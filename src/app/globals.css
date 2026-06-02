@@ -1,26 +1,97 @@
 @import "tailwindcss";
+@config "../../tailwind.config.mjs";
+
+/*
+ * Design system — hierarchical color usage
+ * - Canvas & cards: white (--background)
+ * - Text & borders: neutral tones (--foreground, --muted, --border)
+ * - Brand blue: sparse accents (--brand) — logos, links, secondary tools
+ * - Action green: conversion CTAs (--action) — select / contract
+ * - Highlight amber: preferente & alerts (--highlight)
+ * - Coverage tones: hospital vs ambulatory columns
+ */
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: 0 0% 100%;
+  --foreground: 222 47% 11%;
+  --muted: 220 9% 46%;
+  --border: 220 13% 92%;
+  --surface-hover: 220 14% 97%;
+
+  --brand: 215 65% 47%;
+  --brand-foreground: 0 0% 100%;
+  --brand-muted: 215 55% 96%;
+
+  --action: 152 56% 36%;
+  --action-foreground: 0 0% 100%;
+  --action-hover: 152 56% 32%;
+
+  --highlight: 38 92% 50%;
+  --highlight-foreground: 32 85% 18%;
+  --highlight-muted: 40 90% 96%;
+
+  --coverage-hospital: 215 65% 47%;
+  --coverage-ambulatory: 168 48% 36%;
+
+  /* Legacy aliases (prefer semantic tokens in new code) */
+  --primary: 215 65% 47%;
+  --secondary: 220 14% 96%;
+  --accent: 168 48% 36%;
+
+  --radius-lg: 1rem;
+  --radius-md: 0.75rem;
+  --radius-sm: 0.5rem;
+  --radius-xl: 1.25rem;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-muted: hsl(var(--muted));
+  --color-border: hsl(var(--border));
+  --color-surface-hover: hsl(var(--surface-hover));
+
+  --color-brand: hsl(var(--brand));
+  --color-brand-foreground: hsl(var(--brand-foreground));
+  --color-brand-muted: hsl(var(--brand-muted));
+
+  --color-action: hsl(var(--action));
+  --color-action-foreground: hsl(var(--action-foreground));
+  --color-action-hover: hsl(var(--action-hover));
+
+  --color-highlight: hsl(var(--highlight));
+  --color-highlight-foreground: hsl(var(--highlight-foreground));
+  --color-highlight-muted: hsl(var(--highlight-muted));
+
+  --color-coverage-hospital: hsl(var(--coverage-hospital));
+  --color-coverage-ambulatory: hsl(var(--coverage-ambulatory));
+
+  --color-primary: hsl(var(--primary));
+  --color-secondary: hsl(var(--secondary));
+  --color-accent: hsl(var(--accent));
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
+    --muted: 220 9% 46%;
+    --border: 220 13% 92%;
+    --surface-hover: 220 14% 97%;
   }
 }
 
+* {
+  border-color: hsl(var(--border));
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
