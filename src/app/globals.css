@@ -2,95 +2,74 @@
 @config "../../tailwind.config.mjs";
 
 /*
- * Design system — hierarchical color usage
- * - Canvas & cards: white (--background)
- * - Text & borders: neutral tones (--foreground, --muted, --border)
- * - Brand blue: sparse accents (--brand) — logos, links, secondary tools
- * - Action green: conversion CTAs (--action) — select / contract
- * - Highlight amber: preferente & alerts (--highlight)
- * - Coverage tones: hospital vs ambulatory columns
+ * Cotizador Inteligente — vibrant green-centric design system
  */
 
 :root {
-  --background: 0 0% 100%;
-  --foreground: 222 47% 11%;
-  --muted: 220 9% 46%;
-  --border: 220 13% 92%;
-  --surface-hover: 220 14% 97%;
+  --primary: #00b159;
+  --primary-hover: #00c966;
+  --primary-dark: #004d26;
+  --secondary: #0070f3;
+  --accent-warning: #ffb703;
+  --accent-warning-foreground: #3d2e00;
+  --accent-danger: #e63946;
+  --bg-layout: #f4f7f6;
 
-  --brand: 215 65% 47%;
-  --brand-foreground: 0 0% 100%;
-  --brand-muted: 215 55% 96%;
+  --background: #ffffff;
+  --foreground: #0f1f17;
+  --muted: #5c6f66;
+  --border: #dce6e2;
+  --surface-hover: #eef4f2;
 
-  --action: 152 56% 36%;
-  --action-foreground: 0 0% 100%;
-  --action-hover: 152 56% 32%;
+  --primary-foreground: #ffffff;
+  --secondary-muted: #e8f2ff;
+  --warning-muted: #fff8e6;
+  --danger-muted: #fef2f2;
 
-  --highlight: 38 92% 50%;
-  --highlight-foreground: 32 85% 18%;
-  --highlight-muted: 40 90% 96%;
-
-  --coverage-hospital: 215 65% 47%;
-  --coverage-ambulatory: 168 48% 36%;
-
-  /* Legacy aliases (prefer semantic tokens in new code) */
-  --primary: 215 65% 47%;
-  --secondary: 220 14% 96%;
-  --accent: 168 48% 36%;
+  --gradient-coverage: linear-gradient(
+    90deg,
+    var(--primary) 0%,
+    var(--secondary) 100%
+  );
 
   --radius-lg: 1rem;
   --radius-md: 0.75rem;
   --radius-sm: 0.5rem;
   --radius-xl: 1.25rem;
+
+  --shadow-card: 0 4px 24px -8px rgb(0 77 38 / 0.08);
+  --shadow-card-hover: 0 12px 32px -10px rgb(0 177 89 / 0.22);
 }
 
 @theme inline {
-  --color-background: hsl(var(--background));
-  --color-foreground: hsl(var(--foreground));
-  --color-muted: hsl(var(--muted));
-  --color-border: hsl(var(--border));
-  --color-surface-hover: hsl(var(--surface-hover));
-
-  --color-brand: hsl(var(--brand));
-  --color-brand-foreground: hsl(var(--brand-foreground));
-  --color-brand-muted: hsl(var(--brand-muted));
-
-  --color-action: hsl(var(--action));
-  --color-action-foreground: hsl(var(--action-foreground));
-  --color-action-hover: hsl(var(--action-hover));
-
-  --color-highlight: hsl(var(--highlight));
-  --color-highlight-foreground: hsl(var(--highlight-foreground));
-  --color-highlight-muted: hsl(var(--highlight-muted));
-
-  --color-coverage-hospital: hsl(var(--coverage-hospital));
-  --color-coverage-ambulatory: hsl(var(--coverage-ambulatory));
-
-  --color-primary: hsl(var(--primary));
-  --color-secondary: hsl(var(--secondary));
-  --color-accent: hsl(var(--accent));
-
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-dark: var(--primary-dark);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-muted: var(--secondary-muted);
+  --color-accent-warning: var(--accent-warning);
+  --color-accent-warning-foreground: var(--accent-warning-foreground);
+  --color-warning-muted: var(--warning-muted);
+  --color-accent-danger: var(--accent-danger);
+  --color-danger-muted: var(--danger-muted);
+  --color-bg-layout: var(--bg-layout);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-surface-hover: var(--surface-hover);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222 47% 11%;
-    --muted: 220 9% 46%;
-    --border: 220 13% 92%;
-    --surface-hover: 220 14% 97%;
-  }
-}
-
 * {
-  border-color: hsl(var(--border));
+  border-color: var(--border);
 }
 
 body {
-  background: hsl(var(--background));
-  color: hsl(var(--foreground));
+  background: var(--bg-layout);
+  color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

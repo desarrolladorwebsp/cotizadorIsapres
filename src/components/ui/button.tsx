@@ -2,7 +2,7 @@ import type { ButtonHTMLAttributes } from "react";
 import { ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 
-type ButtonVariant = "primary" | "secondary" | "ghost" | "brand";
+type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 type ButtonSize = "md" | "sm" | "lg";
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -11,10 +11,13 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantStyles: Record<ButtonVariant, string> = {
-  primary: joinClasses(ui.cta, "shadow-[0_4px_14px_-4px_hsl(var(--action)/0.4)]"),
-  brand:
-    "bg-brand text-brand-foreground hover:brightness-110 active:brightness-95",
-  secondary: joinClasses(ui.ctaOutline),
+  primary: joinClasses(
+    ui.cta,
+    "shadow-[0_6px_20px_-6px_var(--primary)] hover:shadow-[0_8px_24px_-4px_var(--primary)]",
+  ),
+  secondary:
+    "bg-secondary text-white hover:brightness-110 active:brightness-95",
+  danger: ui.dangerGhost,
   ghost:
     "bg-transparent text-foreground hover:bg-surface-hover active:bg-surface-hover/80",
 };
@@ -36,7 +39,7 @@ export function Button({
     <button
       type={type}
       className={joinClasses(
-        "inline-flex items-center justify-center font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+        "inline-flex items-center justify-center font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
         variantStyles[variant],
         sizeStyles[size],
         className,

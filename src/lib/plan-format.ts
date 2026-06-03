@@ -9,6 +9,14 @@ export function formatPlanUf(value: number): string {
   })} UF`;
 }
 
+/** Final quoted price — UF prefix first (e.g. "UF 9,142"). */
+export function formatQuotedUf(value: number): string {
+  return `UF ${value.toLocaleString("es-CL", {
+    minimumFractionDigits: 3,
+    maximumFractionDigits: 3,
+  })}`;
+}
+
 export function formatPlanClp(value: number): string {
   return new Intl.NumberFormat("es-CL", {
     style: "currency",
@@ -17,8 +25,9 @@ export function formatPlanClp(value: number): string {
   }).format(value);
 }
 
+/** @deprecated Use calculateFinalPlanPriceClp from plan-final-price for quoted prices. */
 export function planPriceClp(basePriceUf: number, ufToClp = DEFAULT_UF_TO_CLP): number {
-  return basePriceUf * ufToClp;
+  return Math.round(basePriceUf * ufToClp);
 }
 
 export function splitCoverageByType(coverage: CoverageEntry[]) {

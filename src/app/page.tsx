@@ -1,103 +1,36 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import planesData from "@/assets/planes.json";
-import { BeneficiariesForm } from "@/components/beneficiaries";
-import { PlanCard } from "@/components/plan-card";
+import { FiltersFab, FiltersSidebar } from "@/components/filters";
+import { PlanResultsList } from "@/components/plan-card";
+import { useIsLargeScreen } from "@/hooks/use-media-query";
+import { applyDashboardFilters } from "@/lib/apply-plan-filters";
 import { buildBeneficiaryGroupSummary } from "@/lib/beneficiary-summary";
+import { createDefaultDashboardFilters } from "@/lib/filter-options";
+import { DEFAULT_UF_VALUE_CLP } from "@/lib/economic-indicators";
+import { buildPlanFinalPriceQuote } from "@/lib/plan-final-price";
 import { formatPlanClp, formatPlanUf } from "@/lib/plan-format";
-import { ui } from "@/lib/ui-tokens";
+import { appShell, touchTarget, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type {
   BeneficiaryGroupSummary,
   FamilyBeneficiariesState,
 } from "@/types/beneficiary";
+import type { DashboardFiltersState } from "@/types/filters";
 import type { HealthPlan } from "@/types/plan";
 
-const UF_TO_CLP = 38_500;
-
-const STATIC_ISAPRES = [
-  { id: "banmedica", label: "Banmédica" },
-  { id: "colmena", label: "Colmena" },
-  { id: "consalud", label: "Consalud" },
-  { id: "cruz-blanca", label: "Cruz Blanca" },
-  { id: "esencial", label: "Esencial" },
-  { id: "nueva-masvida", label: "Nueva Masvida" },
-  { id: "vida-tres", label: "Vida Tres" },
-];
-
-const STATIC_ZONAS = [
-  { id: "rm-norte", label: "RM Norte" },
-  { id: "rm-sur", label: "RM Sur" },
-  { id: "rm-oriente", label: "RM Oriente" },
-  { id: "rm-poniente", label: "RM Poniente" },
-  { id: "rm-centro", label: "RM Centro" },
-  { id: "valparaiso", label: "Valparaíso" },
-  { id: "biobio", label: "Biobío" },
-];
+const UF_TO_CLP = DEFAULT_UF_VALUE_CLP;
 
 const INITIAL_BENEFICIARIES: FamilyBeneficiariesState = {
   contributorAge: 34,
   dependents: [{ id: "initial-dependent", age: 32 }],
 };
 
-function FilterCheckbox({
-  id,
-  label,
-  checked,
-  onChange,
-}: {
-  id: string;
-  label: string;
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-}) {
-  return (
-    <label
-      htmlFor={id}
-      className={joinClasses(
-        "flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2 text-sm text-foreground transition",
-        ui.hoverSurface,
-      )}
-    >
-      <input
-        id={id}
-        type="checkbox"
-        checked={checked}
-        onChange={(event) => onChange(event.target.checked)}
-        className="size-4 shrink-0 rounded border-border accent-[hsl(var(--brand))] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand/30"
-      />
-      <span className="leading-snug">{label}</span>
-    </label>
-  );
-}
-
-function FilterCard({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className={joinClasses(ui.card, "p-5 sm:p-6")}>
-      <header className="mb-5 space-y-1">
-        <h2 className="text-sm font-semibold tracking-tight text-foreground">
-          {title}
-        </h2>
-        {description ? (
-          <p className="text-xs leading-relaxed text-muted">{description}</p>
-        ) : null}
-      </header>
-      {children}
-    </section>
-  );
-}
-
 export default function DashboardPage() {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const isLargeScreen = useIsLargeScreen();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarReady, setSidebarReady] = useState(false);
   const [search, setSearch] = useState("");
   const [priceMin, setPriceMin] = useState(3);
   const [priceMax, setPriceMax] = useState(5);
@@ -108,26 +41,22 @@ export default function DashboardPage() {
     useState<BeneficiaryGroupSummary>(() =>
       buildBeneficiaryGroupSummary(INITIAL_BENEFICIARIES),
     );
-  const [selectedIsapres, setSelectedIsapres] = useState<Record<string, boolean>>(
-    () =>
-      Object.fromEntries(
-        STATIC_ISAPRES.map((item) => [item.id, item.id === "consalud"]),
-      ),
+  const [dashboardFilters, setDashboardFilters] = useState<DashboardFiltersState>(
+    createDefaultDashboardFilters,
   );
-  const [selectedZonas, setSelectedZonas] = useState<Record<string, boolean>>(
-    () =>
-      Object.fromEntries(
-        STATIC_ZONAS.map((item) => [
-          item.id,
-          item.id === "rm-oriente" || item.id === "rm-centro",
-        ]),
-      ),
-  );
+
+  useEffect(() => {
+    setSidebarOpen(isLargeScreen);
+    setSidebarReady(true);
+  }, [isLargeScreen]);
 
   const filteredPlans = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
 
-    const plans = (planesData as HealthPlan[]).filter((plan) => {
+    const plans = applyDashboardFilters(
+      planesData as HealthPlan[],
+      dashboardFilters,
+    ).filter((plan) => {
       const matchesSearch =
         normalizedSearch.length === 0 ||
         plan.plan_name.toLowerCase().includes(normalizedSearch) ||
@@ -140,20 +69,28 @@ export default function DashboardPage() {
       return matchesSearch && matchesPrice;
     });
 
-    return plans.sort((a, b) =>
-      sortAsc
-        ? a.base_price_uf - b.base_price_uf
-        : b.base_price_uf - a.base_price_uf,
-    );
-  }, [search, priceMin, priceMax, sortAsc]);
+    return plans.sort((a, b) => {
+      const priceA = buildPlanFinalPriceQuote(
+        a.base_price_uf,
+        beneficiarySummary,
+        UF_TO_CLP,
+      ).finalPriceUf;
+      const priceB = buildPlanFinalPriceQuote(
+        b.base_price_uf,
+        beneficiarySummary,
+        UF_TO_CLP,
+      ).finalPriceUf;
 
-  function toggleIsapre(id: string, checked: boolean) {
-    setSelectedIsapres((prev) => ({ ...prev, [id]: checked }));
-  }
-
-  function toggleZona(id: string, checked: boolean) {
-    setSelectedZonas((prev) => ({ ...prev, [id]: checked }));
-  }
+      return sortAsc ? priceA - priceB : priceB - priceA;
+    });
+  }, [
+    search,
+    priceMin,
+    priceMax,
+    sortAsc,
+    dashboardFilters,
+    beneficiarySummary,
+  ]);
 
   function handleBeneficiariesChange(
     next: FamilyBeneficiariesState,
@@ -167,16 +104,17 @@ export default function DashboardPage() {
     <div className={joinClasses("flex min-h-screen flex-col", ui.canvas)}>
       <header
         className={joinClasses(
-          "sticky top-0 z-30 border-b bg-background",
+          "sticky top-0 z-30 border-b bg-white shadow-sm",
           ui.border,
         )}
       >
-        <div className="flex h-[4.5rem] items-center gap-6 px-6 lg:px-10">
+        <div className="flex h-14 min-h-14 items-center gap-3 px-4 sm:h-[4.5rem] sm:gap-6 sm:px-6 lg:px-10">
           <button
             type="button"
             onClick={() => setSidebarOpen((open) => !open)}
             className={joinClasses(
-              "inline-flex size-9 items-center justify-center rounded-lg text-muted transition lg:hidden",
+              touchTarget,
+              "rounded-lg text-muted transition lg:hidden",
               ui.borderHairline,
               ui.hoverSurface,
             )}
@@ -194,20 +132,22 @@ export default function DashboardPage() {
             </svg>
           </button>
 
-          <div className="flex min-w-0 items-center gap-4">
-            <div
-              className={joinClasses(
-                "flex size-10 shrink-0 items-center justify-center rounded-lg text-sm font-semibold text-brand",
-                ui.borderHairline,
-              )}
-            >
+          <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground shadow-sm sm:size-10">
               CI
             </div>
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold tracking-tight text-foreground">
+              <p
+                className={joinClasses(
+                  "truncate text-sm font-bold tracking-tight sm:text-base",
+                  ui.sectionTitle,
+                )}
+              >
                 Cotizador Inteligente
               </p>
-              <p className="truncate text-xs text-muted">Comparador de planes Isapre</p>
+              <p className="truncate text-xs text-muted">
+                Comparador de planes Isapre
+              </p>
             </div>
           </div>
 
@@ -218,7 +158,7 @@ export default function DashboardPage() {
                 ui.borderHairline,
               )}
             >
-              <span className="size-1.5 rounded-full bg-action" />
+              <span className="size-2 rounded-full bg-primary shadow-[0_0_8px_var(--primary)]" />
               <span className="text-muted">Cotización activa</span>
               <span className="font-medium tracking-tight text-foreground">
                 #CI-2406
@@ -226,7 +166,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="ml-auto flex items-center gap-4">
+          <div className="ml-auto flex items-center gap-2 sm:gap-4">
             <div className="hidden text-right sm:block">
               <p className="text-sm font-medium tracking-tight text-foreground">
                 Alfredo Hurtado
@@ -235,7 +175,8 @@ export default function DashboardPage() {
             </div>
             <div
               className={joinClasses(
-                "flex size-10 items-center justify-center rounded-full text-sm font-medium text-muted",
+                touchTarget,
+                "rounded-full text-sm font-medium text-muted md:size-10",
                 ui.borderHairline,
               )}
               aria-hidden
@@ -247,97 +188,28 @@ export default function DashboardPage() {
       </header>
 
       <div className="flex min-h-0 flex-1">
-        <aside
-          className={joinClasses(
-            "shrink-0 border-r bg-background transition-[width,transform] duration-300 ease-out",
-            ui.border,
-            sidebarOpen
-              ? "w-[min(100vw,22rem)] translate-x-0"
-              : "w-0 -translate-x-full overflow-hidden border-r-0 lg:w-0",
-            "fixed inset-y-[4.5rem] left-0 z-20 lg:static lg:inset-auto lg:translate-x-0",
-            !sidebarOpen && "pointer-events-none lg:pointer-events-auto",
-          )}
-        >
-          <div className="flex h-full w-[min(100vw,22rem)] flex-col">
-            <div
-              className={joinClasses(
-                "flex items-center justify-between border-b px-6 py-5 lg:px-8",
-                ui.border,
-              )}
-            >
-              <p className="text-sm font-semibold tracking-tight text-foreground">
-                Filtros
-              </p>
-              <button
-                type="button"
-                onClick={() => setSidebarOpen(false)}
-                className={joinClasses(
-                  "hidden rounded-lg px-2 py-1 text-xs text-muted transition lg:inline-flex",
-                  ui.hoverSurface,
-                )}
-              >
-                Ocultar
-              </button>
-            </div>
-
-            <div className="flex-1 space-y-6 overflow-y-auto p-6 lg:p-8">
-              <BeneficiariesForm
-                value={beneficiaries}
-                onChange={handleBeneficiariesChange}
-              />
-
-              <FilterCard
-                title="Isapres"
-                description="Selección rápida de prestadores."
-              >
-                <div className="space-y-0.5">
-                  {STATIC_ISAPRES.map((item) => (
-                    <FilterCheckbox
-                      key={item.id}
-                      id={`isapre-${item.id}`}
-                      label={item.label}
-                      checked={Boolean(selectedIsapres[item.id])}
-                      onChange={(checked) => toggleIsapre(item.id, checked)}
-                    />
-                  ))}
-                </div>
-              </FilterCard>
-
-              <FilterCard title="Zonas" description="Cobertura geográfica.">
-                <div className="max-h-48 space-y-0.5 overflow-y-auto pr-1">
-                  {STATIC_ZONAS.map((item) => (
-                    <FilterCheckbox
-                      key={item.id}
-                      id={`zona-${item.id}`}
-                      label={item.label}
-                      checked={Boolean(selectedZonas[item.id])}
-                      onChange={(checked) => toggleZona(item.id, checked)}
-                    />
-                  ))}
-                </div>
-              </FilterCard>
-            </div>
-          </div>
-        </aside>
-
-        {sidebarOpen ? (
-          <button
-            type="button"
-            aria-label="Cerrar panel de filtros"
-            className="fixed inset-0 z-10 bg-foreground/[0.04] lg:hidden"
-            onClick={() => setSidebarOpen(false)}
+        {sidebarReady ? (
+          <FiltersSidebar
+            open={sidebarOpen}
+            onClose={() => setSidebarOpen(false)}
+            beneficiaries={beneficiaries}
+            onBeneficiariesChange={handleBeneficiariesChange}
+            filters={dashboardFilters}
+            onFiltersChange={setDashboardFilters}
           />
         ) : null}
 
-        <main className="min-w-0 flex-1 px-6 py-8 lg:px-10 lg:py-10">
-          <div className="mx-auto flex max-w-7xl flex-col gap-10">
+        <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 sm:py-8 lg:px-10 lg:py-10">
+          <div className={joinClasses(appShell, "flex flex-col gap-6 sm:gap-8 xl:gap-10")}>
             <section
               className={joinClasses(
-                "grid gap-8 border-b pb-10 lg:grid-cols-[1fr_minmax(16rem,20rem)_auto] lg:items-end",
+                "grid gap-5 rounded-xl border bg-white p-4 shadow-card sm:gap-6 sm:p-6",
+                "md:grid-cols-2 md:items-end",
+                "lg:grid-cols-[1fr_minmax(14rem,20rem)_auto] lg:gap-8 lg:p-8",
                 ui.border,
               )}
             >
-              <div className="space-y-2">
+              <div className="space-y-2 md:col-span-2 lg:col-span-1">
                 <label
                   htmlFor="plan-search"
                   className="text-xs font-medium text-muted"
@@ -363,7 +235,7 @@ export default function DashboardPage() {
                     onChange={(event) => setSearch(event.target.value)}
                     placeholder="Nombre, código o Isapre..."
                     className={joinClasses(
-                      "h-11 w-full rounded-lg py-2 pl-10 pr-4 text-sm",
+                      "h-12 w-full rounded-lg py-2 pl-10 pr-4 text-base md:h-11 md:text-sm",
                       ui.input,
                     )}
                   />
@@ -377,7 +249,7 @@ export default function DashboardPage() {
                     {formatPlanUf(priceMin)} – {formatPlanUf(priceMax)}
                   </span>
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <input
                     type="range"
                     min={2}
@@ -388,7 +260,7 @@ export default function DashboardPage() {
                       const value = Number(event.target.value);
                       setPriceMin(Math.min(value, priceMax));
                     }}
-                    className="h-px w-full cursor-pointer appearance-none rounded-full bg-border accent-brand [&::-webkit-slider-thumb]:size-3.5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-border [&::-webkit-slider-thumb]:bg-background"
+                    className="h-2 w-full cursor-pointer appearance-none rounded-full bg-border accent-primary [&::-webkit-slider-thumb]:size-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-primary [&::-webkit-slider-thumb]:bg-white md:[&::-webkit-slider-thumb]:size-4"
                   />
                   <input
                     type="range"
@@ -400,7 +272,7 @@ export default function DashboardPage() {
                       const value = Number(event.target.value);
                       setPriceMax(Math.max(value, priceMin));
                     }}
-                    className="h-px w-full cursor-pointer appearance-none rounded-full bg-border accent-brand [&::-webkit-slider-thumb]:size-3.5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-border [&::-webkit-slider-thumb]:bg-background"
+                    className="h-2 w-full cursor-pointer appearance-none rounded-full bg-border accent-primary [&::-webkit-slider-thumb]:size-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-primary [&::-webkit-slider-thumb]:bg-white md:[&::-webkit-slider-thumb]:size-4"
                   />
                 </div>
                 <p className="text-[11px] text-muted/80">
@@ -413,14 +285,15 @@ export default function DashboardPage() {
                 type="button"
                 onClick={() => setSortAsc((value) => !value)}
                 className={joinClasses(
-                  "inline-flex h-11 items-center justify-center gap-2 rounded-lg px-5 text-sm font-medium text-foreground transition",
+                  touchTarget,
+                  "w-full justify-center gap-2 rounded-lg px-5 text-sm font-medium md:w-auto",
                   ui.ctaOutline,
                 )}
               >
                 <svg
                   viewBox="0 0 24 24"
                   fill="none"
-                  className="size-4 text-muted"
+                  className="size-4 shrink-0 text-muted"
                   stroke="currentColor"
                   strokeWidth="1.8"
                   aria-hidden
@@ -435,16 +308,16 @@ export default function DashboardPage() {
               </button>
             </section>
 
-            <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
               <p className="text-sm text-muted">
-                <span className="font-semibold text-foreground">
+                <span className="font-bold text-primary-dark">
                   {filteredPlans.length}
                 </span>{" "}
                 planes encontrados
-                <span className="mx-2 text-border">·</span>
-                <span className="text-foreground/80">
-                  Factor total grupo:{" "}
-                  <span className="font-semibold tabular-nums text-foreground">
+                <span className="mx-2 hidden text-border sm:inline">·</span>
+                <span className="mt-1 block text-foreground/80 sm:mt-0 sm:inline">
+                  Factor total:{" "}
+                  <span className="font-bold tabular-nums text-primary-dark">
                     {beneficiarySummary.totalFactors.toLocaleString("es-CL", {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
@@ -452,32 +325,27 @@ export default function DashboardPage() {
                   </span>
                 </span>
               </p>
-              {!sidebarOpen ? (
+              {!sidebarOpen && isLargeScreen ? (
                 <button
                   type="button"
                   onClick={() => setSidebarOpen(true)}
-                  className={joinClasses("text-sm font-medium", ui.link)}
+                  className={joinClasses("text-sm font-semibold", ui.link)}
                 >
                   Mostrar filtros
                 </button>
               ) : null}
             </div>
 
-            <div className="flex flex-col gap-6">
-              {filteredPlans.map((plan) => (
-                <PlanCard
-                  key={plan.unique_code}
-                  plan={plan}
-                  ufToClp={UF_TO_CLP}
-                  badges={plan.has_top ? ["Top", "Preferente"] : undefined}
-                />
-              ))}
-            </div>
-
-            {filteredPlans.length === 0 ? (
+            {filteredPlans.length > 0 ? (
+              <PlanResultsList
+                plans={filteredPlans}
+                beneficiarySummary={beneficiarySummary}
+                ufToClp={UF_TO_CLP}
+              />
+            ) : (
               <div
                 className={joinClasses(
-                  "rounded-xl border border-dashed px-8 py-20 text-center",
+                  "rounded-xl border border-dashed bg-white px-6 py-16 text-center shadow-card sm:px-8 sm:py-20",
                   ui.border,
                 )}
               >
@@ -485,13 +353,19 @@ export default function DashboardPage() {
                   Sin resultados para los filtros actuales
                 </p>
                 <p className="mt-1 text-sm text-muted">
-                  Ajusta el rango de precio o el término de búsqueda.
+                  Ajusta los filtros del panel lateral, el rango de precio o el
+                  término de búsqueda.
                 </p>
               </div>
-            ) : null}
+            )}
           </div>
         </main>
       </div>
+
+      <FiltersFab
+        visible={!sidebarOpen && !isLargeScreen}
+        onClick={() => setSidebarOpen(true)}
+      />
     </div>
   );
 }

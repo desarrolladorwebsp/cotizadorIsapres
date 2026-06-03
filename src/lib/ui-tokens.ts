@@ -1,45 +1,82 @@
 /**
- * Semantic UI fragments — always prefer these over raw color utilities.
- * Maps 1:1 to CSS variables in globals.css.
+ * Semantic UI fragments — maps to CSS variables in globals.css
  */
+/** WCAG-friendly touch target (48×48px minimum on mobile). */
+export const touchTarget =
+  "min-h-12 min-w-12 inline-flex items-center justify-center md:min-h-10 md:min-w-10";
+
+export const touchRow =
+  "min-h-12 px-3 py-2 md:min-h-10 md:py-2";
+
+export const appShell =
+  "mx-auto w-full max-w-7xl 2xl:max-w-[1600px]";
+
+export const motionGpu =
+  "will-change-[transform,opacity] transform-gpu backface-hidden";
+
 export const ui = {
-  canvas: "bg-background text-foreground",
+  canvas: "bg-bg-layout text-foreground",
+  surfaceCard: "rounded-xl border border-border bg-white shadow-card",
   mutedText: "text-muted",
   border: "border-border",
   borderHairline: "border border-border",
   hoverSurface: "hover:bg-surface-hover",
+  sectionTitle: "text-primary-dark",
   input:
-    "border border-border bg-background text-foreground placeholder:text-muted/80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand/30",
-  card: "rounded-xl border border-border bg-background",
-  link: "text-brand transition hover:text-brand/80",
-  cta: "bg-action text-action-foreground transition hover:bg-action-hover active:scale-[0.99]",
+    "border border-border bg-white text-foreground placeholder:text-muted/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
+  card: "rounded-xl border border-border bg-white shadow-card",
+  link: "text-secondary transition hover:text-secondary/80",
+  cta: "bg-primary text-primary-foreground transition hover:bg-primary-hover active:scale-[0.99]",
   ctaOutline:
-    "border border-border bg-background text-foreground transition hover:bg-surface-hover",
+    "border border-border bg-white text-foreground transition hover:bg-surface-hover",
+  dangerText: "text-danger transition hover:text-danger/80",
+  dangerGhost:
+    "border border-danger/30 bg-danger-muted text-danger transition hover:border-danger/50 hover:bg-danger-muted/80",
 } as const;
 
 export type PercentageTone = "hospital" | "ambulatory" | "neutral";
 
-export const percentageToneClass: Record<PercentageTone, string> = {
+export const percentageToneActiveClass: Record<PercentageTone, string> = {
   hospital:
-    "border-[hsl(var(--coverage-hospital)/0.35)] text-[hsl(var(--coverage-hospital))]",
+    "border-primary bg-primary/10 text-primary-dark ring-2 ring-primary/25",
   ambulatory:
-    "border-[hsl(var(--coverage-ambulatory)/0.35)] text-[hsl(var(--coverage-ambulatory))]",
-  neutral: "border-border text-muted",
+    "border-secondary bg-secondary-muted text-secondary ring-2 ring-secondary/25",
+  neutral:
+    "border-primary bg-primary/10 text-primary-dark ring-2 ring-primary/30",
 };
 
-export type StatusBadgeTone = "brand" | "highlight" | "neutral";
+export type StatusBadgeTone =
+  | "preferred"
+  | "top"
+  | "neutral"
+  | "base"
+  | "closed"
+  | "free_choice";
 
 export const statusBadgeToneClass: Record<StatusBadgeTone, string> = {
-  brand:
-    "border-[hsl(var(--brand)/0.3)] bg-brand-muted text-[hsl(var(--brand))]",
-  highlight:
-    "border-[hsl(var(--highlight)/0.35)] bg-highlight-muted text-[hsl(var(--highlight-foreground))]",
-  neutral: "border-border bg-background text-muted",
+  preferred:
+    "border-warning/40 bg-warning text-warning-foreground shadow-sm",
+  top: "border-primary/30 bg-primary/10 text-primary-dark",
+  neutral: "border-border bg-white text-muted",
+  base: "border-primary/25 bg-primary/10 text-primary-dark",
+  closed: "border-secondary/35 bg-secondary-muted text-secondary",
+  free_choice: "border-border bg-surface-hover text-muted",
+};
+
+export const planTypeBadgeTone: Record<
+  "preferred" | "closed" | "free_choice",
+  StatusBadgeTone
+> = {
+  preferred: "preferred",
+  closed: "closed",
+  free_choice: "free_choice",
 };
 
 export function resolveBadgeTone(label: string): StatusBadgeTone {
   const key = label.toLowerCase();
-  if (key === "preferente") return "highlight";
-  if (key === "top") return "brand";
+  if (key === "preferente") return "preferred";
+  if (key === "top") return "top";
   return "neutral";
 }
+
+export const coverageBarGradient = "h-2 rounded-full bg-coverage-gradient";

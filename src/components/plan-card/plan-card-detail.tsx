@@ -1,9 +1,9 @@
 "use client";
 
 import { motion } from "framer-motion";
-import type { PercentageTone } from "@/lib/ui-tokens";
-import { ui } from "@/lib/ui-tokens";
+import { coverageBarGradient, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
+import type { PercentageTone } from "@/lib/ui-tokens";
 import type { CoverageEntry } from "@/types/plan";
 import { PercentagePill } from "./percentage-pill";
 
@@ -21,42 +21,43 @@ function CoverageBarChart({
   entries: CoverageEntry[];
   tone: PercentageTone;
 }) {
-  const barColor =
-    tone === "hospital"
-      ? "bg-[hsl(var(--coverage-hospital))]"
-      : "bg-[hsl(var(--coverage-ambulatory))]";
-
   return (
     <motion.div
-      initial={{ opacity: 0, y: 6 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-      className="space-y-4"
+      transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+      className="overflow-hidden rounded-xl border border-border bg-white"
     >
-      <h5 className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">
-        {title}
-      </h5>
-      <ul className="space-y-3">
+      <div className="bg-primary-dark px-4 py-2.5">
+        <h5 className="text-[10px] font-bold uppercase tracking-[0.14em] text-white">
+          {title}
+        </h5>
+      </div>
+      <ul className="space-y-3 p-4">
         {entries.map((entry, index) => (
           <motion.li
             key={`chart-${entry.type}-${entry.clinic_id}`}
-            initial={{ opacity: 0, x: -4 }}
+            initial={{ opacity: 0, x: -8 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: index * 0.02, duration: 0.25 }}
-            className="space-y-1.5"
+            transition={{ delay: index * 0.025, duration: 0.28 }}
+            className="space-y-2"
           >
             <div className="flex items-center justify-between gap-3">
-              <span className="truncate text-xs text-foreground/75">
+              <span className="truncate text-xs font-medium text-foreground/80">
                 {entry.clinic_name}
               </span>
               <PercentagePill value={entry.percentage} tone={tone} size="sm" />
             </div>
-            <div className="h-px overflow-hidden rounded-full bg-border">
+            <div className="h-2 overflow-hidden rounded-full bg-border/80">
               <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${entry.percentage}%` }}
-                transition={{ duration: 0.45, ease: "easeOut" }}
-                className={joinClasses("h-px rounded-full", barColor)}
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: entry.percentage / 100 }}
+                transition={{ duration: 0.5, ease: "easeOut", delay: index * 0.02 }}
+                className={joinClasses(
+                  coverageBarGradient,
+                  "origin-left transform-gpu will-change-transform",
+                )}
+                style={{ width: "100%" }}
               />
             </div>
           </motion.li>
@@ -73,17 +74,17 @@ export function PlanCardDetail({
   return (
     <div
       className={joinClasses(
-        "grid gap-8 border-t bg-background px-6 py-6 sm:px-8 sm:py-7 lg:grid-cols-2",
+        "grid gap-5 border-t bg-bg-layout/30 px-6 py-6 sm:px-8 sm:py-7 lg:grid-cols-2",
         ui.border,
       )}
     >
       <CoverageBarChart
-        title="Hospitalaria"
+        title="Desglose hospitalario"
         entries={hospitalaria}
         tone="hospital"
       />
       <CoverageBarChart
-        title="Ambulatoria"
+        title="Desglose ambulatorio"
         entries={ambulatoria}
         tone="ambulatory"
       />

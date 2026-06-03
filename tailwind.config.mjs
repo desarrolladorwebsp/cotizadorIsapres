@@ -4,35 +4,31 @@ const config = {
   theme: {
     extend: {
       colors: {
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
-        muted: "hsl(var(--muted))",
-        border: "hsl(var(--border))",
-        "surface-hover": "hsl(var(--surface-hover))",
-
-        brand: {
-          DEFAULT: "hsl(var(--brand))",
-          foreground: "hsl(var(--brand-foreground))",
-          muted: "hsl(var(--brand-muted))",
+        primary: {
+          DEFAULT: "var(--primary)",
+          hover: "var(--primary-hover)",
+          dark: "var(--primary-dark)",
+          foreground: "var(--primary-foreground)",
         },
-        action: {
-          DEFAULT: "hsl(var(--action))",
-          foreground: "hsl(var(--action-foreground))",
-          hover: "hsl(var(--action-hover))",
+        secondary: {
+          DEFAULT: "var(--secondary)",
+          muted: "var(--secondary-muted)",
         },
-        highlight: {
-          DEFAULT: "hsl(var(--highlight))",
-          foreground: "hsl(var(--highlight-foreground))",
-          muted: "hsl(var(--highlight-muted))",
+        warning: {
+          DEFAULT: "var(--accent-warning)",
+          foreground: "var(--accent-warning-foreground)",
+          muted: "var(--warning-muted)",
         },
-        coverage: {
-          hospital: "hsl(var(--coverage-hospital))",
-          ambulatory: "hsl(var(--coverage-ambulatory))",
+        danger: {
+          DEFAULT: "var(--accent-danger)",
+          muted: "var(--danger-muted)",
         },
-
-        primary: "hsl(var(--primary))",
-        secondary: "hsl(var(--secondary))",
-        accent: "hsl(var(--accent))",
+        "bg-layout": "var(--bg-layout)",
+        background: "var(--background)",
+        foreground: "var(--foreground)",
+        muted: "var(--muted)",
+        border: "var(--border)",
+        "surface-hover": "var(--surface-hover)",
       },
       borderRadius: {
         lg: "var(--radius-lg)",
@@ -41,8 +37,12 @@ const config = {
         xl: "var(--radius-xl)",
       },
       boxShadow: {
-        card: "0 12px 40px -28px hsl(var(--foreground) / 0.1)",
-        "card-hover": "0 16px 48px -24px hsl(var(--foreground) / 0.12)",
+        card: "var(--shadow-card)",
+        "card-hover": "var(--shadow-card-hover)",
+        md: "0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.06)",
+      },
+      backgroundImage: {
+        "coverage-gradient": "var(--gradient-coverage)",
       },
     },
   },

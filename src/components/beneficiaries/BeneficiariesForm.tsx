@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { buildBeneficiaryGroupSummary } from "@/lib/beneficiary-summary";
 import { parseBeneficiaryAge } from "@/lib/risk-factor-table-604";
-import { ui } from "@/lib/ui-tokens";
+import { touchTarget, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type {
   BeneficiaryGroupSummary,
@@ -139,9 +139,9 @@ export function BeneficiariesForm({
   }
 
   return (
-    <section className={joinClasses(ui.card, "p-5 sm:p-6", className)}>
+    <section className={joinClasses(ui.surfaceCard, "p-5 sm:p-6", className)}>
       <header className="mb-6 space-y-1">
-        <h2 className="text-sm font-semibold tracking-tight text-foreground">
+        <h2 className={joinClasses("text-sm font-bold tracking-tight", ui.sectionTitle)}>
           Beneficiarios
         </h2>
         <p className="text-xs leading-relaxed text-muted">
@@ -179,7 +179,7 @@ export function BeneficiariesForm({
                 handleContributorInputChange(event.target.value)
               }
               className={joinClasses(
-                "h-9 w-full min-w-0 flex-1 rounded-lg px-3 text-sm tabular-nums",
+                "h-12 w-full min-w-0 flex-1 rounded-lg px-3 text-base tabular-nums md:h-10 md:text-sm",
                 ui.input,
               )}
             />
@@ -214,10 +214,10 @@ export function BeneficiariesForm({
                 return (
                   <motion.li
                     key={dependent.id}
-                    layout
-                    initial={{ opacity: 0, y: -6, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -6, scale: 0.98, height: 0 }}
+                    layout="position"
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
                     transition={listItemTransition}
                     className="overflow-hidden"
                   >
@@ -245,7 +245,7 @@ export function BeneficiariesForm({
                           )
                         }
                         className={joinClasses(
-                          "h-9 min-w-0 flex-1 rounded-lg px-3 text-sm tabular-nums",
+                          "h-12 min-w-0 flex-1 rounded-lg px-3 text-base tabular-nums md:h-10 md:text-sm",
                           ui.input,
                         )}
                       />
@@ -255,9 +255,9 @@ export function BeneficiariesForm({
                         onClick={() => removeDependent(dependent.id)}
                         aria-label={`Eliminar carga ${index + 1}`}
                         className={joinClasses(
-                          "inline-flex size-9 shrink-0 items-center justify-center rounded-full text-muted transition",
-                          ui.borderHairline,
-                          ui.hoverSurface,
+                          "inline-flex shrink-0 items-center justify-center rounded-full transition",
+                          touchTarget,
+                          ui.dangerGhost,
                         )}
                       >
                         <RemoveIcon />
@@ -273,9 +273,8 @@ export function BeneficiariesForm({
             type="button"
             onClick={addDependent}
             className={joinClasses(
-              "inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg text-sm font-medium text-brand transition",
-              ui.borderHairline,
-              ui.hoverSurface,
+              touchTarget,
+              "w-full gap-2 rounded-lg border-2 border-primary/25 text-sm font-semibold text-primary-dark transition hover:border-primary/50 hover:bg-primary/5",
             )}
           >
             <PlusIcon />
@@ -284,30 +283,32 @@ export function BeneficiariesForm({
         </div>
 
         <motion.div
-          layout
-          className={joinClasses(
-            "rounded-lg px-4 py-4",
-            ui.borderHairline,
-            "bg-[hsl(var(--surface-hover)/0.5)]",
-          )}
+          layout="position"
+          className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-4"
         >
           <div className="flex items-end justify-between gap-4">
             <div className="space-y-1">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-primary-dark/70">
                 Resumen del grupo
               </p>
               <p className="text-sm text-foreground">
-                <span className="font-semibold tabular-nums">
-                  {summary.personCount}
+                <span className="font-bold tabular-nums text-primary-dark">
+                  {summary.beneficiaryCount}
                 </span>{" "}
-                {summary.personCount === 1 ? "persona" : "personas"} en el grupo
+                {summary.beneficiaryCount === 1
+                  ? "beneficiario"
+                  : "beneficiarios"}{" "}
+                (prima GES)
+              </p>
+              <p className="text-[11px] leading-snug text-muted">
+                Menores de 2 años: factor 0 (Circular N°343)
               </p>
             </div>
             <div className="text-right">
-              <p className="text-[10px] font-medium uppercase tracking-wide text-muted">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-primary-dark/70">
                 Factor total
               </p>
-              <p className="text-2xl font-semibold tabular-nums tracking-tight text-foreground">
+              <p className="text-2xl font-bold tabular-nums tracking-tight text-primary-dark">
                 {summary.totalFactors.toLocaleString("es-CL", {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
