@@ -1,6 +1,6 @@
 import { touchRow, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
-import type { FilterOption } from "@/types/filters";
+import type { FilterOption } from "@/domain";
 
 export interface FilterCheckboxListProps {
   options: FilterOption[];

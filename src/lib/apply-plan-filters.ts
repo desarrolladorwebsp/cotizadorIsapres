@@ -18,29 +18,36 @@ function normalizeText(value: string): string {
     .replace(/\p{Diacritic}/gu, "");
 }
 
-function matchesIsapreFilter(plan: HealthPlan, filters: DashboardFiltersState): boolean {
+function matchesIsapreFilter(
+  plan: HealthPlan,
+  filters: DashboardFiltersState,
+): boolean {
   if (!isCheckboxGroupActive(filters.isapres)) return true;
-
   const activeIds = getActiveCheckboxIds(filters.isapres);
   const planIsapre = normalizeText(plan.isapre);
-
   return activeIds.some((id) => {
     const label = normalizeText(resolveIsapreDisplayName(id));
     return planIsapre.includes(label) || label.includes(planIsapre);
   });
 }
 
-function matchesZoneFilter(_plan: HealthPlan, filters: DashboardFiltersState): boolean {
+function matchesZoneFilter(
+  _plan: HealthPlan,
+  filters: DashboardFiltersState,
+): boolean {
   if (!isCheckboxGroupActive(filters.zones)) return true;
   return true;
 }
 
-function matchesPlanTypeFilter(plan: HealthPlan, filters: DashboardFiltersState): boolean {
+function matchesPlanTypeFilter(
+  plan: HealthPlan,
+  filters: DashboardFiltersState,
+): boolean {
   if (!isCheckboxGroupActive(filters.planTypes)) return true;
-
-  const activeTypes = getActiveCheckboxIds(filters.planTypes) as PlanTypeFilterId[];
+  const activeTypes = getActiveCheckboxIds(
+    filters.planTypes,
+  ) as PlanTypeFilterId[];
   const planTypes = inferPlanTypes(plan);
-
   return activeTypes.some((type) => planTypes.includes(type));
 }
 
@@ -50,12 +57,9 @@ function matchesCoveragePercent(
   threshold: number | null,
 ): boolean {
   if (threshold === null) return true;
-
   const { hospitalaria, ambulatoria } = splitCoverageByType(plan.coverage);
   const entries = type === "hospitalaria" ? hospitalaria : ambulatoria;
-  const globalPercent = coverageGlobalPercentage(entries);
-
-  return globalPercent >= threshold;
+  return coverageGlobalPercentage(entries) >= threshold;
 }
 
 export function applyDashboardFilters(

@@ -1,0 +1,58 @@
+[
+  {
+    "id": "cm-redsalud",
+    "name": "Centros Médicos RedSalud"
+  },
+  {
+    "id": "cl-indisa-maipu",
+    "name": "Clínica Indisa Maipú"
+  },
+  {
+    "id": "cl-indisa-providencia-anexo",
+    "name": "Clínica Indisa Providencia (y prestadores Anexo I)"
+  },
+  {
+    "id": "cl-las-condes",
+    "name": "Clínica Las Condes"
+  },
+  {
+    "id": "cl-meds",
+    "name": "Clínica Meds"
+  },
+  {
+    "id": "cl-redsalud-providencia",
+    "name": "Clínica RedSalud Providencia"
+  },
+  {
+    "id": "cl-redsalud-santiago",
+    "name": "Clínica RedSalud Santiago"
+  },
+  {
+    "id": "cl-redsalud-vitacura",
+    "name": "Clínica RedSalud Vitacura"
+  },
+  {
+    "id": "cl-san-carlos",
+    "name": "Clínica San Carlos de Apoquindo"
+  },
+  {
+    "id": "cl-santa-maria",
+    "name": "Clínica Santa María"
+  },
+  {
+    "id": "cl-univ-andes",
+    "name": "Clínica Universidad de los Andes"
+  },
+  {
+    "id": "hosp-clinico-uc",
+    "name": "Hospital Clínico Universidad Católica"
+  },
+  {
+    "id": "integramedica",
+    "name": "Integramédica"
+  },
+  {
+    "id": "red-uc-christus",
+    "name": "Red de Salud UC Christus"
+  }
+]

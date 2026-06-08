@@ -14,7 +14,6 @@ function normalizeText(value: string): string {
     .replace(/\p{Diacritic}/gu, "");
 }
 
-/** Infers plan type tags from JSON fields and naming conventions. */
 export function inferPlanTypes(plan: HealthPlan): PlanTypeFilterId[] {
   const name = normalizeText(plan.plan_name);
   const notes = normalizeText(plan.additional_notes ?? "");
@@ -23,7 +22,6 @@ export function inferPlanTypes(plan: HealthPlan): PlanTypeFilterId[] {
   if (plan.has_top || name.includes("preferente") || notes.includes("preferente")) {
     types.push("preferred");
   }
-
   if (
     name.includes("libre") ||
     notes.includes("libre eleccion") ||
@@ -31,7 +29,6 @@ export function inferPlanTypes(plan: HealthPlan): PlanTypeFilterId[] {
   ) {
     types.push("free_choice");
   }
-
   if (
     name.includes("cerrado") ||
     name.includes("-sf") ||
@@ -39,32 +36,24 @@ export function inferPlanTypes(plan: HealthPlan): PlanTypeFilterId[] {
   ) {
     types.push("closed");
   }
-
-  if (types.length === 0) {
-    types.push("free_choice");
-  }
-
+  if (types.length === 0) types.push("free_choice");
   return types;
 }
 
 export function resolvePrimaryPlanType(plan: HealthPlan): PlanTypeFilterId {
   const types = inferPlanTypes(plan);
-
   if (types.includes("preferred")) return "preferred";
   if (types.includes("closed")) return "closed";
   return "free_choice";
 }
 
-/** Commercial plan title shown beside the Isapre logo (without redundant Isapre prefix). */
 export function resolveCommercialPlanName(plan: HealthPlan): string {
   const prefix = `${plan.isapre} `.trim();
   const normalizedPrefix = `${prefix} `;
-
   if (plan.plan_name.toLowerCase().startsWith(normalizedPrefix.toLowerCase())) {
     const stripped = plan.plan_name.slice(normalizedPrefix.length).trim();
     return stripped.length > 0 ? stripped : plan.plan_name;
   }
-
   return plan.plan_name;
 }
 

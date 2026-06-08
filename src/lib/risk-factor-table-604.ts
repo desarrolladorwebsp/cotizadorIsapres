@@ -1,6 +1,5 @@
 import type { BeneficiaryRole } from "@/types/beneficiary";
 
-/** Tabla Única de Factores N°604 — tramos etarios (edad en años, límite superior exclusivo). */
 interface AgeBracketRow {
   minAge: number;
   maxAge: number | null;
@@ -43,18 +42,13 @@ function resolveBracket(age: number): AgeBracketRow | null {
   );
 }
 
-/**
- * Returns the individual risk factor for a given age and role per Table 604.
- */
 export function getRiskFactor604(
   age: number,
   role: BeneficiaryRole,
 ): number | null {
   if (!isValidBeneficiaryAge(age)) return null;
-
   const bracket = resolveBracket(age);
   if (!bracket) return null;
-
   return role === "contributor"
     ? bracket.contributorFactor
     : bracket.dependentFactor;

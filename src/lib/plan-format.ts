@@ -1,6 +1,5 @@
+import { DEFAULT_UF_VALUE_CLP } from "@/lib/economic-indicators";
 import type { CoverageEntry } from "@/types/plan";
-
-const DEFAULT_UF_TO_CLP = 38_500;
 
 export function formatPlanUf(value: number): string {
   return `${value.toLocaleString("es-CL", {
@@ -9,7 +8,6 @@ export function formatPlanUf(value: number): string {
   })} UF`;
 }
 
-/** Final quoted price — UF prefix first (e.g. "UF 9,142"). */
 export function formatQuotedUf(value: number): string {
   return `UF ${value.toLocaleString("es-CL", {
     minimumFractionDigits: 3,
@@ -25,8 +23,10 @@ export function formatPlanClp(value: number): string {
   }).format(value);
 }
 
-/** @deprecated Use calculateFinalPlanPriceClp from plan-final-price for quoted prices. */
-export function planPriceClp(basePriceUf: number, ufToClp = DEFAULT_UF_TO_CLP): number {
+export function planPriceClp(
+  basePriceUf: number,
+  ufToClp = DEFAULT_UF_VALUE_CLP,
+): number {
   return Math.round(basePriceUf * ufToClp);
 }
 
@@ -43,4 +43,15 @@ export function coverageGlobalPercentage(entries: CoverageEntry[]): number {
   return Math.round(total / entries.length);
 }
 
-export { DEFAULT_UF_TO_CLP };
+export function uniqueCoveragePercentages(entries: CoverageEntry[]): number[] {
+  return [...new Set(entries.map((entry) => entry.percentage))].sort(
+    (a, b) => a - b,
+  );
+}
+
+/** Lista todos los % distintos del plan, ej. "50% 70%". */
+export function formatCoveragePercentagesList(entries: CoverageEntry[]): string {
+  const values = uniqueCoveragePercentages(entries);
+  if (values.length === 0) return "—";
+  return values.map((value) => `${value}%`).join(" ");
+}

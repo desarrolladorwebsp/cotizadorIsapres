@@ -3,8 +3,8 @@
 import { motion } from "framer-motion";
 import { motionGpu } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
-import type { BeneficiaryGroupSummary } from "@/types/beneficiary";
-import type { HealthPlan } from "@/types/plan";
+import type { BeneficiaryGroupSummary } from "@/domain";
+import type { HealthPlan } from "@/domain";
 import { PlanCard } from "./PlanCard";
 
 export interface PlanResultsListProps {

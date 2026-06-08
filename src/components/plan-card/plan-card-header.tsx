@@ -1,14 +1,14 @@
-import { formatPlanClp, formatQuotedUf } from "@/lib/plan-format";
-import type { PlanFinalPriceQuote } from "@/lib/plan-final-price";
+import { formatPlanClp, formatQuotedUf } from "@/domain";
+import type { PlanFinalPriceQuote } from "@/domain";
 import {
   formatBasePriceBadgeLabel,
   PLAN_TYPE_LABELS,
   resolveCommercialPlanName,
   resolvePrimaryPlanType,
-} from "@/lib/plan-metadata";
+} from "@/domain";
 import { ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
-import type { HealthPlan } from "@/types/plan";
+import type { HealthPlan } from "@/domain";
 import { IsapreLogo } from "./isapre-logo";
 import { PlanMetaBadge } from "./plan-meta-badge";
 

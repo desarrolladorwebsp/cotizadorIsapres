@@ -1,6 +1,4 @@
-import {
-  isRiskFactorExemptByAge,
-} from "@/lib/isapre-pricing-rules";
+import { isRiskFactorExemptByAge } from "@/lib/isapre-pricing-rules";
 import { getRiskFactor604, isValidBeneficiaryAge } from "@/lib/risk-factor-table-604";
 import type {
   BeneficiaryGroupSummary,
@@ -14,7 +12,6 @@ function resolveBillableFactor(
 ): number | null {
   if (age === null || !isValidBeneficiaryAge(age)) return null;
   if (isRiskFactorExemptByAge(age)) return 0;
-
   return getRiskFactor604(age, role);
 }
 
@@ -56,11 +53,10 @@ export function buildBeneficiaryGroupSummary(
   });
 
   const allPersons = [contributor, ...dependents];
-
-  const totalFactors = allPersons.reduce((sum, person) => {
-    return sum + (person.factor ?? 0);
-  }, 0);
-
+  const totalFactors = allPersons.reduce(
+    (sum, person) => sum + (person.factor ?? 0),
+    0,
+  );
   const beneficiaryCount = allPersons.filter((person) =>
     isCountedBeneficiary(person.age),
   ).length;

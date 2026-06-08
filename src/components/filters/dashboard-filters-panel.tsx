@@ -6,10 +6,10 @@ import {
   PLAN_TYPE_FILTER_OPTIONS,
   toggleCheckboxFilter,
   ZONE_FILTER_OPTIONS,
-} from "@/lib/filter-options";
+} from "@/domain";
 import { touchTarget, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
-import type { DashboardFiltersState } from "@/types/filters";
+import type { DashboardFiltersState } from "@/domain";
 import { CoveragePercentageFilter } from "./coverage-percentage-filter";
 import { FilterCheckboxList } from "./filter-checkbox-list";
 import { FilterSection } from "./filter-section";

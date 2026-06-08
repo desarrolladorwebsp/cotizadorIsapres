@@ -14,19 +14,13 @@ export interface PlanFinalPriceQuote {
   ufToClp: number;
 }
 
-/**
- * Official monthly plan price in UF:
- * FinalPrice = (GroupTotalFactor × BasePriceUF) + (BeneficiaryCount × GES_UF)
- */
 export function calculateFinalPlanPriceUf(
   basePriceUf: number,
   groupTotalFactor: number,
   beneficiaryCount: number,
   gesPremiumUfPerPerson: number = GES_PREMIUM_UF_PER_BENEFICIARY,
 ): number {
-  const riskComponentUf = groupTotalFactor * basePriceUf;
-  const gesTotalUf = beneficiaryCount * gesPremiumUfPerPerson;
-  return riskComponentUf + gesTotalUf;
+  return groupTotalFactor * basePriceUf + beneficiaryCount * gesPremiumUfPerPerson;
 }
 
 export function calculateFinalPlanPriceClp(

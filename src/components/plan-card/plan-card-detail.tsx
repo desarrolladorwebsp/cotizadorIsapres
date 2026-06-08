@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { coverageBarGradient, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type { PercentageTone } from "@/lib/ui-tokens";
-import type { CoverageEntry } from "@/types/plan";
+import type { CoverageEntry } from "@/domain";
 import { PercentagePill } from "./percentage-pill";
 
 export interface PlanCardDetailProps {

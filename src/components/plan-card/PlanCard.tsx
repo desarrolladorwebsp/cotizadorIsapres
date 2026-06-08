@@ -3,15 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { GpuExpandPanel } from "@/components/ui/gpu-expand-panel";
-import {
-  coverageGlobalPercentage,
-  splitCoverageByType,
-} from "@/lib/plan-format";
-import { buildPlanFinalPriceQuote } from "@/lib/plan-final-price";
+import { splitCoverageByType } from "@/domain";
+import { buildPlanFinalPriceQuote } from "@/domain";
 import { motionGpu, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
-import type { BeneficiaryGroupSummary } from "@/types/beneficiary";
-import type { HealthPlan } from "@/types/plan";
+import type { BeneficiaryGroupSummary } from "@/domain";
+import type { HealthPlan } from "@/domain";
 import { PlanCardActions } from "./plan-card-actions";
 import { PlanCardCoverage } from "./plan-card-coverage";
 import { PlanCardDetail } from "./plan-card-detail";
@@ -55,16 +52,6 @@ export function PlanCard({
   const { hospitalaria, ambulatoria } = useMemo(
     () => splitCoverageByType(plan.coverage),
     [plan.coverage],
-  );
-
-  const hospitalGlobal = useMemo(
-    () => coverageGlobalPercentage(hospitalaria),
-    [hospitalaria],
-  );
-
-  const ambulatoryGlobal = useMemo(
-    () => coverageGlobalPercentage(ambulatoria),
-    [ambulatoria],
   );
 
   const priceQuote = useMemo(
@@ -112,8 +99,6 @@ export function PlanCard({
       <PlanCardCoverage
         hospitalaria={hospitalaria}
         ambulatoria={ambulatoria}
-        hospitalGlobal={hospitalGlobal}
-        ambulatoryGlobal={ambulatoryGlobal}
       />
 
       <GpuExpandPanel open={expanded}>

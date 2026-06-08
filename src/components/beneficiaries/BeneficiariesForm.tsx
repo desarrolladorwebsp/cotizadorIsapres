@@ -2,14 +2,14 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
-import { buildBeneficiaryGroupSummary } from "@/lib/beneficiary-summary";
-import { parseBeneficiaryAge } from "@/lib/risk-factor-table-604";
+import { buildBeneficiaryGroupSummary } from "@/domain";
+import { parseBeneficiaryAge } from "@/domain";
 import { touchTarget, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type {
   BeneficiaryGroupSummary,
   FamilyBeneficiariesState,
-} from "@/types/beneficiary";
+} from "@/domain";
 import { FactorBadge } from "./factor-badge";
 
 export interface BeneficiariesFormProps {

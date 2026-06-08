@@ -1,0 +1,123 @@
+import type {
+  PlanPdfUploadResult,
+  UploadPlanPdfRequest,
+} from "@/lib/cloudinary/types";
+import type { Clinic } from "@/types/clinic";
+import type { HealthPlan } from "@/types/plan";
+
+async function parseJsonResponse<T>(response: Response): Promise<T> {
+  const data = (await response.json()) as T & { error?: string };
+
+  if (!response.ok) {
+    throw new Error(data.error ?? "Error en la solicitud.");
+  }
+
+  return data;
+}
+
+export async function fetchPlans(): Promise<HealthPlan[]> {
+  const response = await fetch("/api/plans");
+  return parseJsonResponse<HealthPlan[]>(response);
+}
+
+export async function createPlan(plan: HealthPlan): Promise<HealthPlan> {
+  const response = await fetch("/api/plans", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(plan),
+  });
+  return parseJsonResponse<HealthPlan>(response);
+}
+
+export async function updatePlan(plan: HealthPlan): Promise<HealthPlan> {
+  const response = await fetch(
+    `/api/plans/${encodeURIComponent(plan.unique_code)}`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(plan),
+    },
+  );
+  return parseJsonResponse<HealthPlan>(response);
+}
+
+export async function deletePlan(uniqueCode: string): Promise<void> {
+  const response = await fetch(
+    `/api/plans/${encodeURIComponent(uniqueCode)}`,
+    { method: "DELETE" },
+  );
+  await parseJsonResponse<{ ok: boolean }>(response);
+}
+
+export async function fetchClinics(): Promise<Clinic[]> {
+  const response = await fetch("/api/clinics");
+  return parseJsonResponse<Clinic[]>(response);
+}
+
+export async function createClinic(clinic: Clinic): Promise<Clinic> {
+  const response = await fetch("/api/clinics", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(clinic),
+  });
+  return parseJsonResponse<Clinic>(response);
+}
+
+export async function updateClinic(clinic: Clinic): Promise<Clinic> {
+  const response = await fetch(
+    `/api/clinics/${encodeURIComponent(clinic.id)}`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(clinic),
+    },
+  );
+  return parseJsonResponse<Clinic>(response);
+}
+
+export async function deleteClinic(clinicId: string): Promise<void> {
+  const response = await fetch(
+    `/api/clinics/${encodeURIComponent(clinicId)}`,
+    { method: "DELETE" },
+  );
+  await parseJsonResponse<{ ok: boolean }>(response);
+}
+
+export async function uploadPlanPdf(
+  file: File,
+  params: UploadPlanPdfRequest,
+): Promise<PlanPdfUploadResult> {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("uniqueCode", params.uniqueCode);
+  formData.append("isapre", params.isapre);
+
+  if (params.previousPublicId) {
+    formData.append("previousPublicId", params.previousPublicId);
+  }
+
+  const response = await fetch("/api/cloudinary/plan-pdf", {
+    method: "POST",
+    body: formData,
+  });
+
+  return parseJsonResponse<PlanPdfUploadResult>(response);
+}
+
+export function createEmptyPlan(): HealthPlan {
+  return {
+    isapre: "Consalud",
+    plan_name: "",
+    unique_code: "",
+    base_price_uf: 1,
+    has_top: false,
+    additional_notes: null,
+    pdf_url: null,
+    pdf_public_id: null,
+    coverage: [],
+  };
+}
+
+export function createEmptyClinic(): Clinic {
+  return { id: "", name: "" };
+}

@@ -5,21 +5,19 @@ import { motion } from "framer-motion";
 import type { PercentageTone } from "@/lib/ui-tokens";
 import { touchTarget, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
-import type { CoverageEntry } from "@/types/plan";
+import { formatCoveragePercentagesList } from "@/domain";
+import type { CoverageEntry } from "@/domain";
 import { PercentagePill } from "./percentage-pill";
 import { VISIBLE_CLINICS_LIMIT } from "./plan-card.utils";
 
 export interface PlanCardCoverageProps {
   hospitalaria: CoverageEntry[];
   ambulatoria: CoverageEntry[];
-  hospitalGlobal: number;
-  ambulatoryGlobal: number;
 }
 
 interface CoverageColumnProps {
   title: string;
   entries: CoverageEntry[];
-  globalPercentage: number;
   tone: PercentageTone;
   showDivider?: boolean;
 }
@@ -44,10 +42,10 @@ function ClinicRow({
 function CoverageColumn({
   title,
   entries,
-  globalPercentage,
   tone,
   showDivider = false,
 }: CoverageColumnProps) {
+  const percentagesLabel = formatCoveragePercentagesList(entries);
   const visibleEntries = entries.slice(0, VISIBLE_CLINICS_LIMIT);
   const hiddenCount = Math.max(entries.length - VISIBLE_CLINICS_LIMIT, 0);
 
@@ -64,7 +62,7 @@ function CoverageColumn({
             {title}
           </h4>
           <span className="rounded-full bg-white/15 px-2.5 py-0.5 text-sm font-bold tabular-nums text-white">
-            {globalPercentage}%
+            {percentagesLabel}
           </span>
         </div>
       </div>
@@ -93,17 +91,16 @@ function CoverageColumn({
 function CoverageAccordion({
   title,
   entries,
-  globalPercentage,
   tone,
   defaultOpen = false,
 }: {
   title: string;
   entries: CoverageEntry[];
-  globalPercentage: number;
   tone: PercentageTone;
   defaultOpen?: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
+  const percentagesLabel = formatCoveragePercentagesList(entries);
   const visibleEntries = entries.slice(0, VISIBLE_CLINICS_LIMIT);
   const hiddenCount = Math.max(entries.length - VISIBLE_CLINICS_LIMIT, 0);
 
@@ -123,7 +120,7 @@ function CoverageAccordion({
         </span>
         <div className="flex items-center gap-2">
           <span className="rounded-full bg-white/15 px-2 py-0.5 text-xs font-bold text-white">
-            {globalPercentage}%
+            {percentagesLabel}
           </span>
           <motion.span
             animate={{ rotate: open ? 180 : 0 }}
@@ -172,8 +169,6 @@ function CoverageAccordion({
 export function PlanCardCoverage({
   hospitalaria,
   ambulatoria,
-  hospitalGlobal,
-  ambulatoryGlobal,
 }: PlanCardCoverageProps) {
   return (
     <div className={joinClasses(ui.border, "border-t")}>
@@ -181,13 +176,11 @@ export function PlanCardCoverage({
         <CoverageAccordion
           title="Cobertura hospitalaria"
           entries={hospitalaria}
-          globalPercentage={hospitalGlobal}
           tone="hospital"
         />
         <CoverageAccordion
           title="Cobertura ambulatoria"
           entries={ambulatoria}
-          globalPercentage={ambulatoryGlobal}
           tone="ambulatory"
         />
       </div>
@@ -196,14 +189,12 @@ export function PlanCardCoverage({
         <CoverageColumn
           title="Cobertura hospitalaria"
           entries={hospitalaria}
-          globalPercentage={hospitalGlobal}
           tone="hospital"
           showDivider
         />
         <CoverageColumn
           title="Cobertura ambulatoria"
           entries={ambulatoria}
-          globalPercentage={ambulatoryGlobal}
           tone="ambulatory"
         />
       </div>

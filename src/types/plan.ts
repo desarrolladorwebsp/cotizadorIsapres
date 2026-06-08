@@ -14,5 +14,9 @@ export interface HealthPlan {
   base_price_uf: number;
   has_top: boolean;
   additional_notes: string | null;
+  /** URL del PDF oficial del plan en Cloudinary. */
+  pdf_url: string | null;
+  /** Identificador público en Cloudinary para reemplazos o descargas. */
+  pdf_public_id: string | null;
   coverage: CoverageEntry[];
 }

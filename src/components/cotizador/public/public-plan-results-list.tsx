@@ -1,0 +1,67 @@
+"use client";
+
+import { motion } from "framer-motion";
+import { motionGpu } from "@/lib/ui-tokens";
+import { joinClasses } from "@/lib/utils";
+import type { BeneficiaryGroupSummary } from "@/domain";
+import type { HealthPlan } from "@/domain";
+import { PublicPlanCard } from "./public-plan-card";
+import type { CurrencyDisplay } from "./public-results-toolbar";
+
+export interface PublicPlanResultsListProps {
+  plans: HealthPlan[];
+  beneficiarySummary: BeneficiaryGroupSummary;
+  ufToClp: number;
+  currency: CurrencyDisplay;
+  onRequestPlan: (plan: HealthPlan) => void;
+}
+
+const listVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.05, delayChildren: 0.02 },
+  },
+};
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 16 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { type: "spring" as const, stiffness: 320, damping: 28 },
+  },
+};
+
+export function PublicPlanResultsList({
+  plans,
+  beneficiarySummary,
+  ufToClp,
+  currency,
+  onRequestPlan,
+}: PublicPlanResultsListProps) {
+  return (
+    <motion.div
+      variants={listVariants}
+      initial="hidden"
+      animate="visible"
+      className="flex flex-col gap-4"
+    >
+      {plans.map((plan) => (
+        <motion.div
+          key={plan.unique_code}
+          variants={cardVariants}
+          className={joinClasses(motionGpu)}
+        >
+          <PublicPlanCard
+            plan={plan}
+            beneficiarySummary={beneficiarySummary}
+            ufToClp={ufToClp}
+            currency={currency}
+            onRequest={() => onRequestPlan(plan)}
+          />
+        </motion.div>
+      ))}
+    </motion.div>
+  );
+}

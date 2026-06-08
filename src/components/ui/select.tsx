@@ -15,12 +15,18 @@ export function Select({
   className,
   options,
   placeholder,
-  defaultValue = "",
+  defaultValue,
+  value,
   ...props
 }: SelectProps) {
+  const selectProps =
+    value !== undefined
+      ? { value }
+      : { defaultValue: defaultValue ?? "" };
+
   return (
     <select
-      defaultValue={defaultValue}
+      {...selectProps}
       className={joinClasses(
         "h-10 w-full rounded-md border bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60",
         className,

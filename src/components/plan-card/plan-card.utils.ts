@@ -1,4 +1,4 @@
-import type { HealthPlan } from "@/types/plan";
+import type { HealthPlan } from "@/domain";
 
 export const VISIBLE_CLINICS_LIMIT = 6;
 

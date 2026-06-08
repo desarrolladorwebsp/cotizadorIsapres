@@ -1,4 +1,4 @@
-import { formatRiskFactor } from "@/lib/risk-factor-table-604";
+import { formatRiskFactor } from "@/domain";
 import { joinClasses } from "@/lib/utils";
 
 export interface FactorBadgeProps {

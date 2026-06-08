@@ -4,7 +4,7 @@ import {
   type StatusBadgeTone,
 } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
-import type { PlanTypeFilterId } from "@/types/filters";
+import type { PlanTypeFilterId } from "@/domain";
 
 export interface PlanMetaBadgeProps {
   label: string;

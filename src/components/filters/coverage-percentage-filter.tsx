@@ -1,6 +1,6 @@
 "use client";
 
-import { COVERAGE_PERCENTAGE_OPTIONS } from "@/lib/filter-options";
+import { COVERAGE_PERCENTAGE_OPTIONS } from "@/domain";
 import {
   percentageToneActiveClass,
   type PercentageTone,
@@ -8,7 +8,7 @@ import {
   ui,
 } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
-import type { CoveragePercentageOption } from "@/types/filters";
+import type { CoveragePercentageOption } from "@/domain";
 
 export interface CoveragePercentageFilterProps {
   title: string;

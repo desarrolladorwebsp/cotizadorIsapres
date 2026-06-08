@@ -9,8 +9,8 @@ import { joinClasses } from "@/lib/utils";
 import type {
   BeneficiaryGroupSummary,
   FamilyBeneficiariesState,
-} from "@/types/beneficiary";
-import type { DashboardFiltersState } from "@/types/filters";
+} from "@/domain";
+import type { DashboardFiltersState } from "@/domain";
 import { DashboardFiltersPanel } from "./dashboard-filters-panel";
 
 export interface FiltersSidebarProps {
