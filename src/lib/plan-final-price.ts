@@ -35,8 +35,9 @@ export function buildPlanFinalPriceQuote(
   summary: BeneficiaryGroupSummary,
   ufToClp: number = DEFAULT_UF_VALUE_CLP,
 ): PlanFinalPriceQuote {
-  const groupTotalFactor = summary.totalFactors;
   const beneficiaryCount = summary.beneficiaryCount;
+  const groupTotalFactor =
+    beneficiaryCount === 0 ? 1 : summary.totalFactors;
   const gesTotalUf = beneficiaryCount * GES_PREMIUM_UF_PER_BENEFICIARY;
   const riskComponentUf = groupTotalFactor * basePriceUf;
   const finalPriceUf = riskComponentUf + gesTotalUf;

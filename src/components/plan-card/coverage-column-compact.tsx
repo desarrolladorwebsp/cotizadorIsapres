@@ -1,0 +1,147 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { joinClasses } from "@/lib/utils";
+import type { CoverageEntry } from "@/domain";
+import { VISIBLE_CLINICS_LIMIT } from "./plan-card.utils";
+
+export interface CoverageColumnCompactProps {
+  title: string;
+  icon: React.ReactNode;
+  entries: CoverageEntry[];
+  /** Porcentajes del resumen cuando aún no hay detalle por clínica. */
+  fallbackPercentages?: number[];
+  barClassName: string;
+  percentClassName: string;
+  headerClassName?: string;
+  badgeClassName?: string;
+  sectionClassName?: string;
+  showDivider?: boolean;
+  initialVisible?: number;
+  /** Expande la lista desde el padre (ej. footer del card). */
+  showAll?: boolean;
+}
+
+function resolveMaxPercentage(
+  entries: CoverageEntry[],
+  fallbackPercentages: number[],
+): number {
+  if (entries.length > 0) {
+    return Math.max(...entries.map((entry) => entry.percentage));
+  }
+  if (fallbackPercentages.length > 0) {
+    return Math.max(...fallbackPercentages);
+  }
+  return 0;
+}
+
+function CoverageSummaryBar({
+  percentage,
+  barClassName,
+}: {
+  percentage: number;
+  barClassName: string;
+}) {
+  return (
+    <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200/90">
+      <div
+        className={joinClasses("h-full rounded-full transition-[width] duration-500", barClassName)}
+        style={{ width: `${Math.min(Math.max(percentage, 0), 100)}%` }}
+      />
+    </div>
+  );
+}
+
+export function CoverageColumnCompact({
+  title,
+  icon,
+  entries,
+  fallbackPercentages = [],
+  barClassName,
+  percentClassName,
+  headerClassName = "text-muted",
+  badgeClassName = "bg-surface-hover text-foreground/80",
+  sectionClassName,
+  showDivider = false,
+  initialVisible = 4,
+  showAll = false,
+}: CoverageColumnCompactProps) {
+  const [expanded, setExpanded] = useState(false);
+  const maxPercentage = useMemo(
+    () => resolveMaxPercentage(entries, fallbackPercentages),
+    [entries, fallbackPercentages],
+  );
+
+  const isExpanded = showAll || expanded;
+  const visibleLimit = isExpanded ? VISIBLE_CLINICS_LIMIT : initialVisible;
+  const visibleEntries = entries.slice(0, visibleLimit);
+  const hiddenCount = Math.max(entries.length - visibleLimit, 0);
+
+  return (
+    <section
+      className={joinClasses(
+        "flex min-w-0 flex-1 flex-col px-3.5 py-3 sm:px-4 sm:py-3.5",
+        showDivider && "border-border md:border-r",
+        sectionClassName,
+      )}
+    >
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-1.5">
+          <span className={joinClasses("shrink-0", headerClassName)} aria-hidden>
+            {icon}
+          </span>
+          <h4
+            className={joinClasses(
+              "truncate text-[10px] font-bold uppercase tracking-[0.1em] sm:text-[11px]",
+              headerClassName,
+            )}
+          >
+            {title}
+          </h4>
+        </div>
+        <span
+          className={joinClasses(
+            "shrink-0 rounded-md px-2 py-0.5 text-[11px] font-bold tabular-nums sm:text-xs",
+            badgeClassName,
+          )}
+        >
+          {maxPercentage > 0 ? `${maxPercentage}%` : "—"}
+        </span>
+      </div>
+
+      <CoverageSummaryBar percentage={maxPercentage} barClassName={barClassName} />
+
+      <ul className="mt-2 space-y-0.5">
+        {visibleEntries.length > 0 ? (
+          visibleEntries.map((entry, index) => (
+            <li
+              key={`${entry.type}-${entry.clinic_id}-${entry.percentage}-${index}`}
+              className="truncate text-[11px] leading-relaxed text-foreground/85 sm:text-xs"
+            >
+              <span className={joinClasses("font-bold tabular-nums", percentClassName)}>
+                {entry.percentage}%
+              </span>{" "}
+              <span>{entry.clinic_name}</span>
+            </li>
+          ))
+        ) : (
+          <li className="text-[11px] text-muted sm:text-xs">
+            {entries.length === 0 && fallbackPercentages.length > 0
+              ? `Coberturas ${fallbackPercentages.map((value) => `${value}%`).join(" · ")}`
+              : "Sin prestadores cargados"}
+          </li>
+        )}
+      </ul>
+
+      {hiddenCount > 0 && !showAll ? (
+        <button
+          type="button"
+          onClick={() => setExpanded((value) => !value)}
+          className="mt-2 text-left text-[11px] font-semibold text-secondary hover:underline sm:text-xs"
+        >
+          {isExpanded ? "Ver menos" : `+${hiddenCount} prestadores más`}
+        </button>
+      ) : null}
+    </section>
+  );
+}

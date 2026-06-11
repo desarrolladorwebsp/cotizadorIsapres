@@ -4,6 +4,18 @@
     "name": "Centros Médicos RedSalud"
   },
   {
+    "id": "cl-bupa-renaca",
+    "name": "Clínica Bupa Reñaca"
+  },
+  {
+    "id": "cl-bupa-santiago",
+    "name": "Clínica Bupa Santiago"
+  },
+  {
+    "id": "cl-ciudad-del-mar",
+    "name": "Clínica Ciudad del Mar"
+  },
+  {
     "id": "cl-indisa-maipu",
     "name": "Clínica Indisa Maipú"
   },
@@ -16,12 +28,28 @@
     "name": "Clínica Las Condes"
   },
   {
+    "id": "cl-los-carrera",
+    "name": "Clínica Los Carrera"
+  },
+  {
+    "id": "cl-los-leones",
+    "name": "Clínica Los Leones"
+  },
+  {
     "id": "cl-meds",
     "name": "Clínica Meds"
   },
   {
     "id": "cl-redsalud-providencia",
     "name": "Clínica RedSalud Providencia"
+  },
+  {
+    "id": "cl-redsalud-rancagua",
+    "name": "Clínica RedSalud Rancagua"
+  },
+  {
+    "id": "cl-redsalud-valparaiso",
+    "name": "Clínica RedSalud Valparaíso"
   },
   {
     "id": "cl-redsalud-santiago",
@@ -44,8 +72,16 @@
     "name": "Clínica Universidad de los Andes"
   },
   {
+    "id": "hosp-clinico-fusat",
+    "name": "Hospital Clinico Fusat"
+  },
+  {
     "id": "hosp-clinico-uc",
     "name": "Hospital Clínico Universidad Católica"
+  },
+  {
+    "id": "hosp-vina-del-mar",
+    "name": "Hospital Clinico de Viña del Mar"
   },
   {
     "id": "integramedica",
@@ -54,5 +90,81 @@
   {
     "id": "red-uc-christus",
     "name": "Red de Salud UC Christus"
+  },
+  {
+    "id": "cl-san-jose-arica",
+    "name": "Clínica San José de Arica"
+  },
+  {
+    "id": "cl-atacama",
+    "name": "Clínica Atacama"
+  },
+  {
+    "id": "cl-redsalud-iquique",
+    "name": "Clínica RedSalud Iquique"
+  },
+  {
+    "id": "cl-la-portada",
+    "name": "Clínica La Portada"
+  },
+  {
+    "id": "cl-la-portad",
+    "name": "Clínica La Portad"
+  },
+  {
+    "id": "cl-tarapaca",
+    "name": "Clínica Tarapacá"
+  },
+  {
+    "id": "cl-andes-salud-el-loa",
+    "name": "Clínica Andes Salud El Loa"
+  },
+  {
+    "id": "cl-redsalud-elqui",
+    "name": "Clínica RedSalud Elqui"
+  },
+  {
+    "id": "cl-bupa-antofagasta",
+    "name": "Clínica Bupa Antofagasta"
+  },
+  {
+    "id": "cl-alemana-santiago-a",
+    "name": "Clínica Alemana de Santiago(A.)"
+  },
+  {
+    "id": "cl-alemana-santiago-a2",
+    "name": "Clínica Alemana de Santiago(A.2)"
+  },
+  {
+    "id": "cl-alemana-santiago-a3",
+    "name": "Clínica Alemana de Santiago(A.3)"
+  },
+  {
+    "id": "cl-davila",
+    "name": "Clínica Dávila"
+  },
+  {
+    "id": "cl-davila-a3",
+    "name": "Clínica Dávila(A.3)"
+  },
+  {
+    "id": "cl-davila-vespucio",
+    "name": "Clínica Dávila Vespucio"
+  },
+  {
+    "id": "hosp-clinico-uc-a2",
+    "name": "Hospital Clínico Universidad Católica(A.2)"
+  },
+  {
+    "id": "hosp-clinico-uch",
+    "name": "Hospital Clínico Universidad de Chile"
+  },
+  {
+    "id": "hosp-clinico-uch-a2",
+    "name": "Hospital Clínico Universidad de Chile(A.2)"
+  },
+  {
+    "id": "red-uc-christus-a3",
+    "name": "Red de Salud UC Christus(A.3)"
   }
 ]

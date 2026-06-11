@@ -5,7 +5,7 @@ import { joinClasses } from "@/lib/utils";
 
 export interface IsapreLogoProps {
   isapre: string;
-  size?: "md" | "lg";
+  size?: "sm" | "md" | "lg";
   className?: string;
 }
 
@@ -18,6 +18,7 @@ function initialsFromIsapre(name: string): string {
 }
 
 const LOGO_FRAME_CLASS = {
+  sm: "h-8 w-16 sm:h-9 sm:w-[4.5rem]",
   md: "h-10 w-24 sm:h-11 sm:w-28",
   lg: "h-11 w-28 sm:h-14 sm:w-36",
 } as const;
@@ -47,7 +48,7 @@ export function IsapreLogo({
           alt={`Logo ${isapre}`}
           fill
           className="object-contain object-center px-2 py-1"
-          sizes={size === "lg" ? "144px" : "112px"}
+          sizes={size === "lg" ? "144px" : size === "sm" ? "72px" : "112px"}
         />
       </div>
     );

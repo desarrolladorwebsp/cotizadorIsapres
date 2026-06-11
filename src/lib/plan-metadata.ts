@@ -1,5 +1,10 @@
 import type { PlanTypeFilterId } from "@/types/filters";
-import type { HealthPlan } from "@/types/plan";
+import type { HealthPlan, HealthPlanSummary } from "@/types/plan";
+
+type PlanMetadataInput = Pick<
+  HealthPlan,
+  "plan_name" | "has_top" | "additional_notes"
+>;
 
 export const PLAN_TYPE_LABELS: Record<PlanTypeFilterId, string> = {
   closed: "Cerrado",
@@ -14,7 +19,7 @@ function normalizeText(value: string): string {
     .replace(/\p{Diacritic}/gu, "");
 }
 
-export function inferPlanTypes(plan: HealthPlan): PlanTypeFilterId[] {
+export function inferPlanTypes(plan: PlanMetadataInput): PlanTypeFilterId[] {
   const name = normalizeText(plan.plan_name);
   const notes = normalizeText(plan.additional_notes ?? "");
   const types: PlanTypeFilterId[] = [];
@@ -40,14 +45,16 @@ export function inferPlanTypes(plan: HealthPlan): PlanTypeFilterId[] {
   return types;
 }
 
-export function resolvePrimaryPlanType(plan: HealthPlan): PlanTypeFilterId {
+export function resolvePrimaryPlanType(plan: PlanMetadataInput): PlanTypeFilterId {
   const types = inferPlanTypes(plan);
   if (types.includes("preferred")) return "preferred";
   if (types.includes("closed")) return "closed";
   return "free_choice";
 }
 
-export function resolveCommercialPlanName(plan: HealthPlan): string {
+export function resolveCommercialPlanName(
+  plan: Pick<HealthPlan, "isapre" | "plan_name"> | HealthPlanSummary,
+): string {
   const prefix = `${plan.isapre} `.trim();
   const normalizedPrefix = `${prefix} `;
   if (plan.plan_name.toLowerCase().startsWith(normalizedPrefix.toLowerCase())) {

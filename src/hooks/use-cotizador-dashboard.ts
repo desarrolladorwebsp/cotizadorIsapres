@@ -17,8 +17,8 @@ import type { DashboardFiltersState } from "@/types/filters";
 import type { HealthPlan } from "@/types/plan";
 
 const INITIAL_BENEFICIARIES: FamilyBeneficiariesState = {
-  contributorAge: 34,
-  dependents: [{ id: "initial-dependent", age: 32 }],
+  contributorAge: null,
+  dependents: [],
 };
 
 export interface CotizadorDashboardOptions {

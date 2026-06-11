@@ -4,16 +4,16 @@ import { motion } from "framer-motion";
 import { motionGpu } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type { BeneficiaryGroupSummary } from "@/domain";
-import type { HealthPlan } from "@/domain";
+import type { HealthPlanSummary } from "@/domain";
 import { PublicPlanCard } from "./public-plan-card";
 import type { CurrencyDisplay } from "./public-results-toolbar";
 
 export interface PublicPlanResultsListProps {
-  plans: HealthPlan[];
+  plans: HealthPlanSummary[];
   beneficiarySummary: BeneficiaryGroupSummary;
   ufToClp: number;
   currency: CurrencyDisplay;
-  onRequestPlan: (plan: HealthPlan) => void;
+  onRequestPlan: (plan: HealthPlanSummary) => void;
 }
 
 const listVariants = {

@@ -24,8 +24,9 @@ import {
   ui,
 } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
+import { usePlanDetail } from "@/hooks/use-plan-detail";
 import type { BeneficiaryGroupSummary, FamilyBeneficiariesState } from "@/domain";
-import type { HealthPlan } from "@/domain";
+import type { HealthPlanSummary } from "@/domain";
 import type { QuoteCriteria } from "./public-quote-criteria-bar";
 import { ModalPlanOverviewPanel } from "./modal-plan-overview-panel";
 import { ModalPricePanel } from "./modal-price-panel";
@@ -37,7 +38,7 @@ import {
 
 export interface ContractPlanModalProps {
   open: boolean;
-  plan: HealthPlan | null;
+  planSummary: HealthPlanSummary | null;
   beneficiarySummary: BeneficiaryGroupSummary;
   dependents: FamilyBeneficiariesState["dependents"];
   ufToClp: number;
@@ -101,13 +102,17 @@ function resolveChartHighlightAge(age: number | null): number | null {
 
 export function ContractPlanModal({
   open,
-  plan,
+  planSummary,
   beneficiarySummary,
   dependents,
   ufToClp,
   criteria,
   onClose,
 }: ContractPlanModalProps) {
+  const { plan: detailPlan, loading: detailLoading } = usePlanDetail(
+    planSummary?.unique_code ?? null,
+    open,
+  );
   const [activeTab, setActiveTab] = useState<ModalTabId>("overview");
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -152,25 +157,28 @@ export function ContractPlanModal({
   }, [open, onClose]);
 
   const priceQuote = useMemo(() => {
-    if (!plan) return null;
+    if (!planSummary) return null;
     return buildPlanFinalPriceQuote(
-      plan.base_price_uf,
+      planSummary.base_price_uf,
       beneficiarySummary,
       ufToClp,
     );
-  }, [plan, beneficiarySummary, ufToClp]);
+  }, [planSummary, beneficiarySummary, ufToClp]);
 
   const chartHighlightAge = useMemo(
     () => resolveChartHighlightAge(beneficiarySummary.contributor.age),
     [beneficiarySummary.contributor.age],
   );
 
-  if (!plan || !priceQuote) return null;
+  if (!planSummary || !priceQuote) return null;
 
-  const planType = resolvePrimaryPlanType(plan);
+  const summary = planSummary;
+  const quote = priceQuote;
+
+  const planType = resolvePrimaryPlanType(summary);
   const planTypeLabel = PLAN_TYPE_LABELS[planType];
   const badgeTone = statusBadgeToneClass[planTypeBadgeTone[planType]];
-  const commercialName = resolveCommercialPlanName(plan);
+  const commercialName = resolveCommercialPlanName(summary);
 
   function collectValidationErrors(): string[] {
     const errors: string[] = [];
@@ -194,7 +202,7 @@ export function ContractPlanModal({
       errors.push("Ingresa un teléfono válido (mínimo 8 dígitos).");
     }
     if (isCurrentIsapre === "") {
-      errors.push(`Indica si ${plan!.isapre} es tu Isapre actual.`);
+      errors.push(`Indica si ${summary.isapre} es tu Isapre actual.`);
     }
 
     return errors;
@@ -219,7 +227,7 @@ export function ContractPlanModal({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          planCode: plan!.unique_code,
+          planCode: summary.unique_code,
           fullName: name.trim(),
           email: email.trim(),
           phone: phone.trim(),
@@ -232,16 +240,16 @@ export function ContractPlanModal({
           dependentAges: beneficiarySummary.dependents
             .map((dependent) => dependent.age)
             .filter((age): age is number => age !== null),
-          finalPriceUf: priceQuote!.finalPriceUf,
-          finalPriceClp: priceQuote!.finalPriceClp,
+          finalPriceUf: quote.finalPriceUf,
+          finalPriceClp: quote.finalPriceClp,
           ufValue: ufToClp,
           beneficiaryCount: beneficiarySummary.beneficiaryCount,
           totalFactors: beneficiarySummary.totalFactors,
           quoteReason: "Solicitud desde cotizador público",
           notes:
             isCurrentIsapre === "yes"
-              ? `Ya es afiliado a ${plan!.isapre}`
-              : `No es afiliado actualmente a ${plan!.isapre}`,
+              ? `Ya es afiliado a ${summary.isapre}`
+              : `No es afiliado actualmente a ${summary.isapre}`,
         }),
       });
 
@@ -300,10 +308,10 @@ export function ContractPlanModal({
 
             <div className="flex shrink-0 items-center justify-between border-b px-4 py-3 pt-4 sm:px-6">
               <div className="flex items-center gap-3">
-                <IsapreLogo isapre={plan.isapre} size="md" />
+                <IsapreLogo isapre={summary.isapre} size="md" />
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-                    {plan.isapre}
+                    {summary.isapre}
                   </p>
                   <p className="text-sm font-bold text-primary-dark">
                     Isapres Premium
@@ -358,7 +366,7 @@ export function ContractPlanModal({
                 >
                   {commercialName}
                 </h2>
-                <p className="font-mono text-xs text-muted">{plan.unique_code}</p>
+                <p className="font-mono text-xs text-muted">{summary.unique_code}</p>
               </div>
 
               <div
@@ -450,16 +458,21 @@ export function ContractPlanModal({
                     Tu información fue cargada correctamente. Un ejecutivo
                     especializado de Isapres Premium se pondrá en contacto contigo
                     próximamente para entregarte el precio final y acompañarte en
-                    tu incorporación a {plan.isapre}.
+                    tu incorporación a {summary.isapre}.
                   </p>
                   <Button type="button" onClick={onClose} className="mt-2">
                     Cerrar
                   </Button>
                 </div>
               ) : activeTab === "overview" ? (
+                detailLoading || !detailPlan ? (
+                  <p className="px-6 py-12 text-center text-sm text-muted">
+                    Cargando coberturas del plan…
+                  </p>
+                ) : (
                 <ModalPlanOverviewPanel
-                  plan={plan}
-                  planIsapre={plan.isapre}
+                  plan={detailPlan}
+                  planIsapre={summary.isapre}
                   name={name}
                   onNameChange={setName}
                   rut={rut}
@@ -476,9 +489,10 @@ export function ContractPlanModal({
                   submitting={submitting}
                   onSubmit={handleSubmit}
                 />
+                )
               ) : activeTab === "price" ? (
                 <ModalPricePanel
-                  basePriceUf={plan.base_price_uf}
+                  basePriceUf={summary.base_price_uf}
                   ufToClp={ufToClp}
                   priceQuote={priceQuote}
                   highlightAge={chartHighlightAge}
@@ -553,7 +567,7 @@ export function ContractPlanModal({
 
                   <div className="p-4 sm:p-6">
                     <ModalRequestForm
-                      planIsapre={plan.isapre}
+                      planIsapre={summary.isapre}
                       name={name}
                       onNameChange={setName}
                       rut={rut}

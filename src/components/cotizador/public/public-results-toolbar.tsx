@@ -10,7 +10,8 @@ import { joinClasses } from "@/lib/utils";
 export type CurrencyDisplay = "clp" | "uf";
 
 export interface PublicResultsToolbarProps {
-  resultCount: number;
+  displayedCount: number;
+  totalCount: number;
   sortKey: QuoteSortKey;
   onSortChange: (key: QuoteSortKey) => void;
   currency: CurrencyDisplay;
@@ -18,17 +19,23 @@ export interface PublicResultsToolbarProps {
 }
 
 export function PublicResultsToolbar({
-  resultCount,
+  displayedCount,
+  totalCount,
   sortKey,
   onSortChange,
   currency,
   onCurrencyChange,
 }: PublicResultsToolbarProps) {
+  const resultsLabel =
+    displayedCount < totalCount
+      ? `Mostrando ${displayedCount.toLocaleString("es-CL")} de ${totalCount.toLocaleString("es-CL")}`
+      : `${totalCount.toLocaleString("es-CL")} resultados`;
+
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
       <div className="flex flex-wrap items-center gap-3">
         <span className="inline-flex items-center rounded-full bg-primary px-4 py-1.5 text-sm font-bold text-white shadow-sm">
-          {resultCount.toLocaleString("es-CL")} Resultados
+          {resultsLabel}
         </span>
         <span className="text-xs font-medium text-primary-dark/80">
           Precios directos · Sin costo adicional

@@ -20,3 +20,32 @@ export interface HealthPlan {
   pdf_public_id: string | null;
   coverage: CoverageEntry[];
 }
+
+/** Resumen de coberturas para listados (sin detalle por clínica). */
+export interface PlanCoverageSummary {
+  clinic_count: number;
+  hospital_percentages: number[];
+  ambulatory_percentages: number[];
+  hospital_avg: number;
+  ambulatory_avg: number;
+}
+
+/** Plan ligero para resultados de búsqueda (sin array de coberturas completo). */
+export interface HealthPlanSummary {
+  isapre: string;
+  plan_name: string;
+  unique_code: string;
+  base_price_uf: number;
+  has_top: boolean;
+  additional_notes: string | null;
+  pdf_url: string | null;
+  pdf_public_id: string | null;
+  coverage_summary: PlanCoverageSummary;
+}
+
+export interface PlanSearchResult {
+  plans: HealthPlanSummary[];
+  total: number;
+  limit: number;
+  offset: number;
+}

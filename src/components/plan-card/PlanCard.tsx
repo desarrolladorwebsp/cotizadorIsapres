@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { GpuExpandPanel } from "@/components/ui/gpu-expand-panel";
 import { splitCoverageByType } from "@/domain";
 import { buildPlanFinalPriceQuote } from "@/domain";
 import { getPlanPdfDownloadUrl, planHasPdf } from "@/lib/plan-pdf";
@@ -12,7 +11,6 @@ import type { BeneficiaryGroupSummary } from "@/domain";
 import type { HealthPlan } from "@/domain";
 import { PlanCardActions } from "./plan-card-actions";
 import { PlanCardCoverage } from "./plan-card-coverage";
-import { PlanCardDetail } from "./plan-card-detail";
 import { PlanCardHeader } from "./plan-card-header";
 
 export interface PlanCardProps {
@@ -42,7 +40,7 @@ export function PlanCard({
   onDownloadPdf,
   onAddInsurance,
 }: PlanCardProps) {
-  const [expanded, setExpanded] = useState(defaultExpanded);
+  const [expanded, setExpanded] = useState(defaultExpanded); // reservado para acciones futuras
   const [isSelected, setIsSelected] = useState(selected);
   const [isHovered, setIsHovered] = useState(false);
 
@@ -117,11 +115,8 @@ export function PlanCard({
       <PlanCardCoverage
         hospitalaria={hospitalaria}
         ambulatoria={ambulatoria}
+        showAllClinics={expanded}
       />
-
-      <GpuExpandPanel open={expanded}>
-        <PlanCardDetail hospitalaria={hospitalaria} ambulatoria={ambulatoria} />
-      </GpuExpandPanel>
 
       <PlanCardActions
         selected={isSelected}

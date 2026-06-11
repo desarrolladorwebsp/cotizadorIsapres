@@ -17,6 +17,9 @@ export type {
   CoverageEntry,
   CoverageType,
   HealthPlan,
+  HealthPlanSummary,
+  PlanCoverageSummary,
+  PlanSearchResult,
 } from "@/types/plan";
 
 export { buildBeneficiaryGroupSummary } from "@/lib/beneficiary-summary";
