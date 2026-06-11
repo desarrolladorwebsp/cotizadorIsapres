@@ -7,7 +7,14 @@ import { CotizadorNav } from "@/components/cotizador/cotizador-nav";
 import { useCotizadorDashboard } from "@/hooks/use-cotizador-dashboard";
 import { usePlansCatalog } from "@/hooks/use-plans-catalog";
 import { formatPlanClp, formatPlanUf } from "@/domain";
-import { appShell, touchTarget, ui } from "@/lib/ui-tokens";
+import {
+  appShell,
+  appShellRoot,
+  appShellScroll,
+  safeWidth,
+  touchTarget,
+  ui,
+} from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 
 export interface CotizadorWorkspaceProps {
@@ -19,7 +26,7 @@ export function CotizadorWorkspace({ variant }: CotizadorWorkspaceProps) {
   const dashboard = useCotizadorDashboard(plans);
 
   return (
-    <div className={joinClasses("flex min-h-screen flex-col", ui.canvas)}>
+    <div className={joinClasses(appShellRoot, ui.canvas)}>
       <CotizadorHeader
         variant={variant}
         sidebarOpen={dashboard.sidebarOpen}
@@ -27,7 +34,7 @@ export function CotizadorWorkspace({ variant }: CotizadorWorkspaceProps) {
       />
       <CotizadorNav />
 
-      <div className="flex min-h-0 flex-1">
+      <div className={joinClasses(appShellScroll, safeWidth, "flex min-h-0")}>
         {dashboard.sidebarReady ? (
           <FiltersSidebar
             open={dashboard.sidebarOpen}
@@ -39,10 +46,16 @@ export function CotizadorWorkspace({ variant }: CotizadorWorkspaceProps) {
           />
         ) : null}
 
-        <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 sm:py-8 lg:px-10 lg:py-10">
+        <main
+          className={joinClasses(
+            safeWidth,
+            "min-w-0 flex-1 px-4 py-6 sm:px-6 sm:py-8 lg:px-10 lg:py-10",
+          )}
+        >
           <div
             className={joinClasses(
               appShell,
+              safeWidth,
               "flex flex-col gap-6 sm:gap-8 xl:gap-10",
             )}
           >

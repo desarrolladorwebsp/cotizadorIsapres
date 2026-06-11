@@ -146,10 +146,10 @@ export function PlanForm({
         const uploaded = await uploadPlanPdf(pendingPdfFile, {
           uniqueCode: payload.unique_code,
           isapre: payload.isapre,
-          previousPublicId: initialValue.pdf_public_id,
+          previousStoragePath: initialValue.pdf_public_id,
         });
         payload.pdf_url = uploaded.url;
-        payload.pdf_public_id = uploaded.publicId;
+        payload.pdf_public_id = uploaded.storagePath;
       }
 
       await onSubmit(payload);
@@ -276,6 +276,7 @@ export function PlanForm({
           isapre={form.isapre}
           uniqueCode={form.unique_code}
           pdfUrl={form.pdf_url}
+          pdfPublicId={form.pdf_public_id}
           pdfFileName={pendingPdfFile?.name ?? null}
           disabled={saving}
           uploading={uploadingPdf}

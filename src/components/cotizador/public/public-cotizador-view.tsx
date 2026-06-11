@@ -11,7 +11,14 @@ import {
   splitCoverageByType,
 } from "@/domain";
 import type { QuoteSortKey } from "@/lib/quote-criteria-options";
-import { appShell, touchTarget, ui } from "@/lib/ui-tokens";
+import {
+  appShell,
+  appShellRoot,
+  appShellScroll,
+  safeWidth,
+  touchTarget,
+  ui,
+} from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type { HealthPlan } from "@/domain";
 import { ContractPlanModal } from "./contract-plan-modal";
@@ -96,15 +103,24 @@ export function PublicCotizadorView() {
   }
 
   return (
-    <div className={joinClasses("flex min-h-screen flex-col", ui.canvas)}>
+    <div className={joinClasses(appShellRoot, ui.canvas)}>
       <PublicCotizadorHeader />
 
-      <main className="flex-1 px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
-        <div className={joinClasses(appShell, "mx-auto max-w-7xl space-y-5")}>
-          <header className="space-y-1">
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold text-primary-dark sm:text-3xl">
-                Planes de Isapre
+      <main
+        className={joinClasses(
+          appShellScroll,
+          safeWidth,
+          "px-4 py-5 sm:px-6 sm:py-6 lg:px-8",
+        )}
+      >
+        <div className={joinClasses(appShell, safeWidth, "space-y-5")}>
+          <header className={joinClasses(safeWidth, "motion-safe-fade-in space-y-2")}>
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">
+              Cotizador en línea
+            </p>
+            <div className={joinClasses(safeWidth, "flex items-center gap-2")}>
+              <h1 className="text-2xl font-bold tracking-tight text-primary-dark sm:text-3xl">
+                Encuentra tu plan de salud
               </h1>
               <span
                 className="rounded-md bg-primary/10 px-2 py-1 text-primary-dark"
@@ -149,20 +165,20 @@ export function PublicCotizadorView() {
               onCurrencyChange={setCurrency}
             />
 
-            <div className="relative">
+            <div className={joinClasses(safeWidth, "relative")}>
               <input
                 type="search"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Buscar por nombre, código o Isapre..."
                 className={joinClasses(
-                  "mb-4 h-11 w-full rounded-xl px-4 text-sm",
+                  "mb-4 h-11 w-full max-w-full rounded-xl px-4 text-sm",
                   ui.input,
                 )}
               />
             </div>
 
-            <div className="flex min-h-0 gap-0 lg:gap-5">
+            <div className={joinClasses(safeWidth, "flex min-h-0 gap-0 lg:gap-5")}>
               <PublicFiltersSidebar
                 open={dashboard.sidebarOpen}
                 onClose={() => dashboard.setSidebarOpen(false)}
@@ -256,7 +272,9 @@ export function PublicCotizadorView() {
         open={contractPlan !== null}
         plan={contractPlan}
         beneficiarySummary={dashboard.beneficiarySummary}
+        dependents={dashboard.beneficiaries.dependents}
         ufToClp={dashboard.ufToClp}
+        criteria={criteria}
         onClose={() => setContractPlan(null)}
       />
     </div>

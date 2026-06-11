@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { GpuExpandPanel } from "@/components/ui/gpu-expand-panel";
 import { splitCoverageByType } from "@/domain";
 import { buildPlanFinalPriceQuote } from "@/domain";
+import { getPlanPdfDownloadUrl, planHasPdf } from "@/lib/plan-pdf";
 import { motionGpu, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type { BeneficiaryGroupSummary } from "@/domain";
@@ -71,6 +72,23 @@ export function PlanCard({
     onSelect?.();
   }
 
+  function handleDownloadPdf() {
+    if (onDownloadPdf) {
+      onDownloadPdf();
+      return;
+    }
+
+    if (!planHasPdf(plan)) {
+      window.alert(
+        "El PDF de este plan estará disponible pronto. Aún no se ha cargado desde administración.",
+      );
+      return;
+    }
+
+    const url = getPlanPdfDownloadUrl(plan);
+    if (url) window.open(url, "_blank", "noopener,noreferrer");
+  }
+
   return (
     <motion.article
       layout="position"
@@ -111,7 +129,7 @@ export function PlanCard({
         onToggleExpand={() => setExpanded((value) => !value)}
         onSelect={handleSelect}
         onChat={onChat}
-        onDownloadPdf={onDownloadPdf}
+        onDownloadPdf={handleDownloadPdf}
         onAddInsurance={onAddInsurance}
       />
     </motion.article>

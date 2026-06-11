@@ -1,3 +1,5 @@
+import Image from "next/image";
+import { resolveIsapreLogoSrc } from "@/lib/isapre-catalog";
 import { ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 
@@ -15,28 +17,48 @@ function initialsFromIsapre(name: string): string {
   return name.slice(0, 2).toUpperCase();
 }
 
-function isConsaludBrand(isapre: string): boolean {
-  return isapre.toLowerCase().includes("consalud");
-}
+const LOGO_FRAME_CLASS = {
+  md: "h-10 w-24 sm:h-11 sm:w-28",
+  lg: "h-11 w-28 sm:h-14 sm:w-36",
+} as const;
 
 export function IsapreLogo({
   isapre,
   size = "lg",
   className,
 }: IsapreLogoProps) {
-  const isConsalud = isConsaludBrand(isapre);
+  const logoSrc = resolveIsapreLogoSrc(isapre);
+  const frameClass = LOGO_FRAME_CLASS[size];
+
+  if (logoSrc) {
+    return (
+      <div
+        className={joinClasses(
+          "relative shrink-0 overflow-hidden rounded-lg border bg-white shadow-sm",
+          ui.border,
+          frameClass,
+          className,
+        )}
+        role="img"
+        aria-label={`Logo ${isapre}`}
+      >
+        <Image
+          src={logoSrc}
+          alt={`Logo ${isapre}`}
+          fill
+          className="object-contain object-center px-2 py-1"
+          sizes={size === "lg" ? "144px" : "112px"}
+        />
+      </div>
+    );
+  }
 
   return (
     <div
       className={joinClasses(
-        "flex shrink-0 items-center justify-center rounded-2xl shadow-sm",
-        size === "lg" ? "size-14 sm:size-16" : "size-12",
-        isConsalud
-          ? "border-2 border-primary/30 bg-gradient-to-br from-primary/15 to-white text-primary-dark"
-          : joinClasses(
-              "border-2 border-primary/20 bg-primary/5 text-primary-dark",
-              ui.borderHairline,
-            ),
+        "flex shrink-0 items-center justify-center rounded-lg border-2 border-primary/20 bg-primary/5 text-primary-dark shadow-sm",
+        frameClass,
+        ui.borderHairline,
         className,
       )}
       role="img"

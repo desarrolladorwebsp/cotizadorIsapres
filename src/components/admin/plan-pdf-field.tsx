@@ -2,8 +2,9 @@
 
 import { useRef, useState } from "react";
 import { FieldGroup, FieldHint, FieldLabel } from "@/components/ui/form-field";
-import { buildPlanPdfPublicPath } from "@/lib/cloudinary/build-plan-pdf-path";
-import { PLAN_PDF_MAX_BYTES } from "@/lib/cloudinary/constants";
+import { buildPlanPdfStorageKey } from "@/lib/plan-pdf-storage/paths";
+import { PLAN_PDF_MAX_BYTES } from "@/lib/plan-pdf-storage/constants";
+import { getPlanPdfDownloadUrl } from "@/lib/plan-pdf";
 import { ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 
@@ -11,6 +12,7 @@ export interface PlanPdfFieldProps {
   isapre: string;
   uniqueCode: string;
   pdfUrl: string | null;
+  pdfPublicId?: string | null;
   pdfFileName: string | null;
   disabled?: boolean;
   uploading?: boolean;
@@ -25,6 +27,7 @@ export function PlanPdfField({
   isapre,
   uniqueCode,
   pdfUrl,
+  pdfPublicId = null,
   pdfFileName,
   disabled = false,
   uploading = false,
@@ -35,7 +38,7 @@ export function PlanPdfField({
   const canUpload =
     isapre.trim().length > 0 && uniqueCode.trim().length > 0;
   const storagePath =
-    canUpload ? buildPlanPdfPublicPath(isapre, uniqueCode) : null;
+    canUpload ? buildPlanPdfStorageKey(isapre, uniqueCode) : null;
 
   function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0] ?? null;
@@ -90,9 +93,11 @@ export function PlanPdfField({
           </FieldHint>
         ) : (
           <FieldHint className="mt-2">
-            Se guardará en Cloudinary como{" "}
-            <span className="font-mono text-foreground">{storagePath}</span>. Máximo{" "}
-            {formatMaxSize()}.
+            Se guardará en{" "}
+            <span className="font-mono text-foreground">
+              storage/planes-pdf/{storagePath}
+            </span>
+            . Máximo {formatMaxSize()}.
           </FieldHint>
         )}
 
@@ -104,14 +109,21 @@ export function PlanPdfField({
           </p>
         ) : null}
 
-        {pdfUrl ? (
+        {pdfUrl || pdfPublicId ? (
           <a
-            href={pdfUrl}
+            href={
+              getPlanPdfDownloadUrl({
+                pdfUrl,
+                pdfPublicId,
+                isapre,
+                uniqueCode,
+              }) ?? "#"
+            }
             target="_blank"
             rel="noopener noreferrer"
             className="mt-3 inline-flex text-sm font-semibold text-primary hover:underline"
           >
-            Ver PDF actual en Cloudinary
+            Ver PDF actual
           </a>
         ) : null}
 

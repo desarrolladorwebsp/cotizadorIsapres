@@ -32,6 +32,12 @@ export {
   buildPlanFinalPriceQuote,
   type PlanFinalPriceQuote,
 } from "@/lib/plan-final-price";
+export {
+  buildSinglePersonPricesByAge,
+  formatAgePriceClpShort,
+  SINGLE_PERSON_AGE_SAMPLES,
+  type AgePricePoint,
+} from "@/lib/plan-price-by-age";
 export { DEFAULT_UF_VALUE_CLP } from "@/lib/economic-indicators";
 export type { UfIndicator } from "@/lib/uf-service";
 export { buildFallbackUfIndicator, fetchUfIndicator } from "@/lib/uf-service";

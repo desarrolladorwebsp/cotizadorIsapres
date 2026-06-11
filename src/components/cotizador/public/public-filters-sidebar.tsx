@@ -50,10 +50,15 @@ export function PublicFiltersSidebar({
   useEffect(() => {
     if (!open) return;
     const previousOverflow = document.body.style.overflow;
+    const previousOverscroll = document.body.style.overscrollBehavior;
     const isMobile = window.matchMedia("(max-width: 1023px)").matches;
-    if (isMobile) document.body.style.overflow = "hidden";
+    if (isMobile) {
+      document.body.style.overflow = "hidden";
+      document.body.style.overscrollBehavior = "none";
+    }
     return () => {
       document.body.style.overflow = previousOverflow;
+      document.body.style.overscrollBehavior = previousOverscroll;
     };
   }, [open]);
 
@@ -107,7 +112,7 @@ export function PublicFiltersSidebar({
             </button>
           </div>
 
-          <div className="flex-1 space-y-6 overflow-y-auto p-4">
+          <div className="flex-1 space-y-6 overflow-y-auto overscroll-y-contain p-4">
             <section className="space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-foreground">Precio</h3>

@@ -47,6 +47,67 @@ export function isValidPlan(payload: unknown): payload is HealthPlan {
   );
 }
 
+export function getPlanValidationError(payload: unknown): string | null {
+  if (!payload || typeof payload !== "object") {
+    return "El plan enviado no es válido.";
+  }
+
+  const plan = payload as HealthPlan;
+
+  if (typeof plan.isapre !== "string" || plan.isapre.trim().length === 0) {
+    return "Debes seleccionar una Isapre.";
+  }
+
+  if (typeof plan.plan_name !== "string" || plan.plan_name.trim().length === 0) {
+    return "El nombre del plan es obligatorio.";
+  }
+
+  if (
+    typeof plan.unique_code !== "string" ||
+    plan.unique_code.trim().length === 0
+  ) {
+    return "El código único del plan es obligatorio.";
+  }
+
+  if (
+    typeof plan.base_price_uf !== "number" ||
+    !Number.isFinite(plan.base_price_uf) ||
+    plan.base_price_uf < 0
+  ) {
+    return "El precio base en UF debe ser un número válido mayor o igual a 0.";
+  }
+
+  if (typeof plan.has_top !== "boolean") {
+    return "El indicador de plan Top no es válido.";
+  }
+
+  if (!Array.isArray(plan.coverage)) {
+    return "Las coberturas del plan deben ser una lista.";
+  }
+
+  for (const entry of plan.coverage) {
+    if (!isValidCoverageEntry(entry)) {
+      return "Una o más coberturas tienen datos incompletos o inválidos.";
+    }
+  }
+
+  return null;
+}
+
+/** Elimina coberturas duplicadas (misma clínica + mismo tipo). */
+export function dedupeCoverageEntries(
+  coverage: CoverageEntry[],
+): CoverageEntry[] {
+  const seen = new Set<string>();
+
+  return coverage.filter((entry) => {
+    const key = `${entry.clinic_id}:${entry.type}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 export function normalizePlan(payload: HealthPlan): HealthPlan {
   return {
     ...payload,
@@ -56,11 +117,13 @@ export function normalizePlan(payload: HealthPlan): HealthPlan {
     additional_notes: payload.additional_notes?.trim() || null,
     pdf_url: payload.pdf_url?.trim() || null,
     pdf_public_id: payload.pdf_public_id?.trim() || null,
-    coverage: payload.coverage.map((entry) => ({
-      clinic_id: entry.clinic_id.trim(),
-      clinic_name: entry.clinic_name.trim(),
-      percentage: entry.percentage,
-      type: entry.type,
-    })),
+    coverage: dedupeCoverageEntries(
+      payload.coverage.map((entry) => ({
+        clinic_id: entry.clinic_id.trim(),
+        clinic_name: entry.clinic_name.trim(),
+        percentage: entry.percentage,
+        type: entry.type,
+      })),
+    ),
   };
 }

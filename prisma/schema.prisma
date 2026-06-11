@@ -1,0 +1,128 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
+}
+
+enum UserRole {
+  CLIENT
+  EXECUTIVE
+  ADMIN
+}
+
+enum QuoteStatus {
+  PENDING
+  CONTACTED
+  CONVERTED
+  CANCELLED
+}
+
+model Isapre {
+  id        String   @id
+  name      String
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  plans     Plan[]
+
+  @@map("isapres")
+}
+
+model Clinic {
+  id        String          @id
+  name      String
+  createdAt DateTime        @default(now()) @map("created_at")
+  updatedAt DateTime        @updatedAt @map("updated_at")
+  coverages CoverageEntry[]
+
+  @@map("clinics")
+}
+
+model Plan {
+  uniqueCode      String          @id @map("unique_code")
+  isapreId        String          @map("isapre_id")
+  planName        String          @map("plan_name")
+  basePriceUf     Float           @map("base_price_uf")
+  hasTop          Boolean         @default(false) @map("has_top")
+  additionalNotes String?         @map("additional_notes")
+  pdfUrl          String?         @map("pdf_url")
+  pdfPublicId     String?         @map("pdf_public_id")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+  isapreRef       Isapre          @relation(fields: [isapreId], references: [id])
+  coverages       CoverageEntry[]
+  quotes          Quote[]
+
+  @@index([isapreId])
+  @@map("plans")
+}
+
+model CoverageEntry {
+  id         String @id @default(cuid())
+  clinicId   String @map("clinic_id")
+  clinicName String @map("clinic_name")
+  percentage Int
+  type       String
+  planCode   String @map("plan_code")
+  plan       Plan   @relation(fields: [planCode], references: [uniqueCode], onDelete: Cascade)
+  clinic     Clinic @relation(fields: [clinicId], references: [id], onUpdate: Cascade)
+
+  @@index([planCode])
+  @@index([clinicId])
+  @@map("coverage_entries")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  phone     String?
+  fullName  String   @map("full_name")
+  rut       String?
+  role      UserRole @default(CLIENT)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  quotes    Quote[]
+
+  @@index([role])
+  @@map("users")
+}
+
+model Quote {
+  id                String      @id @default(cuid())
+  userId            String?     @map("user_id")
+  planCode          String?     @map("plan_code")
+  status            QuoteStatus @default(PENDING)
+  fullName          String      @map("full_name")
+  email             String
+  phone             String
+  rut               String?
+  region            String?
+  sex               String?
+  monthlyIncome     String?     @map("monthly_income")
+  contributorAge    Int?        @map("contributor_age")
+  dependentsCount   Int         @default(0) @map("dependents_count")
+  dependentAges     Json?       @map("dependent_ages")
+  contactPreference String?     @map("contact_preference")
+  quoteReason       String?     @map("quote_reason")
+  finalPriceUf      Float?      @map("final_price_uf")
+  finalPriceClp     Float?      @map("final_price_clp")
+  ufValue           Float?      @map("uf_value")
+  beneficiaryCount  Int?        @map("beneficiary_count")
+  totalFactors      Float?      @map("total_factors")
+  notes             String?
+  createdAt         DateTime    @default(now()) @map("created_at")
+  updatedAt         DateTime    @updatedAt @map("updated_at")
+  user              User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  plan              Plan?       @relation(fields: [planCode], references: [uniqueCode], onDelete: SetNull)
+
+  @@index([status])
+  @@index([planCode])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("quotes")
+}

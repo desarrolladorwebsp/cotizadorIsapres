@@ -69,9 +69,9 @@ function CoverageColumn({
 
       <div className="px-4 py-4 sm:px-5 sm:py-5">
         <ul>
-          {visibleEntries.map((entry) => (
+          {visibleEntries.map((entry, index) => (
             <ClinicRow
-              key={`${entry.type}-${entry.clinic_id}`}
+              key={`${entry.type}-${entry.clinic_id}-${entry.percentage}-${index}`}
               entry={entry}
               tone={tone}
             />
@@ -147,9 +147,9 @@ function CoverageAccordion({
       >
         <div className="overflow-hidden">
           <ul className="px-4 py-3">
-            {visibleEntries.map((entry) => (
+            {visibleEntries.map((entry, index) => (
               <ClinicRow
-                key={`mobile-${entry.type}-${entry.clinic_id}`}
+                key={`mobile-${entry.type}-${entry.clinic_id}-${entry.percentage}-${index}`}
                 entry={entry}
                 tone={tone}
               />

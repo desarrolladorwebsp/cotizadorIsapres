@@ -21,7 +21,7 @@ export function CotizadorHeader({
   return (
     <header
       className={joinClasses(
-        "sticky top-0 z-30 border-b bg-white shadow-sm",
+        "sticky top-0 z-30 shrink-0 border-b bg-white shadow-sm lg:sticky",
         ui.border,
       )}
     >

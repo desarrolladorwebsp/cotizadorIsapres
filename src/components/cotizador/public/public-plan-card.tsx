@@ -13,15 +13,31 @@ import {
   resolvePrimaryPlanType,
   splitCoverageByType,
 } from "@/domain";
-import { touchTarget, ui } from "@/lib/ui-tokens";
+import {
+  accent,
+  planTypeBadgeTone,
+  statusBadgeToneClass,
+  touchTarget,
+  ui,
+} from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type { BeneficiaryGroupSummary } from "@/domain";
 import type { HealthPlan } from "@/domain";
 import { DownloadIcon } from "@/components/plan-card/icons";
 import { IsapreLogo } from "@/components/plan-card/isapre-logo";
 import { PlanCardDetail } from "@/components/plan-card/plan-card-detail";
-import { getPlanPdfDownloadUrl } from "@/lib/plan-pdf";
+import {
+  buildPlanPdfFileName,
+  getPlanPdfDownloadUrl,
+  planHasPdf,
+} from "@/lib/plan-pdf";
 import type { CurrencyDisplay } from "./public-results-toolbar";
+import { MetricCell } from "./metric-cell";
+import {
+  AmbulatoryMetricIcon,
+  ClinicMetricIcon,
+  HospitalMetricIcon,
+} from "./plan-card-icons";
 
 export interface PublicPlanCardProps {
   plan: HealthPlan;
@@ -31,24 +47,11 @@ export interface PublicPlanCardProps {
   onRequest: () => void;
 }
 
-function InfoCell({
-  label,
-  value,
-  className,
-}: {
-  label: string;
-  value: string;
-  className?: string;
-}) {
+function MetaDivider() {
   return (
-    <div className={joinClasses("min-w-0", className)}>
-      <p className="text-[10px] font-bold uppercase tracking-wide text-muted">
-        {label}
-      </p>
-      <p className="mt-1 text-sm font-semibold leading-snug text-foreground">
-        {value}
-      </p>
-    </div>
+    <span className="hidden text-border sm:inline" aria-hidden>
+      ·
+    </span>
   );
 }
 
@@ -77,6 +80,7 @@ export function PublicPlanCard({
 
   const planType = resolvePrimaryPlanType(plan);
   const planTypeLabel = PLAN_TYPE_LABELS[planType];
+  const planTypeBadge = statusBadgeToneClass[planTypeBadgeTone[planType]];
   const commercialName = resolveCommercialPlanName(plan);
 
   const priceQuote = useMemo(
@@ -99,87 +103,139 @@ export function PublicPlanCard({
       ? formatQuotedUf(priceQuote.finalPriceUf)
       : formatPlanClp(priceQuote.finalPriceClp);
 
+  function toggleClinics() {
+    setExpanded((value) => !value);
+  }
+
   return (
     <motion.article
       layout="position"
       className={joinClasses(
-        "overflow-hidden rounded-2xl border bg-white shadow-card transition-shadow hover:shadow-[var(--shadow-card-hover)]",
+        "relative overflow-hidden rounded-2xl border bg-white shadow-card transition-shadow hover:shadow-[var(--shadow-card-hover)]",
         ui.border,
       )}
     >
+      <div
+        className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary via-primary/70 to-secondary/60"
+        aria-hidden
+      />
+
       {/* Identidad + precio */}
-      <div className="flex flex-col gap-5 p-4 sm:p-5 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
-        <div className="flex min-w-0 flex-1 items-start gap-4">
+      <div className="flex flex-col gap-4 p-4 pt-5 sm:p-5 sm:pt-6 lg:flex-row lg:items-start lg:justify-between lg:gap-6">
+        <div className="flex min-w-0 flex-1 items-start gap-3 sm:gap-4">
           <IsapreLogo isapre={plan.isapre} size="md" />
 
           <div className="min-w-0 flex-1 space-y-2">
-            <div>
-              <h3 className="text-base font-bold leading-snug text-primary-dark sm:text-lg">
-                {commercialName}
-              </h3>
-              <p className="mt-1 font-mono text-xs text-muted">
-                {plan.unique_code}
-              </p>
-            </div>
+            <h3 className="text-base font-bold leading-snug text-primary-dark sm:text-lg">
+              {commercialName}
+            </h3>
 
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 text-[11px] leading-none text-muted sm:text-xs">
+              <span className="font-mono font-medium text-foreground/80">
+                {plan.unique_code}
+              </span>
+              <MetaDivider />
               <span
                 className={joinClasses(
-                  "rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide",
-                  planType === "preferred"
-                    ? "bg-secondary-muted text-secondary"
-                    : "bg-surface-hover text-muted",
+                  "rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide sm:text-[11px]",
+                  planTypeBadge,
                 )}
               >
                 {planTypeLabel}
               </span>
               {plan.has_top ? (
-                <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary-dark">
-                  Tope 7.500 UF
-                </span>
+                <>
+                  <MetaDivider />
+                  <span
+                    className={joinClasses(
+                      "rounded-full border px-2 py-0.5 text-[10px] font-semibold sm:text-[11px]",
+                      statusBadgeToneClass.top,
+                    )}
+                  >
+                    Tope 7.500 UF
+                  </span>
+                </>
               ) : null}
+              <MetaDivider />
+              <span>
+                Base{" "}
+                <span className="font-semibold tabular-nums text-foreground/90">
+                  {formatQuotedUf(plan.base_price_uf)}
+                </span>
+              </span>
+              <MetaDivider />
+              <span>
+                {beneficiarySummary.beneficiaryCount} beneficiario
+                {beneficiarySummary.beneficiaryCount === 1 ? "" : "s"}
+              </span>
             </div>
           </div>
         </div>
 
-        <div
-          className={joinClasses(
-            "shrink-0 rounded-xl bg-primary/5 px-4 py-3 lg:min-w-[11rem] lg:text-right",
-          )}
-        >
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">
+        <div className="shrink-0 lg:min-w-[10rem] lg:text-right">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">
             Tu precio estimado
           </p>
-          <p className="mt-0.5 text-2xl font-black tabular-nums tracking-tight text-primary-dark">
+          <p
+            className={joinClasses(
+              "mt-0.5 text-xl font-bold tabular-nums tracking-tight sm:text-2xl",
+              accent.valuePrimary,
+            )}
+          >
             {mainPrice}
           </p>
-          <p className="text-xs text-muted">/ mes · {secondaryPrice}</p>
-          <p className="mt-2 text-xs text-muted">
-            Base {formatQuotedUf(plan.base_price_uf)} ·{" "}
-            {beneficiarySummary.beneficiaryCount} beneficiario
-            {beneficiarySummary.beneficiaryCount === 1 ? "" : "s"}
+          <p className="text-xs text-muted">
+            <span>/ mes · </span>
+            <span className={joinClasses("font-semibold", accent.valueSecondary)}>
+              {secondaryPrice}
+            </span>
           </p>
         </div>
       </div>
 
-      {/* Cobertura resumida — sin repetir datos */}
+      {/* Cobertura resumida — clic abre clínicas */}
       <div
         className={joinClasses(
-          "grid gap-4 border-t bg-surface-hover/25 px-4 py-4 sm:grid-cols-3 sm:px-5",
+          "grid gap-3 border-t bg-surface-hover/25 px-3 py-3 sm:grid-cols-3 sm:gap-2 sm:px-4 sm:py-3.5",
           ui.border,
         )}
       >
-        <InfoCell label="Hospitalaria" value={hospitalPercentages} />
-        <InfoCell label="Ambulatoria" value={ambulatoryPercentages} />
-        <InfoCell
+        <MetricCell
+          label="Hospitalaria"
+          value={hospitalPercentages}
+          icon={<HospitalMetricIcon />}
+          tone="primary"
+          valueClassName={accent.valuePrimary}
+          onClick={toggleClinics}
+          active={expanded}
+        />
+        <MetricCell
+          label="Ambulatoria"
+          value={ambulatoryPercentages}
+          icon={<AmbulatoryMetricIcon />}
+          tone="secondary"
+          valueClassName={accent.valueSecondary}
+          onClick={toggleClinics}
+          active={expanded}
+        />
+        <MetricCell
           label="Prestadores"
           value={
             clinicCount > 0
               ? `${clinicCount} clínica${clinicCount === 1 ? "" : "s"}`
               : "Sin prestadores"
           }
+          icon={<ClinicMetricIcon />}
+          tone="warning"
+          valueClassName={accent.valueWarning}
+          onClick={toggleClinics}
+          active={expanded}
         />
       </div>
+
+      <GpuExpandPanel open={expanded}>
+        <PlanCardDetail hospitalaria={hospitalaria} ambulatoria={ambulatoria} />
+      </GpuExpandPanel>
 
       {/* Acciones */}
       <div
@@ -191,29 +247,33 @@ export function PublicPlanCard({
         <div className="flex flex-col gap-3 sm:flex-row">
           <button
             type="button"
-            onClick={() => setExpanded((v) => !v)}
+            onClick={toggleClinics}
             className={joinClasses(
               touchTarget,
-              "rounded-full border px-5 text-sm font-semibold text-foreground transition hover:bg-surface-hover sm:min-w-36",
+              "rounded-full border px-5 text-sm font-semibold text-foreground transition hover:border-secondary/40 hover:bg-secondary-muted/50 sm:min-w-36",
               ui.border,
+              expanded ? "border-primary/30 bg-primary/5 text-primary-dark" : "",
             )}
+            aria-expanded={expanded}
           >
             {expanded ? "Ocultar clínicas" : "Ver clínicas"}
           </button>
 
-          {plan.pdf_url ? (
+          {planHasPdf(plan) ? (
             <a
-              href={getPlanPdfDownloadUrl(plan.pdf_url)}
+              href={getPlanPdfDownloadUrl(plan) ?? "#"}
               target="_blank"
               rel="noopener noreferrer"
-              download
+              download={buildPlanPdfFileName(plan.unique_code)}
               className={joinClasses(
                 touchTarget,
-                "inline-flex items-center justify-center gap-2 rounded-full border px-5 text-sm font-semibold text-foreground transition hover:bg-surface-hover sm:min-w-36",
+                "inline-flex items-center justify-center gap-2 rounded-full border px-5 text-sm font-semibold text-secondary transition hover:border-secondary/40 hover:bg-secondary-muted/60 sm:min-w-36",
                 ui.border,
               )}
             >
-              <DownloadIcon />
+              <span className="text-secondary">
+                <DownloadIcon />
+              </span>
               Descargar PDF
             </a>
           ) : (
@@ -226,7 +286,7 @@ export function PublicPlanCard({
               }
               className={joinClasses(
                 touchTarget,
-                "inline-flex items-center justify-center gap-2 rounded-full border px-5 text-sm font-semibold text-foreground transition hover:bg-surface-hover sm:min-w-36",
+                "inline-flex items-center justify-center gap-2 rounded-full border px-5 text-sm font-semibold text-muted transition hover:bg-surface-hover sm:min-w-36",
                 ui.border,
               )}
             >
@@ -249,10 +309,6 @@ export function PublicPlanCard({
           Solicitar
         </motion.button>
       </div>
-
-      <GpuExpandPanel open={expanded}>
-        <PlanCardDetail hospitalaria={hospitalaria} ambulatoria={ambulatoria} />
-      </GpuExpandPanel>
     </motion.article>
   );
 }

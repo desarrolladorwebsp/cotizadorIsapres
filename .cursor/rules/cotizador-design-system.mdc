@@ -1,0 +1,59 @@
+---
+description: Design system y UI del cotizador Isapres Premium — tokens, Tailwind, accesibilidad
+globs: src/components/**/*,src/app/**/*.tsx,src/lib/ui-tokens.ts,src/app/globals.css
+alwaysApply: false
+---
+
+# Cotizador — Design System
+
+## Tokens (no inventar colores)
+
+Leer `src/app/globals.css` y `src/lib/ui-tokens.ts` antes de estilizar.
+
+- Primario: `primary`, `primary-dark`, `primary-hover`
+- Secundario: `secondary`, `secondary-muted`
+- Superficies: `bg-layout`, `background`, `surface-hover`
+- Semánticos: `accent-danger`, `accent-warning`, `danger-muted`
+
+## Tailwind
+
+- Usar clases del theme (`text-primary-dark`, `border-border`, `shadow-card`)
+- Espaciado 8pt: preferir `4`, `5`, `6`, `8` en padding/gap
+- Bordes: `rounded-xl` cards, `rounded-full` CTAs
+- Importar utilidades: `joinClasses`, `ui`, `touchTarget` desde `@/lib/ui-tokens`
+
+## App móvil nativa (aplicar en cada cambio UI)
+
+En móvil (`<lg`) la experiencia debe ser firme: sin desborde lateral ni rebote del navegador.
+
+**Tokens obligatorios** (`ui-tokens.ts`):
+
+- `appShellRoot` — raíz de vista
+- `appShellScroll` — único scroll vertical en móvil
+- `safeWidth` — contener hijos anchos (`min-w-0 max-w-full`)
+- `horizontalScrollRail` — tabs/nav con scroll horizontal sin arrastrar la página
+
+**Al crear o modificar vistas:**
+
+1. Header/nav con `shrink-0`; contenido en `appShellScroll`
+2. Inputs, grids y bloques anchos envueltos en `safeWidth` — no eliminar elementos
+3. Modales/drawers: cuerpo con `overscroll-y-contain`; al bloquear `body`, setear también `overscrollBehavior: none`
+4. Desktop (`lg+`) mantiene scroll de documento normal
+
+Detalle completo en skill `/cotizador-ui` → sección «App móvil nativa».
+
+## Componentes
+
+- Client components solo cuando hay estado/eventos
+- Props con interfaces exportadas
+- Listas con keys únicas (`clinic_id + type + index` si hay duplicados)
+
+## Accesibilidad
+
+- `aria-label` en botones solo-icono
+- `htmlFor` + `id` en labels de formulario
+- `prefers-reduced-motion`: no depender de animación para información crítica
+
+## Skill relacionado
+
+Para trabajo visual amplio, invocar skill de proyecto: `/cotizador-ui`

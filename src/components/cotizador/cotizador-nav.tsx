@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { touchTarget, ui } from "@/lib/ui-tokens";
+import { horizontalScrollRail, touchTarget, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 
 const NAV_ITEMS = [
@@ -21,12 +21,17 @@ export function CotizadorNav() {
   return (
     <nav
       className={joinClasses(
-        "border-t bg-white px-4 sm:px-6 lg:px-10",
+        "shrink-0 border-t bg-white px-4 sm:px-6 lg:px-10",
         ui.border,
       )}
       aria-label="Vistas del cotizador"
     >
-      <div className="mx-auto flex max-w-7xl gap-1 overflow-x-auto py-2">
+      <div
+        className={joinClasses(
+          horizontalScrollRail,
+          "mx-auto flex max-w-7xl gap-1 py-2",
+        )}
+      >
         {NAV_ITEMS.map((item) => {
           const isActive =
             item.href === "/cotizador"

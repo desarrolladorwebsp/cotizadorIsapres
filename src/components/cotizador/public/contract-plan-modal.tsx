@@ -1,45 +1,138 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { IsapreLogo } from "@/components/plan-card/isapre-logo";
 import {
   buildPlanFinalPriceQuote,
   formatPlanClp,
   formatQuotedUf,
+  PLAN_TYPE_LABELS,
   resolveCommercialPlanName,
+  resolvePrimaryPlanType,
 } from "@/domain";
-import { touchTarget, ui } from "@/lib/ui-tokens";
+import { SINGLE_PERSON_AGE_SAMPLES } from "@/lib/plan-price-by-age";
+import {
+  accent,
+  accentIconClass,
+  horizontalScrollRail,
+  planTypeBadgeTone,
+  safeWidth,
+  statusBadgeToneClass,
+  touchTarget,
+  ui,
+} from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
-import type { BeneficiaryGroupSummary } from "@/domain";
+import type { BeneficiaryGroupSummary, FamilyBeneficiariesState } from "@/domain";
 import type { HealthPlan } from "@/domain";
+import type { QuoteCriteria } from "./public-quote-criteria-bar";
+import { ModalPlanOverviewPanel } from "./modal-plan-overview-panel";
+import { ModalPricePanel } from "./modal-price-panel";
+import {
+  isValidRequestEmail,
+  ModalRequestForm,
+  normalizeRequestPhoneDigits,
+} from "./modal-request-form";
 
 export interface ContractPlanModalProps {
   open: boolean;
   plan: HealthPlan | null;
   beneficiarySummary: BeneficiaryGroupSummary;
+  dependents: FamilyBeneficiariesState["dependents"];
   ufToClp: number;
+  criteria: QuoteCriteria;
   onClose: () => void;
+}
+
+type ModalTabId = "overview" | "price" | "request";
+
+const MODAL_TABS: {
+  id: ModalTabId;
+  label: string;
+  icon: string;
+  tone: "primary" | "secondary" | "warning";
+}[] = [
+  { id: "overview", label: "Vista general", icon: "◎", tone: "secondary" },
+  { id: "price", label: "Precio", icon: "$", tone: "primary" },
+  { id: "request", label: "Solicitar", icon: "✉", tone: "primary" },
+];
+
+const BENEFITS = [
+  {
+    title: "Sin costo adicional",
+    description: "La asesoría y cotización no tienen cargo para ti.",
+    icon: "✓",
+    tone: "primary" as const,
+  },
+  {
+    title: "Acompañamiento post-venta",
+    description: "Te guiamos hasta la incorporación y después del contrato.",
+    icon: "★",
+    tone: "secondary" as const,
+  },
+  {
+    title: "Cancelación gratuita",
+    description: "Puedes desistir sin compromiso antes de firmar.",
+    icon: "↺",
+    tone: "warning" as const,
+  },
+] as const;
+
+function CloseIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="size-5" aria-hidden>
+      <path
+        d="M6 6l12 12M18 6L6 18"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function resolveChartHighlightAge(age: number | null): number | null {
+  if (age === null) return null;
+  return SINGLE_PERSON_AGE_SAMPLES.reduce((closest, sample) =>
+    Math.abs(sample - age) < Math.abs(closest - age) ? sample : closest,
+  );
 }
 
 export function ContractPlanModal({
   open,
   plan,
   beneficiarySummary,
+  dependents,
   ufToClp,
+  criteria,
   onClose,
 }: ContractPlanModalProps) {
+  const [activeTab, setActiveTab] = useState<ModalTabId>("overview");
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [attemptedSubmit, setAttemptedSubmit] = useState(false);
   const [name, setName] = useState("");
+  const [rut, setRut] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [isCurrentIsapre, setIsCurrentIsapre] = useState<"yes" | "no" | "">("");
 
   useEffect(() => {
     if (!open) {
+      setActiveTab("overview");
       setSubmitted(false);
+      setSubmitting(false);
+      setSubmitError(null);
+      setValidationErrors([]);
+      setAttemptedSubmit(false);
       setName("");
+      setRut("");
       setEmail("");
       setPhone("");
+      setIsCurrentIsapre("");
     }
   }, [open]);
 
@@ -50,30 +143,132 @@ export function ContractPlanModal({
     }
     document.addEventListener("keydown", onKeyDown);
     document.body.style.overflow = "hidden";
+    document.body.style.overscrollBehavior = "none";
     return () => {
       document.removeEventListener("keydown", onKeyDown);
       document.body.style.overflow = "";
+      document.body.style.overscrollBehavior = "";
     };
   }, [open, onClose]);
 
-  if (!plan) return null;
+  const priceQuote = useMemo(() => {
+    if (!plan) return null;
+    return buildPlanFinalPriceQuote(
+      plan.base_price_uf,
+      beneficiarySummary,
+      ufToClp,
+    );
+  }, [plan, beneficiarySummary, ufToClp]);
 
-  const priceQuote = buildPlanFinalPriceQuote(
-    plan.base_price_uf,
-    beneficiarySummary,
-    ufToClp,
+  const chartHighlightAge = useMemo(
+    () => resolveChartHighlightAge(beneficiarySummary.contributor.age),
+    [beneficiarySummary.contributor.age],
   );
 
-  function handleSubmit(event: React.FormEvent) {
+  if (!plan || !priceQuote) return null;
+
+  const planType = resolvePrimaryPlanType(plan);
+  const planTypeLabel = PLAN_TYPE_LABELS[planType];
+  const badgeTone = statusBadgeToneClass[planTypeBadgeTone[planType]];
+  const commercialName = resolveCommercialPlanName(plan);
+
+  function collectValidationErrors(): string[] {
+    const errors: string[] = [];
+
+    if (!name.trim()) {
+      errors.push("Ingresa tu nombre y apellido.");
+    }
+    if (!rut.trim()) {
+      errors.push("Ingresa tu RUT.");
+    } else if (rut.replace(/\D/g, "").length < 7) {
+      errors.push("El RUT ingresado no parece válido.");
+    }
+    if (!email.trim()) {
+      errors.push("Ingresa tu correo electrónico.");
+    } else if (!isValidRequestEmail(email)) {
+      errors.push("Ingresa un correo electrónico válido.");
+    }
+    if (!phone.trim()) {
+      errors.push("Ingresa tu teléfono de contacto.");
+    } else if (normalizeRequestPhoneDigits(phone).length < 8) {
+      errors.push("Ingresa un teléfono válido (mínimo 8 dígitos).");
+    }
+    if (isCurrentIsapre === "") {
+      errors.push(`Indica si ${plan!.isapre} es tu Isapre actual.`);
+    }
+
+    return errors;
+  }
+
+  async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    setSubmitted(true);
+    setAttemptedSubmit(true);
+    setSubmitError(null);
+
+    const errors = collectValidationErrors();
+    if (errors.length > 0) {
+      setValidationErrors(errors);
+      return;
+    }
+
+    setValidationErrors([]);
+    setSubmitting(true);
+
+    try {
+      const response = await fetch("/api/quotes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          planCode: plan!.unique_code,
+          fullName: name.trim(),
+          email: email.trim(),
+          phone: phone.trim(),
+          rut: rut.trim(),
+          region: criteria.region || null,
+          sex: criteria.sex || null,
+          monthlyIncome: criteria.monthlyIncome || null,
+          contributorAge: beneficiarySummary.contributor.age,
+          dependentsCount: beneficiarySummary.dependents.length,
+          dependentAges: beneficiarySummary.dependents
+            .map((dependent) => dependent.age)
+            .filter((age): age is number => age !== null),
+          finalPriceUf: priceQuote!.finalPriceUf,
+          finalPriceClp: priceQuote!.finalPriceClp,
+          ufValue: ufToClp,
+          beneficiaryCount: beneficiarySummary.beneficiaryCount,
+          totalFactors: beneficiarySummary.totalFactors,
+          quoteReason: "Solicitud desde cotizador público",
+          notes:
+            isCurrentIsapre === "yes"
+              ? `Ya es afiliado a ${plan!.isapre}`
+              : `No es afiliado actualmente a ${plan!.isapre}`,
+        }),
+      });
+
+      if (!response.ok) {
+        const body = (await response.json().catch(() => null)) as {
+          error?: string;
+        } | null;
+        throw new Error(body?.error ?? "No se pudo enviar la solicitud.");
+      }
+
+      setSubmitted(true);
+    } catch (error) {
+      setSubmitError(
+        error instanceof Error
+          ? error.message
+          : "No se pudo enviar la solicitud. Intenta nuevamente o contáctanos.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
     <AnimatePresence>
       {open ? (
         <motion.div
-          className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center"
+          className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -81,87 +276,306 @@ export function ContractPlanModal({
           <button
             type="button"
             aria-label="Cerrar"
-            className="absolute inset-0 bg-black/45 backdrop-blur-[2px]"
+            className="absolute inset-0 bg-primary-dark/55 backdrop-blur-[3px]"
             onClick={onClose}
           />
 
           <motion.div
             role="dialog"
             aria-modal="true"
-            initial={{ opacity: 0, y: 28 }}
+            aria-labelledby="contract-plan-title"
+            initial={{ opacity: 0, y: 32 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
+            exit={{ opacity: 0, y: 24 }}
             className={joinClasses(
-              "relative z-10 w-full max-w-md overflow-hidden rounded-2xl border bg-white shadow-2xl",
+              safeWidth,
+              "relative z-10 flex max-h-[96dvh] w-full max-w-full flex-col overflow-hidden overscroll-none rounded-t-2xl border bg-white shadow-2xl sm:max-h-[92dvh] sm:max-w-6xl sm:rounded-2xl",
               ui.border,
             )}
           >
-            <div className="bg-gradient-to-r from-primary-dark to-primary px-5 py-4 text-white">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-white/75">
-                Solicitar plan
-              </p>
-              <h2 className="mt-1 text-lg font-bold">
-                {resolveCommercialPlanName(plan)}
-              </h2>
-              <p className="mt-1 text-sm text-white/90">
-                {formatQuotedUf(priceQuote.finalPriceUf)} ·{" "}
-                {formatPlanClp(priceQuote.finalPriceClp)} / mes
-              </p>
+            <div
+              className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary via-secondary/70 to-accent-warning/80"
+              aria-hidden
+            />
+
+            <div className="flex shrink-0 items-center justify-between border-b px-4 py-3 pt-4 sm:px-6">
+              <div className="flex items-center gap-3">
+                <IsapreLogo isapre={plan.isapre} size="md" />
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+                    {plan.isapre}
+                  </p>
+                  <p className="text-sm font-bold text-primary-dark">
+                    Isapres Premium
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Cerrar modal"
+                className={joinClasses(
+                  "rounded-full p-2 text-muted transition hover:bg-surface-hover hover:text-foreground",
+                  touchTarget,
+                )}
+              >
+                <CloseIcon />
+              </button>
             </div>
 
-            {submitted ? (
-              <div className="space-y-4 px-5 py-8 text-center">
-                <p className="text-lg font-bold text-primary-dark">
-                  ¡Solicitud recibida!
-                </p>
-                <p className="text-sm text-muted">
-                  Un ejecutivo de Isapres Premium te contactará para finalizar tu
-                  incorporación a {plan.isapre}.
-                </p>
-                <Button type="button" onClick={onClose} className="w-full">
-                  Cerrar
-                </Button>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-4 px-5 py-5">
-                <input
-                  required
-                  placeholder="Nombre y apellido"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className={joinClasses("h-11 w-full rounded-xl px-3 text-sm", ui.input)}
-                />
-                <input
-                  required
-                  type="email"
-                  placeholder="Correo electrónico"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className={joinClasses("h-11 w-full rounded-xl px-3 text-sm", ui.input)}
-                />
-                <input
-                  required
-                  type="tel"
-                  placeholder="Teléfono"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className={joinClasses("h-11 w-full rounded-xl px-3 text-sm", ui.input)}
-                />
-                <div className="flex gap-3 pt-1">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={onClose}
-                    className={touchTarget}
+            <div className="flex shrink-0 items-center justify-center gap-2 border-b bg-secondary-muted px-4 py-2.5 text-center text-sm text-primary-dark sm:px-6">
+              <span
+                className={joinClasses(
+                  "hidden size-6 shrink-0 items-center justify-center rounded-full sm:inline-flex",
+                  accentIconClass.secondary,
+                )}
+                aria-hidden
+              >
+                ✉
+              </span>
+              {activeTab === "request"
+                ? "Completa el formulario para recibir un precio exacto con un ejecutivo especializado."
+                : activeTab === "price"
+                  ? "Revisa el precio estimado del plan según la edad del cotizante."
+                  : "Conoce las coberturas y características principales del plan."}
+            </div>
+
+            <div className="grid shrink-0 gap-4 border-b px-4 py-4 sm:grid-cols-[1fr_auto] sm:items-center sm:px-6">
+              <div className="min-w-0 space-y-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span
+                    className={joinClasses(
+                      "rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide",
+                      badgeTone,
+                    )}
                   >
-                    Cancelar
-                  </Button>
-                  <Button type="submit" className={joinClasses(touchTarget, "flex-1")}>
-                    Enviar solicitud
+                    {planTypeLabel}
+                  </span>
+                </div>
+                <h2
+                  id="contract-plan-title"
+                  className="text-base font-bold leading-snug text-foreground sm:text-lg"
+                >
+                  {commercialName}
+                </h2>
+                <p className="font-mono text-xs text-muted">{plan.unique_code}</p>
+              </div>
+
+              <div
+                className={joinClasses(
+                  "rounded-xl border bg-primary/5 px-4 py-3 text-right sm:min-w-52",
+                  accent.borderPrimary,
+                  accent.ringPrimary,
+                )}
+              >
+                <p className="text-[10px] font-bold uppercase tracking-wide text-muted">
+                  Precio estimado
+                </p>
+                <p
+                  className={joinClasses(
+                    "mt-1 text-xl font-bold sm:text-2xl",
+                    accent.valuePrimary,
+                  )}
+                >
+                  Desde {formatPlanClp(priceQuote.finalPriceClp)}
+                  <span className="text-sm font-semibold text-muted"> /mes</span>
+                </p>
+                <p
+                  className={joinClasses(
+                    "mt-0.5 text-xs font-semibold",
+                    accent.valueSecondary,
+                  )}
+                >
+                  {formatQuotedUf(priceQuote.finalPriceUf)}
+                </p>
+              </div>
+            </div>
+
+            <div
+              className={joinClasses(
+                horizontalScrollRail,
+                "flex shrink-0 gap-1 border-b px-4 py-2 sm:px-6",
+              )}
+              role="tablist"
+              aria-label="Secciones del plan"
+            >
+              {MODAL_TABS.map((tab) => {
+                const active = tab.id === activeTab;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={joinClasses(
+                      "inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition",
+                      active
+                        ? "bg-primary/10 text-primary-dark ring-1 ring-primary/20"
+                        : "text-muted hover:bg-surface-hover/80",
+                    )}
+                  >
+                    <span
+                      className={joinClasses(
+                        "flex size-5 items-center justify-center rounded-md text-[10px]",
+                        active
+                          ? accentIconClass[tab.tone]
+                          : "bg-surface-hover text-muted",
+                      )}
+                      aria-hidden
+                    >
+                      {tab.icon}
+                    </span>
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-x-clip overflow-y-auto overscroll-y-contain">
+              {submitted ? (
+                <div className="space-y-4 px-6 py-12 text-center">
+                  <div
+                    className={joinClasses(
+                      "mx-auto flex size-16 items-center justify-center rounded-full text-2xl",
+                      accentIconClass.primary,
+                    )}
+                  >
+                    ✓
+                  </div>
+                  <p className="text-xl font-bold text-primary-dark">
+                    Solicitud enviada correctamente
+                  </p>
+                  <p className="mx-auto max-w-md text-sm leading-relaxed text-muted">
+                    Tu información fue cargada correctamente. Un ejecutivo
+                    especializado de Isapres Premium se pondrá en contacto contigo
+                    próximamente para entregarte el precio final y acompañarte en
+                    tu incorporación a {plan.isapre}.
+                  </p>
+                  <Button type="button" onClick={onClose} className="mt-2">
+                    Cerrar
                   </Button>
                 </div>
-              </form>
-            )}
+              ) : activeTab === "overview" ? (
+                <ModalPlanOverviewPanel
+                  plan={plan}
+                  planIsapre={plan.isapre}
+                  name={name}
+                  onNameChange={setName}
+                  rut={rut}
+                  onRutChange={setRut}
+                  email={email}
+                  onEmailChange={setEmail}
+                  phone={phone}
+                  onPhoneChange={setPhone}
+                  isCurrentIsapre={isCurrentIsapre}
+                  onIsCurrentIsapreChange={setIsCurrentIsapre}
+                  attemptedSubmit={attemptedSubmit}
+                  validationErrors={validationErrors}
+                  submitError={submitError}
+                  submitting={submitting}
+                  onSubmit={handleSubmit}
+                />
+              ) : activeTab === "price" ? (
+                <ModalPricePanel
+                  basePriceUf={plan.base_price_uf}
+                  ufToClp={ufToClp}
+                  priceQuote={priceQuote}
+                  highlightAge={chartHighlightAge}
+                  beneficiarySummary={beneficiarySummary}
+                  dependents={dependents}
+                />
+              ) : (
+                <div className="grid gap-0 lg:grid-cols-[minmax(0,17rem)_minmax(0,1fr)]">
+                  <aside className="space-y-4 border-b bg-bg-layout/40 p-4 sm:p-5 lg:border-b-0 lg:border-r">
+                    <div
+                      className={joinClasses(
+                        "rounded-xl border border-primary/15 bg-primary/5 p-4",
+                        accent.ringPrimary,
+                      )}
+                    >
+                      <h3 className="text-sm font-bold text-primary-dark">
+                        ¿Por qué Isapres Premium?
+                      </h3>
+                      <ul className="mt-3 space-y-3">
+                        {BENEFITS.map((benefit) => (
+                          <li key={benefit.title} className="flex gap-3">
+                            <span
+                              className={joinClasses(
+                                "flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-bold",
+                                accentIconClass[benefit.tone],
+                              )}
+                            >
+                              {benefit.icon}
+                            </span>
+                            <div>
+                              <p className="text-sm font-semibold text-foreground">
+                                {benefit.title}
+                              </p>
+                              <p className="text-xs leading-relaxed text-muted">
+                                {benefit.description}
+                              </p>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div
+                      className={joinClasses(
+                        "rounded-xl border bg-white p-4",
+                        accent.borderSecondary,
+                      )}
+                    >
+                      <p className="text-[10px] font-bold uppercase tracking-wide text-muted">
+                        Tu selección
+                      </p>
+                      <p className="mt-2 text-sm font-bold text-primary-dark">
+                        {commercialName}
+                      </p>
+                      <p className="mt-2 text-lg font-bold text-foreground">
+                        {formatPlanClp(priceQuote.finalPriceClp)}
+                        <span className="text-xs font-medium text-muted">
+                          {" "}
+                          /mes
+                        </span>
+                      </p>
+                      <p
+                        className={joinClasses(
+                          "mt-1 text-xs font-semibold",
+                          accent.valueSecondary,
+                        )}
+                      >
+                        {formatQuotedUf(priceQuote.finalPriceUf)}
+                      </p>
+                    </div>
+                  </aside>
+
+                  <div className="p-4 sm:p-6">
+                    <ModalRequestForm
+                      planIsapre={plan.isapre}
+                      name={name}
+                      onNameChange={setName}
+                      rut={rut}
+                      onRutChange={setRut}
+                      email={email}
+                      onEmailChange={setEmail}
+                      phone={phone}
+                      onPhoneChange={setPhone}
+                      isCurrentIsapre={isCurrentIsapre}
+                      onIsCurrentIsapreChange={setIsCurrentIsapre}
+                      attemptedSubmit={attemptedSubmit}
+                      validationErrors={validationErrors}
+                      submitError={submitError}
+                      submitting={submitting}
+                      onSubmit={handleSubmit}
+                      variant="plain"
+                      radioGroupName="request-current-isapre"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
           </motion.div>
         </motion.div>
       ) : null}

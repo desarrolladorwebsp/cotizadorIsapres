@@ -1,85 +1,220 @@
-import { readFile, writeFile } from "fs/promises";
-import path from "path";
+import { ApiError, toApiError } from "@/lib/api/api-error";
+import { ensureIsapreExists } from "@/lib/api/isapre-store";
+import {
+  mapDbPlanToHealthPlan,
+  mapHealthPlanToDbCreate,
+  mapHealthPlanToDbUpdate,
+} from "@/lib/api/plan-mapper";
+import { prisma } from "@/lib/prisma";
 import type { Clinic } from "@/types/clinic";
 import type { HealthPlan } from "@/types/plan";
+import type { Prisma } from "@prisma/client";
 
-const PLANS_PATH = path.join(process.cwd(), "src/assets/planes.json");
-const CLINICS_PATH = path.join(process.cwd(), "src/assets/clinics.json");
+const planInclude = { coverages: true, isapreRef: true } as const;
 
-function extractClinicsFromPlans(plans: HealthPlan[]): Clinic[] {
-  const map = new Map<string, string>();
+async function upsertClinicsForCoverage(
+  tx: Prisma.TransactionClient,
+  coverage: HealthPlan["coverage"],
+): Promise<void> {
+  const uniqueClinics = new Map<string, string>();
 
-  for (const plan of plans) {
-    for (const entry of plan.coverage) {
-      if (!map.has(entry.clinic_id)) {
-        map.set(entry.clinic_id, entry.clinic_name);
-      }
-    }
+  for (const entry of coverage) {
+    uniqueClinics.set(entry.clinic_id, entry.clinic_name);
   }
 
-  return Array.from(map.entries())
-    .map(([id, name]) => ({ id, name }))
-    .sort((a, b) => a.name.localeCompare(b.name, "es-CL"));
+  for (const [id, name] of uniqueClinics) {
+    await tx.clinic.upsert({
+      where: { id },
+      create: { id, name },
+      update: { name },
+    });
+  }
 }
 
-async function writeJsonFile<T>(filePath: string, data: T): Promise<void> {
-  await writeFile(filePath, `${JSON.stringify(data, null, 2)}\n`, "utf-8");
+function mapCoverageCreateInput(coverage: HealthPlan["coverage"]) {
+  return coverage.map((entry) => ({
+    clinicId: entry.clinic_id,
+    clinicName: entry.clinic_name,
+    percentage: entry.percentage,
+    type: entry.type,
+  }));
 }
 
 export async function readPlans(): Promise<HealthPlan[]> {
-  const raw = await readFile(PLANS_PATH, "utf-8");
-  return JSON.parse(raw) as HealthPlan[];
+  const plans = await prisma.plan.findMany({
+    include: planInclude,
+    orderBy: { planName: "asc" },
+  });
+
+  return plans.map(mapDbPlanToHealthPlan);
 }
 
 export async function readPlanByCode(
   uniqueCode: string,
 ): Promise<HealthPlan | null> {
-  const plans = await readPlans();
-  return plans.find((plan) => plan.unique_code === uniqueCode) ?? null;
+  const plan = await prisma.plan.findUnique({
+    where: { uniqueCode },
+    include: planInclude,
+  });
+
+  return plan ? mapDbPlanToHealthPlan(plan) : null;
 }
 
-export async function writePlans(plans: HealthPlan[]): Promise<void> {
-  await writeJsonFile(PLANS_PATH, plans);
-}
-
-export async function readClinics(): Promise<Clinic[]> {
+export async function createPlanRecord(plan: HealthPlan): Promise<HealthPlan> {
   try {
-    const raw = await readFile(CLINICS_PATH, "utf-8");
-    return JSON.parse(raw) as Clinic[];
-  } catch {
-    const plans = await readPlans();
-    const clinics = extractClinicsFromPlans(plans);
-    await writeClinics(clinics);
-    return clinics;
+    const isapreId = await ensureIsapreExists(plan.isapre);
+
+    const created = await prisma.$transaction(async (tx) => {
+      const existing = await tx.plan.findUnique({
+        where: { uniqueCode: plan.unique_code },
+        select: { uniqueCode: true },
+      });
+
+      if (existing) {
+        throw new ApiError("Ya existe un plan con ese código único.", 409);
+      }
+
+      await upsertClinicsForCoverage(tx, plan.coverage);
+
+      return tx.plan.create({
+        data: mapHealthPlanToDbCreate(plan, isapreId),
+        include: planInclude,
+      });
+    });
+
+    return mapDbPlanToHealthPlan(created);
+  } catch (error) {
+    throw toApiError(error);
   }
 }
 
+export async function updatePlanRecord(plan: HealthPlan): Promise<HealthPlan> {
+  try {
+    const isapreId = await ensureIsapreExists(plan.isapre);
+
+    const updated = await prisma.$transaction(async (tx) => {
+      const existing = await tx.plan.findUnique({
+        where: { uniqueCode: plan.unique_code },
+        select: { uniqueCode: true },
+      });
+
+      if (!existing) {
+        throw new ApiError("Plan no encontrado.", 404);
+      }
+
+      await upsertClinicsForCoverage(tx, plan.coverage);
+
+      await tx.coverageEntry.deleteMany({
+        where: { planCode: plan.unique_code },
+      });
+
+      return tx.plan.update({
+        where: { uniqueCode: plan.unique_code },
+        data: {
+          ...mapHealthPlanToDbUpdate(plan, isapreId),
+          coverages: {
+            create: mapCoverageCreateInput(plan.coverage),
+          },
+        },
+        include: planInclude,
+      });
+    });
+
+    return mapDbPlanToHealthPlan(updated);
+  } catch (error) {
+    throw toApiError(error);
+  }
+}
+
+export async function deletePlanRecord(
+  uniqueCode: string,
+): Promise<HealthPlan | null> {
+  try {
+    const existing = await prisma.plan.findUnique({
+      where: { uniqueCode },
+      include: planInclude,
+    });
+
+    if (!existing) return null;
+
+    await prisma.plan.delete({
+      where: { uniqueCode },
+    });
+
+    return mapDbPlanToHealthPlan(existing);
+  } catch (error) {
+    throw toApiError(error);
+  }
+}
+
+export async function writePlans(plans: HealthPlan[]): Promise<void> {
+  try {
+    const incomingCodes = plans.map((plan) => plan.unique_code);
+
+    await prisma.$transaction(async (tx) => {
+      if (incomingCodes.length === 0) {
+        await tx.coverageEntry.deleteMany();
+        await tx.plan.deleteMany();
+        return;
+      }
+
+      await tx.plan.deleteMany({
+        where: { uniqueCode: { notIn: incomingCodes } },
+      });
+
+      for (const plan of plans) {
+        const isapreId = await ensureIsapreExists(plan.isapre);
+        await upsertClinicsForCoverage(tx, plan.coverage);
+
+        await tx.plan.upsert({
+          where: { uniqueCode: plan.unique_code },
+          create: mapHealthPlanToDbCreate(plan, isapreId),
+          update: {
+            ...mapHealthPlanToDbUpdate(plan, isapreId),
+            coverages: {
+              deleteMany: {},
+              create: mapCoverageCreateInput(plan.coverage),
+            },
+          },
+        });
+      }
+    });
+  } catch (error) {
+    throw toApiError(error);
+  }
+}
+
+export async function readClinics(): Promise<Clinic[]> {
+  const clinics = await prisma.clinic.findMany({
+    orderBy: { name: "asc" },
+  });
+
+  return clinics.map((clinic) => ({
+    id: clinic.id,
+    name: clinic.name,
+  }));
+}
+
 export async function writeClinics(clinics: Clinic[]): Promise<void> {
-  const sorted = [...clinics].sort((a, b) =>
-    a.name.localeCompare(b.name, "es-CL"),
+  await prisma.$transaction(
+    clinics.map((clinic) =>
+      prisma.clinic.upsert({
+        where: { id: clinic.id },
+        create: { id: clinic.id, name: clinic.name },
+        update: { name: clinic.name },
+      }),
+    ),
   );
-  await writeJsonFile(CLINICS_PATH, sorted);
 }
 
 export async function syncClinicNameInPlans(
   clinicId: string,
   clinicName: string,
 ): Promise<void> {
-  const plans = await readPlans();
-  let changed = false;
-
-  const nextPlans = plans.map((plan) => ({
-    ...plan,
-    coverage: plan.coverage.map((entry) => {
-      if (entry.clinic_id !== clinicId) return entry;
-      changed = true;
-      return { ...entry, clinic_name: clinicName };
-    }),
-  }));
-
-  if (changed) {
-    await writePlans(nextPlans);
-  }
+  await prisma.coverageEntry.updateMany({
+    where: { clinicId },
+    data: { clinicName },
+  });
 }
 
 export function countClinicUsage(

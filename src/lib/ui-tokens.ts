@@ -1,5 +1,9 @@
 /**
  * Semantic UI fragments — maps to CSS variables in globals.css
+ *
+ * App móvil nativa: usar appShellRoot + appShellScroll en vistas;
+ * safeWidth en hijos anchos; horizontalScrollRail en tabs/nav.
+ * Ver .cursor/skills/cotizador-ui/SKILL.md → «App móvil nativa».
  */
 /** WCAG-friendly touch target (48×48px minimum on mobile). */
 export const touchTarget =
@@ -11,8 +15,54 @@ export const touchRow =
 export const appShell =
   "mx-auto w-full max-w-7xl 2xl:max-w-[1600px]";
 
+/** Evita que un hijo empuje el layout horizontalmente. */
+export const safeWidth = "min-w-0 max-w-full";
+
+/**
+ * Carcasa app móvil: sin desborde lateral; en <lg> altura fija y scroll interno.
+ * Usar con `appShellScroll` en el único contenedor que debe hacer scroll vertical.
+ */
+export const appShellRoot =
+  "flex min-h-screen w-full max-w-full flex-col overflow-x-clip max-lg:h-dvh max-lg:max-h-dvh max-lg:overflow-hidden";
+
+/** Zona de scroll vertical contenida (móvil). */
+export const appShellScroll =
+  "min-h-0 flex-1 overflow-x-clip max-lg:overflow-y-auto max-lg:overscroll-y-contain";
+
+/** Carril horizontal interno (tabs, nav) sin arrastrar la página. */
+export const horizontalScrollRail =
+  "max-w-full overflow-x-auto overscroll-x-contain";
+
 export const motionGpu =
   "will-change-[transform,opacity] transform-gpu backface-hidden";
+
+export const criteriaBar =
+  "rounded-2xl bg-[var(--criteria-surface)] p-4 shadow-sm ring-1 ring-[var(--criteria-ring)] sm:p-5";
+
+/** Acentos de detalle (amarillo, azul, rojo) — no reemplazan el verde primario. */
+export const accent = {
+  iconPrimary: "bg-primary/12 text-primary-dark",
+  iconSecondary: "bg-secondary-muted text-secondary",
+  iconWarning: "bg-warning-muted text-accent-warning-foreground",
+  iconDanger: "bg-danger-muted text-accent-danger",
+  valuePrimary: "text-primary-dark",
+  valueSecondary: "text-secondary",
+  valueWarning: "text-accent-warning-foreground",
+  borderPrimary: "border-l-[3px] border-l-primary",
+  borderSecondary: "border-l-[3px] border-l-secondary",
+  ringPrimary: "ring-1 ring-primary/20",
+  ringSecondary: "ring-1 ring-secondary/25",
+  ringWarning: "ring-1 ring-accent-warning/35",
+} as const;
+
+export type AccentIconTone = "primary" | "secondary" | "warning" | "danger";
+
+export const accentIconClass: Record<AccentIconTone, string> = {
+  primary: accent.iconPrimary,
+  secondary: accent.iconSecondary,
+  warning: accent.iconWarning,
+  danger: accent.iconDanger,
+};
 
 export const ui = {
   canvas: "bg-bg-layout text-foreground",

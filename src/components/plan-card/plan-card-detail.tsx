@@ -36,7 +36,7 @@ function CoverageBarChart({
       <ul className="space-y-3 p-4">
         {entries.map((entry, index) => (
           <motion.li
-            key={`chart-${entry.type}-${entry.clinic_id}`}
+            key={`chart-${entry.type}-${entry.clinic_id}-${entry.percentage}-${index}`}
             initial={{ opacity: 0, x: -8 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.025, duration: 0.28 }}

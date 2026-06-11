@@ -1,0 +1,69 @@
+import { dedupeCoverageEntries } from "@/lib/api/plan-validation";
+import { resolveIsapreNameFromId } from "@/lib/isapre-catalog";
+import type { CoverageEntry, HealthPlan } from "@/types/plan";
+import type {
+  CoverageEntry as DbCoverage,
+  Isapre as DbIsapre,
+  Plan as DbPlan,
+} from "@prisma/client";
+
+export type PlanWithCoverages = DbPlan & {
+  coverages: DbCoverage[];
+  isapreRef: DbIsapre;
+};
+
+export function mapDbPlanToHealthPlan(plan: PlanWithCoverages): HealthPlan {
+  return {
+    isapre: plan.isapreRef.name,
+    plan_name: plan.planName,
+    unique_code: plan.uniqueCode,
+    base_price_uf: plan.basePriceUf,
+    has_top: plan.hasTop,
+    additional_notes: plan.additionalNotes,
+    pdf_url: plan.pdfUrl,
+    pdf_public_id: plan.pdfPublicId,
+    coverage: dedupeCoverageEntries(
+      plan.coverages.map(mapDbCoverageToEntry),
+    ),
+  };
+}
+
+function mapDbCoverageToEntry(entry: DbCoverage): CoverageEntry {
+  return {
+    clinic_id: entry.clinicId,
+    clinic_name: entry.clinicName,
+    percentage: entry.percentage,
+    type: entry.type as CoverageEntry["type"],
+  };
+}
+
+export function mapHealthPlanToDbFields(plan: HealthPlan, isapreId: string) {
+  return {
+    uniqueCode: plan.unique_code,
+    isapreId,
+    planName: plan.plan_name,
+    basePriceUf: plan.base_price_uf,
+    hasTop: plan.has_top,
+    additionalNotes: plan.additional_notes,
+    pdfUrl: plan.pdf_url,
+    pdfPublicId: plan.pdf_public_id,
+  };
+}
+
+export function mapHealthPlanToDbCreate(plan: HealthPlan, isapreId: string) {
+  return {
+    ...mapHealthPlanToDbFields(plan, isapreId),
+    coverages: {
+      create: plan.coverage.map((entry) => ({
+        clinicId: entry.clinic_id,
+        clinicName: entry.clinic_name,
+        percentage: entry.percentage,
+        type: entry.type,
+      })),
+    },
+  };
+}
+
+export function mapHealthPlanToDbUpdate(plan: HealthPlan, isapreId: string) {
+  return mapHealthPlanToDbFields(plan, isapreId);
+}

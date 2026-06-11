@@ -1,7 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { touchTarget, ui } from "@/lib/ui-tokens";
+import {
+  appShellRoot,
+  appShellScroll,
+  horizontalScrollRail,
+  safeWidth,
+  touchTarget,
+  ui,
+} from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 
 export type AdminSection = "plans" | "clinics";
@@ -23,10 +30,10 @@ export function AdminShell({
   children,
 }: AdminShellProps) {
   return (
-    <div className={joinClasses("min-h-screen", ui.canvas)}>
+    <div className={joinClasses(appShellRoot, ui.canvas)}>
       <header
         className={joinClasses(
-          "sticky top-0 z-30 border-b bg-white shadow-sm",
+          "z-30 shrink-0 border-b bg-white shadow-sm lg:sticky lg:top-0",
           ui.border,
         )}
       >
@@ -64,7 +71,12 @@ export function AdminShell({
           )}
           aria-label="Secciones administrativas"
         >
-          <div className="mx-auto flex max-w-7xl gap-1 overflow-x-auto py-2">
+          <div
+            className={joinClasses(
+              horizontalScrollRail,
+              "mx-auto flex max-w-7xl gap-1 py-2",
+            )}
+          >
             {navItems.map((item) => {
               const isActive = activeSection === item.id;
 
@@ -90,11 +102,17 @@ export function AdminShell({
         </nav>
       </header>
 
-      <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+      <main
+        className={joinClasses(
+          appShellScroll,
+          safeWidth,
+          "mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8",
+        )}
+      >
         {children}
       </main>
 
-      <div className="sticky bottom-0 border-t bg-white p-3 sm:hidden">
+      <div className="shrink-0 border-t bg-white p-3 sm:hidden">
         <Link
           href="/cotizador"
           className={joinClasses(

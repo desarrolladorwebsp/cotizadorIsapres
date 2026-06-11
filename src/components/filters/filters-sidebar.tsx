@@ -51,12 +51,15 @@ export function FiltersSidebar({
   useEffect(() => {
     if (!open) return;
     const previousOverflow = document.body.style.overflow;
+    const previousOverscroll = document.body.style.overscrollBehavior;
     const isMobile = window.matchMedia("(max-width: 1023px)").matches;
     if (isMobile) {
       document.body.style.overflow = "hidden";
+      document.body.style.overscrollBehavior = "none";
     }
     return () => {
       document.body.style.overflow = previousOverflow;
+      document.body.style.overscrollBehavior = previousOverscroll;
     };
   }, [open]);
 

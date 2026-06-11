@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { buildBeneficiaryGroupSummary, parseBeneficiaryAge } from "@/domain";
 import { REGION_OPTIONS, SEX_OPTIONS } from "@/lib/quote-criteria-options";
-import { touchTarget, ui } from "@/lib/ui-tokens";
+import { criteriaBar, touchTarget, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type {
   BeneficiaryGroupSummary,
@@ -107,7 +107,7 @@ export function PublicQuoteCriteriaBar({
   const insuredCount = 1 + beneficiaries.dependents.length;
 
   return (
-    <section className="rounded-2xl bg-[#fff8e8] p-4 shadow-sm ring-1 ring-[#f0e4c8] sm:p-5">
+    <section className={criteriaBar}>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1.4fr_1.2fr_5rem_6.5rem_auto_auto] lg:items-end lg:gap-4">
         <div className="space-y-1.5">
           <label htmlFor="qc-region" className="text-xs font-semibold text-muted">
@@ -254,7 +254,7 @@ export function PublicQuoteCriteriaBar({
           onClick={onCalculate}
           className={joinClasses(
             touchTarget,
-            "h-11 rounded-full px-8 text-sm font-bold text-white shadow-[0_8px_24px_-8px_var(--primary)] transition hover:brightness-105 sm:col-span-2 lg:col-span-1",
+            "h-11 rounded-full px-8 text-sm font-bold text-white shadow-[var(--shadow-cta)] transition hover:brightness-105 sm:col-span-2 lg:col-span-1",
             ui.cta,
           )}
         >

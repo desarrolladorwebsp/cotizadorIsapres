@@ -1,12 +1,56 @@
-/** URL de descarga directa para PDFs alojados en Cloudinary. */
-export function getPlanPdfDownloadUrl(pdfUrl: string): string {
-  if (
-    pdfUrl.includes("res.cloudinary.com") &&
-    pdfUrl.includes("/upload/") &&
-    !pdfUrl.includes("/upload/fl_attachment/")
-  ) {
-    return pdfUrl.replace("/upload/", "/upload/fl_attachment/");
+import {
+  buildPlanPdfStorageKey,
+  normalizePlanPdfStorageKey,
+} from "@/lib/plan-pdf-storage/paths";
+
+export { buildPlanPdfFileName, ensurePdfExtension } from "@/lib/pdf-filename";
+
+/** Acepta camelCase (admin) o snake_case (HealthPlan / API). */
+export interface PlanPdfLinkInput {
+  pdfUrl?: string | null;
+  pdfPublicId?: string | null;
+  pdf_url?: string | null;
+  pdf_public_id?: string | null;
+  isapre?: string;
+  uniqueCode?: string;
+  unique_code?: string;
+}
+
+function normalizePlanPdfInput(input: PlanPdfLinkInput) {
+  return {
+    pdfUrl: (input.pdfUrl ?? input.pdf_url ?? null)?.trim() || null,
+    pdfPublicId: (input.pdfPublicId ?? input.pdf_public_id ?? null)?.trim() || null,
+    uniqueCode: (input.uniqueCode ?? input.unique_code ?? null)?.trim() || null,
+    isapre: input.isapre?.trim() || null,
+  };
+}
+
+export function resolvePlanPdfStoragePath(input: PlanPdfLinkInput): string | null {
+  const { pdfPublicId, isapre, uniqueCode } = normalizePlanPdfInput(input);
+
+  if (pdfPublicId) return normalizePlanPdfStorageKey(pdfPublicId);
+
+  if (isapre && uniqueCode) {
+    return buildPlanPdfStorageKey(isapre, uniqueCode);
   }
 
-  return pdfUrl;
+  return null;
+}
+
+/** Solo planes con referencia explícita en BD (no infiere por isapre/código). */
+export function planHasPdf(input: PlanPdfLinkInput): boolean {
+  const { pdfUrl, pdfPublicId } = normalizePlanPdfInput(input);
+  return Boolean(pdfPublicId || pdfUrl);
+}
+
+/** Enlace de descarga del PDF vía API local. */
+export function getPlanPdfDownloadUrl(input: PlanPdfLinkInput): string | null {
+  const { pdfUrl, pdfPublicId, uniqueCode } = normalizePlanPdfInput(input);
+
+  if (!pdfPublicId && !pdfUrl) return null;
+  if (!uniqueCode) return null;
+
+  if (pdfUrl) return pdfUrl;
+
+  return `/api/plans/${encodeURIComponent(uniqueCode)}/pdf`;
 }

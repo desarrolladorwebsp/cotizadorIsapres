@@ -1,18 +1,29 @@
 import type {
   PlanPdfUploadResult,
   UploadPlanPdfRequest,
-} from "@/lib/cloudinary/types";
+} from "@/lib/plan-pdf-storage/types";
 import type { Clinic } from "@/types/clinic";
 import type { HealthPlan } from "@/types/plan";
 
 async function parseJsonResponse<T>(response: Response): Promise<T> {
-  const data = (await response.json()) as T & { error?: string };
+  let data: (T & { error?: string }) | null = null;
 
-  if (!response.ok) {
-    throw new Error(data.error ?? "Error en la solicitud.");
+  try {
+    data = (await response.json()) as T & { error?: string };
+  } catch {
+    if (!response.ok) {
+      throw new Error(
+        `Error en la solicitud (${response.status}). El servidor no respondió correctamente.`,
+      );
+    }
+    throw new Error("Respuesta inválida del servidor.");
   }
 
-  return data;
+  if (!response.ok) {
+    throw new Error(data?.error ?? `Error en la solicitud (${response.status}).`);
+  }
+
+  return data as T;
 }
 
 export async function fetchPlans(): Promise<HealthPlan[]> {
@@ -86,22 +97,22 @@ export async function deleteClinic(clinicId: string): Promise<void> {
 export async function uploadPlanPdf(
   file: File,
   params: UploadPlanPdfRequest,
-): Promise<PlanPdfUploadResult> {
+): Promise<PlanPdfUploadResult & { publicId: string }> {
   const formData = new FormData();
   formData.append("file", file);
   formData.append("uniqueCode", params.uniqueCode);
   formData.append("isapre", params.isapre);
 
-  if (params.previousPublicId) {
-    formData.append("previousPublicId", params.previousPublicId);
+  if (params.previousStoragePath) {
+    formData.append("previousStoragePath", params.previousStoragePath);
   }
 
-  const response = await fetch("/api/cloudinary/plan-pdf", {
+  const response = await fetch("/api/plans/pdf", {
     method: "POST",
     body: formData,
   });
 
-  return parseJsonResponse<PlanPdfUploadResult>(response);
+  return parseJsonResponse<PlanPdfUploadResult & { publicId: string }>(response);
 }
 
 export function createEmptyPlan(): HealthPlan {

@@ -14,9 +14,9 @@ export interface HealthPlan {
   base_price_uf: number;
   has_top: boolean;
   additional_notes: string | null;
-  /** URL del PDF oficial del plan en Cloudinary. */
+  /** URL de descarga del PDF vía API local. */
   pdf_url: string | null;
-  /** Identificador público en Cloudinary para reemplazos o descargas. */
+  /** Ruta relativa en storage/planes-pdf (ej. consalud/13-sf1001-26.pdf). */
   pdf_public_id: string | null;
   coverage: CoverageEntry[];
 }

@@ -10,8 +10,10 @@ import {
 import { touchTarget, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type { DashboardFiltersState } from "@/domain";
+import { FILTER_HELP } from "@/lib/filter-help-content";
 import { CoveragePercentageFilter } from "./coverage-percentage-filter";
 import { FilterCheckboxList } from "./filter-checkbox-list";
+import { FilterHelpBlock } from "./filter-info-tip";
 import { FilterSection } from "./filter-section";
 
 export interface DashboardFiltersPanelProps {
@@ -53,6 +55,14 @@ export function DashboardFiltersPanel({
         <FilterSection
           title="Filtrado por Isapre"
           description="Selecciona una o más Isapres para acotar los resultados."
+          infoLabel="Información sobre Isapres"
+          info={
+            <FilterHelpBlock
+              title={FILTER_HELP.isapre.title}
+              paragraphs={FILTER_HELP.isapre.body}
+              source={FILTER_HELP.isapre.source}
+            />
+          }
         >
           <FilterCheckboxList
             options={ISAPRE_FILTER_OPTIONS}
@@ -86,6 +96,15 @@ export function DashboardFiltersPanel({
         <FilterSection
           title="Filtrado por Tipo de Plan"
           description="Modalidad de contratación del plan de salud."
+          infoLabel="Información sobre tipos de plan"
+          info={
+            <FilterHelpBlock
+              title={FILTER_HELP.planType.title}
+              items={FILTER_HELP.planType.items}
+              footnote={FILTER_HELP.planType.footnote}
+              source={FILTER_HELP.planType.source}
+            />
+          }
         >
           <FilterCheckboxList
             options={PLAN_TYPE_FILTER_OPTIONS}
@@ -106,6 +125,15 @@ export function DashboardFiltersPanel({
         <FilterSection
           title="Filtrado por Cobertura"
           description="Umbral mínimo de cobertura hospitalaria y ambulatoria."
+          infoLabel="Información sobre porcentajes de cobertura"
+          info={
+            <FilterHelpBlock
+              title={FILTER_HELP.coverage.title}
+              paragraphs={FILTER_HELP.coverage.body}
+              items={FILTER_HELP.coverage.items}
+              source={FILTER_HELP.coverage.source}
+            />
+          }
         >
           <div className="space-y-6">
             <CoveragePercentageFilter

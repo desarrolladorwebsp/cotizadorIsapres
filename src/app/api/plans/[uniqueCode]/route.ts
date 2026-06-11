@@ -1,13 +1,20 @@
 import { NextResponse } from "next/server";
 import {
+  apiErrorResponse,
+  parseJsonBody,
+} from "@/lib/api/api-error";
+import {
+  deletePlanRecord,
   readPlanByCode,
-  readPlans,
-  writePlans,
+  updatePlanRecord,
 } from "@/lib/api/data-store";
-import { isValidPlan, normalizePlan } from "@/lib/api/plan-validation";
-import { deletePlanPdf } from "@/lib/cloudinary/delete-plan-pdf";
-import { isCloudinaryConfigured } from "@/lib/cloudinary/env";
-import type { HealthPlan } from "@/types/plan";
+import {
+  getPlanValidationError,
+  isValidPlan,
+  normalizePlan,
+} from "@/lib/api/plan-validation";
+import { collectPlanPdfCleanupKeys } from "@/lib/plan-pdf-storage/paths";
+import { deletePlanPdfVariants } from "@/lib/plan-pdf-storage/delete";
 
 interface RouteContext {
   params: Promise<{ uniqueCode: string }>;
@@ -28,10 +35,8 @@ export async function GET(_request: Request, context: RouteContext) {
     return NextResponse.json(plan);
   } catch (error) {
     console.error("GET /api/plans/[uniqueCode]", error);
-    return NextResponse.json(
-      { error: "No se pudo obtener el plan." },
-      { status: 500 },
-    );
+    const { body, status } = apiErrorResponse(error);
+    return NextResponse.json(body, { status });
   }
 }
 
@@ -39,11 +44,12 @@ export async function PUT(request: Request, context: RouteContext) {
   try {
     const { uniqueCode } = await context.params;
     const decodedCode = decodeURIComponent(uniqueCode);
-    const payload = (await request.json()) as unknown;
+    const payload = await parseJsonBody(request);
 
+    const validationError = getPlanValidationError(payload);
     if (!isValidPlan(payload)) {
       return NextResponse.json(
-        { error: "Datos del plan inválidos." },
+        { error: validationError ?? "Datos del plan inválidos." },
         { status: 400 },
       );
     }
@@ -57,27 +63,12 @@ export async function PUT(request: Request, context: RouteContext) {
       );
     }
 
-    const plans = await readPlans();
-    const index = plans.findIndex((plan) => plan.unique_code === decodedCode);
-
-    if (index === -1) {
-      return NextResponse.json(
-        { error: "Plan no encontrado." },
-        { status: 404 },
-      );
-    }
-
-    const nextPlans = [...plans];
-    nextPlans[index] = plan;
-    await writePlans(nextPlans);
-
-    return NextResponse.json(plan);
+    const updated = await updatePlanRecord(plan);
+    return NextResponse.json(updated);
   } catch (error) {
     console.error("PUT /api/plans/[uniqueCode]", error);
-    return NextResponse.json(
-      { error: "No se pudo actualizar el plan." },
-      { status: 500 },
-    );
+    const { body, status } = apiErrorResponse(error);
+    return NextResponse.json(body, { status });
   }
 }
 
@@ -85,38 +76,27 @@ export async function DELETE(_request: Request, context: RouteContext) {
   try {
     const { uniqueCode } = await context.params;
     const decodedCode = decodeURIComponent(uniqueCode);
-    const plans = await readPlans();
-    const planToDelete = plans.find((plan) => plan.unique_code === decodedCode);
+    const deletedPlan = await deletePlanRecord(decodedCode);
 
-    if (!planToDelete) {
+    if (!deletedPlan) {
       return NextResponse.json(
         { error: "Plan no encontrado." },
         { status: 404 },
       );
     }
 
-    const nextPlans = plans.filter(
-      (plan) => plan.unique_code !== decodedCode,
+    await deletePlanPdfVariants(
+      collectPlanPdfCleanupKeys(
+        deletedPlan.isapre,
+        deletedPlan.unique_code,
+        deletedPlan.pdf_public_id,
+      ),
     );
 
-    await writePlans(nextPlans);
-
-    if (
-      isCloudinaryConfigured() &&
-      planToDelete.pdf_public_id?.trim()
-    ) {
-      try {
-        await deletePlanPdf(planToDelete.pdf_public_id);
-      } catch (error) {
-        console.warn("No se pudo eliminar el PDF en Cloudinary:", error);
-      }
-    }
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error("DELETE /api/plans/[uniqueCode]", error);
-    return NextResponse.json(
-      { error: "No se pudo eliminar el plan." },
-      { status: 500 },
-    );
+    const { body, status } = apiErrorResponse(error);
+    return NextResponse.json(body, { status });
   }
 }

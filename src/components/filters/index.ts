@@ -5,6 +5,7 @@ export {
   type DashboardFiltersPanelProps,
 } from "./dashboard-filters-panel";
 export { FilterSection, type FilterSectionProps } from "./filter-section";
+export { FilterInfoTip, FilterHelpBlock } from "./filter-info-tip";
 export {
   FilterCheckboxList,
   type FilterCheckboxListProps,

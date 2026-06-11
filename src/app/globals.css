@@ -39,6 +39,20 @@
 
   --shadow-card: 0 4px 24px -8px rgb(0 77 38 / 0.08);
   --shadow-card-hover: 0 12px 32px -10px rgb(0 177 89 / 0.22);
+  --shadow-cta: 0 8px 24px -8px rgb(0 177 89 / 0.45);
+
+  /* Barra de criterios (estilo QuePlan, tono crema Isapres) */
+  --criteria-surface: #fff8e8;
+  --criteria-ring: #f0e4c8;
+
+  /* Espaciado base 8pt */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
 }
 
 @theme inline {
@@ -67,10 +81,67 @@
   border-color: var(--border);
 }
 
+/*
+ * Contención móvil — evita desborde lateral y rebote elástico del navegador.
+ * No altera tokens ni estilos de componentes; solo ancla el viewport.
+ */
+html {
+  width: 100%;
+  overflow-x: clip;
+  overscroll-behavior: none;
+}
+
 body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+  overscroll-behavior: none;
   background: var(--bg-layout);
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Envoltorio seguro para hijos que puedan exceder el ancho del viewport */
+.safe-width {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Foco accesible global */
+:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--primary) 55%, transparent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Utilidad para animaciones opcionales */
+@media (prefers-reduced-motion: no-preference) {
+  .motion-safe-fade-in {
+    animation: cotizador-fade-in 0.4s ease-out both;
+  }
+}
+
+@keyframes cotizador-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
