@@ -6,7 +6,7 @@ import { horizontalScrollRail, touchTarget, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 
 const NAV_ITEMS = [
-  { href: "/cotizador", label: "Clientes", shortLabel: "Clientes" },
+  { href: "/", label: "Clientes", shortLabel: "Clientes" },
   {
     href: "/cotizador/ejecutivos",
     label: "Ejecutivos",
@@ -34,8 +34,8 @@ export function CotizadorNav() {
       >
         {NAV_ITEMS.map((item) => {
           const isActive =
-            item.href === "/cotizador"
-              ? pathname === "/cotizador"
+            item.href === "/"
+              ? pathname === "/" || pathname === "/cotizador"
               : pathname.startsWith(item.href);
 
           return (

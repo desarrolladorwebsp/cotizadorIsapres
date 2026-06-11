@@ -1,5 +1,5 @@
-import { PublicCotizadorView } from "@/components/cotizador";
+import { redirect } from "next/navigation";
 
-export default function CotizadorClientPage() {
-  return <PublicCotizadorView />;
+export default function LegacyCotizadorPage() {
+  redirect("/");
 }

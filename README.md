@@ -1,16 +1,24 @@
 # Cotizador Inteligente — Next.js
 
-Sistema único con tres vistas principales bajo `/cotizador`.
+Sistema único con tres vistas principales.
 
 ## Vistas
 
 | Ruta | Audiencia |
 |------|-----------|
-| `/cotizador` | Clientes — cotizar y contratar |
+| `/` | Clientes — cotizar y contratar |
 | `/cotizador/ejecutivos` | Ejecutivos Isapre — cotización profesional |
 | `/cotizador/admin` | Administración de planes y clínicas |
 
-La raíz `/` redirige a `/cotizador`.
+`/cotizador` redirige a `/` por compatibilidad.
+
+## Despliegue en Vercel
+
+1. Conectar el repositorio `desarrolladorwebsp/cotizadorIsapres`.
+2. **Root Directory:** dejar vacío (`.`). No usar `cotizador-web` — el código ya está en la raíz del repo.
+3. **Framework Preset:** Next.js (detectado automáticamente).
+4. Variables de entorno: `DATABASE_URL` (Neon con pooler).
+5. Tras el deploy, verificar `https://tu-dominio.vercel.app/api/health` → debe responder `{ "ok": true }`.
 
 ## API
 

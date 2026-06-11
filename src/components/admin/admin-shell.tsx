@@ -53,7 +53,7 @@ export function AdminShell({
           </div>
 
           <Link
-            href="/cotizador"
+            href="/"
             className={joinClasses(
               "hidden rounded-lg px-4 text-sm font-semibold sm:inline-flex",
               touchTarget,
@@ -114,7 +114,7 @@ export function AdminShell({
 
       <div className="shrink-0 border-t bg-white p-3 sm:hidden">
         <Link
-          href="/cotizador"
+          href="/"
           className={joinClasses(
             "flex w-full items-center justify-center rounded-lg text-sm font-semibold",
             touchTarget,

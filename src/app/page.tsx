@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { PublicCotizadorView } from "@/components/cotizador";
 
 export default function HomePage() {
-  redirect("/cotizador");
+  return <PublicCotizadorView />;
 }
