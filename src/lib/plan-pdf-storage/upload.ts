@@ -1,43 +1,18 @@
-import { mkdir, writeFile } from "fs/promises";
-import path from "path";
 import { ApiError } from "@/lib/api/api-error";
-import {
-  PLAN_PDF_ALLOWED_MIME_TYPES,
-  PLAN_PDF_MAX_BYTES,
-} from "@/lib/plan-pdf-storage/constants";
-import { deletePlanPdfVariants } from "@/lib/plan-pdf-storage/delete";
 import {
   buildPlanPdfApiUrl,
   buildPlanPdfStorageKey,
   collectPlanPdfCleanupKeys,
-  resolveAbsolutePdfPath,
 } from "@/lib/plan-pdf-storage/paths";
+import { deletePlanPdfVariants } from "@/lib/plan-pdf-storage/delete";
+import { saveBlobPlanPdf } from "@/lib/plan-pdf-storage/blob";
+import { saveLocalPlanPdf } from "@/lib/plan-pdf-storage/local";
+import { useVercelBlobStorage } from "@/lib/plan-pdf-storage/provider";
 import type {
   PlanPdfUploadResult,
   UploadPlanPdfInput,
 } from "@/lib/plan-pdf-storage/types";
-
-function assertValidPdfUpload(
-  fileBuffer: Buffer,
-  mimeType: string | undefined,
-): void {
-  if (fileBuffer.byteLength === 0) {
-    throw new ApiError("El archivo PDF está vacío.", 400);
-  }
-
-  if (fileBuffer.byteLength > PLAN_PDF_MAX_BYTES) {
-    throw new ApiError("El PDF supera el tamaño máximo permitido (15 MB).", 400);
-  }
-
-  if (mimeType && !PLAN_PDF_ALLOWED_MIME_TYPES.has(mimeType)) {
-    throw new ApiError("Solo se permiten archivos PDF.", 400);
-  }
-
-  const header = fileBuffer.subarray(0, 4).toString("utf8");
-  if (!header.startsWith("%PDF")) {
-    throw new ApiError("El archivo no parece ser un PDF válido.", 400);
-  }
-}
+import { assertValidPdfUpload } from "@/lib/plan-pdf-storage/validate";
 
 export async function savePlanPdf({
   fileBuffer,
@@ -63,19 +38,31 @@ export async function savePlanPdf({
   assertValidPdfUpload(fileBuffer, mimeType);
 
   const storageKey = buildPlanPdfStorageKey(trimmedIsapre, trimmedCode);
-  const absolutePath = resolveAbsolutePdfPath(storageKey);
 
   await deletePlanPdfVariants(
     collectPlanPdfCleanupKeys(trimmedIsapre, trimmedCode, previousStoragePath),
   );
 
-  await mkdir(path.dirname(absolutePath), { recursive: true });
-  await writeFile(absolutePath, fileBuffer);
+  if (useVercelBlobStorage()) {
+    const uploaded = await saveBlobPlanPdf(storageKey, fileBuffer);
+
+    return {
+      url: uploaded.downloadUrl,
+      blobUrl: uploaded.url,
+      storagePath: storageKey,
+      bytes: uploaded.bytes,
+      uploadedAt: new Date().toISOString(),
+      backend: "blob",
+    };
+  }
+
+  const uploaded = await saveLocalPlanPdf(storageKey, fileBuffer);
 
   return {
     url: buildPlanPdfApiUrl(trimmedCode),
     storagePath: storageKey,
-    bytes: fileBuffer.byteLength,
+    bytes: uploaded.bytes,
     uploadedAt: new Date().toISOString(),
+    backend: "local",
   };
 }

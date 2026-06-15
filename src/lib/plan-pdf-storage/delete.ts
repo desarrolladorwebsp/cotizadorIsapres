@@ -1,16 +1,15 @@
-import { unlink } from "fs/promises";
-import { existsSync } from "fs";
-import { resolveAbsolutePdfPath } from "@/lib/plan-pdf-storage/paths";
+import {
+  deleteBlobPlanPdf,
+} from "@/lib/plan-pdf-storage/blob";
+import { deleteLocalPlanPdf } from "@/lib/plan-pdf-storage/local";
+import { useVercelBlobStorage } from "@/lib/plan-pdf-storage/provider";
 
 export async function deletePlanPdfFile(storageKey: string): Promise<boolean> {
-  try {
-    const absolutePath = resolveAbsolutePdfPath(storageKey);
-    if (!existsSync(absolutePath)) return false;
-    await unlink(absolutePath);
-    return true;
-  } catch {
-    return false;
+  if (useVercelBlobStorage()) {
+    return deleteBlobPlanPdf(storageKey);
   }
+
+  return deleteLocalPlanPdf(storageKey);
 }
 
 export async function deletePlanPdfVariants(storageKeys: string[]): Promise<void> {
@@ -24,7 +23,7 @@ export async function deletePlanPdfVariants(storageKeys: string[]): Promise<void
         await deletePlanPdfFile(storageKey);
       } catch (error) {
         console.warn(
-          `No se pudo eliminar el PDF local (${storageKey}):`,
+          `No se pudo eliminar el PDF (${storageKey}):`,
           error,
         );
       }

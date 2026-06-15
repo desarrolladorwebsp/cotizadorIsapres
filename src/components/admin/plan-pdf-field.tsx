@@ -93,11 +93,12 @@ export function PlanPdfField({
           </FieldHint>
         ) : (
           <FieldHint className="mt-2">
-            Se guardará en{" "}
-            <span className="font-mono text-foreground">
-              storage/planes-pdf/{storagePath}
-            </span>
-            . Máximo {formatMaxSize()}.
+            Clave{" "}
+            <span className="font-mono text-foreground">{storagePath}</span>
+            {" · "}
+            En producción (Vercel Blob) o local en{" "}
+            <span className="font-mono">storage/planes-pdf/</span>. Máximo{" "}
+            {formatMaxSize()}.
           </FieldHint>
         )}
 

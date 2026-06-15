@@ -166,5 +166,53 @@
   {
     "id": "red-uc-christus-a3",
     "name": "Red de Salud UC Christus(A.3)"
+  },
+  {
+    "id": "cl-los-andes-la",
+    "name": "Clínica Los Andes Los Ángeles"
+  },
+  {
+    "id": "cl-andes-salud-talca",
+    "name": "Clínica Andes Salud Talca"
+  },
+  {
+    "id": "cl-andes-salud-chillan",
+    "name": "Clínica Andes Salud Chillán"
+  },
+  {
+    "id": "cl-andes-salud-concepcion",
+    "name": "Clínica Andes Salud Concepción"
+  },
+  {
+    "id": "cl-biobio",
+    "name": "Clínica Biobío"
+  },
+  {
+    "id": "sanatorio-aleman",
+    "name": "Sanatorio Alemán"
+  },
+  {
+    "id": "cl-cordillera",
+    "name": "Clínica Cordillera"
+  },
+  {
+    "id": "cl-hospital-del-profesor",
+    "name": "Clínica Hospital del Profesor"
+  },
+  {
+    "id": "hosp-clinico-uch-a3",
+    "name": "Hospital Clínico Universidad de Chile (A.3)"
+  },
+  {
+    "id": "hosp-clinico-uch-a4",
+    "name": "Hospital Clínico Universidad de Chile (A.4)"
+  },
+  {
+    "id": "hosp-parroquial-san-bernardo",
+    "name": "Hospital Parroquial de San Bernardo"
+  },
+  {
+    "id": "red-uc-christus-a4",
+    "name": "Red de Salud UC Christus (A.4)"
   }
 ]

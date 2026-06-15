@@ -12,7 +12,10 @@
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
     "db:seed": "prisma db seed",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "upload-pdfs": "tsx scripts/upload-plan-pdfs.ts",
+    "verify-blob": "tsx scripts/verify-blob-connection.ts",
+    "sync-pdf-urls": "tsx scripts/sync-pdf-urls-from-blob.ts"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"
@@ -20,6 +23,7 @@
   "dependencies": {
     "@prisma/client": "^6.19.3",
     "@vercel/analytics": "^2.0.1",
+    "@vercel/blob": "^2.4.0",
     "framer-motion": "^12.40.0",
     "next": "^16.2.7",
     "react": "^19.2.7",

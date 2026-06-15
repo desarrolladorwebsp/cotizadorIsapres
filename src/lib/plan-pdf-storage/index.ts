@@ -16,8 +16,22 @@ export {
   sanitizeIsapreFolderName,
   sanitizePlanCodeFileName,
 } from "@/lib/plan-pdf-storage/paths";
-export { planPdfFileExists, readPlanPdfFile } from "@/lib/plan-pdf-storage/read";
+export {
+  planPdfFileExists,
+  planPdfFileExistsAsync,
+  readPlanPdfFile,
+} from "@/lib/plan-pdf-storage/read";
 export { savePlanPdf } from "@/lib/plan-pdf-storage/upload";
+export {
+  resolvePlanPdfStorageBackend,
+  useVercelBlobStorage,
+  getBlobClientConfig,
+  assertBlobConfigured,
+} from "@/lib/plan-pdf-storage/provider";
+export {
+  isVercelBlobUrl,
+  resolveBlobPlanPdfDownloadUrl,
+} from "@/lib/plan-pdf-storage/blob";
 export type {
   PlanPdfUploadResult,
   UploadPlanPdfInput,

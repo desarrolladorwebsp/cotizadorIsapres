@@ -20,6 +20,40 @@ Sistema único con tres vistas principales.
 4. Variables de entorno: `DATABASE_URL` (Neon con pooler).
 5. Tras el deploy, verificar `https://tu-dominio.vercel.app/api/health` → debe responder `{ "ok": true }`.
 
+## PDFs de planes (Vercel Blob)
+
+1. En Vercel → proyecto → **Storage** → **Create Blob Store** → conectar al proyecto.
+2. Copia las variables a **Vercel Environment Variables** y a `cotizador-web/.env.local`:
+
+```env
+PLAN_PDF_STORAGE=blob
+BLOB_READ_WRITE_TOKEN=vercel_blob_rw_...
+BLOB_STORE_ID=store_...
+```
+
+3. Verificar conexión:
+
+```bash
+npm run verify-blob
+```
+
+4. Coloca PDFs en `storage/planes-pdf/consalud/{codigo-plan}.pdf` y sube:
+
+```bash
+npm run upload-pdfs
+npm run upload-pdfs -- --dry-run   # simular
+```
+
+5. Si subiste blobs manualmente al dashboard, sincroniza URLs en BD:
+
+```bash
+npm run sync-pdf-urls
+```
+
+6. Health check: `GET /api/health` incluye estado de Blob.
+
+En desarrollo sin token Blob, los PDFs se guardan en disco local automáticamente.
+
 ## API
 
 | Método | Ruta | Descripción |

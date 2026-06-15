@@ -2,6 +2,7 @@ import {
   buildPlanPdfStorageKey,
   normalizePlanPdfStorageKey,
 } from "@/lib/plan-pdf-storage/paths";
+import { isVercelBlobUrl } from "@/lib/plan-pdf-storage/blob";
 
 export { buildPlanPdfFileName, ensurePdfExtension } from "@/lib/pdf-filename";
 
@@ -43,14 +44,20 @@ export function planHasPdf(input: PlanPdfLinkInput): boolean {
   return Boolean(pdfPublicId || pdfUrl);
 }
 
-/** Enlace de descarga del PDF vía API local. */
+/**
+ * Enlace de descarga del PDF.
+ * - Blob: URL directa guardada en pdf_url (o API que resuelve desde pdf_public_id).
+ * - Local: API /api/plans/{code}/pdf
+ */
 export function getPlanPdfDownloadUrl(input: PlanPdfLinkInput): string | null {
   const { pdfUrl, pdfPublicId, uniqueCode } = normalizePlanPdfInput(input);
 
   if (!pdfPublicId && !pdfUrl) return null;
   if (!uniqueCode) return null;
 
-  if (pdfUrl) return pdfUrl;
+  if (pdfUrl && (isVercelBlobUrl(pdfUrl) || pdfUrl.startsWith("http"))) {
+    return pdfUrl;
+  }
 
   return `/api/plans/${encodeURIComponent(uniqueCode)}/pdf`;
 }
