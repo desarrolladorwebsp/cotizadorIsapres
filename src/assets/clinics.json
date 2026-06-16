@@ -214,5 +214,37 @@
   {
     "id": "red-uc-christus-a4",
     "name": "Red de Salud UC Christus (A.4)"
+  },
+  {
+    "id": "cl-alemana-osorno",
+    "name": "Clínica Alemana de Osorno"
+  },
+  {
+    "id": "cl-alemana-temuco",
+    "name": "Clínica Alemana de Temuco"
+  },
+  {
+    "id": "cl-alemana-valdivia",
+    "name": "Clínica Alemana de Valdivia"
+  },
+  {
+    "id": "cl-andes-salud-puerto-montt",
+    "name": "Clínica Andes Salud Puerto Montt"
+  },
+  {
+    "id": "cl-puerto-montt",
+    "name": "Clínica Puerto Montt"
+  },
+  {
+    "id": "cl-puerto-varas",
+    "name": "Clínica Puerto Varas"
+  },
+  {
+    "id": "cl-redsalud-magallanes",
+    "name": "Clínica RedSalud Magallanes"
+  },
+  {
+    "id": "cl-redsalud-mayor",
+    "name": "Clínica RedSalud Mayor"
   }
 ]

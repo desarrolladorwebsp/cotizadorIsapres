@@ -19,6 +19,7 @@ export async function savePlanPdf({
   isapre,
   uniqueCode,
   mimeType,
+  zona,
   previousStoragePath,
 }: UploadPlanPdfInput): Promise<PlanPdfUploadResult> {
   const trimmedIsapre = isapre.trim();
@@ -37,11 +38,15 @@ export async function savePlanPdf({
 
   assertValidPdfUpload(fileBuffer, mimeType);
 
-  const storageKey = buildPlanPdfStorageKey(trimmedIsapre, trimmedCode);
+  const storageKey = buildPlanPdfStorageKey(trimmedIsapre, trimmedCode, zona);
 
-  await deletePlanPdfVariants(
-    collectPlanPdfCleanupKeys(trimmedIsapre, trimmedCode, previousStoragePath),
-  );
+  const cleanupKeys = collectPlanPdfCleanupKeys(
+    trimmedIsapre,
+    trimmedCode,
+    previousStoragePath,
+  ).filter((key) => key !== storageKey);
+
+  await deletePlanPdfVariants(cleanupKeys);
 
   if (useVercelBlobStorage()) {
     const uploaded = await saveBlobPlanPdf(storageKey, fileBuffer);

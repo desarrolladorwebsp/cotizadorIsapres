@@ -100,7 +100,34 @@ CLINIC_NAME_TO_ID = {
     "Hospital Parroquial de San Bernardo": "hosp-parroquial-san-bernardo",
     "Red de Salud UC Christus (A.3)": "red-uc-christus-a3",
     "Red de Salud UC Christus (A.4)": "red-uc-christus-a4",
+    # Sur (clínicas nuevas)
+    "Clínica Alemana de Osorno": "cl-alemana-osorno",
+    "Clínica Alemana de Temuco": "cl-alemana-temuco",
+    "Clínica Alemana de Valdivia": "cl-alemana-valdivia",
+    "Clínica Andes Salud Puerto Montt": "cl-andes-salud-puerto-montt",
+    "Clínica Puerto Montt": "cl-puerto-montt",
+    "Clínica Puerto Varas": "cl-puerto-varas",
+    "Clínica RedSalud Magallanes": "cl-redsalud-magallanes",
+    "Clínica RedSalud Mayor": "cl-redsalud-mayor",
+    # Sur (variantes con typos / artefactos del Excel)
+    "Clínica Alemana de Valdivia}": "cl-alemana-valdivia",
+    "Clínica San Carlos de poquindo": "cl-san-carlos",
+    "Hospital Clínicon Universidad Católica": "hosp-clinico-uc",
 }
+
+# Reparaciones de saltos de línea/typos en celdas del Excel SUR donde un mismo
+# nombre de clínica quedó partido en dos líneas o dos nombres quedaron pegados.
+COVERAGE_TEXT_FIXES = [
+    ("Clínica Andes Salud\nPuerto Montt", "Clínica Andes Salud Puerto Montt"),
+    ("Hospital Clínico\nUniversidad Católica", "Hospital Clínico Universidad Católica"),
+    ("VitacuraClínica Indisa Maipú", "Vitacura\nClínica Indisa Maipú"),
+]
+
+
+def repair_coverage_text(text: str) -> str:
+    for broken, fixed in COVERAGE_TEXT_FIXES:
+        text = text.replace(broken, fixed)
+    return text
 
 HOSPITALARIO_LABELS = {"PORCENTAJE HOSPITALARIO", "HOSPITALARIO"}
 AMBULATORIO_LABELS = {"PORCENTAJE AMBULATORIO", "AMBULATORIO"}
@@ -125,6 +152,8 @@ def normalize_cell_text(value) -> str:
 def parse_coverage_text(text: str, coverage_type: str) -> list[dict]:
     if not text:
         return []
+
+    text = repair_coverage_text(text)
 
     entries: list[dict] = []
     matches = list(COVERAGE_HEADER_PATTERN.finditer(text))

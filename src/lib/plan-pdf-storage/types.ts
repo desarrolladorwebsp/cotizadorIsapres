@@ -14,6 +14,8 @@ export interface UploadPlanPdfInput {
   isapre: string;
   uniqueCode: string;
   mimeType: string;
+  /** Zona/región opcional para organizar el blob: {isapre}/{zona}/{codigo}.pdf */
+  zona?: string | null;
   previousStoragePath?: string | null;
 }
 

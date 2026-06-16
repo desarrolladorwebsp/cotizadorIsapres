@@ -19,36 +19,47 @@ const prisma = new PrismaClient();
 interface PdfCandidate {
   absolutePath: string;
   uniqueCode: string;
-  isapre: string | null;
+  /** Carpeta de primer nivel bajo el root (isapre). */
+  isapreFolder: string | null;
+  /** Carpeta(s) intermedias entre la isapre y el archivo (zona/región). */
+  zona: string | null;
 }
 
 async function collectPdfFiles(rootDir: string): Promise<PdfCandidate[]> {
   const results: PdfCandidate[] = [];
 
-  async function walk(currentDir: string, isapreFolder: string | null) {
+  async function walk(currentDir: string) {
     const entries = await readdir(currentDir, { withFileTypes: true });
 
     for (const entry of entries) {
       const absolutePath = path.join(currentDir, entry.name);
 
       if (entry.isDirectory()) {
-        const nextIsapre = isapreFolder ?? entry.name;
-        await walk(absolutePath, nextIsapre);
+        await walk(absolutePath);
         continue;
       }
 
       if (!entry.name.toLowerCase().endsWith(".pdf")) continue;
 
+      const relative = path.relative(rootDir, absolutePath);
+      const segments = relative.split(path.sep);
       const uniqueCode = entry.name.replace(/\.pdf$/i, "");
+
+      // segments: [isapre, (zona...), archivo.pdf]
+      const isapreFolder = segments.length >= 2 ? segments[0] : null;
+      const zonaSegments = segments.slice(1, -1);
+      const zona = zonaSegments.length > 0 ? zonaSegments.join(" ") : null;
+
       results.push({
         absolutePath,
         uniqueCode,
-        isapre: isapreFolder,
+        isapreFolder,
+        zona,
       });
     }
   }
 
-  await walk(rootDir, null);
+  await walk(rootDir);
   return results;
 }
 
@@ -115,7 +126,11 @@ async function main() {
     }
 
     const isapreName = resolveIsapreNameFromId(plan.isapreId);
-    const storageKey = buildPlanPdfStorageKey(isapreName, plan.uniqueCode);
+    const storageKey = buildPlanPdfStorageKey(
+      isapreName,
+      plan.uniqueCode,
+      file.zona,
+    );
 
     if (planPdfAlreadySynced(plan, storageKey)) {
       skipped += 1;
@@ -135,6 +150,7 @@ async function main() {
         isapre: isapreName,
         uniqueCode: plan.uniqueCode,
         mimeType: "application/pdf",
+        zona: file.zona,
         previousStoragePath: plan.pdfPublicId,
       });
 
