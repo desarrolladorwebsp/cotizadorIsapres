@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useUfValue } from "@/hooks/use-uf-value";
-import { ui } from "@/lib/ui-tokens";
+import { publicCotizadorShell, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 
 export function PublicCotizadorHeader() {
@@ -22,7 +22,12 @@ export function PublicCotizadorHeader() {
         ui.border,
       )}
     >
-      <div className="mx-auto flex h-14 w-full max-w-7xl min-w-0 items-center gap-4 px-4 sm:h-16 sm:px-6 lg:px-8">
+      <div
+        className={joinClasses(
+          publicCotizadorShell,
+          "flex h-14 w-full min-w-0 items-center gap-4 px-3 sm:h-16 sm:px-4 lg:px-6",
+        )}
+      >
         <a
           href="/"
           className="flex min-w-0 shrink items-center rounded-lg transition hover:opacity-90 focus-visible:outline-offset-4"

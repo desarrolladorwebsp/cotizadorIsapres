@@ -15,6 +15,10 @@ export const touchRow =
 export const appShell =
   "mx-auto w-full max-w-7xl 2xl:max-w-[1600px]";
 
+/** Contenedor más ancho para la vista pública del cotizador. */
+export const publicCotizadorShell =
+  "mx-auto w-full max-w-[min(100%,1600px)] 2xl:max-w-[min(100%,1720px)]";
+
 /** Evita que un hijo empuje el layout horizontalmente. */
 export const safeWidth = "min-w-0 max-w-full";
 

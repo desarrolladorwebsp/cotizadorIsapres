@@ -1,13 +1,13 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { motion } from "framer-motion";
 import { CoverageColumnCompact } from "@/components/plan-card/coverage-column-compact";
 import {
   AmbulatoryCoverageIcon,
   HospitalCoverageIcon,
 } from "@/components/plan-card/coverage-column-icons";
-import { DownloadIcon } from "@/components/plan-card/icons";
+import { ChatIcon, DownloadIcon } from "@/components/plan-card/icons";
 import { IsapreLogo } from "@/components/plan-card/isapre-logo";
 import {
   buildPlanFinalPriceQuote,
@@ -21,8 +21,7 @@ import {
 import { useInView } from "@/hooks/use-in-view";
 import { usePlanDetail } from "@/hooks/use-plan-detail";
 import {
-  accent,
-  statusBadgeToneClass,
+  motionGpu,
   touchTarget,
   ui,
 } from "@/lib/ui-tokens";
@@ -45,108 +44,132 @@ export interface PublicPlanCardProps {
   onRequest: () => void;
 }
 
-type ActionIconVariant = "pdf" | "request";
+const planCardShadowRest =
+  "0 1px 2px rgb(0 0 0 / 0.04), 0 6px 20px -4px rgb(0 0 0 / 0.1)";
 
-const planTagPill =
-  "inline-flex shrink-0 items-center rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase leading-none sm:text-[11px]";
+const planCardShadowHover =
+  "0 0 0 1px var(--primary), var(--shadow-card-hover)";
 
-const planTagStyles = {
-  id: joinClasses(
-    planTagPill,
+const metaChip =
+  "inline-flex shrink-0 items-center gap-1 rounded-lg border px-2.5 py-1 text-[10px] font-semibold leading-tight sm:text-[11px]";
+
+const planMetaStyles = {
+  code: joinClasses(
+    metaChip,
     ui.borderHairline,
-    "bg-surface-hover font-mono normal-case tracking-tight text-muted",
+    "bg-surface-hover font-mono text-[10px] font-medium normal-case tracking-wide text-foreground/70",
   ),
   base: joinClasses(
-    planTagPill,
-    "border-primary/25 bg-primary/10 text-primary-dark",
+    metaChip,
+    "border-primary/20 bg-primary/5 text-primary-dark",
   ),
-  top: joinClasses(planTagPill, statusBadgeToneClass.top),
+  top: joinClasses(
+    metaChip,
+    "border-primary/30 bg-primary text-primary-foreground shadow-sm",
+  ),
 } as const;
 
-const planTypeTagStyle: Record<PlanTypeFilterId, string> = {
-  preferred: joinClasses(planTagPill, statusBadgeToneClass.preferred),
-  closed: joinClasses(planTagPill, statusBadgeToneClass.closed),
-  free_choice: joinClasses(planTagPill, statusBadgeToneClass.free_choice),
+const planTypeMetaStyle: Record<PlanTypeFilterId, string> = {
+  preferred: joinClasses(
+    metaChip,
+    "border-amber-300/60 bg-amber-50 text-amber-950",
+  ),
+  closed: joinClasses(
+    metaChip,
+    "border-secondary/35 bg-secondary-muted text-secondary",
+  ),
+  free_choice: joinClasses(
+    metaChip,
+    ui.borderHairline,
+    "bg-white text-muted",
+  ),
 };
 
-const actionIconStyles: Record<
-  ActionIconVariant,
-  { circle: string; label: string }
-> = {
-  pdf: {
-    circle: joinClasses(
-      accent.iconDanger,
-      "border border-accent-danger/30",
-    ),
-    label: "text-accent-danger",
-  },
-  request: {
-    circle: joinClasses(
-      accent.iconPrimary,
-      "border border-primary/25",
-    ),
-    label: "text-primary-dark",
-  },
-};
+const planActionBase = joinClasses(
+  touchTarget,
+  "inline-flex h-10 items-center gap-1.5 rounded-full px-3.5 text-xs font-bold transition active:scale-[0.98]",
+);
 
-function ActionIconShell({
+const planActionIconCircle =
+  "flex size-5 shrink-0 items-center justify-center rounded-full [&_svg]:size-3.5";
+
+function PlanCardActionButton({
   label,
-  variant,
-  children,
-}: {
-  label: string;
-  variant: ActionIconVariant;
-  children: React.ReactNode;
-}) {
-  const styles = actionIconStyles[variant];
-
-  return (
-    <div className="flex flex-col items-center gap-0.5 px-0 py-0.5">
-      <span
-        className={joinClasses(
-          "flex size-9 shrink-0 items-center justify-center rounded-full border p-0 leading-none [&_svg]:size-5",
-          styles.circle,
-        )}
-      >
-        {children}
-      </span>
-      <span
-        className={joinClasses(
-          "text-[9px] font-bold uppercase tracking-wide sm:text-[10px]",
-          styles.label,
-        )}
-      >
-        {label}
-      </span>
-    </div>
-  );
-}
-
-function ActionIconButton({
-  label,
+  icon,
   variant,
   onClick,
-  children,
+  href,
+  download,
+  target,
+  rel,
+  title,
 }: {
   label: string;
-  variant: ActionIconVariant;
+  icon: ReactNode;
+  variant: "primary" | "secondary";
   onClick?: () => void;
-  children: React.ReactNode;
+  href?: string;
+  download?: string;
+  target?: string;
+  rel?: string;
+  title?: string;
 }) {
+  const isPrimary = variant === "primary";
+
+  const className = joinClasses(
+    planActionBase,
+    isPrimary
+      ? joinClasses(
+          ui.cta,
+          "shadow-[var(--shadow-cta)] hover:brightness-105",
+        )
+      : joinClasses(
+          ui.border,
+          "border bg-white text-foreground shadow-sm hover:border-primary/35 hover:bg-primary/5 hover:text-primary-dark",
+        ),
+  );
+
+  const iconClassName = joinClasses(
+    planActionIconCircle,
+    isPrimary
+      ? "bg-white/20 text-primary-foreground"
+      : "bg-primary/10 text-primary-dark",
+  );
+
+  const content = (
+    <>
+      <span className={iconClassName} aria-hidden>
+        {icon}
+      </span>
+      {label}
+    </>
+  );
+
+  if (href) {
+    return (
+      <a
+        href={href}
+        download={download}
+        target={target}
+        rel={rel}
+        title={title}
+        aria-label={title ?? label}
+        className={className}
+      >
+        {content}
+      </a>
+    );
+  }
+
   return (
     <button
       type="button"
       onClick={onClick}
-      title={label}
-      aria-label={label}
-      className={joinClasses(
-        touchTarget,
-        "rounded-lg p-0 transition hover:brightness-95 active:scale-[0.98]",
-      )}
+      title={title}
+      aria-label={title ?? label}
+      className={className}
     >
-      <ActionIconShell label={label} variant={variant}>
-        {children}
-      </ActionIconShell>
+      {content}
     </button>
   );
 }
@@ -158,6 +181,7 @@ export function PublicPlanCard({
   currency,
   onRequest,
 }: PublicPlanCardProps) {
+  const [isHovered, setIsHovered] = useState(false);
   const { ref, inView } = useInView<HTMLElement>();
   const { plan: detailPlan, loading: detailLoading } = usePlanDetail(
     plan.unique_code,
@@ -192,9 +216,17 @@ export function PublicPlanCard({
     <motion.article
       ref={ref}
       layout="position"
+      onHoverStart={() => setIsHovered(true)}
+      onHoverEnd={() => setIsHovered(false)}
+      animate={{
+        y: isHovered ? -4 : 0,
+        borderColor: isHovered ? "var(--primary)" : "var(--border)",
+        boxShadow: isHovered ? planCardShadowHover : planCardShadowRest,
+      }}
+      transition={{ type: "spring", stiffness: 380, damping: 30 }}
       className={joinClasses(
-        ui.surfaceCard,
-        "overflow-hidden transition-shadow hover:shadow-card-hover",
+        motionGpu,
+        "overflow-hidden rounded-xl border bg-white",
       )}
     >
       {/* Cabecera — hero del plan */}
@@ -202,7 +234,7 @@ export function PublicPlanCard({
         className={joinClasses(
           "flex flex-col gap-3 border-b px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-4",
           ui.border,
-          "bg-surface-hover",
+          "bg-white",
         )}
       >
         <div className="flex min-w-0 flex-1 items-start gap-2.5 sm:gap-3">
@@ -212,14 +244,19 @@ export function PublicPlanCard({
             <h3 className="truncate text-xs font-bold uppercase leading-snug tracking-wide text-primary-dark sm:text-sm">
               {commercialName}
             </h3>
-            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-              <span className={planTagStyles.id}>{plan.unique_code}</span>
-              <span className={planTagStyles.base}>
-                Base {formatQuotedUf(plan.base_price_uf).replace("UF ", "")}
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+              <span className={planMetaStyles.code} title="Código del plan">
+                {plan.unique_code}
               </span>
-              <span className={planTypeTagStyle[planType]}>{planTypeLabel}</span>
+              <span className={planMetaStyles.base} title="Precio base en UF">
+                <span className="font-normal text-primary-dark/70">Base</span>
+                <span className="font-bold tabular-nums">
+                  {formatQuotedUf(plan.base_price_uf).replace("UF ", "")} UF
+                </span>
+              </span>
+              <span className={planTypeMetaStyle[planType]}>{planTypeLabel}</span>
               {plan.has_top ? (
-                <span className={planTagStyles.top}>Top</span>
+                <span className={planMetaStyles.top}>Top</span>
               ) : null}
             </div>
           </div>
@@ -255,40 +292,26 @@ export function PublicPlanCard({
             </div>
           </div>
 
-          <div className="flex items-center gap-0.5 sm:gap-1">
+          <div className="flex items-center gap-2">
             {planHasPdf(plan) ? (
-              <a
+              <PlanCardActionButton
+                label="PDF"
+                icon={<DownloadIcon />}
+                variant="secondary"
                 href={getPlanPdfDownloadUrl(plan) ?? "#"}
                 target="_blank"
                 rel="noopener noreferrer"
                 download={buildPlanPdfFileName(plan.unique_code)}
-                title="Descargar PDF"
-                aria-label="Descargar PDF"
-                className={joinClasses(
-                  touchTarget,
-                  "rounded-lg p-0 transition hover:brightness-95",
-                )}
-              >
-                <ActionIconShell label="PDF" variant="pdf">
-                  <DownloadIcon />
-                </ActionIconShell>
-              </a>
-            ) : (
-              <ActionIconButton
-                label="PDF"
-                variant="pdf"
-                onClick={() =>
-                  window.alert(
-                    "El PDF de este plan estará disponible pronto.",
-                  )
-                }
-              >
-                <DownloadIcon />
-              </ActionIconButton>
-            )}
-            <ActionIconButton label="Solicitar" variant="request" onClick={onRequest}>
-              <span className="text-lg font-bold leading-none">✉</span>
-            </ActionIconButton>
+                title="Descargar PDF del plan"
+              />
+            ) : null}
+            <PlanCardActionButton
+              label="Solicitar"
+              icon={<ChatIcon />}
+              variant="primary"
+              onClick={onRequest}
+              title="Solicitar cotización del plan"
+            />
           </div>
         </div>
       </div>

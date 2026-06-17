@@ -12,9 +12,9 @@ import {
 } from "@/lib/plan-search-config";
 import type { QuoteSortKey } from "@/lib/quote-criteria-options";
 import {
-  appShell,
   appShellRoot,
   appShellScroll,
+  publicCotizadorShell,
   safeWidth,
   touchTarget,
   ui,
@@ -195,35 +195,19 @@ export function PublicCotizadorView() {
         className={joinClasses(
           appShellScroll,
           safeWidth,
-          "px-4 py-5 sm:px-6 sm:py-6 lg:px-8",
+          "px-3 py-5 sm:px-4 sm:py-6 lg:px-6",
         )}
       >
-        <div className={joinClasses(appShell, safeWidth, "space-y-5")}>
+        <div className={joinClasses(publicCotizadorShell, safeWidth, "space-y-5")}>
           <header
             className={joinClasses(safeWidth, "motion-safe-fade-in space-y-2")}
           >
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">
               Cotizador en línea
             </p>
-            <div className={joinClasses(safeWidth, "flex items-center gap-2")}>
-              <h1 className="text-2xl font-bold tracking-tight text-primary-dark sm:text-3xl">
-                Encuentra tu plan de salud
-              </h1>
-              <span
-                className="rounded-md bg-primary/10 px-2 py-1 text-primary-dark"
-                title="Información de planes"
-                aria-hidden
-              >
-                <svg viewBox="0 0 24 24" fill="none" className="size-4">
-                  <path
-                    d="M12 16v-4M12 8h.01M4 6a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6z"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </span>
-            </div>
+            <h1 className="text-2xl font-bold tracking-tight text-primary-dark sm:text-3xl">
+              Encuentra tu plan de salud
+            </h1>
           </header>
 
           <PublicQuoteCriteriaBar

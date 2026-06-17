@@ -27,7 +27,7 @@ export function FiltersFab({
           onClick={onClick}
           aria-label="Abrir filtros y beneficiarios"
           className={joinClasses(
-            "fixed bottom-5 right-5 z-40 inline-flex min-h-12 min-w-12 items-center justify-center gap-2 rounded-full px-5 shadow-[0_8px_28px_-6px_var(--primary)] lg:hidden",
+            "fixed bottom-5 left-5 z-40 inline-flex min-h-12 min-w-12 items-center justify-center gap-2 rounded-full px-5 shadow-[0_8px_28px_-6px_var(--primary)] lg:hidden",
             ui.cta,
           )}
         >

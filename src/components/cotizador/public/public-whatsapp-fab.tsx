@@ -27,7 +27,7 @@ export function PublicWhatsAppFab() {
       initial={{ opacity: 0, scale: 0.8, y: 16 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 380, damping: 24, delay: 0.4 }}
-      className="group fixed bottom-5 left-5 z-40 flex items-center gap-3 lg:bottom-6 lg:left-auto lg:right-6"
+      className="group fixed bottom-5 right-5 z-40 flex items-center gap-3 lg:bottom-6 lg:right-6"
     >
       <span
         role="tooltip"
