@@ -23,6 +23,7 @@ import { joinClasses } from "@/lib/utils";
 import type { HealthPlanSummary } from "@/domain";
 import { ContractPlanModal } from "./contract-plan-modal";
 import { PublicCotizadorHeader } from "./public-cotizador-header";
+import { PublicWhatsAppFab } from "./public-whatsapp-fab";
 import { PublicFiltersSidebar } from "./public-filters-sidebar";
 import { PublicPlanResultsList } from "./public-plan-results-list";
 import {
@@ -130,10 +131,12 @@ export function PublicCotizadorView() {
     return [...plans].sort((a, b) => {
       if (sortKey === "coverage") {
         const scoreA =
-          (a.coverage_summary.hospital_avg + a.coverage_summary.ambulatory_avg) /
+          (a.coverage_summary.hospital_avg +
+            a.coverage_summary.ambulatory_avg) /
           2;
         const scoreB =
-          (b.coverage_summary.hospital_avg + b.coverage_summary.ambulatory_avg) /
+          (b.coverage_summary.hospital_avg +
+            b.coverage_summary.ambulatory_avg) /
           2;
         return scoreB - scoreA;
       }
@@ -182,7 +185,10 @@ export function PublicCotizadorView() {
   }
 
   return (
-    <div className={joinClasses(appShellRoot, ui.canvas)}>
+    <div
+      data-brand="cotizalo-antes"
+      className={joinClasses(appShellRoot, ui.canvas)}
+    >
       <PublicCotizadorHeader />
 
       <main
@@ -193,7 +199,9 @@ export function PublicCotizadorView() {
         )}
       >
         <div className={joinClasses(appShell, safeWidth, "space-y-5")}>
-          <header className={joinClasses(safeWidth, "motion-safe-fade-in space-y-2")}>
+          <header
+            className={joinClasses(safeWidth, "motion-safe-fade-in space-y-2")}
+          >
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">
               Cotizador en línea
             </p>
@@ -216,9 +224,6 @@ export function PublicCotizadorView() {
                 </svg>
               </span>
             </div>
-            <p className="text-sm text-muted">
-              Planes de Isapre con precios directos y sin costo adicional
-            </p>
           </header>
 
           <PublicQuoteCriteriaBar
@@ -262,7 +267,9 @@ export function PublicCotizadorView() {
               </div>
             ) : null}
 
-            <div className={joinClasses(safeWidth, "flex min-h-0 gap-0 lg:gap-5")}>
+            <div
+              className={joinClasses(safeWidth, "flex min-h-0 gap-0 lg:gap-5")}
+            >
               {hasSearched ? (
                 <PublicFiltersSidebar
                   open={dashboard.sidebarOpen}
@@ -327,10 +334,7 @@ export function PublicCotizadorView() {
                           )}
                         >
                           Ver más planes (
-                          {Math.min(
-                            PLANS_PAGE_SIZE_STEP,
-                            total - plans.length,
-                          )}{" "}
+                          {Math.min(PLANS_PAGE_SIZE_STEP, total - plans.length)}{" "}
                           adicionales)
                         </button>
                       </div>
@@ -389,6 +393,8 @@ export function PublicCotizadorView() {
         }
         onClick={() => dashboard.setSidebarOpen(true)}
       />
+
+      <PublicWhatsAppFab />
 
       <ContractPlanModal
         open={contractPlan !== null}

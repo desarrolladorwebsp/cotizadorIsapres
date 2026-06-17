@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useUfValue } from "@/hooks/use-uf-value";
 import { ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
@@ -23,17 +24,15 @@ export function PublicCotizadorHeader() {
     >
       <div className="mx-auto flex h-14 w-full max-w-7xl min-w-0 items-center gap-4 px-4 sm:h-16 sm:px-6 lg:px-8">
         <a
-          href="https://isaprespremium.cl/"
-          target="_blank"
-          rel="noopener noreferrer"
+          href="/"
           className="flex min-w-0 shrink items-center rounded-lg transition hover:opacity-90 focus-visible:outline-offset-4"
         >
           <Image
-            src="/images/logo-isapres-premium.png"
-            alt="Isapres Premium Cotizador"
-            width={220}
-            height={52}
-            className="h-9 w-auto max-w-[min(100%,14rem)] object-contain object-left sm:h-10 sm:max-w-none"
+            src="/images/logo-cotizalo-antes.png"
+            alt="Cotízalo Antes"
+            width={224}
+            height={59}
+            className="h-9 w-auto max-w-[min(100%,13rem)] object-contain object-left sm:h-11 sm:max-w-none"
             priority
           />
         </a>
@@ -55,15 +54,24 @@ export function PublicCotizadorHeader() {
               <span className="size-1.5 animate-pulse rounded-full bg-primary" />
             ) : null}
           </span>
-          <a
-            href="tel:+56964133848"
+          <Link
+            href="/cotizador/ejecutivos"
+            className={joinClasses(
+              "rounded-full px-4 py-2 text-xs font-bold sm:text-sm",
+              ui.ctaOutline,
+            )}
+          >
+            Ejecutivo
+          </Link>
+          <Link
+            href="/cotizador/admin"
             className={joinClasses(
               "rounded-full px-4 py-2 text-xs font-bold sm:text-sm",
               ui.cta,
             )}
           >
-            Contacto
-          </a>
+            Admin
+          </Link>
         </div>
       </div>
     </header>

@@ -55,6 +55,35 @@
   --space-8: 2rem;
 }
 
+/*
+ * Marca: Cotízalo Antes (naranja) — sobreescribe los tokens base solo dentro
+ * del subárbol marcado con data-brand. Los componentes siguen usando las
+ * mismas clases (bg-primary, text-primary-dark, …); solo cambian los valores.
+ * A futuro: agregar [data-brand="premium"] u otras marcas con la misma estructura.
+ */
+[data-brand="cotizalo-antes"] {
+  --primary: #ed7d11;
+  --primary-hover: #f59324;
+  --primary-dark: #92450a;
+  --primary-foreground: #ffffff;
+
+  --secondary: #0e7c9c;
+  --secondary-muted: #e3f3f8;
+
+  --bg-layout: #f8f5f1;
+  --foreground: #2a241f;
+  --muted: #6d635b;
+  --border: #ece1d6;
+  --surface-hover: #fdf3e9;
+
+  --shadow-card: 0 4px 24px -8px rgb(146 69 10 / 0.1);
+  --shadow-card-hover: 0 12px 32px -10px rgb(237 125 17 / 0.24);
+  --shadow-cta: 0 8px 24px -8px rgb(237 125 17 / 0.45);
+
+  --criteria-surface: #fff5e9;
+  --criteria-ring: #f3e2cc;
+}
+
 @theme inline {
   --color-primary: var(--primary);
   --color-primary-hover: var(--primary-hover);
