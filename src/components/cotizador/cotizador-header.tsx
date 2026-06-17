@@ -1,5 +1,8 @@
 "use client";
 
+import { UserMenu } from "@/components/auth/user-menu";
+import { useAuthSession } from "@/hooks/use-auth-session";
+import { EXECUTIVE_LOGIN_PATH } from "@/lib/auth/constants";
 import { touchTarget, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 
@@ -17,6 +20,7 @@ export function CotizadorHeader({
   onToggleSidebar,
 }: CotizadorHeaderProps) {
   const isExecutive = variant === "executive";
+  const { user: executiveUser } = useAuthSession("executive");
 
   return (
     <header
@@ -87,24 +91,14 @@ export function CotizadorHeader({
               </div>
             </div>
 
-            <div className="ml-auto flex items-center gap-2 sm:gap-4">
-              <div className="hidden text-right sm:block">
-                <p className="text-sm font-medium tracking-tight text-foreground">
-                  Alfredo Hurtado
-                </p>
-                <p className="text-xs text-muted">Ejecutivo comercial</p>
-              </div>
-              <div
-                className={joinClasses(
-                  touchTarget,
-                  "rounded-full text-sm font-medium text-muted md:size-10",
-                  ui.borderHairline,
-                )}
-                aria-hidden
-              >
-                AH
-              </div>
-            </div>
+            {executiveUser ? (
+              <UserMenu
+                realm="executive"
+                fullName={executiveUser.fullName}
+                subtitle="Ejecutivo comercial"
+                loginPath={EXECUTIVE_LOGIN_PATH}
+              />
+            ) : null}
           </>
         ) : (
           <div className="ml-auto hidden sm:block">

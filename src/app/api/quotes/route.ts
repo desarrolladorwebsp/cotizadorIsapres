@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createQuote, readQuotes } from "@/lib/api/quote-store";
 import type { CreateQuoteInput } from "@/types/quote";
+import { requireAdminSession } from "@/lib/auth/require-auth";
+import { apiErrorResponse } from "@/lib/api/api-error";
 
 function isValidCreateQuoteInput(payload: unknown): payload is CreateQuoteInput {
   if (!payload || typeof payload !== "object") return false;
@@ -17,16 +19,15 @@ function isValidCreateQuoteInput(payload: unknown): payload is CreateQuoteInput 
   );
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    await requireAdminSession(request);
     const quotes = await readQuotes();
     return NextResponse.json(quotes);
   } catch (error) {
     console.error("GET /api/quotes", error);
-    return NextResponse.json(
-      { error: "No se pudieron cargar las cotizaciones." },
-      { status: 500 },
-    );
+    const { body, status } = apiErrorResponse(error);
+    return NextResponse.json(body, { status });
   }
 }
 

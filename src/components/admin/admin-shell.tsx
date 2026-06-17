@@ -1,6 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { UserMenu } from "@/components/auth/user-menu";
+import { useAuthSession } from "@/hooks/use-auth-session";
+import { ADMIN_LOGIN_PATH } from "@/lib/auth/constants";
 import {
   appShellRoot,
   appShellScroll,
@@ -29,6 +32,8 @@ export function AdminShell({
   onSectionChange,
   children,
 }: AdminShellProps) {
+  const { user: adminUser } = useAuthSession("admin");
+
   return (
     <div className={joinClasses(appShellRoot, ui.canvas)}>
       <header
@@ -62,6 +67,15 @@ export function AdminShell({
           >
             Ir al cotizador
           </Link>
+
+          {adminUser ? (
+            <UserMenu
+              realm="admin"
+              fullName={adminUser.fullName}
+              subtitle="Administrador"
+              loginPath={ADMIN_LOGIN_PATH}
+            />
+          ) : null}
         </div>
 
         <nav

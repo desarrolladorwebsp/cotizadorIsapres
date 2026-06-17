@@ -1,6 +1,7 @@
 import { readFile } from "fs/promises";
 import path from "path";
 import { PrismaClient } from "@prisma/client";
+import { seedAuthAccountPassword } from "../src/lib/auth/account-store";
 import {
   ISAPRE_CATALOG,
   resolveIsapreIdFromName,
@@ -13,37 +14,31 @@ const prisma = new PrismaClient();
 const PLANS_PATH = path.join(process.cwd(), "src/assets/planes.json");
 const CLINICS_PATH = path.join(process.cwd(), "src/assets/clinics.json");
 
-const ADMIN_USERS = [
+const ADMIN_ACCOUNTS = [
   {
     email: "admin@isaprespremium.cl",
     fullName: "Administrador Isapres Premium",
-    phone: "+56912345678",
-    rut: "11.111.111-1",
-    role: "ADMIN" as const,
   },
   {
     email: "superadmin@isaprespremium.cl",
     fullName: "Carolina Rojas",
-    phone: "+56987654321",
-    rut: "22.222.222-2",
-    role: "ADMIN" as const,
   },
 ];
 
-const EXECUTIVE_USERS = [
+const EXECUTIVE_ACCOUNTS = [
   {
     email: "ejecutivo@isaprespremium.cl",
     fullName: "María González",
     phone: "+56911223344",
     rut: "15.555.555-5",
-    role: "EXECUTIVE" as const,
+    subscriptionStatus: "TRIAL" as const,
   },
   {
     email: "ventas@isaprespremium.cl",
     fullName: "Pedro Sánchez",
     phone: "+56944332211",
     rut: "16.666.666-6",
-    role: "EXECUTIVE" as const,
+    subscriptionStatus: "ACTIVE" as const,
   },
 ];
 
@@ -150,10 +145,61 @@ async function seedClinicsAndPlans() {
   return { plans, clinicCount: clinicMap.size };
 }
 
-async function seedUsers() {
-  const allUsers = [...ADMIN_USERS, ...EXECUTIVE_USERS, ...CLIENT_USERS];
+async function seedAuthAccounts() {
+  const password =
+    process.env.SEED_ACCOUNT_PASSWORD?.trim() || "ChangeMe123!";
+  const passwordHash = await seedAuthAccountPassword(password);
 
-  for (const user of allUsers) {
+  for (const admin of ADMIN_ACCOUNTS) {
+    await prisma.adminAccount.upsert({
+      where: { email: admin.email },
+      create: {
+        email: admin.email,
+        fullName: admin.fullName,
+        passwordHash,
+        active: true,
+      },
+      update: {
+        fullName: admin.fullName,
+        active: true,
+      },
+    });
+  }
+
+  const trialExpiresAt = new Date();
+  trialExpiresAt.setDate(trialExpiresAt.getDate() + 30);
+
+  for (const executive of EXECUTIVE_ACCOUNTS) {
+    await prisma.executiveAccount.upsert({
+      where: { email: executive.email },
+      create: {
+        email: executive.email,
+        fullName: executive.fullName,
+        phone: executive.phone,
+        rut: executive.rut,
+        passwordHash,
+        active: true,
+        subscriptionStatus: executive.subscriptionStatus,
+        subscriptionExpiresAt:
+          executive.subscriptionStatus === "TRIAL" ? trialExpiresAt : null,
+      },
+      update: {
+        fullName: executive.fullName,
+        phone: executive.phone,
+        rut: executive.rut,
+        active: true,
+      },
+    });
+  }
+
+  return {
+    adminCount: ADMIN_ACCOUNTS.length,
+    executiveCount: EXECUTIVE_ACCOUNTS.length,
+  };
+}
+
+async function seedClientUsers() {
+  for (const user of CLIENT_USERS) {
     await prisma.user.upsert({
       where: { email: user.email },
       create: {
@@ -174,7 +220,7 @@ async function seedUsers() {
     });
   }
 
-  return allUsers.length;
+  return CLIENT_USERS.length;
 }
 
 async function seedQuotes(plans: HealthPlan[]) {
@@ -295,21 +341,21 @@ async function seedQuotes(plans: HealthPlan[]) {
 async function main() {
   await seedIsapres();
   const { plans, clinicCount } = await seedClinicsAndPlans();
-  const userCount = await seedUsers();
+  const { adminCount, executiveCount } = await seedAuthAccounts();
+  const clientCount = await seedClientUsers();
   const quoteCount = await seedQuotes(plans);
-
-  const adminCount = ADMIN_USERS.length;
-  const executiveCount = EXECUTIVE_USERS.length;
-  const clientCount = CLIENT_USERS.length;
 
   console.log("Seed completado:");
   console.log(`  - ${ISAPRE_CATALOG.length} isapres`);
   console.log(`  - ${clinicCount} clínicas`);
   console.log(`  - ${plans.length} planes`);
   console.log(
-    `  - ${userCount} usuarios (${adminCount} admin, ${executiveCount} ejecutivos, ${clientCount} clientes)`,
+    `  - ${adminCount} admins, ${executiveCount} ejecutivos, ${clientCount} clientes`,
   );
   console.log(`  - ${quoteCount} cotizaciones`);
+  console.log(
+    "  - Cuentas demo: usa SEED_ACCOUNT_PASSWORD (por defecto ChangeMe123!)",
+  );
 }
 
 main()

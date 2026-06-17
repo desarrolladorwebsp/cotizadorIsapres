@@ -7,6 +7,8 @@ import {
   writeClinics,
 } from "@/lib/api/data-store";
 import type { Clinic } from "@/types/clinic";
+import { requireAdminSession } from "@/lib/auth/require-auth";
+import { apiErrorResponse } from "@/lib/api/api-error";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -24,6 +26,7 @@ function isValidClinic(payload: unknown): payload is Clinic {
 
 export async function PUT(request: Request, context: RouteContext) {
   try {
+    await requireAdminSession(request);
     const { id } = await context.params;
     const decodedId = decodeURIComponent(id);
     const payload = (await request.json()) as unknown;
@@ -67,8 +70,9 @@ export async function PUT(request: Request, context: RouteContext) {
   }
 }
 
-export async function DELETE(_request: Request, context: RouteContext) {
+export async function DELETE(request: Request, context: RouteContext) {
   try {
+    await requireAdminSession(request);
     const { id } = await context.params;
     const decodedId = decodeURIComponent(id);
     const plans = await readPlans();

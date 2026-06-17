@@ -12,9 +12,11 @@ import {
   isValidPlan,
   normalizePlan,
 } from "@/lib/api/plan-validation";
+import { requireAdminSession, requireStaffSession } from "@/lib/auth/require-auth";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    await requireStaffSession(request);
     const plans = await readPlans();
     return NextResponse.json(plans);
   } catch (error) {
@@ -26,6 +28,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    await requireAdminSession(request);
     const payload = await parseJsonBody(request);
 
     const validationError = getPlanValidationError(payload);

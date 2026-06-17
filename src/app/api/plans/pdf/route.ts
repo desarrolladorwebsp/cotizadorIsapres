@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { apiErrorResponse } from "@/lib/api/api-error";
 import { savePlanPdf } from "@/lib/plan-pdf-storage/upload";
+import { requireAdminSession } from "@/lib/auth/require-auth";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   try {
+    await requireAdminSession(request);
     const formData = await request.formData();
     const file = formData.get("file");
     const uniqueCode = formData.get("uniqueCode");

@@ -15,6 +15,7 @@ import {
 } from "@/lib/api/plan-validation";
 import { collectPlanPdfCleanupKeys } from "@/lib/plan-pdf-storage/paths";
 import { deletePlanPdfVariants } from "@/lib/plan-pdf-storage/delete";
+import { requireAdminSession } from "@/lib/auth/require-auth";
 
 interface RouteContext {
   params: Promise<{ uniqueCode: string }>;
@@ -42,6 +43,7 @@ export async function GET(_request: Request, context: RouteContext) {
 
 export async function PUT(request: Request, context: RouteContext) {
   try {
+    await requireAdminSession(request);
     const { uniqueCode } = await context.params;
     const decodedCode = decodeURIComponent(uniqueCode);
     const payload = await parseJsonBody(request);
@@ -72,8 +74,9 @@ export async function PUT(request: Request, context: RouteContext) {
   }
 }
 
-export async function DELETE(_request: Request, context: RouteContext) {
+export async function DELETE(request: Request, context: RouteContext) {
   try {
+    await requireAdminSession(request);
     const { uniqueCode } = await context.params;
     const decodedCode = decodeURIComponent(uniqueCode);
     const deletedPlan = await deletePlanRecord(decodedCode);

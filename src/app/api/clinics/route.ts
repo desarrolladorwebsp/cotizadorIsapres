@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { readClinics, writeClinics } from "@/lib/api/data-store";
 import type { Clinic } from "@/types/clinic";
+import { requireAdminSession, requireStaffSession } from "@/lib/auth/require-auth";
+import { apiErrorResponse } from "@/lib/api/api-error";
 
 function isValidClinic(payload: unknown): payload is Clinic {
   if (!payload || typeof payload !== "object") return false;
@@ -13,21 +15,21 @@ function isValidClinic(payload: unknown): payload is Clinic {
   );
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    await requireStaffSession(request);
     const clinics = await readClinics();
     return NextResponse.json(clinics);
   } catch (error) {
     console.error("GET /api/clinics", error);
-    return NextResponse.json(
-      { error: "No se pudieron cargar las clínicas." },
-      { status: 500 },
-    );
+    const { body, status } = apiErrorResponse(error);
+    return NextResponse.json(body, { status });
   }
 }
 
 export async function POST(request: Request) {
   try {
+    await requireAdminSession(request);
     const payload = (await request.json()) as unknown;
 
     if (!isValidClinic(payload)) {

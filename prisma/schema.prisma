@@ -20,6 +20,14 @@ enum QuoteStatus {
   CANCELLED
 }
 
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  EXPIRED
+}
+
 model Isapre {
   id        String   @id
   name      String
@@ -75,6 +83,7 @@ model CoverageEntry {
   @@map("coverage_entries")
 }
 
+/// Clientes del cotizador público (sin credenciales de acceso).
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -89,6 +98,47 @@ model User {
 
   @@index([role])
   @@map("users")
+}
+
+/// Cuentas de administración — tabla aislada con credenciales propias.
+model AdminAccount {
+  id                  String    @id @default(cuid())
+  email               String    @unique
+  passwordHash        String    @map("password_hash")
+  fullName            String    @map("full_name")
+  active              Boolean   @default(true)
+  failedLoginAttempts Int       @default(0) @map("failed_login_attempts")
+  lockedUntil         DateTime? @map("locked_until")
+  lastLoginAt         DateTime? @map("last_login_at")
+  passwordChangedAt   DateTime  @default(now()) @map("password_changed_at")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  @@map("admin_accounts")
+}
+
+/// Cuentas de ejecutivos — tabla aislada; suscripción lista para facturación futura.
+model ExecutiveAccount {
+  id                    String             @id @default(cuid())
+  email                 String             @unique
+  passwordHash          String             @map("password_hash")
+  fullName              String             @map("full_name")
+  phone                 String?
+  rut                   String?
+  active                Boolean            @default(true)
+  subscriptionStatus    SubscriptionStatus @default(TRIAL) @map("subscription_status")
+  subscriptionPlanId    String?            @map("subscription_plan_id")
+  subscriptionExpiresAt DateTime?          @map("subscription_expires_at")
+  stripeCustomerId      String?            @unique @map("stripe_customer_id")
+  failedLoginAttempts   Int                @default(0) @map("failed_login_attempts")
+  lockedUntil           DateTime?          @map("locked_until")
+  lastLoginAt           DateTime?          @map("last_login_at")
+  passwordChangedAt     DateTime           @default(now()) @map("password_changed_at")
+  createdAt             DateTime           @default(now()) @map("created_at")
+  updatedAt             DateTime           @updatedAt @map("updated_at")
+
+  @@index([subscriptionStatus])
+  @@map("executive_accounts")
 }
 
 model Quote {

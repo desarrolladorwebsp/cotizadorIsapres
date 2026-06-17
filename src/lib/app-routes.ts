@@ -5,5 +5,7 @@ export const KNOWN_PAGE_ROUTES = new Set([
   COTIZADOR_HOME,
   "/cotizador",
   "/cotizador/ejecutivos",
+  "/cotizador/ejecutivos/login",
   "/cotizador/admin",
+  "/cotizador/admin/login",
 ]);
