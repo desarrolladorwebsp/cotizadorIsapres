@@ -3,6 +3,12 @@ import {
   getFallbackPartnerEntity,
 } from "@/lib/partner-entity/fallback-entities";
 import { RESERVED_ROOT_SEGMENTS } from "@/lib/partner-entity/constants";
+import {
+  isPartnerEntityDbUnavailable,
+  isPartnerEntitySchemaError,
+  logPartnerEntitySchemaWarning,
+  markPartnerEntityDbUnavailable,
+} from "@/lib/partner-entity/db-guard";
 import { prisma } from "@/lib/prisma";
 import type {
   PartnerEntityPublic,
@@ -68,7 +74,10 @@ export async function readPartnerEntityBySlug(
 ): Promise<PartnerEntityRecord | null> {
   const normalized = slug.trim().toLowerCase();
 
-  if (typeof prisma.partnerEntity?.findFirst === "function") {
+  if (
+    !isPartnerEntityDbUnavailable() &&
+    typeof prisma.partnerEntity?.findFirst === "function"
+  ) {
     try {
       const entity = await prisma.partnerEntity.findFirst({
         where: { slug: normalized, active: true },
@@ -78,7 +87,12 @@ export async function readPartnerEntityBySlug(
         return mapDbPartnerEntity(entity);
       }
     } catch (error) {
-      console.error("readPartnerEntityBySlug: error de base de datos", error);
+      if (isPartnerEntitySchemaError(error)) {
+        markPartnerEntityDbUnavailable();
+        logPartnerEntitySchemaWarning();
+      } else {
+        console.error("readPartnerEntityBySlug: error de base de datos", error);
+      }
     }
   }
 
@@ -87,7 +101,10 @@ export async function readPartnerEntityBySlug(
 }
 
 export async function readActivePartnerSlugs(): Promise<string[]> {
-  if (typeof prisma.partnerEntity?.findMany === "function") {
+  if (
+    !isPartnerEntityDbUnavailable() &&
+    typeof prisma.partnerEntity?.findMany === "function"
+  ) {
     try {
       const entities = await prisma.partnerEntity.findMany({
         where: { active: true },
@@ -99,7 +116,12 @@ export async function readActivePartnerSlugs(): Promise<string[]> {
         return entities.map((entity) => entity.slug);
       }
     } catch (error) {
-      console.error("readActivePartnerSlugs: error de base de datos", error);
+      if (isPartnerEntitySchemaError(error)) {
+        markPartnerEntityDbUnavailable();
+        logPartnerEntitySchemaWarning();
+      } else {
+        console.error("readActivePartnerSlugs: error de base de datos", error);
+      }
     }
   }
 

@@ -8,6 +8,7 @@ import {
   PLAN_TYPE_FILTER_OPTIONS,
   ZONE_FILTER_OPTIONS,
 } from "@/lib/filter-options";
+import { formatMonthlyIncomeForDisplay } from "@/lib/deep-link/income";
 import {
   DEEP_LINK_PARAMS,
   VALID_CURRENCY,
@@ -152,7 +153,9 @@ export function parseCotizadorUrl(
 
   const criteria: QuoteCriteria = {
     region: regionRaw && VALID_REGIONS.has(regionRaw) ? regionRaw : "rm",
-    monthlyIncome: params.get(DEEP_LINK_PARAMS.ingreso)?.trim() ?? "",
+    monthlyIncome: formatMonthlyIncomeForDisplay(
+      params.get(DEEP_LINK_PARAMS.ingreso),
+    ),
     sex: sexRaw && VALID_SEX_VALUES.has(sexRaw) ? sexRaw : "",
   };
 

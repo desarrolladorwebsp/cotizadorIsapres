@@ -1,4 +1,5 @@
 import { ApiError, toApiError } from "@/lib/api/api-error";
+import { invalidatePlanCatalogCache } from "@/lib/api/plan-catalog-cache";
 import { ensureIsapreExists } from "@/lib/api/isapre-store";
 import {
   mapDbPlanToHealthPlan,
@@ -82,6 +83,7 @@ export async function createPlanRecord(plan: HealthPlan): Promise<HealthPlan> {
       });
     });
 
+    invalidatePlanCatalogCache();
     return mapDbPlanToHealthPlan(created);
   } catch (error) {
     throw toApiError(error);
@@ -120,6 +122,7 @@ export async function updatePlanRecord(plan: HealthPlan): Promise<HealthPlan> {
       });
     });
 
+    invalidatePlanCatalogCache();
     return mapDbPlanToHealthPlan(updated);
   } catch (error) {
     throw toApiError(error);
@@ -141,6 +144,7 @@ export async function deletePlanRecord(
       where: { uniqueCode },
     });
 
+    invalidatePlanCatalogCache();
     return mapDbPlanToHealthPlan(existing);
   } catch (error) {
     throw toApiError(error);
@@ -179,6 +183,7 @@ export async function writePlans(plans: HealthPlan[]): Promise<void> {
         });
       }
     });
+    invalidatePlanCatalogCache();
   } catch (error) {
     throw toApiError(error);
   }

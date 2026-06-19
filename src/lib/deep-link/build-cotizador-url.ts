@@ -7,6 +7,7 @@ import {
   ZONE_FILTER_OPTIONS,
 } from "@/lib/filter-options";
 import { DEEP_LINK_PARAMS } from "@/lib/deep-link/params";
+import { normalizeIncomeDigits } from "@/lib/deep-link/income";
 import type { ParsedCotizadorDeepLink } from "@/lib/deep-link/parse-cotizador-url";
 
 export interface BuildCotizadorUrlInput {
@@ -41,7 +42,10 @@ export function buildCotizadorUrl(input: BuildCotizadorUrlInput): string {
   if (input.region) params.set(DEEP_LINK_PARAMS.region, input.region);
   if (input.edad !== undefined) params.set(DEEP_LINK_PARAMS.edad, String(input.edad));
   if (input.sexo) params.set(DEEP_LINK_PARAMS.sexo, input.sexo);
-  if (input.ingreso) params.set(DEEP_LINK_PARAMS.ingreso, input.ingreso);
+  if (input.ingreso) {
+    const digits = normalizeIncomeDigits(input.ingreso);
+    if (digits) params.set(DEEP_LINK_PARAMS.ingreso, digits);
+  }
   if (input.cargas?.length) {
     params.set(DEEP_LINK_PARAMS.cargas, input.cargas.join(","));
   }

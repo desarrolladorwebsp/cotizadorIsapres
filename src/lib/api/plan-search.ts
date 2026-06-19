@@ -1,18 +1,13 @@
 import { applyDashboardFilters } from "@/lib/apply-plan-filters";
-import {
-  mapDbPlanToHealthPlan,
-  type PlanWithCoverages,
-} from "@/lib/api/plan-mapper";
+import { getCachedHealthPlans } from "@/lib/api/plan-catalog-cache";
 import { mapHealthPlanToSummary } from "@/lib/api/plan-summary";
 import {
   getActiveCheckboxIds,
   isCheckboxGroupActive,
 } from "@/lib/filter-options";
-import { prisma } from "@/lib/prisma";
+import { MAX_PLAN_SEARCH_LIMIT } from "@/lib/plan-search-config";
 import type { DashboardFiltersState } from "@/types/filters";
-import type { HealthPlanSummary, PlanSearchResult } from "@/types/plan";
-
-const planInclude = { coverages: true, isapreRef: true } as const;
+import type { HealthPlan, HealthPlanSummary, PlanSearchResult } from "@/types/plan";
 
 export interface PlanSearchQuery {
   q?: string;
@@ -96,9 +91,9 @@ function matchesCoverageThresholds(
 }
 
 function matchesFiltersWithoutCoverageAvg(
-  plans: ReturnType<typeof mapDbPlanToHealthPlan>[],
+  plans: HealthPlan[],
   filters: DashboardFiltersState,
-): ReturnType<typeof mapDbPlanToHealthPlan>[] {
+): HealthPlan[] {
   return applyDashboardFilters(plans, {
     ...filters,
     hospitalCoveragePercent: null,
@@ -106,15 +101,20 @@ function matchesFiltersWithoutCoverageAvg(
   });
 }
 
+function clampSearchLimit(limit: number | undefined, total: number): number {
+  if (limit === undefined || !Number.isFinite(limit) || limit <= 0) {
+    return total;
+  }
+
+  return Math.min(Math.floor(limit), MAX_PLAN_SEARCH_LIMIT, total);
+}
+
 export async function searchPlanSummaries(
   query: PlanSearchQuery,
 ): Promise<PlanSearchResult> {
-  const dbPlans = await prisma.plan.findMany({
-    include: planInclude,
-    orderBy: { planName: "asc" },
-  });
+  const dbPlans = await getCachedHealthPlans();
 
-  let plans = (dbPlans as PlanWithCoverages[]).map(mapDbPlanToHealthPlan);
+  let plans = dbPlans;
 
   if (query.filters) {
     plans = matchesFiltersWithoutCoverageAvg(plans, query.filters);
@@ -141,10 +141,7 @@ export async function searchPlanSummaries(
     query.offset !== undefined && Number.isFinite(query.offset) && query.offset > 0
       ? Math.floor(query.offset)
       : 0;
-  const limit =
-    query.limit !== undefined && Number.isFinite(query.limit) && query.limit > 0
-      ? Math.floor(query.limit)
-      : total;
+  const limit = clampSearchLimit(query.limit, total);
 
   return {
     plans: summaries.slice(offset, offset + limit),
@@ -154,29 +151,21 @@ export async function searchPlanSummaries(
   };
 }
 
-/** Primeros N planes del catálogo (consulta acotada en BD, sin cargar todo el catálogo). */
+/** Primeros N planes del catálogo (desde caché en memoria). */
 export async function readLimitedPlanSummaries(
   limit: number,
 ): Promise<PlanSearchResult> {
   const safeLimit =
     Number.isFinite(limit) && limit > 0 ? Math.floor(limit) : 1;
 
-  const [dbPlans, total] = await Promise.all([
-    prisma.plan.findMany({
-      include: planInclude,
-      orderBy: { planName: "asc" },
-      take: safeLimit,
-    }),
-    prisma.plan.count(),
-  ]);
-
-  const summaries = (dbPlans as PlanWithCoverages[])
-    .map(mapDbPlanToHealthPlan)
+  const allPlans = await getCachedHealthPlans();
+  const summaries = allPlans
+    .slice(0, safeLimit)
     .map(mapHealthPlanToSummary);
 
   return {
     plans: summaries,
-    total,
+    total: allPlans.length,
     limit: safeLimit,
     offset: 0,
   };
@@ -187,16 +176,24 @@ export async function readPlanCatalogBounds(): Promise<{
   priceMax: number;
   totalPlans: number;
 }> {
-  const aggregate = await prisma.plan.aggregate({
-    _min: { basePriceUf: true },
-    _max: { basePriceUf: true },
-    _count: { _all: true },
-  });
+  const plans = await getCachedHealthPlans();
+
+  if (plans.length === 0) {
+    return { priceMin: 0, priceMax: 10, totalPlans: 0 };
+  }
+
+  let priceMin = plans[0].base_price_uf;
+  let priceMax = plans[0].base_price_uf;
+
+  for (const plan of plans) {
+    if (plan.base_price_uf < priceMin) priceMin = plan.base_price_uf;
+    if (plan.base_price_uf > priceMax) priceMax = plan.base_price_uf;
+  }
 
   return {
-    priceMin: aggregate._min.basePriceUf ?? 0,
-    priceMax: aggregate._max.basePriceUf ?? 10,
-    totalPlans: aggregate._count._all,
+    priceMin,
+    priceMax,
+    totalPlans: plans.length,
   };
 }
 

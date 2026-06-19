@@ -25,6 +25,8 @@ export interface PublicQuoteCriteriaBarProps {
     summary: BeneficiaryGroupSummary,
   ) => void;
   onCalculate: () => void;
+  /** Abre el panel de cargas cuando vienen prellenadas desde la URL. */
+  showPreloadedDependents?: boolean;
 }
 
 const fieldClass = joinClasses(
@@ -37,13 +39,14 @@ export function PublicQuoteCriteriaBar({
   beneficiaries,
   onBeneficiariesChange,
   onCalculate,
+  showPreloadedDependents = false,
 }: PublicQuoteCriteriaBarProps) {
   const [ageInput, setAgeInput] = useState(
     beneficiaries.contributorAge !== null
       ? String(beneficiaries.contributorAge)
       : "",
   );
-  const [insuredOpen, setInsuredOpen] = useState(false);
+  const [insuredOpen, setInsuredOpen] = useState(showPreloadedDependents);
   const popoverRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -53,6 +56,12 @@ export function PublicQuoteCriteriaBar({
         : "",
     );
   }, [beneficiaries.contributorAge]);
+
+  useEffect(() => {
+    if (showPreloadedDependents && beneficiaries.dependents.length > 0) {
+      setInsuredOpen(true);
+    }
+  }, [showPreloadedDependents, beneficiaries.dependents.length]);
 
   useEffect(() => {
     if (!insuredOpen) return;

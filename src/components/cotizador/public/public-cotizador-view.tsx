@@ -34,6 +34,10 @@ import { PublicWhatsAppFab } from "./public-whatsapp-fab";
 import { PublicFiltersSidebar } from "./public-filters-sidebar";
 import { PublicPlanResultsList } from "./public-plan-results-list";
 import {
+  PublicPlanResultsLoading,
+  PublicPlanResultsLoadingInline,
+} from "./public-plan-results-loading";
+import {
   PublicQuoteCriteriaBar,
   type QuoteCriteria,
 } from "./public-quote-criteria-bar";
@@ -66,6 +70,7 @@ export function PublicCotizadorView({
 
 function PublicCotizadorViewInner() {
   const searchParams = useSearchParams();
+  const deepLinkParamKey = searchParams.toString();
   const deepLink = useMemo(
     () => parseCotizadorUrl(searchParams),
     [searchParams],
@@ -79,11 +84,13 @@ function PublicCotizadorViewInner() {
     initialPriceMin: deepLink.priceMin,
     initialPriceMax: deepLink.priceMax,
   });
-  const { bounds } = usePlanCatalogBounds();
-  const { plans, total, loading, error, hasSearched, search } = usePlanSearch();
+  const { bounds, loading: boundsLoading } = usePlanCatalogBounds();
+  const { plans, total, loading, error, hasSearched, search, resetSearchCache } =
+    usePlanSearch();
   const resultsRef = useRef<HTMLElement>(null);
   const initialSearchDoneRef = useRef(false);
   const skipDebouncedSearchRef = useRef(false);
+  const [formReady, setFormReady] = useState(false);
 
   const [criteria, setCriteria] = useState<QuoteCriteria>(deepLink.criteria);
   const [sortKey, setSortKey] = useState<QuoteSortKey>(
@@ -98,15 +105,50 @@ function PublicCotizadorViewInner() {
   const [searchText, setSearchText] = useState(deepLink.q ?? "");
   const [resultsLimit, setResultsLimit] = useState(INITIAL_PLANS_PAGE_SIZE);
 
+  useEffect(() => {
+    if (deepLink.hasDeepLinkParams) {
+      setCriteria(deepLink.criteria);
+      setSearchText(deepLink.q ?? "");
+      if (deepLink.sortKey) setSortKey(deepLink.sortKey);
+      if (deepLink.currency) setCurrency(deepLink.currency);
+
+      dashboard.handleBeneficiariesChange(
+        deepLink.beneficiaries,
+        deepLink.beneficiarySummary,
+      );
+      dashboard.setDashboardFilters(deepLink.filters);
+
+      if (deepLink.priceMin !== undefined) {
+        dashboard.setPriceMin(deepLink.priceMin);
+      }
+      if (deepLink.priceMax !== undefined) {
+        dashboard.setPriceMax(deepLink.priceMax);
+      }
+
+      initialSearchDoneRef.current = false;
+      resetSearchCache();
+    }
+
+    setFormReady(true);
+  }, [
+    deepLinkParamKey,
+    deepLink,
+    dashboard.handleBeneficiariesChange,
+    resetSearchCache,
+  ]);
+
   const runSearch = useCallback(
-    (limit = resultsLimit) => {
-      void search({
-        q: searchText,
-        priceMin: dashboard.priceMin,
-        priceMax: dashboard.priceMax,
-        filters: dashboard.dashboardFilters,
-        limit,
-      });
+    (limit = resultsLimit, options?: { force?: boolean }) => {
+      void search(
+        {
+          q: searchText,
+          priceMin: dashboard.priceMin,
+          priceMax: dashboard.priceMax,
+          filters: dashboard.dashboardFilters,
+          limit,
+        },
+        options,
+      );
     },
     [
       search,
@@ -119,7 +161,14 @@ function PublicCotizadorViewInner() {
   );
 
   useEffect(() => {
-    if (initialSearchDoneRef.current || bounds.totalPlans === 0) return;
+    if (
+      !formReady ||
+      boundsLoading ||
+      initialSearchDoneRef.current ||
+      bounds.totalPlans === 0
+    ) {
+      return;
+    }
 
     const priceMin =
       deepLink.priceMin ?? Math.floor(bounds.priceMin * 10) / 10;
@@ -133,13 +182,20 @@ function PublicCotizadorViewInner() {
 
     if (!deepLink.shouldAutoSearch) return;
 
-    void search({
-      q: deepLink.q,
-      priceMin,
-      priceMax,
-      filters: dashboard.dashboardFilters,
-      limit: INITIAL_PLANS_PAGE_SIZE,
-    }).then(() => {
+    const filters = deepLink.hasDeepLinkParams
+      ? deepLink.filters
+      : dashboard.dashboardFilters;
+
+    void search(
+      {
+        q: deepLink.q,
+        priceMin,
+        priceMax,
+        filters,
+        limit: INITIAL_PLANS_PAGE_SIZE,
+      },
+      { force: true },
+    ).then(() => {
       if (deepLink.hasDeepLinkParams) {
         resultsRef.current?.scrollIntoView({
           behavior: "smooth",
@@ -148,12 +204,15 @@ function PublicCotizadorViewInner() {
       }
     });
   }, [
+    formReady,
+    boundsLoading,
     bounds.totalPlans,
     bounds.priceMin,
     bounds.priceMax,
     dashboard.dashboardFilters,
     dashboard.setPriceMin,
     dashboard.setPriceMax,
+    deepLink.filters,
     deepLink.hasDeepLinkParams,
     deepLink.priceMax,
     deepLink.priceMin,
@@ -219,17 +278,22 @@ function PublicCotizadorViewInner() {
   }, [plans, sortKey, dashboard.beneficiarySummary, dashboard.ufToClp]);
 
   const hasMoreResults = total > plans.length;
+  const showFullLoading = loading && (!hasSearched || plans.length === 0);
+  const showInlineLoading = loading && hasSearched && plans.length > 0;
 
   function handleCalculate() {
     setResultsLimit(INITIAL_PLANS_PAGE_SIZE);
     skipDebouncedSearchRef.current = true;
-    void search({
-      q: searchText,
-      priceMin: dashboard.priceMin,
-      priceMax: dashboard.priceMax,
-      filters: dashboard.dashboardFilters,
-      limit: INITIAL_PLANS_PAGE_SIZE,
-    });
+    void search(
+      {
+        q: searchText,
+        priceMin: dashboard.priceMin,
+        priceMax: dashboard.priceMax,
+        filters: dashboard.dashboardFilters,
+        limit: INITIAL_PLANS_PAGE_SIZE,
+      },
+      { force: true },
+    );
     resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
@@ -237,13 +301,16 @@ function PublicCotizadorViewInner() {
     const nextLimit = resultsLimit + PLANS_PAGE_SIZE_STEP;
     setResultsLimit(nextLimit);
     skipDebouncedSearchRef.current = true;
-    void search({
-      q: searchText,
-      priceMin: dashboard.priceMin,
-      priceMax: dashboard.priceMax,
-      filters: dashboard.dashboardFilters,
-      limit: nextLimit,
-    });
+    void search(
+      {
+        q: searchText,
+        priceMin: dashboard.priceMin,
+        priceMax: dashboard.priceMax,
+        filters: dashboard.dashboardFilters,
+        limit: nextLimit,
+      },
+      { force: true },
+    );
   }
 
   const brandKey = isBranded ? entity!.brandKey : undefined;
@@ -284,6 +351,10 @@ function PublicCotizadorViewInner() {
             beneficiaries={dashboard.beneficiaries}
             onBeneficiariesChange={dashboard.handleBeneficiariesChange}
             onCalculate={handleCalculate}
+            showPreloadedDependents={
+              deepLink.hasDeepLinkParams &&
+              dashboard.beneficiaries.dependents.length > 0
+            }
           />
 
           <section
@@ -335,15 +406,8 @@ function PublicCotizadorViewInner() {
               ) : null}
 
               <div className="min-w-0 flex-1">
-                {loading || !hasSearched ? (
-                  <div
-                    className={joinClasses(
-                      "rounded-2xl border bg-white px-6 py-16 text-center",
-                      ui.border,
-                    )}
-                  >
-                    <p className="text-sm text-muted">Cargando planes…</p>
-                  </div>
+                {showFullLoading || !hasSearched ? (
+                  <PublicPlanResultsLoading />
                 ) : error ? (
                   <div
                     className={joinClasses(
@@ -354,7 +418,7 @@ function PublicCotizadorViewInner() {
                     <p className="font-medium">{error}</p>
                     <button
                       type="button"
-                      onClick={() => runSearch()}
+                      onClick={() => runSearch(undefined, { force: true })}
                       className={joinClasses(
                         "mt-4 text-sm font-semibold",
                         ui.link,
@@ -372,7 +436,12 @@ function PublicCotizadorViewInner() {
                       currency={currency}
                       onRequestPlan={setContractPlan}
                     />
-                    {hasMoreResults ? (
+                    {showInlineLoading ? (
+                      <div className="mt-4">
+                        <PublicPlanResultsLoadingInline />
+                      </div>
+                    ) : null}
+                    {hasMoreResults && !showInlineLoading ? (
                       <div className="mt-6 flex justify-center">
                         <button
                           type="button"

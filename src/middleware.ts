@@ -69,7 +69,10 @@ export async function middleware(request: NextRequest) {
       .toLowerCase();
 
     if (entidad && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(entidad)) {
-      const redirect = NextResponse.redirect(new URL(`/${entidad}`, request.url));
+      const redirectUrl = new URL(`/${entidad}`, request.url);
+      redirectUrl.search = request.nextUrl.search;
+      redirectUrl.searchParams.delete(PARTNER_ENTITY_QUERY_PARAM);
+      const redirect = NextResponse.redirect(redirectUrl);
       return setPartnerEntityCookie(redirect, entidad);
     }
 

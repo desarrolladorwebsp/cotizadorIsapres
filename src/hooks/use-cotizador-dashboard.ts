@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   applyDashboardFilters,
   buildBeneficiaryGroupSummary,
@@ -105,13 +105,13 @@ export function useCotizadorDashboard(
     ufToClp,
   ]);
 
-  function handleBeneficiariesChange(
-    next: FamilyBeneficiariesState,
-    summary: BeneficiaryGroupSummary,
-  ) {
-    setBeneficiaries(next);
-    setBeneficiarySummary(summary);
-  }
+  const applyBeneficiaries = useCallback(
+    (next: FamilyBeneficiariesState, summary: BeneficiaryGroupSummary) => {
+      setBeneficiaries(next);
+      setBeneficiarySummary(summary);
+    },
+    [],
+  );
 
   return {
     isLargeScreen,
@@ -131,7 +131,7 @@ export function useCotizadorDashboard(
     dashboardFilters,
     setDashboardFilters,
     filteredPlans,
-    handleBeneficiariesChange,
+    handleBeneficiariesChange: applyBeneficiaries,
     ufToClp,
     ufLoading,
     ufLastUpdated,
