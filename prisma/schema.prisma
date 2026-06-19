@@ -175,3 +175,22 @@ model Quote {
   @@index([createdAt])
   @@map("quotes")
 }
+
+/// Entidades aliadas (ej. Cotízalo Antes) con branding white-label del cotizador.
+model PartnerEntity {
+  id              String   @id @default(cuid())
+  slug            String   @unique
+  name            String
+  logoUrl         String   @map("logo_url")
+  websiteUrl      String   @map("website_url")
+  whatsappNumber  String   @map("whatsapp_number")
+  whatsappMessage String?  @map("whatsapp_message")
+  exitLabel       String   @default("Volver al sitio") @map("exit_label")
+  brandKey        String   @map("brand_key")
+  theme           Json
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("partner_entities")
+}

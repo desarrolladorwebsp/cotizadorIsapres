@@ -1,12 +1,13 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { usePartnerEntity } from "@/components/partner/partner-entity-provider";
+import { buildWhatsAppUrl } from "@/lib/partner-entity/theme";
 import { touchTarget } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 
-const WHATSAPP_NUMBER = "56964133848";
-const WHATSAPP_MESSAGE = "Hola, quiero cotizar un plan de salud";
-const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(WHATSAPP_MESSAGE)}`;
+const DEFAULT_WHATSAPP_NUMBER = "56964133848";
+const DEFAULT_WHATSAPP_MESSAGE = "Hola, quiero cotizar un plan de salud";
 
 function WhatsAppIcon({ className }: { className?: string }) {
   return (
@@ -22,6 +23,13 @@ function WhatsAppIcon({ className }: { className?: string }) {
 }
 
 export function PublicWhatsAppFab() {
+  const { entity } = usePartnerEntity();
+
+  const whatsappUrl = buildWhatsAppUrl(
+    entity?.whatsappNumber ?? DEFAULT_WHATSAPP_NUMBER,
+    entity?.whatsappMessage ?? DEFAULT_WHATSAPP_MESSAGE,
+  );
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.8, y: 16 }}
@@ -41,7 +49,7 @@ export function PublicWhatsAppFab() {
       </span>
 
       <a
-        href={WHATSAPP_URL}
+        href={whatsappUrl}
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Hablar con ejecutivo por WhatsApp"

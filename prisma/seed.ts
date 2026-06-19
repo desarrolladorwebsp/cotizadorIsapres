@@ -338,12 +338,74 @@ async function seedQuotes(plans: HealthPlan[]) {
   return sampleQuotes.length;
 }
 
+const PARTNER_ENTITIES = [
+  {
+    slug: "cotizaloantes",
+    name: "Cotízalo Antes",
+    logoUrl: "/images/logo-cotizalo-antes.png",
+    websiteUrl: "https://cotizaloantes.cl",
+    whatsappNumber: "56964133848",
+    whatsappMessage: "Hola, quiero cotizar un plan de salud",
+    exitLabel: "Volver a Cotízalo Antes",
+    brandKey: "cotizalo-antes",
+    theme: {
+      primary: "#ed7d11",
+      primaryHover: "#f59324",
+      primaryDark: "#92450a",
+      primaryForeground: "#ffffff",
+      secondary: "#0e7c9c",
+      secondaryMuted: "#eef6f8",
+      bgLayout: "#ffffff",
+      foreground: "#1a1a1a",
+      muted: "#6b7280",
+      border: "#e5e7eb",
+      surfaceHover: "#f4f4f5",
+      criteriaSurface: "#ffffff",
+      criteriaRing: "#e5e7eb",
+    },
+  },
+];
+
+async function seedPartnerEntities() {
+  for (const partner of PARTNER_ENTITIES) {
+    await prisma.partnerEntity.upsert({
+      where: { slug: partner.slug },
+      create: {
+        slug: partner.slug,
+        name: partner.name,
+        logoUrl: partner.logoUrl,
+        websiteUrl: partner.websiteUrl,
+        whatsappNumber: partner.whatsappNumber,
+        whatsappMessage: partner.whatsappMessage,
+        exitLabel: partner.exitLabel,
+        brandKey: partner.brandKey,
+        theme: partner.theme,
+        active: true,
+      },
+      update: {
+        name: partner.name,
+        logoUrl: partner.logoUrl,
+        websiteUrl: partner.websiteUrl,
+        whatsappNumber: partner.whatsappNumber,
+        whatsappMessage: partner.whatsappMessage,
+        exitLabel: partner.exitLabel,
+        brandKey: partner.brandKey,
+        theme: partner.theme,
+        active: true,
+      },
+    });
+  }
+
+  return PARTNER_ENTITIES.length;
+}
+
 async function main() {
   await seedIsapres();
   const { plans, clinicCount } = await seedClinicsAndPlans();
   const { adminCount, executiveCount } = await seedAuthAccounts();
   const clientCount = await seedClientUsers();
   const quoteCount = await seedQuotes(plans);
+  const partnerCount = await seedPartnerEntities();
 
   console.log("Seed completado:");
   console.log(`  - ${ISAPRE_CATALOG.length} isapres`);
@@ -353,6 +415,7 @@ async function main() {
     `  - ${adminCount} admins, ${executiveCount} ejecutivos, ${clientCount} clientes`,
   );
   console.log(`  - ${quoteCount} cotizaciones`);
+  console.log(`  - ${partnerCount} entidades aliadas`);
   console.log(
     "  - Cuentas demo: usa SEED_ACCOUNT_PASSWORD (por defecto ChangeMe123!)",
   );

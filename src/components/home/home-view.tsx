@@ -29,7 +29,7 @@ export function HomeView() {
             Arquitectura base inicial
           </p>
           <h1 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
-            Cotizador Inteligente de planes Isapre
+            Cotizador Virtual de planes Isapre
           </h1>
           <p className="max-w-3xl text-sm text-foreground/75 sm:text-base">
             Base de proyecto con componentes atómicos reutilizables, tokens de

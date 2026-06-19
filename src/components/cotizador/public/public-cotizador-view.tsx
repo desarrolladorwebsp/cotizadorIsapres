@@ -1,11 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { FiltersFab } from "@/components/filters";
+import {
+  PartnerEntityProvider,
+  usePartnerEntity,
+} from "@/components/partner/partner-entity-provider";
 import { useCotizadorDashboard } from "@/hooks/use-cotizador-dashboard";
 import { usePlanCatalogBounds } from "@/hooks/use-plan-catalog-bounds";
 import { usePlanSearch } from "@/hooks/use-plan-search";
 import { buildPlanFinalPriceQuote } from "@/domain";
+import { parseCotizadorUrl } from "@/lib/deep-link/parse-cotizador-url";
 import {
   INITIAL_PLANS_PAGE_SIZE,
   PLANS_PAGE_SIZE_STEP,
@@ -21,6 +27,7 @@ import {
 } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type { HealthPlanSummary } from "@/domain";
+import type { PartnerEntityPublic } from "@/types/partner-entity";
 import { ContractPlanModal } from "./contract-plan-modal";
 import { PublicCotizadorHeader } from "./public-cotizador-header";
 import { PublicWhatsAppFab } from "./public-whatsapp-fab";
@@ -35,25 +42,60 @@ import {
   type CurrencyDisplay,
 } from "./public-results-toolbar";
 
-export function PublicCotizadorView() {
-  const dashboard = useCotizadorDashboard([]);
+export interface PublicCotizadorViewProps {
+  entity?: PartnerEntityPublic | null;
+}
+
+export function PublicCotizadorView({
+  entity = null,
+}: PublicCotizadorViewProps) {
+  return (
+    <PartnerEntityProvider entity={entity}>
+      <Suspense
+        fallback={
+          <div className="flex min-h-screen items-center justify-center bg-bg-layout text-sm text-muted">
+            Cargando cotizador…
+          </div>
+        }
+      >
+        <PublicCotizadorViewInner />
+      </Suspense>
+    </PartnerEntityProvider>
+  );
+}
+
+function PublicCotizadorViewInner() {
+  const searchParams = useSearchParams();
+  const deepLink = useMemo(
+    () => parseCotizadorUrl(searchParams),
+    [searchParams],
+  );
+
+  const { entity, isBranded, themeStyle } = usePartnerEntity();
+  const dashboard = useCotizadorDashboard([], {
+    initialBeneficiaries: deepLink.beneficiaries,
+    initialBeneficiarySummary: deepLink.beneficiarySummary,
+    initialDashboardFilters: deepLink.filters,
+    initialPriceMin: deepLink.priceMin,
+    initialPriceMax: deepLink.priceMax,
+  });
   const { bounds } = usePlanCatalogBounds();
   const { plans, total, loading, error, hasSearched, search } = usePlanSearch();
   const resultsRef = useRef<HTMLElement>(null);
   const initialSearchDoneRef = useRef(false);
   const skipDebouncedSearchRef = useRef(false);
 
-  const [criteria, setCriteria] = useState<QuoteCriteria>({
-    region: "rm",
-    monthlyIncome: "",
-    sex: "",
-  });
-  const [sortKey, setSortKey] = useState<QuoteSortKey>("price_asc");
-  const [currency, setCurrency] = useState<CurrencyDisplay>("clp");
+  const [criteria, setCriteria] = useState<QuoteCriteria>(deepLink.criteria);
+  const [sortKey, setSortKey] = useState<QuoteSortKey>(
+    deepLink.sortKey ?? "price_asc",
+  );
+  const [currency, setCurrency] = useState<CurrencyDisplay>(
+    deepLink.currency ?? "clp",
+  );
   const [contractPlan, setContractPlan] = useState<HealthPlanSummary | null>(
     null,
   );
-  const [searchText, setSearchText] = useState("");
+  const [searchText, setSearchText] = useState(deepLink.q ?? "");
   const [resultsLimit, setResultsLimit] = useState(INITIAL_PLANS_PAGE_SIZE);
 
   const runSearch = useCallback(
@@ -79,16 +121,31 @@ export function PublicCotizadorView() {
   useEffect(() => {
     if (initialSearchDoneRef.current || bounds.totalPlans === 0) return;
 
-    dashboard.setPriceMin(Math.floor(bounds.priceMin * 10) / 10);
-    dashboard.setPriceMax(Math.ceil(bounds.priceMax * 10) / 10);
+    const priceMin =
+      deepLink.priceMin ?? Math.floor(bounds.priceMin * 10) / 10;
+    const priceMax =
+      deepLink.priceMax ?? Math.ceil(bounds.priceMax * 10) / 10;
+
+    dashboard.setPriceMin(priceMin);
+    dashboard.setPriceMax(priceMax);
     initialSearchDoneRef.current = true;
     skipDebouncedSearchRef.current = true;
 
+    if (!deepLink.shouldAutoSearch) return;
+
     void search({
-      priceMin: Math.floor(bounds.priceMin * 10) / 10,
-      priceMax: Math.ceil(bounds.priceMax * 10) / 10,
+      q: deepLink.q,
+      priceMin,
+      priceMax,
       filters: dashboard.dashboardFilters,
       limit: INITIAL_PLANS_PAGE_SIZE,
+    }).then(() => {
+      if (deepLink.hasDeepLinkParams) {
+        resultsRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }
     });
   }, [
     bounds.totalPlans,
@@ -97,6 +154,11 @@ export function PublicCotizadorView() {
     dashboard.dashboardFilters,
     dashboard.setPriceMin,
     dashboard.setPriceMax,
+    deepLink.hasDeepLinkParams,
+    deepLink.priceMax,
+    deepLink.priceMin,
+    deepLink.q,
+    deepLink.shouldAutoSearch,
     search,
   ]);
 
@@ -184,9 +246,13 @@ export function PublicCotizadorView() {
     });
   }
 
+  const brandKey = isBranded ? entity!.brandKey : undefined;
+
   return (
     <div
-      data-brand="cotizalo-antes"
+      data-brand={brandKey}
+      data-partner={isBranded ? entity!.slug : undefined}
+      style={isBranded ? themeStyle : undefined}
       className={joinClasses(appShellRoot, ui.canvas)}
     >
       <PublicCotizadorHeader />

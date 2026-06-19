@@ -1,4 +1,4 @@
-# Cotizador Inteligente — Next.js
+# Cotizador Virtual — Next.js
 
 Sistema único con tres vistas principales.
 

@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Cotizador Inteligente",
+  title: "Cotizador Virtual",
   description: "Sistema inteligente de cotizaciones para planes de Isapre.",
 };
 

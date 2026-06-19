@@ -64,7 +64,7 @@ export function CotizadorHeader({
                 ui.sectionTitle,
               )}
             >
-              Cotizador Inteligente
+              Cotizador Virtual
             </p>
             <p className="truncate text-xs text-muted">
               {isExecutive

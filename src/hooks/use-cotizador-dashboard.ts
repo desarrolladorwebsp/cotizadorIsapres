@@ -24,6 +24,9 @@ const INITIAL_BENEFICIARIES: FamilyBeneficiariesState = {
 export interface CotizadorDashboardOptions {
   initialBeneficiaries?: FamilyBeneficiariesState;
   initialBeneficiarySummary?: BeneficiaryGroupSummary;
+  initialDashboardFilters?: DashboardFiltersState;
+  initialPriceMin?: number;
+  initialPriceMax?: number;
 }
 
 export function useCotizadorDashboard(
@@ -42,15 +45,15 @@ export function useCotizadorDashboard(
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarReady, setSidebarReady] = useState(false);
   const [search, setSearch] = useState("");
-  const [priceMin, setPriceMin] = useState(3);
-  const [priceMax, setPriceMax] = useState(5);
+  const [priceMin, setPriceMin] = useState(options?.initialPriceMin ?? 3);
+  const [priceMax, setPriceMax] = useState(options?.initialPriceMax ?? 5);
   const [sortAsc, setSortAsc] = useState(true);
   const [beneficiaries, setBeneficiaries] =
     useState<FamilyBeneficiariesState>(seedBeneficiaries);
   const [beneficiarySummary, setBeneficiarySummary] =
     useState<BeneficiaryGroupSummary>(seedSummary);
   const [dashboardFilters, setDashboardFilters] = useState<DashboardFiltersState>(
-    createDefaultDashboardFilters,
+    () => options?.initialDashboardFilters ?? createDefaultDashboardFilters(),
   );
 
   useEffect(() => {

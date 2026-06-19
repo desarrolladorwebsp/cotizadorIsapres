@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Administración | Cotizador Inteligente",
+  title: "Administración | Cotizador Virtual",
   description: "Gestión de planes de salud y clínicas.",
 };
 
