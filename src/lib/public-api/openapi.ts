@@ -1,6 +1,7 @@
 import {
   PUBLIC_API_BASE_PATH,
   PUBLIC_API_KEY_HEADER,
+  PUBLIC_API_PLANS_PREVIEW_LIMIT,
   PUBLIC_API_VERSION,
 } from "@/lib/public-api/constants";
 import { getDeepLinkDocumentation } from "@/lib/deep-link/build-cotizador-url";
@@ -78,6 +79,29 @@ export function buildPublicApiAgentGuide(request: Request) {
           },
         },
       },
+      {
+        method: "GET",
+        path: `${baseUrl}/plans/preview`,
+        summary: `Vista previa de ${PUBLIC_API_PLANS_PREVIEW_LIMIT} planes (ligera, recomendada para integraciones)`,
+        auth_required: true,
+        response: {
+          content_type: "application/json",
+          shape: {
+            data: "HealthPlanSummary[]",
+            meta: {
+              total: "number",
+              limit: "number",
+              offset: "number",
+              version: "string",
+            },
+          },
+          notes: [
+            `Devuelve exactamente ${PUBLIC_API_PLANS_PREVIEW_LIMIT} planes ordenados por nombre.`,
+            "Usa coverage_summary en lugar del array coverage completo para reducir el payload.",
+            "Para el catálogo completo con coberturas por clínica, usa GET /plans.",
+          ],
+        },
+      },
     ],
     cotizador_deep_link: getDeepLinkDocumentation(
       process.env.PUBLIC_API_BASE_URL?.replace(/\/api\/public\/v1\/?$/, "") ??
@@ -146,6 +170,11 @@ export function buildPublicApiAgentGuide(request: Request) {
       list_plans_curl: `curl -s "${baseUrl}/plans" \\
   -H "Authorization: Bearer $PUBLIC_API_SECRET"`,
       list_plans_fetch: `fetch("${baseUrl}/plans", {
+  headers: { Authorization: "Bearer " + process.env.PUBLIC_API_SECRET }
+})`,
+      preview_plans_curl: `curl -s "${baseUrl}/plans/preview" \\
+  -H "Authorization: Bearer $PUBLIC_API_SECRET"`,
+      preview_plans_fetch: `fetch("${baseUrl}/plans/preview", {
   headers: { Authorization: "Bearer " + process.env.PUBLIC_API_SECRET }
 })`,
     },
@@ -243,6 +272,72 @@ function buildOpenApiDocument(baseUrl: string) {
             },
           },
         },
+        PlanCoverageSummary: {
+          type: "object",
+          required: [
+            "clinic_count",
+            "hospital_percentages",
+            "ambulatory_percentages",
+            "hospital_avg",
+            "ambulatory_avg",
+          ],
+          properties: {
+            clinic_count: { type: "integer" },
+            hospital_percentages: {
+              type: "array",
+              items: { type: "integer" },
+            },
+            ambulatory_percentages: {
+              type: "array",
+              items: { type: "integer" },
+            },
+            hospital_avg: { type: "number" },
+            ambulatory_avg: { type: "number" },
+          },
+        },
+        HealthPlanSummary: {
+          type: "object",
+          required: [
+            "isapre",
+            "plan_name",
+            "unique_code",
+            "base_price_uf",
+            "has_top",
+            "coverage_summary",
+          ],
+          properties: {
+            isapre: { type: "string" },
+            plan_name: { type: "string" },
+            unique_code: { type: "string" },
+            base_price_uf: { type: "number" },
+            has_top: { type: "boolean" },
+            additional_notes: { type: "string", nullable: true },
+            pdf_url: { type: "string", nullable: true },
+            pdf_public_id: { type: "string", nullable: true },
+            coverage_summary: {
+              $ref: "#/components/schemas/PlanCoverageSummary",
+            },
+          },
+        },
+        PlansPreviewResponse: {
+          type: "object",
+          required: ["data", "meta"],
+          properties: {
+            data: {
+              type: "array",
+              items: { $ref: "#/components/schemas/HealthPlanSummary" },
+            },
+            meta: {
+              type: "object",
+              properties: {
+                total: { type: "integer" },
+                limit: { type: "integer" },
+                offset: { type: "integer" },
+                version: { type: "string" },
+              },
+            },
+          },
+        },
         ErrorResponse: {
           type: "object",
           properties: {
@@ -281,6 +376,32 @@ function buildOpenApiDocument(baseUrl: string) {
               content: {
                 "application/json": {
                   schema: { $ref: "#/components/schemas/PlansResponse" },
+                },
+              },
+            },
+            "401": {
+              description: "Clave ausente o inválida",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/ErrorResponse" },
+                },
+              },
+            },
+          },
+        },
+      },
+      "/plans/preview": {
+        get: {
+          operationId: "previewHealthPlans",
+          summary: `Vista previa de ${PUBLIC_API_PLANS_PREVIEW_LIMIT} planes (ligera)`,
+          description:
+            "Devuelve un subconjunto fijo de planes con coverage_summary en lugar del detalle por clínica. Recomendado para integraciones que no necesitan el catálogo completo.",
+          responses: {
+            "200": {
+              description: "Vista previa de planes",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/PlansPreviewResponse" },
                 },
               },
             },

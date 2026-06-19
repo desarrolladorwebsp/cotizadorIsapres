@@ -366,6 +366,7 @@ exit;`,
     notes_for_integrators: [
       "El deep link es público: no necesitas PUBLIC_API_SECRET para redirigir usuarios al cotizador.",
       "La API REST (/api/public/v1/plans) sí requiere PUBLIC_API_SECRET para consumir datos de planes programáticamente.",
+      "Para integraciones ligeras usa GET /api/public/v1/plans/preview (6 planes con resumen de coberturas).",
       "Usa entidad=cotizaloantes para el branding de Cotízalo Antes (logo naranja, WhatsApp y botón volver).",
       "Si envías isapres o zonas, solo quedan activos los ids listados; el resto se desactiva.",
       "Parámetros desconocidos o mal formados se ignoran silenciosamente.",

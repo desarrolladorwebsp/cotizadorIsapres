@@ -154,6 +154,34 @@ export async function searchPlanSummaries(
   };
 }
 
+/** Primeros N planes del catálogo (consulta acotada en BD, sin cargar todo el catálogo). */
+export async function readLimitedPlanSummaries(
+  limit: number,
+): Promise<PlanSearchResult> {
+  const safeLimit =
+    Number.isFinite(limit) && limit > 0 ? Math.floor(limit) : 1;
+
+  const [dbPlans, total] = await Promise.all([
+    prisma.plan.findMany({
+      include: planInclude,
+      orderBy: { planName: "asc" },
+      take: safeLimit,
+    }),
+    prisma.plan.count(),
+  ]);
+
+  const summaries = (dbPlans as PlanWithCoverages[])
+    .map(mapDbPlanToHealthPlan)
+    .map(mapHealthPlanToSummary);
+
+  return {
+    plans: summaries,
+    total,
+    limit: safeLimit,
+    offset: 0,
+  };
+}
+
 export async function readPlanCatalogBounds(): Promise<{
   priceMin: number;
   priceMax: number;
