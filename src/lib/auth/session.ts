@@ -89,6 +89,7 @@ export async function issueSession(input: {
   accountId: string;
   email: string;
   realm: AuthRealm;
+  mustChangePassword?: boolean;
 }): Promise<string> {
   const token = await createSessionToken(input);
   await setSessionCookie(input.realm, token);

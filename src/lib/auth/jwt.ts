@@ -28,12 +28,14 @@ export async function createSessionToken(input: {
   accountId: string;
   email: string;
   realm: AuthRealm;
+  mustChangePassword?: boolean;
 }): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
 
   return new SignJWT({
     email: input.email,
     realm: input.realm,
+    mustChangePassword: Boolean(input.mustChangePassword),
   })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(input.accountId)
@@ -63,6 +65,7 @@ export async function verifySessionToken(
       sub: payload.sub,
       email: payload.email,
       realm,
+      mustChangePassword: payload.mustChangePassword === true,
       iat: payload.iat ?? 0,
       exp: payload.exp ?? 0,
     };

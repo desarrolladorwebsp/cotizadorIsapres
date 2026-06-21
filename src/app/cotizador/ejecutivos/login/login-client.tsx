@@ -2,7 +2,10 @@
 
 import { useSearchParams } from "next/navigation";
 import { LoginForm } from "@/components/auth/login-form";
-import { EXECUTIVE_HOME_PATH } from "@/lib/auth/constants";
+import {
+  EXECUTIVE_CHANGE_PASSWORD_PATH,
+  EXECUTIVE_HOME_PATH,
+} from "@/lib/auth/constants";
 
 export default function ExecutiveLoginClient() {
   const searchParams = useSearchParams();
@@ -16,6 +19,7 @@ export default function ExecutiveLoginClient() {
       title="Acceso ejecutivos"
       subtitle="Ingresa con tu cuenta de ejecutivo comercial."
       redirectTo={redirectTo}
+      changePasswordPath={EXECUTIVE_CHANGE_PASSWORD_PATH}
     />
   );
 }

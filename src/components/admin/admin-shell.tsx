@@ -1,9 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { UserMenu } from "@/components/auth/user-menu";
 import { useAuthSession } from "@/hooks/use-auth-session";
-import { ADMIN_LOGIN_PATH } from "@/lib/auth/constants";
+import {
+  ADMIN_HOME_PATH,
+  ADMIN_LOGIN_PATH,
+  ADMIN_USERS_PATH,
+} from "@/lib/auth/constants";
 import {
   appShellRoot,
   appShellScroll,
@@ -17,8 +22,8 @@ import { joinClasses } from "@/lib/utils";
 export type AdminSection = "plans" | "clinics" | "quotes";
 
 export interface AdminShellProps {
-  activeSection: AdminSection;
-  onSectionChange: (section: AdminSection) => void;
+  activeSection?: AdminSection;
+  onSectionChange?: (section: AdminSection) => void;
   children: React.ReactNode;
 }
 
@@ -33,7 +38,10 @@ export function AdminShell({
   onSectionChange,
   children,
 }: AdminShellProps) {
+  const pathname = usePathname();
   const { user: adminUser } = useAuthSession("admin");
+  const onUsersPage = pathname === ADMIN_USERS_PATH;
+  const useTabNavigation = Boolean(onSectionChange && activeSection);
 
   return (
     <div className={joinClasses(appShellRoot, ui.canvas)}>
@@ -53,7 +61,7 @@ export function AdminShell({
                 Panel administrativo
               </p>
               <p className="truncate text-xs text-muted">
-                Gestión de planes, clínicas y cotizaciones
+                Gestión de planes, clínicas, cotizaciones y usuarios
               </p>
             </div>
           </div>
@@ -93,13 +101,29 @@ export function AdminShell({
             )}
           >
             {navItems.map((item) => {
-              const isActive = activeSection === item.id;
+              const isActive = useTabNavigation && activeSection === item.id;
+
+              if (!useTabNavigation) {
+                return (
+                  <Link
+                    key={item.id}
+                    href={ADMIN_HOME_PATH}
+                    className={joinClasses(
+                      "shrink-0 rounded-lg px-4 py-2.5 text-sm font-semibold transition",
+                      joinClasses("text-muted", ui.hoverSurface),
+                    )}
+                  >
+                    <span className="sm:hidden">{item.shortLabel}</span>
+                    <span className="hidden sm:inline">{item.label}</span>
+                  </Link>
+                );
+              }
 
               return (
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => onSectionChange(item.id)}
+                  onClick={() => onSectionChange?.(item.id)}
                   className={joinClasses(
                     "shrink-0 rounded-lg px-4 py-2.5 text-sm font-semibold transition",
                     isActive
@@ -113,6 +137,20 @@ export function AdminShell({
                 </button>
               );
             })}
+
+            <Link
+              href={ADMIN_USERS_PATH}
+              className={joinClasses(
+                "shrink-0 rounded-lg px-4 py-2.5 text-sm font-semibold transition",
+                onUsersPage
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : joinClasses("text-muted", ui.hoverSurface),
+              )}
+              aria-current={onUsersPage ? "page" : undefined}
+            >
+              <span className="sm:hidden">Usuarios</span>
+              <span className="hidden sm:inline">Usuarios</span>
+            </Link>
           </div>
         </nav>
       </header>

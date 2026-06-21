@@ -5,6 +5,12 @@ import type {
 import type { Clinic } from "@/types/clinic";
 import type { HealthPlan } from "@/types/plan";
 import type { QuoteRecord } from "@/types/quote";
+import type {
+  CreateStaffAccountInput,
+  StaffAccountRecord,
+  StaffRealm,
+  UpdateStaffAccountInput,
+} from "@/types/staff-account";
 
 async function parseJsonResponse<T>(response: Response): Promise<T> {
   let data: (T & { error?: string }) | null = null;
@@ -69,6 +75,53 @@ export async function fetchClinics(): Promise<Clinic[]> {
 export async function fetchQuotes(): Promise<QuoteRecord[]> {
   const response = await fetch("/api/quotes");
   return parseJsonResponse<QuoteRecord[]>(response);
+}
+
+export async function fetchStaffAccounts(): Promise<StaffAccountRecord[]> {
+  const response = await fetch("/api/admin/accounts");
+  return parseJsonResponse<StaffAccountRecord[]>(response);
+}
+
+export async function createStaffAccount(
+  input: CreateStaffAccountInput,
+): Promise<{ account: StaffAccountRecord; message: string }> {
+  const response = await fetch("/api/admin/accounts", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  return parseJsonResponse<{ account: StaffAccountRecord; message: string }>(
+    response,
+  );
+}
+
+export async function updateStaffAccount(
+  realm: StaffRealm,
+  id: string,
+  input: UpdateStaffAccountInput,
+): Promise<{ account: StaffAccountRecord }> {
+  const response = await fetch(
+    `/api/admin/accounts/${encodeURIComponent(id)}?realm=${realm}`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+  );
+  return parseJsonResponse<{ account: StaffAccountRecord }>(response);
+}
+
+export async function resendStaffInvite(
+  realm: StaffRealm,
+  id: string,
+): Promise<{ account: StaffAccountRecord; message: string }> {
+  const response = await fetch(
+    `/api/admin/accounts/${encodeURIComponent(id)}?realm=${realm}&action=resend-invite`,
+    { method: "POST" },
+  );
+  return parseJsonResponse<{ account: StaffAccountRecord; message: string }>(
+    response,
+  );
 }
 
 export async function createClinic(clinic: Clinic): Promise<Clinic> {

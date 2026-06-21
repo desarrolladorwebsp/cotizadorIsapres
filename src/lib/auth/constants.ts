@@ -22,4 +22,8 @@ export const PASSWORD_MIN_LENGTH = 8;
 export const ADMIN_LOGIN_PATH = "/cotizador/admin/login";
 export const EXECUTIVE_LOGIN_PATH = "/cotizador/ejecutivos/login";
 export const ADMIN_HOME_PATH = "/cotizador/admin";
+export const ADMIN_USERS_PATH = "/cotizador/admin/usuarios";
+export const ADMIN_CHANGE_PASSWORD_PATH = "/cotizador/admin/cambiar-contrasena";
 export const EXECUTIVE_HOME_PATH = "/cotizador/ejecutivos";
+export const EXECUTIVE_CHANGE_PASSWORD_PATH =
+  "/cotizador/ejecutivos/cambiar-contrasena";

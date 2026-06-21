@@ -9,4 +9,7 @@ export const KNOWN_PAGE_ROUTES = new Set([
   "/cotizador/ejecutivos/login",
   "/cotizador/admin",
   "/cotizador/admin/login",
+  "/cotizador/admin/usuarios",
+  "/cotizador/admin/cambiar-contrasena",
+  "/cotizador/ejecutivos/cambiar-contrasena",
 ]);

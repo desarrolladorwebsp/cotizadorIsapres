@@ -2,72 +2,66 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import {
-  ADMIN_CHANGE_PASSWORD_PATH,
-  EXECUTIVE_CHANGE_PASSWORD_PATH,
-} from "@/lib/auth/constants";
+import { PASSWORD_MIN_LENGTH } from "@/lib/auth/constants";
 import { touchTarget, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 
-export interface LoginFormProps {
+export interface ChangePasswordFormProps {
   realm: "admin" | "executive";
   title: string;
   subtitle: string;
   redirectTo: string;
-  changePasswordPath?: string;
 }
 
-export function LoginForm({
+export function ChangePasswordForm({
   realm,
   title,
   subtitle,
   redirectTo,
-  changePasswordPath,
-}: LoginFormProps) {
+}: ChangePasswordFormProps) {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setLoading(true);
     setError(null);
 
+    if (newPassword.length < PASSWORD_MIN_LENGTH) {
+      setError(`La nueva contraseña debe tener al menos ${PASSWORD_MIN_LENGTH} caracteres.`);
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError("La confirmación no coincide con la nueva contraseña.");
+      return;
+    }
+
+    setLoading(true);
+
     try {
-      const response = await fetch(`/api/auth/${realm}/login`, {
+      const response = await fetch(`/api/auth/${realm}/change-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ currentPassword, newPassword }),
       });
 
-      const data = (await response.json()) as {
-        error?: string;
-        user?: { mustChangePassword?: boolean };
-      };
+      const data = (await response.json()) as { error?: string };
 
       if (!response.ok) {
-        throw new Error(data.error ?? "No se pudo iniciar sesión.");
+        throw new Error(data.error ?? "No se pudo actualizar la contraseña.");
       }
 
-      const mustChangePassword = Boolean(data.user?.mustChangePassword);
-      const defaultChangePath =
-        realm === "admin"
-          ? ADMIN_CHANGE_PASSWORD_PATH
-          : EXECUTIVE_CHANGE_PASSWORD_PATH;
-
-      router.replace(
-        mustChangePassword
-          ? (changePasswordPath ?? defaultChangePath)
-          : redirectTo,
-      );
+      router.replace(redirectTo);
       router.refresh();
     } catch (submitError) {
       setError(
         submitError instanceof Error
           ? submitError.message
-          : "No se pudo iniciar sesión.",
+          : "No se pudo actualizar la contraseña.",
       );
     } finally {
       setLoading(false);
@@ -76,12 +70,7 @@ export function LoginForm({
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-bg-layout px-4 py-10">
-      <div
-        className={joinClasses(
-          ui.surfaceCard,
-          "w-full max-w-md p-6 sm:p-8",
-        )}
-      >
+      <div className={joinClasses(ui.surfaceCard, "w-full max-w-md p-6 sm:p-8")}>
         <div className="mb-8 text-center">
           <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-primary text-sm font-bold text-primary-foreground shadow-sm">
             CI
@@ -94,36 +83,44 @@ export function LoginForm({
 
         <form className="space-y-4" onSubmit={handleSubmit}>
           <label className="block space-y-2">
-            <span className="text-sm font-medium text-foreground">Correo</span>
+            <span className="text-sm font-medium text-foreground">
+              Clave temporal / actual
+            </span>
             <input
-              type="email"
-              name="email"
-              autoComplete="username"
+              type="password"
+              autoComplete="current-password"
               required
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              className={joinClasses(
-                "w-full rounded-lg px-3 py-2.5 text-sm",
-                ui.input,
-              )}
+              value={currentPassword}
+              onChange={(event) => setCurrentPassword(event.target.value)}
+              className={joinClasses("w-full rounded-lg px-3 py-2.5 text-sm", ui.input)}
             />
           </label>
 
           <label className="block space-y-2">
             <span className="text-sm font-medium text-foreground">
-              Contraseña
+              Nueva contraseña
             </span>
             <input
               type="password"
-              name="password"
-              autoComplete="current-password"
+              autoComplete="new-password"
               required
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              className={joinClasses(
-                "w-full rounded-lg px-3 py-2.5 text-sm",
-                ui.input,
-              )}
+              value={newPassword}
+              onChange={(event) => setNewPassword(event.target.value)}
+              className={joinClasses("w-full rounded-lg px-3 py-2.5 text-sm", ui.input)}
+            />
+          </label>
+
+          <label className="block space-y-2">
+            <span className="text-sm font-medium text-foreground">
+              Confirmar nueva contraseña
+            </span>
+            <input
+              type="password"
+              autoComplete="new-password"
+              required
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              className={joinClasses("w-full rounded-lg px-3 py-2.5 text-sm", ui.input)}
             />
           </label>
 
@@ -144,7 +141,7 @@ export function LoginForm({
               "w-full rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60",
             )}
           >
-            {loading ? "Ingresando..." : "Iniciar sesión"}
+            {loading ? "Guardando..." : "Actualizar contraseña"}
           </button>
         </form>
       </div>

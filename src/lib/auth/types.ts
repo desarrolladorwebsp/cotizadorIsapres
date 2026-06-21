@@ -5,6 +5,7 @@ export interface SessionPayload {
   sub: string;
   email: string;
   realm: AuthRealm;
+  mustChangePassword: boolean;
   iat: number;
   exp: number;
 }
@@ -13,6 +14,7 @@ export interface AdminSessionUser {
   id: string;
   email: string;
   fullName: string;
+  mustChangePassword: boolean;
 }
 
 export interface ExecutiveSessionUser {
@@ -23,6 +25,11 @@ export interface ExecutiveSessionUser {
   subscriptionStatus: SubscriptionStatus;
   subscriptionExpiresAt: string | null;
   subscriptionActive: boolean;
+  mustChangePassword: boolean;
+}
+
+export interface LoginResponseUser {
+  mustChangePassword: boolean;
 }
 
 export interface LoginCredentials {

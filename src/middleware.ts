@@ -1,6 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { AUTH_REALM, SESSION_COOKIE } from "@/lib/auth/constants";
+import {
+  ADMIN_CHANGE_PASSWORD_PATH,
+  AUTH_REALM,
+  EXECUTIVE_CHANGE_PASSWORD_PATH,
+  SESSION_COOKIE,
+} from "@/lib/auth/constants";
 import { verifySessionToken } from "@/lib/auth/jwt";
+import type { SessionPayload } from "@/lib/auth/types";
 import {
   DEFAULT_PARTNER_ENTITY_SLUG,
   PARTNER_ENTITY_COOKIE,
@@ -16,20 +22,22 @@ const EXECUTIVE_LOGIN = `${EXECUTIVE_PREFIX}/login`;
 
 const PARTNER_SLUG_PATTERN = /^\/([a-z0-9]+(?:-[a-z0-9]+)*)\/?$/;
 
-async function hasValidSession(
+async function readStaffSession(
   request: NextRequest,
   realm: typeof AUTH_REALM.admin | typeof AUTH_REALM.executive,
-): Promise<boolean> {
+): Promise<SessionPayload | null> {
   const cookieName =
     realm === AUTH_REALM.admin
       ? SESSION_COOKIE.admin
       : SESSION_COOKIE.executive;
   const token = request.cookies.get(cookieName)?.value;
 
-  if (!token) return false;
+  if (!token) return null;
 
   const session = await verifySessionToken(token);
-  return Boolean(session && session.realm === realm);
+  if (!session || session.realm !== realm) return null;
+
+  return session;
 }
 
 function setPartnerEntityCookie(
@@ -84,38 +92,78 @@ export async function middleware(request: NextRequest) {
   }
 
   if (pathname.startsWith(ADMIN_PREFIX)) {
+    const session = await readStaffSession(request, AUTH_REALM.admin);
     const isLoginPage = pathname === ADMIN_LOGIN;
+    const isChangePasswordPage = pathname === ADMIN_CHANGE_PASSWORD_PATH;
 
     if (isLoginPage) {
-      if (await hasValidSession(request, AUTH_REALM.admin)) {
-        return NextResponse.redirect(new URL(ADMIN_PREFIX, request.url));
+      if (session) {
+        const target = session.mustChangePassword
+          ? ADMIN_CHANGE_PASSWORD_PATH
+          : ADMIN_PREFIX;
+        return NextResponse.redirect(new URL(target, request.url));
       }
       return NextResponse.next();
     }
 
-    if (!(await hasValidSession(request, AUTH_REALM.admin))) {
+    if (isChangePasswordPage) {
+      if (!session) {
+        const loginUrl = new URL(ADMIN_LOGIN, request.url);
+        loginUrl.searchParams.set("next", ADMIN_CHANGE_PASSWORD_PATH);
+        return NextResponse.redirect(loginUrl);
+      }
+      return NextResponse.next();
+    }
+
+    if (!session) {
       const loginUrl = new URL(ADMIN_LOGIN, request.url);
       loginUrl.searchParams.set("next", pathname);
       return NextResponse.redirect(loginUrl);
+    }
+
+    if (session.mustChangePassword) {
+      return NextResponse.redirect(
+        new URL(ADMIN_CHANGE_PASSWORD_PATH, request.url),
+      );
     }
 
     return NextResponse.next();
   }
 
   if (pathname.startsWith(EXECUTIVE_PREFIX)) {
+    const session = await readStaffSession(request, AUTH_REALM.executive);
     const isLoginPage = pathname === EXECUTIVE_LOGIN;
+    const isChangePasswordPage = pathname === EXECUTIVE_CHANGE_PASSWORD_PATH;
 
     if (isLoginPage) {
-      if (await hasValidSession(request, AUTH_REALM.executive)) {
-        return NextResponse.redirect(new URL(EXECUTIVE_PREFIX, request.url));
+      if (session) {
+        const target = session.mustChangePassword
+          ? EXECUTIVE_CHANGE_PASSWORD_PATH
+          : EXECUTIVE_PREFIX;
+        return NextResponse.redirect(new URL(target, request.url));
       }
       return NextResponse.next();
     }
 
-    if (!(await hasValidSession(request, AUTH_REALM.executive))) {
+    if (isChangePasswordPage) {
+      if (!session) {
+        const loginUrl = new URL(EXECUTIVE_LOGIN, request.url);
+        loginUrl.searchParams.set("next", EXECUTIVE_CHANGE_PASSWORD_PATH);
+        return NextResponse.redirect(loginUrl);
+      }
+      return NextResponse.next();
+    }
+
+    if (!session) {
       const loginUrl = new URL(EXECUTIVE_LOGIN, request.url);
       loginUrl.searchParams.set("next", pathname);
       return NextResponse.redirect(loginUrl);
+    }
+
+    if (session.mustChangePassword) {
+      return NextResponse.redirect(
+        new URL(EXECUTIVE_CHANGE_PASSWORD_PATH, request.url),
+      );
     }
 
     return NextResponse.next();

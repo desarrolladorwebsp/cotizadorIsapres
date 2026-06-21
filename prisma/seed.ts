@@ -158,10 +158,12 @@ async function seedAuthAccounts() {
         fullName: admin.fullName,
         passwordHash,
         active: true,
+        mustChangePassword: false,
       },
       update: {
         fullName: admin.fullName,
         active: true,
+        mustChangePassword: false,
       },
     });
   }
@@ -179,6 +181,7 @@ async function seedAuthAccounts() {
         rut: executive.rut,
         passwordHash,
         active: true,
+        mustChangePassword: false,
         subscriptionStatus: executive.subscriptionStatus,
         subscriptionExpiresAt:
           executive.subscriptionStatus === "TRIAL" ? trialExpiresAt : null,
@@ -188,6 +191,7 @@ async function seedAuthAccounts() {
         phone: executive.phone,
         rut: executive.rut,
         active: true,
+        mustChangePassword: false,
       },
     });
   }

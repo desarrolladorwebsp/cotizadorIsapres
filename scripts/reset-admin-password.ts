@@ -23,6 +23,7 @@ async function upsertAdminPassword(email: string, password: string) {
       fullName,
       passwordHash,
       active: true,
+      mustChangePassword: false,
     },
     update: {
       passwordHash,
@@ -30,6 +31,7 @@ async function upsertAdminPassword(email: string, password: string) {
       lockedUntil: null,
       passwordChangedAt: new Date(),
       active: true,
+      mustChangePassword: false,
     },
   });
 
