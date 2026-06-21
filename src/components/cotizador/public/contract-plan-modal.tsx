@@ -130,6 +130,7 @@ export function ContractPlanModal({
   );
   const [activeTab, setActiveTab] = useState<ModalTabId>("overview");
   const [submitted, setSubmitted] = useState(false);
+  const [emailNotifyFailed, setEmailNotifyFailed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
@@ -144,6 +145,7 @@ export function ContractPlanModal({
     if (!open) {
       setActiveTab("overview");
       setSubmitted(false);
+      setEmailNotifyFailed(false);
       setSubmitting(false);
       setSubmitError(null);
       setValidationErrors([]);
@@ -288,7 +290,9 @@ export function ContractPlanModal({
           plan: summary,
           priceQuote: quote,
         });
+        setEmailNotifyFailed(false);
       } catch (notifyError) {
+        setEmailNotifyFailed(true);
         console.error(
           "La solicitud se guardó, pero falló el envío de correos:",
           notifyError,
@@ -495,6 +499,22 @@ export function ContractPlanModal({
                     próximamente para entregarte el precio final y acompañarte en
                     tu incorporación a {summary.isapre}.
                   </p>
+                  {emailNotifyFailed ? (
+                    <p
+                      className="mx-auto mt-4 max-w-md rounded-lg border border-accent-warning/40 bg-warning-muted px-4 py-3 text-sm text-accent-warning-foreground"
+                      role="alert"
+                    >
+                      Tu solicitud quedó registrada, pero no pudimos enviar el
+                      correo de confirmación en este momento. Revisa tu bandeja más
+                      tarde o contáctanos si no recibes respuesta.
+                    </p>
+                  ) : (
+                    <p className="mx-auto mt-3 max-w-md text-sm font-medium text-primary">
+                      Te enviamos un correo de confirmación a {email.trim()}.
+                      Si no lo ves en unos minutos, revisa tu carpeta de spam o
+                      correo no deseado.
+                    </p>
+                  )}
                   <Button type="button" onClick={onClose} className="mt-2">
                     Cerrar
                   </Button>
