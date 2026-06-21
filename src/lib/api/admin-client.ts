@@ -4,6 +4,7 @@ import type {
 } from "@/lib/plan-pdf-storage/types";
 import type { Clinic } from "@/types/clinic";
 import type { HealthPlan } from "@/types/plan";
+import type { QuoteRecord } from "@/types/quote";
 
 async function parseJsonResponse<T>(response: Response): Promise<T> {
   let data: (T & { error?: string }) | null = null;
@@ -63,6 +64,11 @@ export async function deletePlan(uniqueCode: string): Promise<void> {
 export async function fetchClinics(): Promise<Clinic[]> {
   const response = await fetch("/api/clinics");
   return parseJsonResponse<Clinic[]>(response);
+}
+
+export async function fetchQuotes(): Promise<QuoteRecord[]> {
+  const response = await fetch("/api/quotes");
+  return parseJsonResponse<QuoteRecord[]>(response);
 }
 
 export async function createClinic(clinic: Clinic): Promise<Clinic> {

@@ -34,6 +34,8 @@ export interface BuildCotizacionNotifyPayloadInput {
   plan?: HealthPlanSummary;
   priceQuote?: PlanFinalPriceQuote;
   cotizadorUrl?: string;
+  partnerEntitySlug?: string | null;
+  partnerEntityName?: string | null;
 }
 
 function resolveRegionLabel(regionValue: string): string {
@@ -106,6 +108,8 @@ export function buildCotizacionNotifyPayload(
     moneda: input.currency,
     isapres: resolveFilteredIsapres(input.filters),
     cotizadorUrl: resolveCotizadorUrl(input.deepLink, input.cotizadorUrl),
+    partnerEntitySlug: input.partnerEntitySlug?.trim().toLowerCase() || undefined,
+    partnerEntityName: input.partnerEntityName?.trim() || undefined,
   };
 
   if (input.plan && input.priceQuote) {

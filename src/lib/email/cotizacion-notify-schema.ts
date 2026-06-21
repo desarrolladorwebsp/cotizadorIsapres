@@ -23,6 +23,8 @@ export const cotizacionNotifyInputSchema = z.object({
   isapres: z.array(z.string().trim().min(1)).optional(),
   plan: cotizacionNotifyPlanSchema.optional(),
   cotizadorUrl: z.string().trim().url(),
+  partnerEntitySlug: z.string().trim().min(1).optional(),
+  partnerEntityName: z.string().trim().min(1).optional(),
 });
 
 export type CotizacionNotifyInput = z.infer<typeof cotizacionNotifyInputSchema>;

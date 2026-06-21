@@ -16,7 +16,8 @@
     "upload-pdfs": "tsx scripts/upload-plan-pdfs.ts",
     "verify-blob": "tsx scripts/verify-blob-connection.ts",
     "sync-pdf-urls": "tsx scripts/sync-pdf-urls-from-blob.ts",
-    "test-cotizacion-notify": "tsx scripts/test-cotizacion-notify.ts"
+    "test-cotizacion-notify": "tsx scripts/test-cotizacion-notify.ts",
+    "reset-admin-password": "tsx scripts/reset-admin-password.ts"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"

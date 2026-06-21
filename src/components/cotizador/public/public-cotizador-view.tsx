@@ -181,6 +181,8 @@ function PublicCotizadorViewInner() {
         sortKey,
         currency,
         deepLink,
+        partnerEntitySlug: entity?.slug ?? deepLink.entidad ?? null,
+        partnerEntityName: entity?.name ?? null,
       });
     } catch (error) {
       searchNotifySentRef.current = false;
@@ -195,6 +197,8 @@ function PublicCotizadorViewInner() {
     sortKey,
     currency,
     deepLink,
+    entity?.slug,
+    entity?.name,
   ]);
 
   useEffect(() => {

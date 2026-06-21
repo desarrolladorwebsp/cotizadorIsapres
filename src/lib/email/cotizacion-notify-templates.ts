@@ -150,6 +150,10 @@ export function buildAdminCotizacionEmailHtml(data: CotizacionNotifyInput): stri
     renderTableRow("Ordenar por", escapeHtml(data.orden?.trim() || "—")),
     renderTableRow("Moneda", escapeHtml(formatMoneda(data.moneda))),
     renderTableRow("Isapres filtradas", escapeHtml(formatIsapres(data.isapres))),
+    renderTableRow(
+      "Sitio de origen",
+      escapeHtml(data.partnerEntityName ?? data.partnerEntitySlug ?? "—"),
+    ),
   ];
 
   if (data.plan) {

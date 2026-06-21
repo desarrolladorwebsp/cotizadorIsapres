@@ -164,6 +164,8 @@ model Quote {
   beneficiaryCount  Int?        @map("beneficiary_count")
   totalFactors      Float?      @map("total_factors")
   notes             String?
+  partnerEntitySlug String?     @map("partner_entity_slug")
+  partnerEntityName String?     @map("partner_entity_name")
   createdAt         DateTime    @default(now()) @map("created_at")
   updatedAt         DateTime    @updatedAt @map("updated_at")
   user              User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
@@ -172,6 +174,7 @@ model Quote {
   @@index([status])
   @@index([planCode])
   @@index([userId])
+  @@index([partnerEntitySlug])
   @@index([createdAt])
   @@map("quotes")
 }

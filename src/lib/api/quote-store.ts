@@ -1,9 +1,13 @@
 import { prisma } from "@/lib/prisma";
 import type { CreateQuoteInput, QuoteRecord, QuoteStatus } from "@/types/quote";
-import type { Quote as DbQuote } from "@prisma/client";
+import type { Quote as DbQuote, Plan, Isapre } from "@prisma/client";
 import { upsertUserByEmail } from "./user-store";
 
-function mapDbQuote(quote: DbQuote): QuoteRecord {
+function mapDbQuote(
+  quote: DbQuote & {
+    plan?: (Pick<Plan, "planName"> & { isapreRef: Pick<Isapre, "name"> }) | null;
+  },
+): QuoteRecord {
   const dependentAges = Array.isArray(quote.dependentAges)
     ? (quote.dependentAges as number[])
     : undefined;
@@ -31,6 +35,10 @@ function mapDbQuote(quote: DbQuote): QuoteRecord {
     beneficiaryCount: quote.beneficiaryCount,
     totalFactors: quote.totalFactors,
     notes: quote.notes,
+    partnerEntitySlug: quote.partnerEntitySlug,
+    partnerEntityName: quote.partnerEntityName,
+    planName: quote.plan?.planName ?? null,
+    planIsapre: quote.plan?.isapreRef?.name ?? null,
     createdAt: quote.createdAt.toISOString(),
     updatedAt: quote.updatedAt.toISOString(),
   };
@@ -39,6 +47,14 @@ function mapDbQuote(quote: DbQuote): QuoteRecord {
 export async function readQuotes(): Promise<QuoteRecord[]> {
   const quotes = await prisma.quote.findMany({
     orderBy: { createdAt: "desc" },
+    include: {
+      plan: {
+        select: {
+          planName: true,
+          isapreRef: { select: { name: true } },
+        },
+      },
+    },
   });
 
   return quotes.map(mapDbQuote);
@@ -82,6 +98,8 @@ export async function createQuote(
       beneficiaryCount: input.beneficiaryCount ?? null,
       totalFactors: input.totalFactors ?? null,
       notes: input.notes ?? null,
+      partnerEntitySlug: input.partnerEntitySlug?.trim().toLowerCase() || null,
+      partnerEntityName: input.partnerEntityName?.trim() || null,
     },
   });
 

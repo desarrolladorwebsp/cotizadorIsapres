@@ -25,6 +25,7 @@ import {
 } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import { usePlanDetail } from "@/hooks/use-plan-detail";
+import { usePartnerEntity } from "@/components/partner/partner-entity-provider";
 import type { BeneficiaryGroupSummary, FamilyBeneficiariesState } from "@/domain";
 import type { HealthPlanSummary } from "@/domain";
 import type { QuoteCriteria } from "./public-quote-criteria-bar";
@@ -128,6 +129,7 @@ export function ContractPlanModal({
     planSummary?.unique_code ?? null,
     open,
   );
+  const { entity: partnerEntity } = usePartnerEntity();
   const [activeTab, setActiveTab] = useState<ModalTabId>("overview");
   const [submitted, setSubmitted] = useState(false);
   const [emailNotifyFailed, setEmailNotifyFailed] = useState(false);
@@ -267,6 +269,9 @@ export function ContractPlanModal({
             isCurrentIsapre === "yes"
               ? `Ya es afiliado a ${summary.isapre}`
               : `No es afiliado actualmente a ${summary.isapre}`,
+          partnerEntitySlug:
+            partnerEntity?.slug ?? deepLink.entidad ?? null,
+          partnerEntityName: partnerEntity?.name ?? null,
         }),
       });
 
@@ -289,6 +294,8 @@ export function ContractPlanModal({
           deepLink,
           plan: summary,
           priceQuote: quote,
+          partnerEntitySlug: partnerEntity?.slug ?? deepLink.entidad ?? null,
+          partnerEntityName: partnerEntity?.name ?? null,
         });
         setEmailNotifyFailed(false);
       } catch (notifyError) {

@@ -20,6 +20,10 @@ export interface CreateQuoteInput {
   beneficiaryCount?: number | null;
   totalFactors?: number | null;
   notes?: string | null;
+  partnerEntitySlug?: string | null;
+  partnerEntityName?: string | null;
+  planName?: string | null;
+  planIsapre?: string | null;
 }
 
 export interface QuoteRecord extends CreateQuoteInput {
