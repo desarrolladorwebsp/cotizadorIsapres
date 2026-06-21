@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { CotizadorNav } from "@/components/cotizador";
 import { AdminShell, type AdminSection } from "@/components/admin/admin-shell";
 import { AdminToast } from "@/components/admin/admin-toast";
 import { ClinicsPanel } from "@/components/admin/clinics-panel";
@@ -69,7 +68,6 @@ export default function CotizadorAdminPage() {
 
   return (
     <>
-      <CotizadorNav />
       <AdminShell
         activeSection={activeSection}
         onSectionChange={setActiveSection}

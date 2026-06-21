@@ -44,16 +44,16 @@ export function AdminShell({
   const useTabNavigation = Boolean(onSectionChange && activeSection);
 
   return (
-    <div className={joinClasses(appShellRoot, ui.canvas)}>
+    <div className={joinClasses(appShellRoot, ui.canvas, "min-h-screen")}>
       <header
         className={joinClasses(
-          "z-30 shrink-0 border-b bg-white shadow-sm lg:sticky lg:top-0",
+          "sticky top-0 z-30 shrink-0 border-b bg-white shadow-sm",
           ui.border,
         )}
       >
-        <div className="mx-auto flex h-14 min-h-14 max-w-7xl items-center gap-3 px-4 sm:h-16 sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-4 py-3 sm:px-6 lg:px-8">
           <div className="flex min-w-0 flex-1 items-center gap-3">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-sm font-bold text-primary-foreground shadow-sm">
               AD
             </div>
             <div className="min-w-0">
@@ -61,30 +61,32 @@ export function AdminShell({
                 Panel administrativo
               </p>
               <p className="truncate text-xs text-muted">
-                Gestión de planes, clínicas, cotizaciones y usuarios
+                Cotizador Virtual · Cotízalo Antes
               </p>
             </div>
           </div>
 
-          <Link
-            href="/"
-            className={joinClasses(
-              "hidden rounded-lg px-4 text-sm font-semibold sm:inline-flex",
-              touchTarget,
-              ui.ctaOutline,
-            )}
-          >
-            Ir al cotizador
-          </Link>
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+            <Link
+              href="/"
+              className={joinClasses(
+                "rounded-lg px-3 text-sm font-semibold sm:px-4",
+                touchTarget,
+                ui.ctaOutline,
+              )}
+            >
+              Ir al cotizador
+            </Link>
 
-          {adminUser ? (
-            <UserMenu
-              realm="admin"
-              fullName={adminUser.fullName}
-              subtitle="Administrador"
-              loginPath={ADMIN_LOGIN_PATH}
-            />
-          ) : null}
+            {adminUser ? (
+              <UserMenu
+                realm="admin"
+                fullName={adminUser.fullName}
+                subtitle="Administrador"
+                loginPath={ADMIN_LOGIN_PATH}
+              />
+            ) : null}
+          </div>
         </div>
 
         <nav
@@ -164,19 +166,6 @@ export function AdminShell({
       >
         {children}
       </main>
-
-      <div className="shrink-0 border-t bg-white p-3 sm:hidden">
-        <Link
-          href="/"
-          className={joinClasses(
-            "flex w-full items-center justify-center rounded-lg text-sm font-semibold",
-            touchTarget,
-            ui.ctaOutline,
-          )}
-        >
-          Volver al cotizador
-        </Link>
-      </div>
     </div>
   );
 }

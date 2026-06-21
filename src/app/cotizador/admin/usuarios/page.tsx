@@ -1,6 +1,5 @@
 "use client";
 
-import { CotizadorNav } from "@/components/cotizador";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminToast } from "@/components/admin/admin-toast";
 import { UsersPanel } from "@/components/admin/users-panel";
@@ -20,7 +19,6 @@ export default function AdminUsersPage() {
 
   return (
     <>
-      <CotizadorNav />
       <AdminShell>
         <UsersPanel onNotify={notify} />
       </AdminShell>
