@@ -12,6 +12,7 @@ import { usePlanCatalogBounds } from "@/hooks/use-plan-catalog-bounds";
 import { usePlanSearch } from "@/hooks/use-plan-search";
 import { buildPlanFinalPriceQuote } from "@/domain";
 import { parseCotizadorUrl } from "@/lib/deep-link/parse-cotizador-url";
+import { notifyCotizacionByEmail } from "@/lib/cotizacion-notify/client";
 import {
   INITIAL_PLANS_PAGE_SIZE,
   PLANS_PAGE_SIZE_STEP,
@@ -104,6 +105,8 @@ function PublicCotizadorViewInner() {
   );
   const [searchText, setSearchText] = useState(deepLink.q ?? "");
   const [resultsLimit, setResultsLimit] = useState(INITIAL_PLANS_PAGE_SIZE);
+  const [notifyEmail, setNotifyEmail] = useState(deepLink.email ?? "");
+  const searchNotifySentRef = useRef(false);
 
   useEffect(() => {
     if (deepLink.hasDeepLinkParams) {
@@ -111,6 +114,8 @@ function PublicCotizadorViewInner() {
       setSearchText(deepLink.q ?? "");
       if (deepLink.sortKey) setSortKey(deepLink.sortKey);
       if (deepLink.currency) setCurrency(deepLink.currency);
+      if (deepLink.email) setNotifyEmail(deepLink.email);
+      searchNotifySentRef.current = false;
 
       dashboard.handleBeneficiariesChange(
         deepLink.beneficiaries,
@@ -139,7 +144,7 @@ function PublicCotizadorViewInner() {
 
   const runSearch = useCallback(
     (limit = resultsLimit, options?: { force?: boolean }) => {
-      void search(
+      return search(
         {
           q: searchText,
           priceMin: dashboard.priceMin,
@@ -159,6 +164,38 @@ function PublicCotizadorViewInner() {
       resultsLimit,
     ],
   );
+
+  const sendSearchCotizacionNotify = useCallback(async () => {
+    if (!notifyEmail.trim() || searchNotifySentRef.current) return;
+    if (dashboard.beneficiarySummary.contributor.age === null) return;
+
+    searchNotifySentRef.current = true;
+
+    try {
+      await notifyCotizacionByEmail({
+        email: notifyEmail,
+        criteria,
+        beneficiarySummary: dashboard.beneficiarySummary,
+        filters: dashboard.dashboardFilters,
+        searchText,
+        sortKey,
+        currency,
+        deepLink,
+      });
+    } catch (error) {
+      searchNotifySentRef.current = false;
+      console.error("No se pudo enviar la notificación de cotización:", error);
+    }
+  }, [
+    notifyEmail,
+    criteria,
+    dashboard.beneficiarySummary,
+    dashboard.dashboardFilters,
+    searchText,
+    sortKey,
+    currency,
+    deepLink,
+  ]);
 
   useEffect(() => {
     if (
@@ -196,6 +233,7 @@ function PublicCotizadorViewInner() {
       },
       { force: true },
     ).then(() => {
+      void sendSearchCotizacionNotify();
       if (deepLink.hasDeepLinkParams) {
         resultsRef.current?.scrollIntoView({
           behavior: "smooth",
@@ -219,6 +257,7 @@ function PublicCotizadorViewInner() {
     deepLink.q,
     deepLink.shouldAutoSearch,
     search,
+    sendSearchCotizacionNotify,
   ]);
 
   useEffect(() => {
@@ -293,7 +332,9 @@ function PublicCotizadorViewInner() {
         limit: INITIAL_PLANS_PAGE_SIZE,
       },
       { force: true },
-    );
+    ).then(() => {
+      void sendSearchCotizacionNotify();
+    });
     resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
@@ -522,6 +563,11 @@ function PublicCotizadorViewInner() {
         dependents={dashboard.beneficiaries.dependents}
         ufToClp={dashboard.ufToClp}
         criteria={criteria}
+        filters={dashboard.dashboardFilters}
+        searchText={searchText}
+        sortKey={sortKey}
+        currency={currency}
+        deepLink={deepLink}
         onClose={() => setContractPlan(null)}
       />
     </div>

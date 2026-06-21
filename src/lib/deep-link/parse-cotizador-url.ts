@@ -42,6 +42,8 @@ export interface ParsedCotizadorDeepLink {
   shouldAutoSearch: boolean;
   /** true cuando la URL trae al menos un param de cotización/filtro. */
   hasDeepLinkParams: boolean;
+  /** Correo del cotizante (desde cotizaloantes.cl u otro origen). */
+  email?: string;
 }
 
 function parseCommaList(raw: string | null): string[] {
@@ -104,6 +106,12 @@ function parsePrice(raw: string | null): number | undefined {
   return Number.isFinite(value) && value >= 0 ? value : undefined;
 }
 
+function parseEmail(raw: string | null): string | undefined {
+  const value = raw?.trim().toLowerCase();
+  if (!value || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return undefined;
+  return value;
+}
+
 function hasDeepLinkFilterParams(params: URLSearchParams): boolean {
   const keys = [
     DEEP_LINK_PARAMS.region,
@@ -121,6 +129,7 @@ function hasDeepLinkFilterParams(params: URLSearchParams): boolean {
     DEEP_LINK_PARAMS.coberturaA,
     DEEP_LINK_PARAMS.orden,
     DEEP_LINK_PARAMS.moneda,
+    DEEP_LINK_PARAMS.email,
   ];
 
   return keys.some((key) => params.has(key));
@@ -204,5 +213,6 @@ export function parseCotizadorUrl(
         : undefined,
     shouldAutoSearch: resolveShouldAutoSearch(params),
     hasDeepLinkParams: hasDeepLinkFilterParams(params),
+    email: parseEmail(params.get(DEEP_LINK_PARAMS.email)),
   };
 }

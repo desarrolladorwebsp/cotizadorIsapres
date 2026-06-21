@@ -17,6 +17,7 @@ export const DEEP_LINK_PARAMS = {
   orden: "orden",
   moneda: "moneda",
   auto: "auto",
+  email: "email",
 } as const;
 
 export const VALID_REGIONS = new Set([

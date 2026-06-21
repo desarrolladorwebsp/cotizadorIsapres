@@ -29,6 +29,7 @@ export interface BuildCotizadorUrlInput {
   orden?: string;
   moneda?: string;
   auto?: boolean;
+  email?: string;
 }
 
 export function buildCotizadorUrl(input: BuildCotizadorUrlInput): string {
@@ -76,6 +77,7 @@ export function buildCotizadorUrl(input: BuildCotizadorUrlInput): string {
   if (input.auto !== undefined) {
     params.set(DEEP_LINK_PARAMS.auto, input.auto ? "1" : "0");
   }
+  if (input.email) params.set(DEEP_LINK_PARAMS.email, input.email.trim());
 
   const query = params.toString();
   return query ? `${base}/?${query}` : `${base}/`;
@@ -106,6 +108,7 @@ export function buildCotizadorUrlFromParsed(
     orden: parsed.sortKey,
     moneda: parsed.currency,
     auto: parsed.shouldAutoSearch,
+    email: parsed.email,
   });
 }
 

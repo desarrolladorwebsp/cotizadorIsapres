@@ -43,7 +43,10 @@ async function collectPdfFiles(rootDir: string): Promise<PdfCandidate[]> {
 
       const relative = path.relative(rootDir, absolutePath);
       const segments = relative.split(path.sep);
-      const uniqueCode = entry.name.replace(/\.pdf$/i, "");
+      const uniqueCode = entry.name
+        .replace(/\.pdf$/i, "")
+        .replace(/\s*\(\d+\)$/, "")
+        .trim();
 
       // segments: [isapre, (zona...), archivo.pdf]
       const isapreFolder = segments.length >= 2 ? segments[0] : null;

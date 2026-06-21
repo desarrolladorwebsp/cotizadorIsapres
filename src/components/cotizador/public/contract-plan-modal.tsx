@@ -28,6 +28,11 @@ import { usePlanDetail } from "@/hooks/use-plan-detail";
 import type { BeneficiaryGroupSummary, FamilyBeneficiariesState } from "@/domain";
 import type { HealthPlanSummary } from "@/domain";
 import type { QuoteCriteria } from "./public-quote-criteria-bar";
+import { notifyCotizacionByEmail } from "@/lib/cotizacion-notify/client";
+import type { ParsedCotizadorDeepLink } from "@/lib/deep-link/parse-cotizador-url";
+import type { QuoteSortKey } from "@/lib/quote-criteria-options";
+import type { CurrencyDisplay } from "./public-results-toolbar";
+import type { DashboardFiltersState } from "@/types/filters";
 import { ModalPlanOverviewPanel } from "./modal-plan-overview-panel";
 import { ModalPricePanel } from "./modal-price-panel";
 import {
@@ -43,6 +48,11 @@ export interface ContractPlanModalProps {
   dependents: FamilyBeneficiariesState["dependents"];
   ufToClp: number;
   criteria: QuoteCriteria;
+  filters: DashboardFiltersState;
+  searchText: string;
+  sortKey: QuoteSortKey;
+  currency: CurrencyDisplay;
+  deepLink: ParsedCotizadorDeepLink;
   onClose: () => void;
 }
 
@@ -107,6 +117,11 @@ export function ContractPlanModal({
   dependents,
   ufToClp,
   criteria,
+  filters,
+  searchText,
+  sortKey,
+  currency,
+  deepLink,
   onClose,
 }: ContractPlanModalProps) {
   const { plan: detailPlan, loading: detailLoading } = usePlanDetail(
@@ -258,6 +273,26 @@ export function ContractPlanModal({
           error?: string;
         } | null;
         throw new Error(body?.error ?? "No se pudo enviar la solicitud.");
+      }
+
+      try {
+        await notifyCotizacionByEmail({
+          email: email.trim(),
+          criteria,
+          beneficiarySummary,
+          filters,
+          searchText,
+          sortKey,
+          currency,
+          deepLink,
+          plan: summary,
+          priceQuote: quote,
+        });
+      } catch (notifyError) {
+        console.error(
+          "La solicitud se guardó, pero falló el envío de correos:",
+          notifyError,
+        );
       }
 
       setSubmitted(true);
