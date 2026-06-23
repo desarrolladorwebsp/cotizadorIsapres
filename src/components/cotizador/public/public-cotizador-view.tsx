@@ -12,6 +12,11 @@ import { usePlanCatalogBounds } from "@/hooks/use-plan-catalog-bounds";
 import { usePlanSearch } from "@/hooks/use-plan-search";
 import { buildPlanFinalPriceQuote } from "@/domain";
 import { parseCotizadorUrl } from "@/lib/deep-link/parse-cotizador-url";
+import {
+  SOLICITAR_DEEP_LINK_RECOVERY_MS,
+  SOLICITAR_RECOVERY_NOTICE,
+  stripSolicitarParamsFromBrowserUrl,
+} from "@/lib/deep-link/solicitar-recovery";
 import { mapHealthPlanToSummary } from "@/lib/api/plan-summary";
 import { primePlanDetailCache } from "@/hooks/use-plan-detail";
 import { notifyCotizacionByEmail } from "@/lib/cotizacion-notify/client";
@@ -33,6 +38,7 @@ import type { HealthPlanSummary } from "@/domain";
 import type { HealthPlan } from "@/types/plan";
 import type { PartnerEntityPublic } from "@/types/partner-entity";
 import { ContractPlanModal } from "./contract-plan-modal";
+import { PublicCotizadorNotice } from "./public-cotizador-notice";
 import { PublicCotizadorHeader } from "./public-cotizador-header";
 import { PublicWhatsAppFab } from "./public-whatsapp-fab";
 import { PublicFiltersSidebar } from "./public-filters-sidebar";
@@ -94,7 +100,13 @@ function PublicCotizadorViewInner() {
   const resultsRef = useRef<HTMLElement>(null);
   const initialSearchDoneRef = useRef(false);
   const skipDebouncedSearchRef = useRef(false);
+  const solicitarFetchStartedRef = useRef<string | null>(null);
+  const solicitarRecoveryDoneRef = useRef(false);
   const [formReady, setFormReady] = useState(false);
+  const [recoveryNotice, setRecoveryNotice] = useState<string | null>(null);
+  const [solicitarFlowActive, setSolicitarFlowActive] = useState(
+    () => deepLink.hasSolicitarDeepLink,
+  );
 
   const [criteria, setCriteria] = useState<QuoteCriteria>(deepLink.criteria);
   const [sortKey, setSortKey] = useState<QuoteSortKey>(
@@ -138,6 +150,10 @@ function PublicCotizadorViewInner() {
       }
 
       initialSearchDoneRef.current = false;
+      solicitarFetchStartedRef.current = null;
+      solicitarRecoveryDoneRef.current = false;
+      setRecoveryNotice(null);
+      setSolicitarFlowActive(deepLink.hasSolicitarDeepLink);
       resetSearchCache();
     }
 
@@ -209,19 +225,16 @@ function PublicCotizadorViewInner() {
   ]);
 
   useEffect(() => {
-    if (
-      !formReady ||
-      boundsLoading ||
-      initialSearchDoneRef.current ||
-      bounds.totalPlans === 0
-    ) {
+    if (!formReady || boundsLoading || initialSearchDoneRef.current) {
       return;
     }
 
     const priceMin =
-      deepLink.priceMin ?? Math.floor(bounds.priceMin * 10) / 10;
+      deepLink.priceMin ??
+      (bounds.totalPlans > 0 ? Math.floor(bounds.priceMin * 10) / 10 : 0);
     const priceMax =
-      deepLink.priceMax ?? Math.ceil(bounds.priceMax * 10) / 10;
+      deepLink.priceMax ??
+      (bounds.totalPlans > 0 ? Math.ceil(bounds.priceMax * 10) / 10 : 20);
 
     dashboard.setPriceMin(priceMin);
     dashboard.setPriceMax(priceMax);
@@ -263,6 +276,7 @@ function PublicCotizadorViewInner() {
     dashboard.setPriceMax,
     deepLink.filters,
     deepLink.hasDeepLinkParams,
+    deepLink.planCode,
     deepLink.priceMax,
     deepLink.priceMin,
     deepLink.q,
@@ -330,65 +344,132 @@ function PublicCotizadorViewInner() {
   }, [plans, sortKey, dashboard.beneficiarySummary, dashboard.ufToClp]);
 
   useEffect(() => {
-    if (!formReady || !deepLink.planCode) {
+    if (!solicitarFlowActive || !deepLink.planCode) return;
+
+    const planInResults = plans.find(
+      (plan) => plan.unique_code === deepLink.planCode,
+    );
+
+    if (!planInResults) return;
+
+    setContractModalTab(deepLink.modalTab ?? "request");
+    setContractPlan(planInResults);
+    setRecoveryNotice(null);
+  }, [solicitarFlowActive, deepLink.planCode, deepLink.modalTab, plans]);
+
+  useEffect(() => {
+    if (!formReady || !solicitarFlowActive || !deepLink.planCode) {
       return;
     }
 
     const planCode = deepLink.planCode;
     const modalTab = deepLink.modalTab ?? "request";
 
-    const planInResults = plans.find(
-      (plan) => plan.unique_code === planCode,
-    );
-
-    if (planInResults) {
-      setContractModalTab(modalTab);
-      setContractPlan(planInResults);
-      return;
-    }
-
     if (contractPlan?.unique_code === planCode) {
       return;
     }
 
+    if (solicitarFetchStartedRef.current === planCode) {
+      return;
+    }
+
+    solicitarFetchStartedRef.current = planCode;
     setContractModalTab(modalTab);
 
-    let cancelled = false;
+    const controller = new AbortController();
+    const fetchTimeout = window.setTimeout(() => controller.abort(), 10_000);
 
     async function loadPlanForSolicitar() {
       try {
         const response = await fetch(
           `/api/plans/${encodeURIComponent(planCode)}`,
+          { signal: controller.signal },
         );
-        if (!response.ok || cancelled) {
-          return;
-        }
+        if (!response.ok) return;
 
         const plan = (await response.json()) as HealthPlan;
-        if (cancelled) return;
-
         primePlanDetailCache(plan);
         setContractPlan(mapHealthPlanToSummary(plan));
+        setRecoveryNotice(null);
       } catch (loadError) {
+        if (
+          loadError instanceof DOMException &&
+          loadError.name === "AbortError"
+        ) {
+          return;
+        }
         console.error("No se pudo abrir el plan desde deep link:", loadError);
+      } finally {
+        window.clearTimeout(fetchTimeout);
       }
     }
 
     void loadPlanForSolicitar();
 
     return () => {
-      cancelled = true;
+      controller.abort();
+      window.clearTimeout(fetchTimeout);
     };
+  }, [formReady, solicitarFlowActive, deepLink.planCode, deepLink.modalTab, contractPlan?.unique_code]);
+
+  useEffect(() => {
+    if (
+      !formReady ||
+      !solicitarFlowActive ||
+      !deepLink.hasSolicitarDeepLink ||
+      solicitarRecoveryDoneRef.current
+    ) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      if (contractPlan !== null) return;
+
+      solicitarRecoveryDoneRef.current = true;
+      setSolicitarFlowActive(false);
+      stripSolicitarParamsFromBrowserUrl(deepLink.planCode);
+      setSearchText("");
+      setRecoveryNotice(SOLICITAR_RECOVERY_NOTICE);
+
+      if (!hasSearched || loading) {
+        skipDebouncedSearchRef.current = true;
+        void search(
+          {
+            priceMin: dashboard.priceMin,
+            priceMax: dashboard.priceMax,
+            filters: dashboard.dashboardFilters,
+            limit: INITIAL_PLANS_PAGE_SIZE,
+          },
+          { force: true },
+        );
+      }
+
+      resultsRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, SOLICITAR_DEEP_LINK_RECOVERY_MS);
+
+    return () => window.clearTimeout(timer);
   }, [
     formReady,
+    solicitarFlowActive,
+    deepLink.hasSolicitarDeepLink,
     deepLink.planCode,
-    deepLink.modalTab,
-    plans,
-    contractPlan?.unique_code,
+    contractPlan,
+    hasSearched,
+    loading,
+    search,
+    dashboard.priceMin,
+    dashboard.priceMax,
+    dashboard.dashboardFilters,
   ]);
 
+  const awaitingAutoSearch =
+    deepLink.shouldAutoSearch && !hasSearched && !error;
+  const showFullLoading =
+    (loading || boundsLoading) && awaitingAutoSearch;
   const hasMoreResults = total > plans.length;
-  const showFullLoading = loading && (!hasSearched || plans.length === 0);
   const showInlineLoading = loading && hasSearched && plans.length > 0;
 
   function handleCalculate() {
@@ -518,8 +599,22 @@ function PublicCotizadorViewInner() {
               ) : null}
 
               <div className="min-w-0 flex-1">
-                {showFullLoading || !hasSearched ? (
+                {showFullLoading ? (
                   <PublicPlanResultsLoading />
+                ) : !hasSearched && !deepLink.shouldAutoSearch ? (
+                  <div
+                    className={joinClasses(
+                      "rounded-2xl border border-dashed bg-white px-6 py-16 text-center",
+                      ui.border,
+                    )}
+                  >
+                    <p className="font-medium text-foreground">
+                      Completa tus datos y pulsa «Buscar mejor plan»
+                    </p>
+                    <p className="mt-1 text-sm text-muted">
+                      Te mostraremos opciones según tu perfil.
+                    </p>
+                  </div>
                 ) : error ? (
                   <div
                     className={joinClasses(
@@ -629,6 +724,11 @@ function PublicCotizadorViewInner() {
       />
 
       <PublicWhatsAppFab />
+
+      <PublicCotizadorNotice
+        message={recoveryNotice}
+        onDismiss={() => setRecoveryNotice(null)}
+      />
 
       <ContractPlanModal
         open={contractPlan !== null}

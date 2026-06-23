@@ -62,6 +62,7 @@ export function usePlanSearch() {
         if (requestId !== requestIdRef.current) return;
         setPlans([]);
         setTotal(0);
+        setHasSearched(true);
         setError(
           searchError instanceof Error
             ? searchError.message

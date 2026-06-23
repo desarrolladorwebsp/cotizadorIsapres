@@ -102,8 +102,9 @@ export function buildCotizadorUrl(input: BuildCotizadorUrlInput): string {
   if (input.rut) params.set(DEEP_LINK_PARAMS.rut, input.rut.trim());
   if (input.telefono) params.set(DEEP_LINK_PARAMS.telefono, input.telefono.trim());
 
+  const path = input.entidad?.trim() ? `/${input.entidad.trim()}` : "";
   const query = params.toString();
-  return query ? `${base}/?${query}` : `${base}/`;
+  return query ? `${base}${path}?${query}` : `${base}${path}`;
 }
 
 export function buildCotizadorUrlFromParsed(
