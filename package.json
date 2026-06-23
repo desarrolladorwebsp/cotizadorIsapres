@@ -19,6 +19,7 @@
     "sync-pdf-urls": "tsx scripts/sync-pdf-urls-from-blob.ts",
     "test-cotizacion-notify": "tsx scripts/test-cotizacion-notify.ts",
     "test-plan-query": "tsx scripts/test-plan-query.ts",
+    "test-uf-service": "tsx scripts/test-uf-service.ts",
     "reset-admin-password": "tsx scripts/reset-admin-password.ts"
   },
   "prisma": {

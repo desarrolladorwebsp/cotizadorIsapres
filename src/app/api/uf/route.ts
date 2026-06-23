@@ -2,18 +2,21 @@ import { buildFallbackUfIndicator, fetchUfIndicator } from "@/lib/uf-service";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const force = new URL(request.url).searchParams.get("refresh") === "1";
+
   try {
-    const indicator = await fetchUfIndicator();
+    const indicator = await fetchUfIndicator({ force });
     return Response.json(indicator, {
       headers: {
-        "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=1800",
+        "Cache-Control": "public, s-maxage=600, stale-while-revalidate=300",
       },
     });
   } catch {
-    return Response.json(buildFallbackUfIndicator(), {
+    const fallback = buildFallbackUfIndicator();
+    return Response.json(fallback, {
       headers: {
-        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=300",
+        "Cache-Control": "no-store",
       },
     });
   }

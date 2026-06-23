@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { DEFAULT_UF_VALUE_CLP } from "@/domain";
-import type { UfIndicator } from "@/lib/uf-service";
+import { isUfIndicatorStale, type UfIndicator } from "@/lib/uf-service";
 
 const CLIENT_CACHE_MS = 5 * 60 * 1000;
-const REFRESH_MS = 30 * 60 * 1000;
+const REFRESH_MS = 15 * 60 * 1000;
+const FALLBACK_RETRY_MS = 2 * 60 * 1000;
 
 interface UfStoreState {
   ufToClp: number;
@@ -47,14 +48,29 @@ function getSnapshot() {
   return store;
 }
 
+function shouldBypassClientCache(force: boolean): boolean {
+  if (force) return true;
+  if (store.isFallback) return true;
+
+  if (
+    store.indicatorDate &&
+    isUfIndicatorStale({
+      value: store.ufToClp,
+      date: store.indicatorDate,
+      fetchedAt: store.lastUpdated?.toISOString() ?? new Date().toISOString(),
+      fallback: store.isFallback,
+    })
+  ) {
+    return true;
+  }
+
+  return Date.now() - lastFetchAt >= CLIENT_CACHE_MS;
+}
+
 async function loadUf(force = false) {
   const now = Date.now();
-  if (
-    !force &&
-    inflight === null &&
-    lastFetchAt > 0 &&
-    now - lastFetchAt < CLIENT_CACHE_MS
-  ) {
+
+  if (!shouldBypassClientCache(force)) {
     return;
   }
 
@@ -64,14 +80,13 @@ async function loadUf(force = false) {
   }
 
   inflight = (async () => {
-    if (!force && store.loading === false && now - lastFetchAt < CLIENT_CACHE_MS) {
-      return;
-    }
-
     setStore({ loading: store.lastUpdated === null });
 
     try {
-      const response = await fetch("/api/uf", { cache: "no-store" });
+      const refreshQuery = force ? "?refresh=1" : "";
+      const response = await fetch(`/api/uf${refreshQuery}`, {
+        cache: "no-store",
+      });
       if (!response.ok) throw new Error("UF API error");
 
       const data = (await response.json()) as UfIndicator;
@@ -98,13 +113,23 @@ async function loadUf(force = false) {
   await inflight;
 }
 
+function scheduleRefreshLoop() {
+  if (refreshTimer) {
+    clearInterval(refreshTimer);
+  }
+
+  const interval = store.isFallback ? FALLBACK_RETRY_MS : REFRESH_MS;
+
+  refreshTimer = setInterval(() => {
+    void loadUf(true);
+  }, interval);
+}
+
 function ensureGlobalListeners() {
   if (listenersBound || typeof document === "undefined") return;
   listenersBound = true;
 
-  refreshTimer = setInterval(() => {
-    void loadUf(true);
-  }, REFRESH_MS);
+  scheduleRefreshLoop();
 
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") {
@@ -122,6 +147,10 @@ export function useUfValue() {
     ensureGlobalListeners();
     void loadUf();
   }, []);
+
+  useEffect(() => {
+    scheduleRefreshLoop();
+  }, [state.isFallback]);
 
   return {
     ufToClp: state.ufToClp,
