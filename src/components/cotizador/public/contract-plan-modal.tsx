@@ -30,7 +30,7 @@ import type { BeneficiaryGroupSummary, FamilyBeneficiariesState } from "@/domain
 import type { HealthPlanSummary } from "@/domain";
 import type { QuoteCriteria } from "./public-quote-criteria-bar";
 import { notifyCotizacionByEmail } from "@/lib/cotizacion-notify/client";
-import type { ParsedCotizadorDeepLink } from "@/lib/deep-link/parse-cotizador-url";
+import type { ParsedCotizadorDeepLink, SolicitarModalTab } from "@/lib/deep-link/parse-cotizador-url";
 import type { QuoteSortKey } from "@/lib/quote-criteria-options";
 import type { CurrencyDisplay } from "./public-results-toolbar";
 import type { DashboardFiltersState } from "@/types/filters";
@@ -54,6 +54,7 @@ export interface ContractPlanModalProps {
   sortKey: QuoteSortKey;
   currency: CurrencyDisplay;
   deepLink: ParsedCotizadorDeepLink;
+  initialTab?: SolicitarModalTab;
   onClose: () => void;
 }
 
@@ -123,6 +124,7 @@ export function ContractPlanModal({
   sortKey,
   currency,
   deepLink,
+  initialTab,
   onClose,
 }: ContractPlanModalProps) {
   const { plan: detailPlan, loading: detailLoading } = usePlanDetail(
@@ -157,8 +159,22 @@ export function ContractPlanModal({
       setEmail("");
       setPhone("");
       setIsCurrentIsapre("");
+      return;
     }
-  }, [open]);
+
+    setActiveTab(initialTab ?? "overview");
+    setSubmitted(false);
+    setEmailNotifyFailed(false);
+    setSubmitting(false);
+    setSubmitError(null);
+    setValidationErrors([]);
+    setAttemptedSubmit(false);
+    setName(deepLink.requestPrefill?.name ?? "");
+    setRut(deepLink.requestPrefill?.rut ?? "");
+    setEmail(deepLink.requestPrefill?.email ?? deepLink.email ?? "");
+    setPhone(deepLink.requestPrefill?.phone ?? "");
+    setIsCurrentIsapre("");
+  }, [open, initialTab, deepLink.requestPrefill, deepLink.email]);
 
   useEffect(() => {
     if (!open) return;

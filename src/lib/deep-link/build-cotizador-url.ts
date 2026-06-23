@@ -8,7 +8,10 @@ import {
 } from "@/lib/filter-options";
 import { DEEP_LINK_PARAMS } from "@/lib/deep-link/params";
 import { normalizeIncomeDigits } from "@/lib/deep-link/income";
-import type { ParsedCotizadorDeepLink } from "@/lib/deep-link/parse-cotizador-url";
+import type {
+  ParsedCotizadorDeepLink,
+  SolicitarModalTab,
+} from "@/lib/deep-link/parse-cotizador-url";
 
 export interface BuildCotizadorUrlInput {
   baseUrl?: string;
@@ -30,6 +33,20 @@ export interface BuildCotizadorUrlInput {
   moneda?: string;
   auto?: boolean;
   email?: string;
+  plan?: string;
+  vista?: SolicitarModalTab | "precio" | "solicitar";
+  nombre?: string;
+  rut?: string;
+  telefono?: string;
+}
+
+function resolveVistaParam(
+  vista: BuildCotizadorUrlInput["vista"],
+): string | undefined {
+  if (!vista) return undefined;
+  if (vista === "price" || vista === "precio") return "precio";
+  if (vista === "request" || vista === "solicitar") return "solicitar";
+  return "overview";
 }
 
 export function buildCotizadorUrl(input: BuildCotizadorUrlInput): string {
@@ -78,6 +95,12 @@ export function buildCotizadorUrl(input: BuildCotizadorUrlInput): string {
     params.set(DEEP_LINK_PARAMS.auto, input.auto ? "1" : "0");
   }
   if (input.email) params.set(DEEP_LINK_PARAMS.email, input.email.trim());
+  if (input.plan) params.set(DEEP_LINK_PARAMS.plan, input.plan.trim());
+  const vista = resolveVistaParam(input.vista);
+  if (vista) params.set(DEEP_LINK_PARAMS.vista, vista);
+  if (input.nombre) params.set(DEEP_LINK_PARAMS.nombre, input.nombre.trim());
+  if (input.rut) params.set(DEEP_LINK_PARAMS.rut, input.rut.trim());
+  if (input.telefono) params.set(DEEP_LINK_PARAMS.telefono, input.telefono.trim());
 
   const query = params.toString();
   return query ? `${base}/?${query}` : `${base}/`;
@@ -109,7 +132,189 @@ export function buildCotizadorUrlFromParsed(
     moneda: parsed.currency,
     auto: parsed.shouldAutoSearch,
     email: parsed.email,
+    plan: parsed.planCode,
+    vista: parsed.modalTab,
+    nombre: parsed.requestPrefill?.name,
+    rut: parsed.requestPrefill?.rut,
+    telefono: parsed.requestPrefill?.phone,
   });
+}
+
+export function buildSolicitarUrl(
+  input: BuildCotizadorUrlInput & { plan: string },
+): string {
+  return buildCotizadorUrl({
+    ...input,
+    vista: input.vista ?? "solicitar",
+    auto: input.auto ?? Boolean(input.region || input.edad !== undefined),
+  });
+}
+
+export function getSolicitarDeepLinkDocumentation(
+  baseUrl = "https://cotizador.cotizaloantes.cl",
+) {
+  const cotizadorBase = baseUrl.replace(/\/$/, "");
+
+  const exampleSolicitar = buildSolicitarUrl({
+    baseUrl: cotizadorBase,
+    entidad: "cotizaloantes",
+    plan: "CONSALUD-PLAN-EJEMPLO",
+    region: "rm",
+    edad: 34,
+    sexo: "m",
+    ingreso: "1500000",
+    cargas: [8],
+    nombre: "María González",
+    rut: "12345678-9",
+    email: "maria@ejemplo.cl",
+    telefono: "+56912345678",
+    auto: true,
+  });
+
+  return {
+    title: "Deep link — solicitar plan desde sitio externo",
+    summary:
+      "Cuando el usuario hace clic en «Solicitar» en un card de plan en cotizaloantes.cl (u otro sitio aliado), redirígelo al cotizador con el parámetro plan y los datos del cotizante. El cotizador abrirá automáticamente el modal de solicitud en la pestaña «Solicitar» con el formulario prellenado.",
+    cotizador_base_url: cotizadorBase,
+    required_parameters: [
+      {
+        name: DEEP_LINK_PARAMS.plan,
+        type: "string",
+        description:
+          "Código único del plan (unique_code). Obligatorio para abrir el modal de solicitud.",
+        example: "CONSALUD-PLAN-EJEMPLO",
+      },
+    ],
+    recommended_parameters: [
+      {
+        name: DEEP_LINK_PARAMS.entidad,
+        description: "Slug del aliado para branding y atribución.",
+        example: "cotizaloantes",
+      },
+      {
+        name: DEEP_LINK_PARAMS.vista,
+        description:
+          "Pestaña inicial del modal. Por defecto solicitar si plan está presente.",
+        example: "solicitar",
+        allowed_values: [
+          "solicitar",
+          "request",
+          "precio",
+          "price",
+          "overview",
+          "general",
+        ],
+      },
+      {
+        name: DEEP_LINK_PARAMS.region,
+        description: "Región del cotizante (para calcular precio en el modal).",
+        example: "rm",
+      },
+      {
+        name: DEEP_LINK_PARAMS.edad,
+        description: "Edad del cotizante principal.",
+        example: "34",
+      },
+      {
+        name: DEEP_LINK_PARAMS.sexo,
+        description: "Sexo del cotizante (m/f).",
+        example: "m",
+      },
+      {
+        name: DEEP_LINK_PARAMS.ingreso,
+        description: "Ingreso mensual líquido en CLP (solo dígitos).",
+        example: "1500000",
+      },
+      {
+        name: DEEP_LINK_PARAMS.cargas,
+        description: "Edades de cargas familiares separadas por coma.",
+        example: "32,8",
+      },
+      {
+        name: DEEP_LINK_PARAMS.nombre,
+        description: "Nombre del solicitante (prellena el formulario).",
+        example: "María González",
+      },
+      {
+        name: DEEP_LINK_PARAMS.rut,
+        description: "RUT del solicitante.",
+        example: "12345678-9",
+      },
+      {
+        name: DEEP_LINK_PARAMS.email,
+        description: "Correo del solicitante.",
+        example: "maria@ejemplo.cl",
+      },
+      {
+        name: DEEP_LINK_PARAMS.telefono,
+        description: "Teléfono de contacto.",
+        example: "+56912345678",
+      },
+      {
+        name: DEEP_LINK_PARAMS.auto,
+        description:
+          "1 para ejecutar búsqueda de planes al cargar (recomendado si envías criterios de cotización).",
+        example: "1",
+      },
+    ],
+    user_flow: [
+      "1. Usuario cotiza en cotizaloantes.cl y ve cards de planes.",
+      "2. Hace clic en «Solicitar» en un plan.",
+      "3. El sitio externo redirige al cotizador con plan=<unique_code> y datos del usuario.",
+      "4. El cotizador abre el modal del plan en la pestaña Solicitar.",
+      "5. El usuario completa los campos faltantes y envía la solicitud.",
+      "6. La solicitud se guarda vía POST /api/quotes y se notifica por correo.",
+    ],
+    modal_tabs: [
+      {
+        id: "overview",
+        url_values: ["overview", "general", "vista-general"],
+        label: "Vista general",
+      },
+      {
+        id: "price",
+        url_values: ["precio", "price"],
+        label: "Precio",
+      },
+      {
+        id: "request",
+        url_values: ["solicitar", "request"],
+        label: "Solicitar",
+      },
+    ],
+    examples: {
+      solicitar_link: exampleSolicitar,
+      html_anchor: `<a href="${exampleSolicitar}">Solicitar este plan</a>`,
+      javascript_redirect: `window.location.href = ${JSON.stringify(exampleSolicitar)};`,
+      build_with_api: `POST ${cotizadorBase}/api/public/v1/solicitar/url`,
+    },
+    api_builder: {
+      method: "POST",
+      path: "/api/public/v1/solicitar/url",
+      auth_required: true,
+      description:
+        "Genera la URL de redirección con validación de parámetros. Recomendado para backends que no quieren armar la URL manualmente.",
+    },
+    notes_for_integrators: [
+      "El parámetro plan es obligatorio para el flujo de solicitud.",
+      "En cotizaloantes.cl, antes de redirigir al cotizador el sitio debe validar que el usuario completó región, ingreso mensual, edad y sexo en la barra superior.",
+      "Si faltan datos, mostrar alerta: «Para solicitar el plan y recibir un precio adecuado, completa región, ingreso mensual líquido, edad y sexo en la barra superior».",
+      "Si solo envías plan sin criterios de cotización, el modal se abre igual; el precio estimado puede requerir que el usuario complete edad/región.",
+      "Usa POST /api/public/v1/solicitar/url desde tu backend para construir la URL de forma segura.",
+      "El unique_code del plan lo obtienes de GET /api/public/v1/plans o /plans/preview.",
+      "No expongas PUBLIC_API_SECRET en el frontend del sitio externo.",
+    ],
+    cotizalo_antes_client_validation: {
+      required_before_solicitar: ["region", "ingreso", "edad", "sexo"],
+      alert_title: "Completa los datos del cotizador",
+      alert_message:
+        "Para solicitar el plan y recibir un precio adecuado, completa los datos de la barra superior: región, ingreso mensual líquido, edad y sexo.",
+      proxy_endpoints: {
+        plans: "/api/cotizador/plans/preview",
+        solicitar: "/api/cotizador/solicitar",
+      },
+    },
+  };
 }
 
 export function getDeepLinkDocumentation(baseUrl = "https://cotizador.cotizaloantes.cl") {

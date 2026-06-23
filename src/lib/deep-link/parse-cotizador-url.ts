@@ -12,6 +12,7 @@ import { formatMonthlyIncomeForDisplay } from "@/lib/deep-link/income";
 import {
   DEEP_LINK_PARAMS,
   VALID_CURRENCY,
+  VALID_MODAL_VIEWS,
   VALID_REGIONS,
   VALID_SEX_VALUES,
   VALID_SORT_KEYS,
@@ -26,6 +27,15 @@ import type {
   CoveragePercentageOption,
   DashboardFiltersState,
 } from "@/types/filters";
+
+export type SolicitarModalTab = "overview" | "price" | "request";
+
+export interface SolicitarRequestPrefill {
+  name?: string;
+  rut?: string;
+  email?: string;
+  phone?: string;
+}
 
 export interface ParsedCotizadorDeepLink {
   entidad?: string;
@@ -44,6 +54,14 @@ export interface ParsedCotizadorDeepLink {
   hasDeepLinkParams: boolean;
   /** Correo del cotizante (desde cotizaloantes.cl u otro origen). */
   email?: string;
+  /** Código único del plan a abrir en el modal de solicitud. */
+  planCode?: string;
+  /** Pestaña inicial del modal cuando planCode está presente. */
+  modalTab?: SolicitarModalTab;
+  /** Datos parciales del formulario de solicitud. */
+  requestPrefill?: SolicitarRequestPrefill;
+  /** true cuando la URL incluye plan= (flujo solicitar desde sitio externo). */
+  hasSolicitarDeepLink: boolean;
 }
 
 function parseCommaList(raw: string | null): string[] {
@@ -112,6 +130,20 @@ function parseEmail(raw: string | null): string | undefined {
   return value;
 }
 
+function parseModalTab(raw: string | null): SolicitarModalTab | undefined {
+  const value = raw?.trim().toLowerCase();
+  if (!value || !VALID_MODAL_VIEWS.has(value)) return undefined;
+
+  if (value === "price" || value === "precio") return "price";
+  if (value === "request" || value === "solicitar") return "request";
+  return "overview";
+}
+
+function parseOptionalText(raw: string | null): string | undefined {
+  const value = raw?.trim();
+  return value || undefined;
+}
+
 function hasDeepLinkFilterParams(params: URLSearchParams): boolean {
   const keys = [
     DEEP_LINK_PARAMS.region,
@@ -130,6 +162,9 @@ function hasDeepLinkFilterParams(params: URLSearchParams): boolean {
     DEEP_LINK_PARAMS.orden,
     DEEP_LINK_PARAMS.moneda,
     DEEP_LINK_PARAMS.email,
+    DEEP_LINK_PARAMS.nombre,
+    DEEP_LINK_PARAMS.rut,
+    DEEP_LINK_PARAMS.telefono,
   ];
 
   return keys.some((key) => params.has(key));
@@ -193,6 +228,18 @@ export function parseCotizadorUrl(
   };
 
   const entidad = params.get(DEEP_LINK_PARAMS.entidad)?.trim().toLowerCase();
+  const planCode = parseOptionalText(params.get(DEEP_LINK_PARAMS.plan));
+  const email = parseEmail(params.get(DEEP_LINK_PARAMS.email));
+  const requestPrefill: SolicitarRequestPrefill = {
+    name: parseOptionalText(params.get(DEEP_LINK_PARAMS.nombre)),
+    rut: parseOptionalText(params.get(DEEP_LINK_PARAMS.rut)),
+    email,
+    phone: parseOptionalText(params.get(DEEP_LINK_PARAMS.telefono)),
+  };
+  const hasRequestPrefill = Object.values(requestPrefill).some(Boolean);
+  const modalTab =
+    parseModalTab(params.get(DEEP_LINK_PARAMS.vista)) ??
+    (planCode ? "request" : undefined);
 
   return {
     entidad: entidad || undefined,
@@ -213,6 +260,10 @@ export function parseCotizadorUrl(
         : undefined,
     shouldAutoSearch: resolveShouldAutoSearch(params),
     hasDeepLinkParams: hasDeepLinkFilterParams(params),
-    email: parseEmail(params.get(DEEP_LINK_PARAMS.email)),
+    email,
+    planCode,
+    modalTab,
+    requestPrefill: hasRequestPrefill ? requestPrefill : undefined,
+    hasSolicitarDeepLink: Boolean(planCode),
   };
 }

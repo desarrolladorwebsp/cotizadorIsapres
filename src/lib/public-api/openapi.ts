@@ -4,7 +4,10 @@ import {
   PUBLIC_API_PLANS_PREVIEW_LIMIT,
   PUBLIC_API_VERSION,
 } from "@/lib/public-api/constants";
-import { getDeepLinkDocumentation } from "@/lib/deep-link/build-cotizador-url";
+import {
+  getDeepLinkDocumentation,
+  getSolicitarDeepLinkDocumentation,
+} from "@/lib/deep-link/build-cotizador-url";
 
 function resolveBaseUrl(request: Request): string {
   const configured = process.env.PUBLIC_API_BASE_URL?.trim();
@@ -103,6 +106,48 @@ export function buildPublicApiAgentGuide(request: Request) {
         },
       },
       {
+        method: "POST",
+        path: `${baseUrl}/solicitar/url`,
+        summary:
+          "Genera la URL de redirección al cotizador para abrir el modal de solicitud de un plan",
+        auth_required: true,
+        request: {
+          content_type: "application/json",
+          required_fields: ["plan"],
+          shape: {
+            plan: "string — unique_code del plan (obligatorio)",
+            entidad: "string — slug del aliado (ej. cotizaloantes)",
+            vista: "solicitar | precio | overview (default: solicitar)",
+            region: "string",
+            edad: "number",
+            sexo: "m | f",
+            ingreso: "string — CLP sin formato",
+            cargas: "number[] — edades de cargas",
+            nombre: "string",
+            rut: "string",
+            email: "string",
+            telefono: "string",
+            auto: "boolean — búsqueda automática al cargar",
+            baseUrl: "string — URL base del cotizador (opcional)",
+          },
+        },
+        response: {
+          content_type: "application/json",
+          shape: {
+            data: {
+              url: "string — URL completa para redirigir al usuario",
+              plan: "string",
+              vista: "string",
+              entidad: "string | null",
+              has_quote_criteria: "boolean",
+              has_contact_prefill: "boolean",
+              instructions: "string",
+            },
+            meta: { endpoint: "string", version: "string" },
+          },
+        },
+      },
+      {
         method: "GET",
         path: `${baseUrl.replace(/\/api\/public\/v1$/, "")}/api/public/v1/ui/plan-card`,
         summary:
@@ -119,6 +164,10 @@ export function buildPublicApiAgentGuide(request: Request) {
       },
     ],
     cotizador_deep_link: getDeepLinkDocumentation(
+      process.env.PUBLIC_API_BASE_URL?.replace(/\/api\/public\/v1\/?$/, "") ??
+        "https://cotizador.cotizaloantes.cl",
+    ),
+    solicitar_deep_link: getSolicitarDeepLinkDocumentation(
       process.env.PUBLIC_API_BASE_URL?.replace(/\/api\/public\/v1\/?$/, "") ??
         "https://cotizador.cotizaloantes.cl",
     ),
@@ -192,6 +241,44 @@ export function buildPublicApiAgentGuide(request: Request) {
       preview_plans_fetch: `fetch("${baseUrl}/plans/preview", {
   headers: { Authorization: "Bearer " + process.env.PUBLIC_API_SECRET }
 })`,
+      build_solicitar_url_curl: `curl -s -X POST "${baseUrl}/solicitar/url" \\
+  -H "Authorization: Bearer $PUBLIC_API_SECRET" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "entidad": "cotizaloantes",
+    "plan": "CONSALUD-PLAN-EJEMPLO",
+    "region": "rm",
+    "edad": 34,
+    "sexo": "m",
+    "ingreso": "1500000",
+    "nombre": "María González",
+    "email": "maria@ejemplo.cl",
+    "telefono": "+56912345678",
+    "vista": "solicitar",
+    "auto": true
+  }'`,
+      build_solicitar_url_fetch: `const response = await fetch("${baseUrl}/solicitar/url", {
+  method: "POST",
+  headers: {
+    Authorization: "Bearer " + process.env.PUBLIC_API_SECRET,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    entidad: "cotizaloantes",
+    plan: "CONSALUD-PLAN-EJEMPLO",
+    region: "rm",
+    edad: 34,
+    sexo: "m",
+    ingreso: "1500000",
+    nombre: "María González",
+    email: "maria@ejemplo.cl",
+    telefono: "+56912345678",
+    vista: "solicitar",
+    auto: true,
+  }),
+});
+const { data } = await response.json();
+window.location.href = data.url;`,
     },
     errors: [
       { status: 401, code: "MISSING_API_SECRET", message: "Falta la clave." },
@@ -353,6 +440,65 @@ function buildOpenApiDocument(baseUrl: string) {
             },
           },
         },
+        BuildSolicitarUrlRequest: {
+          type: "object",
+          required: ["plan"],
+          properties: {
+            plan: {
+              type: "string",
+              description: "Código único del plan (unique_code).",
+            },
+            entidad: { type: "string" },
+            vista: {
+              type: "string",
+              enum: [
+                "solicitar",
+                "request",
+                "precio",
+                "price",
+                "overview",
+                "general",
+              ],
+            },
+            region: { type: "string" },
+            edad: { type: "integer" },
+            sexo: { type: "string", enum: ["m", "f"] },
+            ingreso: { type: "string" },
+            cargas: { type: "array", items: { type: "integer" } },
+            nombre: { type: "string" },
+            rut: { type: "string" },
+            email: { type: "string", format: "email" },
+            telefono: { type: "string" },
+            auto: { type: "boolean" },
+            baseUrl: { type: "string", format: "uri" },
+          },
+        },
+        BuildSolicitarUrlResponse: {
+          type: "object",
+          required: ["data", "meta"],
+          properties: {
+            data: {
+              type: "object",
+              required: ["url", "plan", "vista", "instructions"],
+              properties: {
+                url: { type: "string", format: "uri" },
+                plan: { type: "string" },
+                vista: { type: "string" },
+                entidad: { type: "string", nullable: true },
+                has_quote_criteria: { type: "boolean" },
+                has_contact_prefill: { type: "boolean" },
+                instructions: { type: "string" },
+              },
+            },
+            meta: {
+              type: "object",
+              properties: {
+                endpoint: { type: "string" },
+                version: { type: "string" },
+              },
+            },
+          },
+        },
         ErrorResponse: {
           type: "object",
           properties: {
@@ -417,6 +563,48 @@ function buildOpenApiDocument(baseUrl: string) {
               content: {
                 "application/json": {
                   schema: { $ref: "#/components/schemas/PlansPreviewResponse" },
+                },
+              },
+            },
+            "401": {
+              description: "Clave ausente o inválida",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/ErrorResponse" },
+                },
+              },
+            },
+          },
+        },
+      },
+      "/solicitar/url": {
+        post: {
+          operationId: "buildSolicitarUrl",
+          summary: "Generar URL de redirección al modal de solicitud",
+          description:
+            "Construye la URL del cotizador para que el usuario continúe la solicitud de un plan. Usar desde el backend del sitio externo al hacer clic en «Solicitar».",
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/BuildSolicitarUrlRequest" },
+              },
+            },
+          },
+          responses: {
+            "200": {
+              description: "URL generada",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/BuildSolicitarUrlResponse" },
+                },
+              },
+            },
+            "400": {
+              description: "Parámetros inválidos",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/ErrorResponse" },
                 },
               },
             },

@@ -246,6 +246,24 @@ export function buildPlanCardUiGuide(
         expand_label: "Ver más prestadores",
         percentage_badge_min_width: "2.5rem",
       },
+      percentage_display: {
+        summary_badge:
+          "Muestra el % máximo de cobertura en un chip/badge junto al título de la columna (ej. 70%).",
+        progress_bar:
+          "Barra h-2 sobre track gris; el ancho corresponde al % máximo.",
+        clinic_line_format:
+          "Cada prestador: «{percentage}% {clinic_name}» con el % en bold y color de acento.",
+        fallback_without_clinics:
+          "Si solo hay coverage_summary de la API: texto «Coberturas 40% · 60% · 70%» usando hospital_percentages / ambulatory_percentages.",
+        api_fields: {
+          coverage_summary: {
+            hospital_percentages: "number[] — porcentajes distintos hospitalarios",
+            ambulatory_percentages: "number[] — porcentajes distintos ambulatorios",
+            hospital_avg: "number — promedio hospitalario",
+            ambulatory_avg: "number — promedio ambulatorio",
+          },
+        },
+      },
     },
     price_display: {
       show_dual_currency: true,
@@ -304,7 +322,8 @@ export function buildPlanCardUiGuide(
       "Nombre del plan en MAYÚSCULAS, peso bold, color primary-dark.",
       "Chips para código, base UF, tipo de plan y badge Top.",
       "Dos columnas de cobertura: hospitalaria (verde/primary) y ambulatoria (azul/secondary).",
-      "Barra de progreso redondeada sobre track gris claro para % máximo de cobertura.",
+      "Mostrar siempre el porcentaje máximo en badge + barra de progreso + listado con «% prestador».",
+      "Si la API solo entrega coverage_summary, mostrar los porcentajes como «Coberturas 40% · 60%».",
       "Botón primario pill «Solicitar» y secundario «PDF» si hay archivo.",
       "Precios con label «Desde» y números tabulares.",
       "Respetar touch targets ≥ 48px en móvil.",
@@ -338,6 +357,22 @@ export function buildPlanCardUiGuide(
     related_endpoints: {
       plans_preview: "/api/public/v1/plans/preview",
       docs: "/api/public/v1/docs",
+      cotizalo_antes_plans_proxy: "/api/cotizador/plans/preview (en cotizaloantes.cl)",
+      cotizalo_antes_solicitar_proxy: "/api/cotizador/solicitar (en cotizaloantes.cl)",
+    },
+    cotizalo_antes_integration: {
+      plans_source:
+        "GET /api/cotizador/plans/preview en cotizaloantes.cl (proxy a /api/public/v1/plans/preview).",
+      coverage_mapping:
+        "Mapear coverage_summary.hospital_percentages y ambulatory_percentages al card. Mostrar badge con % máximo y fallback «Coberturas X% · Y%» si no hay nombres de clínicas.",
+      solicitar_required_fields: [
+        "region",
+        "ingreso mensual líquido",
+        "edad",
+        "sexo",
+      ],
+      solicitar_validation_message:
+        "Para solicitar el plan y recibir un precio adecuado, completa región, ingreso mensual líquido, edad y sexo en la barra superior antes de pulsar Solicitar.",
     },
   } as const;
 }
