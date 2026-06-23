@@ -41,6 +41,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+scripts/.*-plans-parsed.json
 
 # PDFs de planes (almacenamiento local)
 /storage/planes-pdf/**
