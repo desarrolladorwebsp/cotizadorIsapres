@@ -165,6 +165,8 @@ function hasDeepLinkFilterParams(params: URLSearchParams): boolean {
     DEEP_LINK_PARAMS.nombre,
     DEEP_LINK_PARAMS.rut,
     DEEP_LINK_PARAMS.telefono,
+    DEEP_LINK_PARAMS.plan,
+    DEEP_LINK_PARAMS.vista,
   ];
 
   return keys.some((key) => params.has(key));

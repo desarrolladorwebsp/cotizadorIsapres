@@ -146,6 +146,7 @@ export function buildSolicitarUrl(
   return buildCotizadorUrl({
     ...input,
     vista: input.vista ?? "solicitar",
+    q: input.q ?? input.plan,
     auto: input.auto ?? Boolean(input.region || input.edad !== undefined),
   });
 }

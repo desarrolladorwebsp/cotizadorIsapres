@@ -108,20 +108,20 @@ function PublicCotizadorViewInner() {
   );
   const [contractModalTab, setContractModalTab] = useState<
     "overview" | "price" | "request" | undefined
-  >(undefined);
-  const solicitarDeepLinkHandledRef = useRef(false);
+  >(deepLink.modalTab);
   const [searchText, setSearchText] = useState(deepLink.q ?? "");
   const [resultsLimit, setResultsLimit] = useState(INITIAL_PLANS_PAGE_SIZE);
   const [notifyEmail, setNotifyEmail] = useState(deepLink.email ?? "");
   const searchNotifySentRef = useRef(false);
 
   useEffect(() => {
-    if (deepLink.hasDeepLinkParams) {
+    if (deepLink.hasDeepLinkParams || deepLink.hasSolicitarDeepLink) {
       setCriteria(deepLink.criteria);
-      setSearchText(deepLink.q ?? "");
+      setSearchText(deepLink.q ?? deepLink.planCode ?? "");
       if (deepLink.sortKey) setSortKey(deepLink.sortKey);
       if (deepLink.currency) setCurrency(deepLink.currency);
       if (deepLink.email) setNotifyEmail(deepLink.email);
+      if (deepLink.modalTab) setContractModalTab(deepLink.modalTab);
       searchNotifySentRef.current = false;
 
       dashboard.handleBeneficiariesChange(
@@ -236,7 +236,7 @@ function PublicCotizadorViewInner() {
 
     void search(
       {
-        q: deepLink.q,
+        q: deepLink.q ?? deepLink.planCode,
         priceMin,
         priceMax,
         filters,
@@ -330,34 +330,39 @@ function PublicCotizadorViewInner() {
   }, [plans, sortKey, dashboard.beneficiarySummary, dashboard.ufToClp]);
 
   useEffect(() => {
-    if (
-      !formReady ||
-      !deepLink.planCode ||
-      solicitarDeepLinkHandledRef.current
-    ) {
+    if (!formReady || !deepLink.planCode) {
       return;
     }
 
-    solicitarDeepLinkHandledRef.current = true;
-    setContractModalTab(deepLink.modalTab);
+    const planCode = deepLink.planCode;
+    const modalTab = deepLink.modalTab ?? "request";
 
     const planInResults = plans.find(
-      (plan) => plan.unique_code === deepLink.planCode,
+      (plan) => plan.unique_code === planCode,
     );
 
     if (planInResults) {
+      setContractModalTab(modalTab);
       setContractPlan(planInResults);
       return;
     }
+
+    if (contractPlan?.unique_code === planCode) {
+      return;
+    }
+
+    setContractModalTab(modalTab);
 
     let cancelled = false;
 
     async function loadPlanForSolicitar() {
       try {
         const response = await fetch(
-          `/api/plans/${encodeURIComponent(deepLink.planCode!)}`,
+          `/api/plans/${encodeURIComponent(planCode)}`,
         );
-        if (!response.ok || cancelled) return;
+        if (!response.ok || cancelled) {
+          return;
+        }
 
         const plan = (await response.json()) as HealthPlan;
         if (cancelled) return;
@@ -374,13 +379,13 @@ function PublicCotizadorViewInner() {
     return () => {
       cancelled = true;
     };
-  }, [formReady, deepLink.planCode, deepLink.modalTab, plans]);
-
-  useEffect(() => {
-    if (!deepLink.planCode) {
-      solicitarDeepLinkHandledRef.current = false;
-    }
-  }, [deepLink.planCode]);
+  }, [
+    formReady,
+    deepLink.planCode,
+    deepLink.modalTab,
+    plans,
+    contractPlan?.unique_code,
+  ]);
 
   const hasMoreResults = total > plans.length;
   const showFullLoading = loading && (!hasSearched || plans.length === 0);
