@@ -1,8 +1,7 @@
-import { mapDbPlanToHealthPlan, type PlanWithCoverages } from "@/lib/api/plan-mapper";
-import { prisma } from "@/lib/prisma";
+import {
+  findManyHealthPlans,
+} from "@/lib/api/plan-query";
 import type { HealthPlan } from "@/types/plan";
-
-const planInclude = { coverages: true, isapreRef: true } as const;
 
 /** TTL del catálogo en memoria (evita N consultas completas a BD por sesión). */
 const CATALOG_CACHE_TTL_MS = 5 * 60 * 1000;
@@ -14,15 +13,6 @@ interface CatalogCacheEntry {
 
 let catalogCache: CatalogCacheEntry | null = null;
 let catalogInflight: Promise<HealthPlan[]> | null = null;
-
-async function loadPlansFromDatabase(): Promise<HealthPlan[]> {
-  const dbPlans = await prisma.plan.findMany({
-    include: planInclude,
-    orderBy: { planName: "asc" },
-  });
-
-  return (dbPlans as PlanWithCoverages[]).map(mapDbPlanToHealthPlan);
-}
 
 /** Catálogo completo en memoria con deduplicación de requests concurrentes. */
 export async function getCachedHealthPlans(): Promise<HealthPlan[]> {
@@ -39,7 +29,7 @@ export async function getCachedHealthPlans(): Promise<HealthPlan[]> {
     return catalogInflight;
   }
 
-  catalogInflight = loadPlansFromDatabase()
+  catalogInflight = findManyHealthPlans()
     .then((plans) => {
       catalogCache = { plans, loadedAt: Date.now() };
       return plans;

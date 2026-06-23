@@ -1,6 +1,10 @@
 import { dedupeCoverageEntries } from "@/lib/api/plan-validation";
-import { resolveGesPremiumUf } from "@/lib/isapre-pricing-rules";
 import { resolveIsapreNameFromId } from "@/lib/isapre-catalog";
+import {
+  DEFAULT_GES_PREMIUM_UF,
+  ISAPRE_GES_DEFAULTS,
+  resolveGesPremiumUf,
+} from "@/lib/isapre-ges-defaults";
 import type { CoverageEntry, HealthPlan } from "@/types/plan";
 import type {
   CoverageEntry as DbCoverage,
@@ -13,6 +17,18 @@ export type PlanWithCoverages = DbPlan & {
   isapreRef: DbIsapre;
 };
 
+export type PlanWithCoveragesOnly = DbPlan & {
+  coverages: DbCoverage[];
+};
+
+function resolveGesPremiumForIsapreId(isapreId: string): number {
+  const defaults = ISAPRE_GES_DEFAULTS[isapreId];
+  return resolveGesPremiumUf(
+    defaults?.gesPremiumUf,
+    DEFAULT_GES_PREMIUM_UF,
+  );
+}
+
 export function mapDbPlanToHealthPlan(plan: PlanWithCoverages): HealthPlan {
   return {
     isapre: plan.isapreRef.name,
@@ -20,6 +36,26 @@ export function mapDbPlanToHealthPlan(plan: PlanWithCoverages): HealthPlan {
     unique_code: plan.uniqueCode,
     base_price_uf: plan.basePriceUf,
     ges_premium_uf: resolveGesPremiumUf(plan.isapreRef.gesPremiumUf),
+    has_top: plan.hasTop,
+    additional_notes: plan.additionalNotes,
+    pdf_url: plan.pdfUrl,
+    pdf_public_id: plan.pdfPublicId,
+    coverage: dedupeCoverageEntries(
+      plan.coverages.map(mapDbCoverageToEntry),
+    ),
+  };
+}
+
+/** Fallback cuando la BD aún no tiene columnas GES en `isapres`. */
+export function mapDbPlanToHealthPlanLegacy(
+  plan: PlanWithCoveragesOnly,
+): HealthPlan {
+  return {
+    isapre: resolveIsapreNameFromId(plan.isapreId),
+    plan_name: plan.planName,
+    unique_code: plan.uniqueCode,
+    base_price_uf: plan.basePriceUf,
+    ges_premium_uf: resolveGesPremiumForIsapreId(plan.isapreId),
     has_top: plan.hasTop,
     additional_notes: plan.additionalNotes,
     pdf_url: plan.pdfUrl,

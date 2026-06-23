@@ -6,6 +6,10 @@ import {
   mapHealthPlanToDbCreate,
   mapHealthPlanToDbUpdate,
 } from "@/lib/api/plan-mapper";
+import {
+  findHealthPlanByCode,
+  findManyHealthPlans,
+} from "@/lib/api/plan-query";
 import { prisma } from "@/lib/prisma";
 import type { Clinic } from "@/types/clinic";
 import type { HealthPlan } from "@/types/plan";
@@ -42,23 +46,13 @@ function mapCoverageCreateInput(coverage: HealthPlan["coverage"]) {
 }
 
 export async function readPlans(): Promise<HealthPlan[]> {
-  const plans = await prisma.plan.findMany({
-    include: planInclude,
-    orderBy: { planName: "asc" },
-  });
-
-  return plans.map(mapDbPlanToHealthPlan);
+  return findManyHealthPlans();
 }
 
 export async function readPlanByCode(
   uniqueCode: string,
 ): Promise<HealthPlan | null> {
-  const plan = await prisma.plan.findUnique({
-    where: { uniqueCode },
-    include: planInclude,
-  });
-
-  return plan ? mapDbPlanToHealthPlan(plan) : null;
+  return findHealthPlanByCode(uniqueCode);
 }
 
 export async function createPlanRecord(plan: HealthPlan): Promise<HealthPlan> {
