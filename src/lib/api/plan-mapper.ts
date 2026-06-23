@@ -1,4 +1,5 @@
 import { dedupeCoverageEntries } from "@/lib/api/plan-validation";
+import { resolveGesPremiumUf } from "@/lib/isapre-pricing-rules";
 import { resolveIsapreNameFromId } from "@/lib/isapre-catalog";
 import type { CoverageEntry, HealthPlan } from "@/types/plan";
 import type {
@@ -18,6 +19,7 @@ export function mapDbPlanToHealthPlan(plan: PlanWithCoverages): HealthPlan {
     plan_name: plan.planName,
     unique_code: plan.uniqueCode,
     base_price_uf: plan.basePriceUf,
+    ges_premium_uf: resolveGesPremiumUf(plan.isapreRef.gesPremiumUf),
     has_top: plan.hasTop,
     additional_notes: plan.additionalNotes,
     pdf_url: plan.pdfUrl,

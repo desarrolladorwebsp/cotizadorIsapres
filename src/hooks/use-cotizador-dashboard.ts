@@ -85,11 +85,13 @@ export function useCotizadorDashboard(
         a.base_price_uf,
         beneficiarySummary,
         ufToClp,
+        a.ges_premium_uf,
       ).finalPriceUf;
       const priceB = buildPlanFinalPriceQuote(
         b.base_price_uf,
         beneficiarySummary,
         ufToClp,
+        b.ges_premium_uf,
       ).finalPriceUf;
 
       return sortAsc ? priceA - priceB : priceB - priceA;

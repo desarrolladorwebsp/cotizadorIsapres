@@ -102,6 +102,21 @@ export function buildPublicApiAgentGuide(request: Request) {
           ],
         },
       },
+      {
+        method: "GET",
+        path: `${baseUrl.replace(/\/api\/public\/v1$/, "")}/api/public/v1/ui/plan-card`,
+        summary:
+          "Guía de estilos UI para cards de planes (sin autenticación — para diseño e integraciones visuales)",
+        auth_required: false,
+        query_params: {
+          brand: "default | cotizalo-antes (default: cotizalo-antes)",
+        },
+        response: {
+          content_type: "application/json",
+          description:
+            "Tokens de color, layout, tipografía, badges, botones y reglas do/dont para replicar PublicPlanCard.",
+        },
+      },
     ],
     cotizador_deep_link: getDeepLinkDocumentation(
       process.env.PUBLIC_API_BASE_URL?.replace(/\/api\/public\/v1\/?$/, "") ??

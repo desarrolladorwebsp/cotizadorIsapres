@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { AdminShell, type AdminSection } from "@/components/admin/admin-shell";
 import { AdminToast } from "@/components/admin/admin-toast";
 import { ClinicsPanel } from "@/components/admin/clinics-panel";
+import { GesPanel } from "@/components/admin/ges-panel";
 import { PlansPanel } from "@/components/admin/plans-panel";
 import { QuotesPanel } from "@/components/admin/quotes-panel";
 import {
@@ -88,6 +89,8 @@ export default function CotizadorAdminPage() {
             onRefresh={loadData}
             onNotify={notify}
           />
+        ) : activeSection === "ges" ? (
+          <GesPanel onNotify={notify} />
         ) : (
           <QuotesPanel
             quotes={quotes}

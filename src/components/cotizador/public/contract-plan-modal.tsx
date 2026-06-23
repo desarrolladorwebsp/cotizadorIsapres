@@ -181,6 +181,7 @@ export function ContractPlanModal({
       planSummary.base_price_uf,
       beneficiarySummary,
       ufToClp,
+      planSummary.ges_premium_uf,
     );
   }, [planSummary, beneficiarySummary, ufToClp]);
 

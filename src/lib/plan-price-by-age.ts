@@ -1,4 +1,4 @@
-import { isRiskFactorExemptByAge } from "@/lib/isapre-pricing-rules";
+import { isRiskFactorExemptByAge, resolveGesPremiumUf } from "@/lib/isapre-pricing-rules";
 import {
   calculateFinalPlanPriceClp,
   calculateFinalPlanPriceUf,
@@ -20,12 +20,15 @@ export function buildSinglePersonPricesByAge(
   basePriceUf: number,
   ufToClp: number,
   ages: readonly number[] = SINGLE_PERSON_AGE_SAMPLES,
+  gesPremiumUfPerPerson?: number,
 ): AgePricePoint[] {
+  const gesRate = resolveGesPremiumUf(gesPremiumUfPerPerson);
+
   return ages.map((age) => {
     const factor = isRiskFactorExemptByAge(age)
       ? 0
       : (getRiskFactor604(age, "contributor") ?? 0);
-    const priceUf = calculateFinalPlanPriceUf(basePriceUf, factor, 1);
+    const priceUf = calculateFinalPlanPriceUf(basePriceUf, factor, 1, gesRate);
     const priceClp = calculateFinalPlanPriceClp(priceUf, ufToClp);
 
     return { age, factor, priceUf, priceClp };

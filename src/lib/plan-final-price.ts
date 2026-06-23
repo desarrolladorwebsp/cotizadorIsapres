@@ -1,5 +1,5 @@
 import { DEFAULT_UF_VALUE_CLP } from "@/lib/economic-indicators";
-import { GES_PREMIUM_UF_PER_BENEFICIARY } from "@/lib/isapre-pricing-rules";
+import { resolveGesPremiumUf } from "@/lib/isapre-pricing-rules";
 import type { BeneficiaryGroupSummary } from "@/types/beneficiary";
 
 export interface PlanFinalPriceQuote {
@@ -18,9 +18,11 @@ export function calculateFinalPlanPriceUf(
   basePriceUf: number,
   groupTotalFactor: number,
   beneficiaryCount: number,
-  gesPremiumUfPerPerson: number = GES_PREMIUM_UF_PER_BENEFICIARY,
+  gesPremiumUfPerPerson: number,
 ): number {
-  return groupTotalFactor * basePriceUf + beneficiaryCount * gesPremiumUfPerPerson;
+  return (
+    groupTotalFactor * basePriceUf + beneficiaryCount * gesPremiumUfPerPerson
+  );
 }
 
 export function calculateFinalPlanPriceClp(
@@ -34,11 +36,13 @@ export function buildPlanFinalPriceQuote(
   basePriceUf: number,
   summary: BeneficiaryGroupSummary,
   ufToClp: number = DEFAULT_UF_VALUE_CLP,
+  gesPremiumUfPerPerson?: number,
 ): PlanFinalPriceQuote {
   const beneficiaryCount = summary.beneficiaryCount;
   const groupTotalFactor =
     beneficiaryCount === 0 ? 1 : summary.totalFactors;
-  const gesTotalUf = beneficiaryCount * GES_PREMIUM_UF_PER_BENEFICIARY;
+  const gesRate = resolveGesPremiumUf(gesPremiumUfPerPerson);
+  const gesTotalUf = beneficiaryCount * gesRate;
   const riskComponentUf = groupTotalFactor * basePriceUf;
   const finalPriceUf = riskComponentUf + gesTotalUf;
   const finalPriceClp = calculateFinalPlanPriceClp(finalPriceUf, ufToClp);
@@ -47,7 +51,7 @@ export function buildPlanFinalPriceQuote(
     basePriceUf,
     groupTotalFactor,
     beneficiaryCount,
-    gesPremiumUfPerPerson: GES_PREMIUM_UF_PER_BENEFICIARY,
+    gesPremiumUfPerPerson: gesRate,
     gesTotalUf,
     riskComponentUf,
     finalPriceUf,

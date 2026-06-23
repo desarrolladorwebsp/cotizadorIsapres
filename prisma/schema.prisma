@@ -29,12 +29,14 @@ enum SubscriptionStatus {
 }
 
 model Isapre {
-  id        String   @id
-  name      String
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  plans     Plan[]
+  id                 String   @id
+  name               String
+  active             Boolean  @default(true)
+  gesPremiumUf       Float    @default(0.731) @map("ges_premium_uf")
+  gesPremiumUfLegacy Float?   @map("ges_premium_uf_legacy")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+  plans              Plan[]
 
   @@map("isapres")
 }

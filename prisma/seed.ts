@@ -6,6 +6,7 @@ import {
   ISAPRE_CATALOG,
   resolveIsapreIdFromName,
 } from "../src/lib/isapre-catalog";
+import { ISAPRE_GES_DEFAULTS, DEFAULT_GES_PREMIUM_UF } from "../src/lib/isapre-ges-defaults";
 import type { Clinic } from "../src/types/clinic";
 import type { HealthPlan } from "../src/types/plan";
 
@@ -68,13 +69,28 @@ const CLIENT_USERS = [
 
 async function seedIsapres() {
   await Promise.all(
-    ISAPRE_CATALOG.map((item) =>
-      prisma.isapre.upsert({
+    ISAPRE_CATALOG.map((item) => {
+      const defaults = ISAPRE_GES_DEFAULTS[item.id] ?? {
+        gesPremiumUf: DEFAULT_GES_PREMIUM_UF,
+        gesPremiumUfLegacy: null,
+      };
+
+      return prisma.isapre.upsert({
         where: { id: item.id },
-        create: { id: item.id, name: item.name },
-        update: { name: item.name, active: true },
-      }),
-    ),
+        create: {
+          id: item.id,
+          name: item.name,
+          gesPremiumUf: defaults.gesPremiumUf,
+          gesPremiumUfLegacy: defaults.gesPremiumUfLegacy,
+        },
+        update: {
+          name: item.name,
+          active: true,
+          gesPremiumUf: defaults.gesPremiumUf,
+          gesPremiumUfLegacy: defaults.gesPremiumUfLegacy,
+        },
+      });
+    }),
   );
 }
 

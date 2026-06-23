@@ -5,6 +5,7 @@ import type {
 import type { Clinic } from "@/types/clinic";
 import type { HealthPlan } from "@/types/plan";
 import type { QuoteRecord } from "@/types/quote";
+import type { IsapreRecord, UpdateIsapreGesInput } from "@/types/isapre";
 import type {
   CreateStaffAccountInput,
   StaffAccountRecord,
@@ -75,6 +76,23 @@ export async function fetchClinics(): Promise<Clinic[]> {
 export async function fetchQuotes(): Promise<QuoteRecord[]> {
   const response = await fetch("/api/quotes");
   return parseJsonResponse<QuoteRecord[]>(response);
+}
+
+export async function fetchIsapres(): Promise<IsapreRecord[]> {
+  const response = await fetch("/api/isapres");
+  return parseJsonResponse<IsapreRecord[]>(response);
+}
+
+export async function updateIsapreGes(
+  id: string,
+  input: UpdateIsapreGesInput,
+): Promise<{ isapre: IsapreRecord }> {
+  const response = await fetch(`/api/isapres/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  return parseJsonResponse<{ isapre: IsapreRecord }>(response);
 }
 
 export async function fetchStaffAccounts(): Promise<StaffAccountRecord[]> {
@@ -180,6 +198,7 @@ export function createEmptyPlan(): HealthPlan {
     plan_name: "",
     unique_code: "",
     base_price_uf: 1,
+    ges_premium_uf: 0.731,
     has_top: false,
     additional_notes: null,
     pdf_url: null,

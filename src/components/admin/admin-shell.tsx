@@ -19,7 +19,7 @@ import {
 } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 
-export type AdminSection = "plans" | "clinics" | "quotes";
+export type AdminSection = "quotes" | "plans" | "clinics" | "ges";
 
 export interface AdminShellProps {
   activeSection?: AdminSection;
@@ -31,6 +31,7 @@ const navItems: { id: AdminSection; label: string; shortLabel: string }[] = [
   { id: "quotes", label: "Cotizaciones", shortLabel: "Cotiz." },
   { id: "plans", label: "Planes de salud", shortLabel: "Planes" },
   { id: "clinics", label: "Clínicas y prestadores", shortLabel: "Clínicas" },
+  { id: "ges", label: "Valores GES", shortLabel: "GES" },
 ];
 
 export function AdminShell({

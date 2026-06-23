@@ -59,8 +59,9 @@ export function PlanCard({
         plan.base_price_uf,
         beneficiarySummary,
         ufToClp,
+        plan.ges_premium_uf,
       ),
-    [plan.base_price_uf, beneficiarySummary, ufToClp],
+    [plan.base_price_uf, plan.ges_premium_uf, beneficiarySummary, ufToClp],
   );
 
   function handleSelect() {

@@ -309,11 +309,13 @@ function PublicCotizadorViewInner() {
         a.base_price_uf,
         dashboard.beneficiarySummary,
         dashboard.ufToClp,
+        a.ges_premium_uf,
       ).finalPriceUf;
       const priceB = buildPlanFinalPriceQuote(
         b.base_price_uf,
         dashboard.beneficiarySummary,
         dashboard.ufToClp,
+        b.ges_premium_uf,
       ).finalPriceUf;
 
       return sortKey === "price_asc" ? priceA - priceB : priceB - priceA;

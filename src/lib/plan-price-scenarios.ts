@@ -1,10 +1,10 @@
 import { buildBeneficiaryGroupSummary } from "@/lib/beneficiary-summary";
 import {
-  GES_PREMIUM_UF_PER_BENEFICIARY,
-  isRiskFactorExemptByAge,
+  resolveGesPremiumUf,
 } from "@/lib/isapre-pricing-rules";
 import { calculateFinalPlanPriceClp } from "@/lib/plan-final-price";
 import { getRiskFactor604 } from "@/lib/risk-factor-table-604";
+import { isRiskFactorExemptByAge } from "@/lib/isapre-pricing-rules";
 import type { BeneficiaryGroupSummary } from "@/types/beneficiary";
 import type { FamilyBeneficiariesState } from "@/types/beneficiary";
 
@@ -68,6 +68,7 @@ function buildScenarioQuote(
   dependentAges: number[],
   label: string,
   id: string,
+  gesPremiumUfPerPerson: number,
 ): CargasPriceScenario {
   const contributorFactor = resolveBillableFactor(contributorAge, "contributor");
   const dependentFactors = dependentAges.map((age) =>
@@ -79,7 +80,7 @@ function buildScenarioQuote(
   const beneficiaryCount = allAges.length;
   const gesBillableCount = countGesBillableBeneficiaries(allAges);
   const riskUf = totalFactors * basePriceUf;
-  const gesUf = gesBillableCount * GES_PREMIUM_UF_PER_BENEFICIARY;
+  const gesUf = gesBillableCount * gesPremiumUfPerPerson;
   const priceUf = riskUf + gesUf;
   const priceClp = calculateFinalPlanPriceClp(priceUf, ufToClp);
 
@@ -104,7 +105,10 @@ export function buildCargasPriceScenarios(
   basePriceUf: number,
   ufToClp: number,
   contributorAge: number = 35,
+  gesPremiumUfPerPerson?: number,
 ): CargasPriceScenario[] {
+  const gesRate = resolveGesPremiumUf(gesPremiumUfPerPerson);
+
   return CARGAS_SCENARIO_DEPENDENTS.map((scenario) =>
     buildScenarioQuote(
       basePriceUf,
@@ -113,6 +117,7 @@ export function buildCargasPriceScenarios(
       [...scenario.dependentAges],
       scenario.label,
       scenario.id,
+      gesRate,
     ),
   );
 }
@@ -120,10 +125,13 @@ export function buildCargasPriceScenarios(
 export function buildGesScalePoints(
   ufToClp: number,
   maxBeneficiaries: number = 5,
+  gesPremiumUfPerPerson?: number,
 ): GesScalePoint[] {
+  const gesRate = resolveGesPremiumUf(gesPremiumUfPerPerson);
+
   return Array.from({ length: maxBeneficiaries }, (_, index) => {
     const beneficiaries = index + 1;
-    const gesUf = beneficiaries * GES_PREMIUM_UF_PER_BENEFICIARY;
+    const gesUf = beneficiaries * gesRate;
     return {
       beneficiaries,
       gesUf,
@@ -138,7 +146,9 @@ export function buildPriceCompositionFromSummary(
   ufToClp: number,
   quotedFinalPriceUf?: number,
   quotedFinalPriceClp?: number,
+  gesPremiumUfPerPerson?: number,
 ): PriceCompositionBreakdown {
+  const gesRate = resolveGesPremiumUf(gesPremiumUfPerPerson);
   const allAges = [
     summary.contributor.age,
     ...summary.dependents.map((d) => d.age),
@@ -149,7 +159,7 @@ export function buildPriceCompositionFromSummary(
   const quotedGesUf =
     quotedFinalPriceUf !== undefined
       ? Math.max(quotedFinalPriceUf - riskUf, 0)
-      : gesBillableCount * GES_PREMIUM_UF_PER_BENEFICIARY;
+      : gesBillableCount * gesRate;
   const gesUf = quotedGesUf;
   const totalUf = quotedFinalPriceUf ?? riskUf + gesUf;
   const totalClp =
@@ -172,6 +182,7 @@ export function buildCargasScenarioFromSummary(
   basePriceUf: number,
   summary: BeneficiaryGroupSummary,
   ufToClp: number,
+  gesPremiumUfPerPerson?: number,
 ): CargasPriceScenario | null {
   const contributorAge = summary.contributor.age;
   if (contributorAge === null) return null;
@@ -189,6 +200,7 @@ export function buildCargasScenarioFromSummary(
       ? "Tu grupo"
       : `Tu grupo (${dependentAges.length} carga${dependentAges.length === 1 ? "" : "s"})`,
     "current",
+    resolveGesPremiumUf(gesPremiumUfPerPerson),
   );
 }
 
@@ -198,9 +210,16 @@ export function buildCargasScenariosForGroup(
   ufToClp: number,
   contributorAge: number | null,
   dependents: FamilyBeneficiariesState["dependents"],
+  gesPremiumUfPerPerson?: number,
 ): CargasPriceScenario[] {
+  const gesRate = resolveGesPremiumUf(gesPremiumUfPerPerson);
   const age = contributorAge ?? 35;
-  const scenarios = buildCargasPriceScenarios(basePriceUf, ufToClp, age);
+  const scenarios = buildCargasPriceScenarios(
+    basePriceUf,
+    ufToClp,
+    age,
+    gesRate,
+  );
 
   if (contributorAge === null) return scenarios;
 
@@ -208,7 +227,12 @@ export function buildCargasScenariosForGroup(
     contributorAge,
     dependents,
   });
-  const current = buildCargasScenarioFromSummary(basePriceUf, summary, ufToClp);
+  const current = buildCargasScenarioFromSummary(
+    basePriceUf,
+    summary,
+    ufToClp,
+    gesRate,
+  );
   if (!current) return scenarios;
 
   const matchIndex = scenarios.findIndex(

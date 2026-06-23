@@ -2,7 +2,6 @@
 
 import { useMemo } from "react";
 import {
-  GES_PREMIUM_UF_PER_BENEFICIARY,
   formatPlanClp,
   formatQuotedUf,
 } from "@/domain";
@@ -164,8 +163,14 @@ export function ModalPricePanel({
   dependents,
 }: ModalPricePanelProps) {
   const agePoints = useMemo(
-    () => buildSinglePersonPricesByAge(basePriceUf, ufToClp),
-    [basePriceUf, ufToClp],
+    () =>
+      buildSinglePersonPricesByAge(
+        basePriceUf,
+        ufToClp,
+        undefined,
+        priceQuote.gesPremiumUfPerPerson,
+      ),
+    [basePriceUf, ufToClp, priceQuote.gesPremiumUfPerPerson],
   );
 
   const composition = useMemo(
@@ -176,6 +181,7 @@ export function ModalPricePanel({
         ufToClp,
         priceQuote.finalPriceUf,
         priceQuote.finalPriceClp,
+        priceQuote.gesPremiumUfPerPerson,
       ),
     [basePriceUf, beneficiarySummary, ufToClp, priceQuote],
   );
@@ -187,11 +193,21 @@ export function ModalPricePanel({
         ufToClp,
         beneficiarySummary.contributor.age,
         dependents,
+        priceQuote.gesPremiumUfPerPerson,
       ),
-    [basePriceUf, ufToClp, beneficiarySummary.contributor.age, dependents],
+    [
+      basePriceUf,
+      ufToClp,
+      beneficiarySummary.contributor.age,
+      dependents,
+      priceQuote.gesPremiumUfPerPerson,
+    ],
   );
 
-  const gesScale = useMemo(() => buildGesScalePoints(ufToClp, 5), [ufToClp]);
+  const gesScale = useMemo(
+    () => buildGesScalePoints(ufToClp, 5, priceQuote.gesPremiumUfPerPerson),
+    [ufToClp, priceQuote.gesPremiumUfPerPerson],
+  );
 
   const maxAgeClp = Math.max(...agePoints.map((p) => p.priceClp), 1);
   const plotWidth = AGE_CHART_WIDTH - AGE_PADDING.left - AGE_PADDING.right;
@@ -384,7 +400,7 @@ export function ModalPricePanel({
           <div>
             <h4 className="text-base font-bold text-secondary">GES obligatorio</h4>
             <p className="mt-1 text-sm text-foreground">
-              {formatQuotedUf(GES_PREMIUM_UF_PER_BENEFICIARY)} por beneficiario al mes
+              {formatQuotedUf(priceQuote.gesPremiumUfPerPerson)} por beneficiario al mes
             </p>
           </div>
           <span
