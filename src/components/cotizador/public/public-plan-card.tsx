@@ -103,6 +103,7 @@ function PlanCardActionButton({
   target,
   rel,
   title,
+  disabled = false,
 }: {
   label: string;
   icon: ReactNode;
@@ -113,6 +114,7 @@ function PlanCardActionButton({
   target?: string;
   rel?: string;
   title?: string;
+  disabled?: boolean;
 }) {
   const isPrimary = variant === "primary";
 
@@ -127,6 +129,7 @@ function PlanCardActionButton({
           ui.border,
           "border bg-white text-foreground shadow-sm hover:border-primary/35 hover:bg-primary/5 hover:text-primary-dark",
         ),
+    disabled && "pointer-events-none cursor-not-allowed opacity-50",
   );
 
   const iconClassName = joinClasses(
@@ -134,6 +137,7 @@ function PlanCardActionButton({
     isPrimary
       ? "bg-white/20 text-primary-foreground"
       : "bg-primary/10 text-primary-dark",
+    disabled && "opacity-80",
   );
 
   const content = (
@@ -145,7 +149,7 @@ function PlanCardActionButton({
     </>
   );
 
-  if (href) {
+  if (href && !disabled) {
     return (
       <a
         href={href}
@@ -165,8 +169,10 @@ function PlanCardActionButton({
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
       title={title}
       aria-label={title ?? label}
+      aria-disabled={disabled || undefined}
       className={className}
     >
       {content}
@@ -294,18 +300,21 @@ export function PublicPlanCard({
           </div>
 
           <div className="flex items-center gap-2">
-            {planHasPdf(plan) ? (
-              <PlanCardActionButton
-                label="PDF"
-                icon={<DownloadIcon />}
-                variant="secondary"
-                href={getPlanPdfDownloadUrl(plan) ?? "#"}
-                target="_blank"
-                rel="noopener noreferrer"
-                download={buildPlanPdfFileName(plan.unique_code)}
-                title="Descargar PDF del plan"
-              />
-            ) : null}
+            <PlanCardActionButton
+              label="PDF"
+              icon={<DownloadIcon />}
+              variant="secondary"
+              href={getPlanPdfDownloadUrl(plan) ?? undefined}
+              target="_blank"
+              rel="noopener noreferrer"
+              download={buildPlanPdfFileName(plan.unique_code)}
+              title={
+                planHasPdf(plan)
+                  ? "Descargar PDF del plan"
+                  : "PDF no disponible para este plan"
+              }
+              disabled={!planHasPdf(plan)}
+            />
             <PlanCardActionButton
               label="Solicitar"
               icon={<ChatIcon />}
