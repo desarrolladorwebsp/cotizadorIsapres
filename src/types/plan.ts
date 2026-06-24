@@ -20,6 +20,8 @@ export interface HealthPlan {
   pdf_url: string | null;
   /** Ruta relativa en storage/planes-pdf (ej. consalud/13-sf1001-26.pdf). */
   pdf_public_id: string | null;
+  /** Zonas explícitas (importación) además de las inferidas por clínicas. */
+  zones: string[];
   coverage: CoverageEntry[];
 }
 

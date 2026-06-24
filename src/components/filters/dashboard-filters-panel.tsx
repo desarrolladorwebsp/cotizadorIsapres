@@ -19,12 +19,15 @@ import { FilterSection } from "./filter-section";
 export interface DashboardFiltersPanelProps {
   value: DashboardFiltersState;
   onChange: (next: DashboardFiltersState) => void;
+  /** Si se define, reemplaza el reset local de checkboxes (ej. limpiar todo el cotizador). */
+  onClearAll?: () => void;
   className?: string;
 }
 
 export function DashboardFiltersPanel({
   value,
   onChange,
+  onClearAll,
   className,
 }: DashboardFiltersPanelProps) {
   function update(partial: Partial<DashboardFiltersState>) {
@@ -32,6 +35,10 @@ export function DashboardFiltersPanel({
   }
 
   function clearAllFilters() {
+    if (onClearAll) {
+      onClearAll();
+      return;
+    }
     onChange(createDefaultDashboardFilters());
   }
 
@@ -47,7 +54,7 @@ export function DashboardFiltersPanel({
             ui.dangerGhost,
           )}
         >
-          Limpiar filtros
+          Limpiar todo
         </button>
       </div>
 
@@ -78,7 +85,17 @@ export function DashboardFiltersPanel({
 
         <FilterSection
           title="Filtrado por Zona"
-          description="Cobertura geográfica y comunas de prestación."
+          description="Muestra planes con prestadores en las zonas seleccionadas (sector RM, norte, Valparaíso, etc.)."
+          infoLabel="Información sobre zonas y sectores geográficos"
+          info={
+            <FilterHelpBlock
+              title={FILTER_HELP.zone.title}
+              paragraphs={FILTER_HELP.zone.paragraphs}
+              items={FILTER_HELP.zone.items}
+              footnote={FILTER_HELP.zone.footnote}
+              source={FILTER_HELP.zone.source}
+            />
+          }
         >
           <FilterCheckboxList
             options={ZONE_FILTER_OPTIONS}

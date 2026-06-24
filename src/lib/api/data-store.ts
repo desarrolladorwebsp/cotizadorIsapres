@@ -11,6 +11,7 @@ import {
   findManyHealthPlans,
 } from "@/lib/api/plan-query";
 import { prisma } from "@/lib/prisma";
+import { resolveClinicZoneIds } from "@/lib/clinic-zones";
 import type { Clinic } from "@/types/clinic";
 import type { HealthPlan } from "@/types/plan";
 import type { Prisma } from "@prisma/client";
@@ -28,10 +29,11 @@ async function upsertClinicsForCoverage(
   }
 
   for (const [id, name] of uniqueClinics) {
+    const zones = resolveClinicZoneIds(id);
     await tx.clinic.upsert({
       where: { id },
-      create: { id, name },
-      update: { name },
+      create: { id, name, zones },
+      update: { name, zones },
     });
   }
 }
@@ -191,6 +193,7 @@ export async function readClinics(): Promise<Clinic[]> {
   return clinics.map((clinic) => ({
     id: clinic.id,
     name: clinic.name,
+    zones: clinic.zones ?? [],
   }));
 }
 
@@ -199,8 +202,15 @@ export async function writeClinics(clinics: Clinic[]): Promise<void> {
     clinics.map((clinic) =>
       prisma.clinic.upsert({
         where: { id: clinic.id },
-        create: { id: clinic.id, name: clinic.name },
-        update: { name: clinic.name },
+        create: {
+          id: clinic.id,
+          name: clinic.name,
+          zones: clinic.zones ?? resolveClinicZoneIds(clinic.id),
+        },
+        update: {
+          name: clinic.name,
+          zones: clinic.zones ?? resolveClinicZoneIds(clinic.id),
+        },
       }),
     ),
   );

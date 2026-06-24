@@ -1,4 +1,5 @@
-import type { QuoteCriteria } from "@/components/cotizador/public/public-quote-criteria-bar";
+import type { QuoteCriteria } from "@/lib/quote-criteria-options";
+import { createDefaultQuoteCriteria } from "@/lib/quote-criteria-options";
 import type { CurrencyDisplay } from "@/components/cotizador/public/public-results-toolbar";
 import { buildBeneficiaryGroupSummary } from "@/domain";
 import {
@@ -202,7 +203,7 @@ export function parseCotizadorUrl(
     monthlyIncome: formatMonthlyIncomeForDisplay(
       params.get(DEEP_LINK_PARAMS.ingreso),
     ),
-    sex: sexRaw && VALID_SEX_VALUES.has(sexRaw) ? sexRaw : "",
+    ...(sexRaw && VALID_SEX_VALUES.has(sexRaw) ? { sex: sexRaw } : {}),
   };
 
   const filters: DashboardFiltersState = {

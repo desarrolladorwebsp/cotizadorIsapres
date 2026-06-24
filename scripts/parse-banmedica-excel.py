@@ -142,7 +142,7 @@ def parse_banmedica_coverage(text: str, coverage_type: str) -> list[dict]:
     return entries
 
 
-def parse_workbook(xlsx_path: Path) -> list[dict]:
+def parse_workbook(xlsx_path: Path, default_zones: list[str] | None = None) -> list[dict]:
     workbook = openpyxl.load_workbook(xlsx_path, data_only=True)
     worksheet = workbook.active
     plans: list[dict] = []
@@ -177,6 +177,7 @@ def parse_workbook(xlsx_path: Path) -> list[dict]:
                 "additional_notes": None,
                 "pdf_url": None,
                 "pdf_public_id": None,
+                "zones": list(default_zones or []),
                 "coverage": coverage,
             }
         )
@@ -195,9 +196,24 @@ def main() -> None:
     *input_paths, output_path = sys.argv[1:]
     plans: list[dict] = []
 
+    RM_ZONES = [
+        "rm-metropolitana",
+        "rm-norte",
+        "rm-sur",
+        "rm-oriente",
+        "rm-poniente",
+        "rm-centro",
+    ]
+    REGIONES_ZONES = ["norte", "octava"]
+
     for input_path in input_paths:
         xlsx_path = Path(input_path).expanduser().resolve()
-        parsed = parse_workbook(xlsx_path)
+        name_lower = xlsx_path.name.lower()
+        if "region" in name_lower:
+            default_zones = REGIONES_ZONES
+        else:
+            default_zones = RM_ZONES
+        parsed = parse_workbook(xlsx_path, default_zones=default_zones)
         print(f"{xlsx_path.name}: {len(parsed)} planes", file=sys.stderr)
         plans.extend(parsed)
 

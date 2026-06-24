@@ -51,6 +51,7 @@ export function mergePlanWithCoverage(
   const { coverage_summary: _summary, ...rest } = summary;
   return {
     ...rest,
+    zones: [],
     coverage,
   };
 }

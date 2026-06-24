@@ -4,6 +4,8 @@ import { config } from "dotenv";
 import { PrismaClient } from "@prisma/client";
 import { resolveIsapreIdFromName } from "../src/lib/isapre-catalog";
 import { dedupeCoverageEntries } from "../src/lib/api/plan-validation";
+import { resolveClinicZoneIds } from "../src/lib/clinic-zones";
+import { resolvePlanZoneIds } from "../src/lib/plan-zones";
 import type { HealthPlan } from "../src/types/plan";
 
 config({ path: path.join(process.cwd(), ".env.local") });
@@ -20,10 +22,11 @@ async function ensureClinics(plans: HealthPlan[]) {
   }
 
   for (const [id, name] of clinicMap) {
+    const zones = resolveClinicZoneIds(id);
     await prisma.clinic.upsert({
       where: { id },
-      create: { id, name },
-      update: { name },
+      create: { id, name, zones },
+      update: { name, zones },
     });
   }
 
@@ -38,8 +41,11 @@ async function syncPlans(plans: HealthPlan[]) {
   for (const rawPlan of plans) {
     const plan: HealthPlan = {
       ...rawPlan,
+      zones: rawPlan.zones ?? [],
       coverage: dedupeCoverageEntries(rawPlan.coverage),
     };
+
+    const resolvedZones = resolvePlanZoneIds(plan);
 
     const existing = await prisma.plan.findUnique({
       where: { uniqueCode: plan.unique_code },
@@ -65,6 +71,7 @@ async function syncPlans(plans: HealthPlan[]) {
           additionalNotes: plan.additional_notes,
           pdfUrl: plan.pdf_url,
           pdfPublicId: plan.pdf_public_id,
+          zones: resolvedZones,
           coverages: {
             create: plan.coverage.map((entry) => ({
               clinicId: entry.clinic_id,
@@ -81,6 +88,10 @@ async function syncPlans(plans: HealthPlan[]) {
     }
 
     if (plan.coverage.length === 0) {
+      await prisma.plan.update({
+        where: { uniqueCode: plan.unique_code },
+        data: { zones: resolvedZones },
+      });
       skipped += 1;
       continue;
     }
@@ -90,10 +101,19 @@ async function syncPlans(plans: HealthPlan[]) {
         where: { planCode: plan.unique_code },
       });
       if (unchanged === plan.coverage.length) {
+        await prisma.plan.update({
+          where: { uniqueCode: plan.unique_code },
+          data: { zones: resolvedZones },
+        });
         skipped += 1;
         continue;
       }
     }
+
+    await prisma.plan.update({
+      where: { uniqueCode: plan.unique_code },
+      data: { zones: resolvedZones },
+    });
 
     await prisma.coverageEntry.deleteMany({
       where: { planCode: plan.unique_code },

@@ -100,7 +100,7 @@ export function buildCotizacionNotifyPayload(
     email: input.email.trim(),
     region: resolveRegionLabel(input.criteria.region),
     edad: input.beneficiarySummary.contributor.age ?? 0,
-    sexo: resolveSexLabel(input.criteria.sex) || "No indicado",
+    sexo: resolveSexLabel(input.criteria.sex ?? "") || "No indicado",
     ingreso: input.criteria.monthlyIncome.trim() || undefined,
     cargas: cargas.length > 0 ? cargas : undefined,
     busqueda: input.searchText?.trim() || undefined,

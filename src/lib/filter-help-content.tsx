@@ -4,6 +4,8 @@
  * Referencias: superdesalud.gob.cl, ipsuss.cl, isapre.info
  */
 
+import { ZONE_FILTER_HELP_UI } from "@/lib/zone-filter-guide";
+
 export const FILTER_HELP = {
   isapre: {
     title: "¿Qué es una Isapre?",
@@ -51,4 +53,5 @@ export const FILTER_HELP = {
     ],
     source: "IPSUSS · Banmédica Orientación",
   },
+  zone: ZONE_FILTER_HELP_UI,
 } as const;

@@ -3,6 +3,7 @@ import {
   splitCoverageByType,
 } from "@/lib/plan-format";
 import { inferPlanTypes } from "@/lib/plan-metadata";
+import { planMatchesZoneFilter } from "@/lib/plan-zones";
 import {
   getActiveCheckboxIds,
   isCheckboxGroupActive,
@@ -32,11 +33,12 @@ function matchesIsapreFilter(
 }
 
 function matchesZoneFilter(
-  _plan: HealthPlan,
+  plan: HealthPlan,
   filters: DashboardFiltersState,
 ): boolean {
   if (!isCheckboxGroupActive(filters.zones)) return true;
-  return true;
+  const activeIds = getActiveCheckboxIds(filters.zones);
+  return planMatchesZoneFilter(plan, activeIds);
 }
 
 function matchesPlanTypeFilter(

@@ -29,3 +29,18 @@ export const SORT_OPTIONS: { value: QuoteSortKey; label: string }[] = [
   { value: "price_desc", label: "Mayor precio" },
   { value: "coverage", label: "Mejor cobertura" },
 ];
+
+export interface QuoteCriteria {
+  region: string;
+  monthlyIncome: string;
+  /** Solo compatibilidad con deep links antiguos; ya no se solicita en la UI. */
+  sex?: string;
+}
+
+export function createDefaultQuoteCriteria(): QuoteCriteria {
+  return {
+    region: "rm",
+    monthlyIncome: "",
+    sex: "",
+  };
+}

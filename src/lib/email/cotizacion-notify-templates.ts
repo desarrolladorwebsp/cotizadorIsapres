@@ -92,7 +92,7 @@ export function buildUserCotizacionEmailHtml(data: CotizacionNotifyInput): strin
   const rows = [
     renderTableRow("Región", escapeHtml(data.region)),
     renderTableRow("Edad titular", escapeHtml(String(data.edad))),
-    renderTableRow("Sexo", escapeHtml(data.sexo)),
+    renderTableRow("Sexo", escapeHtml(data.sexo ?? "No indicado")),
     renderTableRow("Ingreso mensual líquido", formatIncomeClp(data.ingreso)),
     renderTableRow("Asegurados adicionales", escapeHtml(formatDependents(data.cargas))),
   ].join("");
@@ -140,7 +140,7 @@ export function buildAdminCotizacionEmailHtml(data: CotizacionNotifyInput): stri
     renderTableRow("Correo del usuario", escapeHtml(data.email)),
     renderTableRow("Región", escapeHtml(data.region)),
     renderTableRow("Edad titular", escapeHtml(String(data.edad))),
-    renderTableRow("Sexo", escapeHtml(data.sexo)),
+    renderTableRow("Sexo", escapeHtml(data.sexo ?? "No indicado")),
     renderTableRow("Ingreso mensual líquido", formatIncomeClp(data.ingreso)),
     renderTableRow(
       "Asegurados adicionales",

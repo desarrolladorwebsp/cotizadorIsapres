@@ -40,6 +40,7 @@ export function mapDbPlanToHealthPlan(plan: PlanWithCoverages): HealthPlan {
     additional_notes: plan.additionalNotes,
     pdf_url: plan.pdfUrl,
     pdf_public_id: plan.pdfPublicId,
+    zones: plan.zones ?? [],
     coverage: dedupeCoverageEntries(
       plan.coverages.map(mapDbCoverageToEntry),
     ),
@@ -60,6 +61,7 @@ export function mapDbPlanToHealthPlanLegacy(
     additional_notes: plan.additionalNotes,
     pdf_url: plan.pdfUrl,
     pdf_public_id: plan.pdfPublicId,
+    zones: plan.zones ?? [],
     coverage: dedupeCoverageEntries(
       plan.coverages.map(mapDbCoverageToEntry),
     ),
@@ -85,6 +87,7 @@ export function mapHealthPlanToDbFields(plan: HealthPlan, isapreId: string) {
     additionalNotes: plan.additional_notes,
     pdfUrl: plan.pdf_url,
     pdfPublicId: plan.pdf_public_id,
+    zones: plan.zones ?? [],
   };
 }
 

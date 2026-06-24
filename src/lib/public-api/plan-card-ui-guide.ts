@@ -451,10 +451,9 @@ export function buildPlanCardUiGuide(
         "region",
         "ingreso mensual líquido",
         "edad",
-        "sexo",
       ],
       solicitar_validation_message:
-        "Para solicitar el plan y recibir un precio adecuado, completa región, ingreso mensual líquido, edad y sexo en la barra superior antes de pulsar Solicitar.",
+        "Para solicitar el plan y recibir un precio adecuado, completa región, ingreso mensual líquido y edad en la barra superior antes de pulsar Solicitar.",
     },
   } as const;
 }

@@ -2,7 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { buildBeneficiaryGroupSummary, parseBeneficiaryAge } from "@/domain";
-import { REGION_OPTIONS, SEX_OPTIONS } from "@/lib/quote-criteria-options";
+import {
+  createDefaultQuoteCriteria,
+  REGION_OPTIONS,
+  type QuoteCriteria,
+} from "@/lib/quote-criteria-options";
 import { criteriaBar, touchTarget, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type {
@@ -10,11 +14,8 @@ import type {
   FamilyBeneficiariesState,
 } from "@/domain";
 
-export interface QuoteCriteria {
-  region: string;
-  monthlyIncome: string;
-  sex: string;
-}
+export type { QuoteCriteria } from "@/lib/quote-criteria-options";
+export { createDefaultQuoteCriteria } from "@/lib/quote-criteria-options";
 
 export interface PublicQuoteCriteriaBarProps {
   criteria: QuoteCriteria;
@@ -25,6 +26,7 @@ export interface PublicQuoteCriteriaBarProps {
     summary: BeneficiaryGroupSummary,
   ) => void;
   onCalculate: () => void;
+  onResetAll?: () => void;
   /** Abre el panel de cargas cuando vienen prellenadas desde la URL. */
   showPreloadedDependents?: boolean;
 }
@@ -39,6 +41,7 @@ export function PublicQuoteCriteriaBar({
   beneficiaries,
   onBeneficiariesChange,
   onCalculate,
+  onResetAll,
   showPreloadedDependents = false,
 }: PublicQuoteCriteriaBarProps) {
   const [ageInput, setAgeInput] = useState(
@@ -117,7 +120,7 @@ export function PublicQuoteCriteriaBar({
 
   return (
     <section className={criteriaBar}>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1.4fr_1.2fr_5rem_6.5rem_auto_auto] lg:items-end lg:gap-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1.4fr_1.2fr_5rem_auto_auto_auto] lg:items-end lg:gap-4">
         <div className="space-y-1.5">
           <label htmlFor="qc-region" className="text-xs font-semibold text-muted">
             Región
@@ -167,25 +170,6 @@ export function PublicQuoteCriteriaBar({
             onChange={(e) => updateAge(e.target.value)}
             className={fieldClass}
           />
-        </div>
-
-        <div className="space-y-1.5">
-          <label htmlFor="qc-sex" className="text-xs font-semibold text-muted">
-            Sexo
-          </label>
-          <select
-            id="qc-sex"
-            value={criteria.sex}
-            onChange={(e) => onCriteriaChange({ sex: e.target.value })}
-            className={fieldClass}
-          >
-            <option value="">—</option>
-            {SEX_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
         </div>
 
         <div className="relative" ref={popoverRef}>
@@ -269,6 +253,21 @@ export function PublicQuoteCriteriaBar({
         >
           Buscar mejor plan
         </button>
+
+        {onResetAll ? (
+          <button
+            type="button"
+            onClick={onResetAll}
+            className={joinClasses(
+              touchTarget,
+              "h-11 rounded-full border px-5 text-sm font-semibold sm:col-span-2 lg:col-span-1",
+              ui.border,
+              "bg-white text-muted transition hover:border-primary/35 hover:bg-surface-hover hover:text-primary-dark",
+            )}
+          >
+            Limpiar todo
+          </button>
+        ) : null}
       </div>
     </section>
   );

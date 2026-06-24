@@ -10,7 +10,7 @@ import {
 import { useCotizadorDashboard } from "@/hooks/use-cotizador-dashboard";
 import { usePlanCatalogBounds } from "@/hooks/use-plan-catalog-bounds";
 import { usePlanSearch } from "@/hooks/use-plan-search";
-import { buildPlanFinalPriceQuote } from "@/domain";
+import { buildPlanFinalPriceQuote, buildBeneficiaryGroupSummary, createDefaultDashboardFilters } from "@/domain";
 import { parseCotizadorUrl } from "@/lib/deep-link/parse-cotizador-url";
 import {
   SOLICITAR_DEEP_LINK_RECOVERY_MS,
@@ -25,6 +25,7 @@ import {
   PLANS_PAGE_SIZE_STEP,
 } from "@/lib/plan-search-config";
 import type { QuoteSortKey } from "@/lib/quote-criteria-options";
+import { createDefaultQuoteCriteria } from "@/lib/quote-criteria-options";
 import {
   appShellRoot,
   appShellScroll,
@@ -95,7 +96,7 @@ function PublicCotizadorViewInner() {
     initialPriceMax: deepLink.priceMax,
   });
   const { bounds, loading: boundsLoading } = usePlanCatalogBounds();
-  const { plans, total, loading, error, hasSearched, search, resetSearchCache } =
+  const { plans, total, loading, error, hasSearched, search, resetSearchCache, resetSearch } =
     usePlanSearch();
   const resultsRef = useRef<HTMLElement>(null);
   const initialSearchDoneRef = useRef(false);
@@ -472,6 +473,37 @@ function PublicCotizadorViewInner() {
   const hasMoreResults = total > plans.length;
   const showInlineLoading = loading && hasSearched && plans.length > 0;
 
+  function handleResetAll() {
+    setCriteria(createDefaultQuoteCriteria());
+    const emptyBeneficiaries = {
+      contributorAge: null,
+      dependents: [],
+    };
+    dashboard.handleBeneficiariesChange(
+      emptyBeneficiaries,
+      buildBeneficiaryGroupSummary(emptyBeneficiaries),
+    );
+    dashboard.setDashboardFilters(createDefaultDashboardFilters());
+    const defaultPriceMin =
+      bounds.totalPlans > 0 ? Math.floor(bounds.priceMin * 10) / 10 : 2;
+    const defaultPriceMax =
+      bounds.totalPlans > 0 ? Math.ceil(bounds.priceMax * 10) / 10 : 8;
+    dashboard.setPriceMin(defaultPriceMin);
+    dashboard.setPriceMax(defaultPriceMax);
+    setSearchText("");
+    setSortKey("price_asc");
+    setCurrency("clp");
+    setResultsLimit(INITIAL_PLANS_PAGE_SIZE);
+    setContractPlan(null);
+    setContractModalTab(undefined);
+    setSolicitarFlowActive(false);
+    setRecoveryNotice(null);
+    initialSearchDoneRef.current = false;
+    searchNotifySentRef.current = false;
+    skipDebouncedSearchRef.current = true;
+    resetSearch();
+  }
+
   function handleCalculate() {
     setResultsLimit(INITIAL_PLANS_PAGE_SIZE);
     skipDebouncedSearchRef.current = true;
@@ -544,6 +576,7 @@ function PublicCotizadorViewInner() {
             beneficiaries={dashboard.beneficiaries}
             onBeneficiariesChange={dashboard.handleBeneficiariesChange}
             onCalculate={handleCalculate}
+            onResetAll={handleResetAll}
             showPreloadedDependents={
               deepLink.hasDeepLinkParams &&
               dashboard.beneficiaries.dependents.length > 0
@@ -595,6 +628,7 @@ function PublicCotizadorViewInner() {
                   onPriceMaxChange={dashboard.setPriceMax}
                   filters={dashboard.dashboardFilters}
                   onFiltersChange={dashboard.setDashboardFilters}
+                  onResetAll={handleResetAll}
                 />
               ) : null}
 

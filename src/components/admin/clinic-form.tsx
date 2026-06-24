@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { FieldGroup, FieldHint, FieldLabel } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { slugifyClinicId } from "@/domain";
+import { resolveClinicZoneIds } from "@/lib/clinic-zones";
 import { ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type { Clinic } from "@/domain";
@@ -38,6 +39,10 @@ export function ClinicForm({
     const payload: Clinic = {
       id: form.id.trim(),
       name: form.name.trim(),
+      zones:
+        form.zones.length > 0
+          ? form.zones
+          : resolveClinicZoneIds(form.id.trim()),
     };
 
     if (!payload.name) return;

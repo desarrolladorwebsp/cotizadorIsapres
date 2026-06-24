@@ -44,6 +44,7 @@ model Isapre {
 model Clinic {
   id        String          @id
   name      String
+  zones     String[]        @default([])
   createdAt DateTime        @default(now()) @map("created_at")
   updatedAt DateTime        @updatedAt @map("updated_at")
   coverages CoverageEntry[]
@@ -60,6 +61,7 @@ model Plan {
   additionalNotes String?         @map("additional_notes")
   pdfUrl          String?         @map("pdf_url")
   pdfPublicId     String?         @map("pdf_public_id")
+  zones           String[]        @default([])
   createdAt       DateTime        @default(now()) @map("created_at")
   updatedAt       DateTime        @updatedAt @map("updated_at")
   isapreRef       Isapre          @relation(fields: [isapreId], references: [id])

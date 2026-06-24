@@ -81,6 +81,17 @@ export function usePlanSearch() {
     lastSuccessKeyRef.current = null;
   }, []);
 
+  const resetSearch = useCallback(() => {
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
+    lastSuccessKeyRef.current = null;
+    setPlans([]);
+    setTotal(0);
+    setLoading(false);
+    setError(null);
+    setHasSearched(false);
+  }, []);
+
   return {
     plans,
     total,
@@ -89,5 +100,6 @@ export function usePlanSearch() {
     hasSearched,
     search,
     resetSearchCache,
+    resetSearch,
   };
 }

@@ -219,8 +219,10 @@ export function getSolicitarDeepLinkDocumentation(
       },
       {
         name: DEEP_LINK_PARAMS.sexo,
-        description: "Sexo del cotizante (m/f).",
+        description:
+          "Opcional y obsoleto. Sexo del cotizante (m/f). Ya no se muestra en la UI; se ignora salvo compatibilidad con enlaces antiguos.",
         example: "m",
+        deprecated: true,
       },
       {
         name: DEEP_LINK_PARAMS.ingreso,
@@ -299,18 +301,18 @@ export function getSolicitarDeepLinkDocumentation(
     },
     notes_for_integrators: [
       "El parámetro plan es obligatorio para el flujo de solicitud.",
-      "En cotizaloantes.cl, antes de redirigir al cotizador el sitio debe validar que el usuario completó región, ingreso mensual, edad y sexo en la barra superior.",
-      "Si faltan datos, mostrar alerta: «Para solicitar el plan y recibir un precio adecuado, completa región, ingreso mensual líquido, edad y sexo en la barra superior».",
+      "En cotizaloantes.cl, antes de redirigir al cotizador el sitio debe validar que el usuario completó región, ingreso mensual y edad en la barra superior.",
+      "Si faltan datos, mostrar alerta: «Para solicitar el plan y recibir un precio adecuado, completa región, ingreso mensual líquido y edad en la barra superior».",
       "Si solo envías plan sin criterios de cotización, el modal se abre igual; el precio estimado puede requerir que el usuario complete edad/región.",
       "Usa POST /api/public/v1/solicitar/url desde tu backend para construir la URL de forma segura.",
       "El unique_code del plan lo obtienes de GET /api/public/v1/plans o /plans/preview.",
       "No expongas PUBLIC_API_SECRET en el frontend del sitio externo.",
     ],
     cotizalo_antes_client_validation: {
-      required_before_solicitar: ["region", "ingreso", "edad", "sexo"],
+      required_before_solicitar: ["region", "ingreso", "edad"],
       alert_title: "Completa los datos del cotizador",
       alert_message:
-        "Para solicitar el plan y recibir un precio adecuado, completa los datos de la barra superior: región, ingreso mensual líquido, edad y sexo.",
+        "Para solicitar el plan y recibir un precio adecuado, completa los datos de la barra superior: región, ingreso mensual líquido y edad.",
       proxy_endpoints: {
         plans: "/api/cotizador/plans/preview",
         solicitar: "/api/cotizador/solicitar",
@@ -382,7 +384,7 @@ export function getDeepLinkDocumentation(baseUrl = "https://cotizador.cotizaloan
     how_to_send: {
       steps: [
         "1. Define la entidad aliada en el parámetro entidad (ej. cotizaloantes) o en la ruta /cotizaloantes.",
-        "2. Agrega los datos del cotizante: region, edad, sexo, ingreso, cargas.",
+        "2. Agrega los datos del cotizante: region, edad, ingreso, cargas (sexo opcional/legacy).",
         "3. Agrega filtros opcionales: isapres, zonas, tipoPlan, precioMin, precioMax, coberturaH, coberturaA.",
         "4. Incluye auto=1 para ejecutar la búsqueda al cargar (recomendado cuando envías datos).",
         "5. Redirige al usuario con window.location.href, <a href>, o HTTP 302 desde tu backend.",
@@ -445,7 +447,8 @@ export function getDeepLinkDocumentation(baseUrl = "https://cotizador.cotizaloan
         name: DEEP_LINK_PARAMS.sexo,
         required: false,
         type: "string",
-        description: "Sexo del cotizante.",
+        description:
+          "Opcional y obsoleto. Sexo del cotizante (m/f). Ya no se usa en la UI del cotizador.",
         example: "m",
         allowed_values: ["m", "f"],
       },
@@ -496,9 +499,11 @@ export function getDeepLinkDocumentation(baseUrl = "https://cotizador.cotizaloan
         name: DEEP_LINK_PARAMS.zonas,
         required: false,
         type: "string",
-        description: "Zonas geográficas activas, ids separados por coma.",
+        description:
+          "Zonas geográficas activas, ids separados por coma. Cada id corresponde a un sector RM o región (ver guía GET /api/public/v1/ui/filters).",
         example: "rm-metropolitana,rm-centro",
         allowed_values: ZONE_FILTER_OPTIONS.map((option) => option.id),
+        documentation_url: "/api/public/v1/ui/filters",
       },
       {
         name: DEEP_LINK_PARAMS.tipoPlan,
@@ -583,6 +588,7 @@ exit;`,
       "Para integraciones ligeras usa GET /api/public/v1/plans/preview (6 planes con resumen de coberturas).",
       "Usa entidad=cotizaloantes para el branding de Cotízalo Antes (logo naranja, WhatsApp y botón volver).",
       "Si envías isapres o zonas, solo quedan activos los ids listados; el resto se desactiva.",
+      "Para el significado de cada zona/sector (RM Oriente, Norte, etc.) y textos del ícono informativo, consulta GET /api/public/v1/ui/filters (público, sin API key).",
       "Parámetros desconocidos o mal formados se ignoran silenciosamente.",
     ],
   };

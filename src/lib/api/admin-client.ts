@@ -203,10 +203,11 @@ export function createEmptyPlan(): HealthPlan {
     additional_notes: null,
     pdf_url: null,
     pdf_public_id: null,
+    zones: [],
     coverage: [],
   };
 }
 
 export function createEmptyClinic(): Clinic {
-  return { id: "", name: "" };
+  return { id: "", name: "", zones: [] };
 }

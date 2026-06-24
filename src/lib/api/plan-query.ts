@@ -89,6 +89,7 @@ type RawModernPlanRow = {
   additional_notes: string | null;
   pdf_url: string | null;
   pdf_public_id: string | null;
+  zones: string[];
   isapre_name: string;
 };
 
@@ -104,6 +105,7 @@ async function findManyHealthPlansRawModern(): Promise<HealthPlan[]> {
         p.additional_notes,
         p.pdf_url,
         p.pdf_public_id,
+        p.zones,
         i.name AS isapre_name
       FROM plans p
       INNER JOIN isapres i ON i.id = p.isapre_id
@@ -122,6 +124,7 @@ async function findManyHealthPlansRawModern(): Promise<HealthPlan[]> {
     additional_notes: plan.additional_notes,
     pdf_url: plan.pdf_url,
     pdf_public_id: plan.pdf_public_id,
+    zones: plan.zones ?? [],
     coverage: mapCoverageMap(plan.unique_code, coverages),
   }));
 }
@@ -140,6 +143,7 @@ async function findHealthPlanByCodeRawModern(
         p.additional_notes,
         p.pdf_url,
         p.pdf_public_id,
+        p.zones,
         i.name AS isapre_name
       FROM plans p
       INNER JOIN isapres i ON i.id = p.isapre_id
@@ -162,6 +166,7 @@ async function findHealthPlanByCodeRawModern(
     additional_notes: plan.additional_notes,
     pdf_url: plan.pdf_url,
     pdf_public_id: plan.pdf_public_id,
+    zones: plan.zones ?? [],
     coverage: mapCoverageMap(plan.unique_code, coverages),
   };
 }
@@ -175,6 +180,7 @@ type RawLegacyPlanRow = {
   additional_notes: string | null;
   pdf_url: string | null;
   pdf_public_id: string | null;
+  zones: string[];
 };
 
 async function findManyHealthPlansRawLegacy(): Promise<HealthPlan[]> {
@@ -188,7 +194,8 @@ async function findManyHealthPlansRawLegacy(): Promise<HealthPlan[]> {
         has_top,
         additional_notes,
         pdf_url,
-        pdf_public_id
+        pdf_public_id,
+        zones
       FROM plans
       ORDER BY plan_name ASC
     `,
@@ -208,6 +215,7 @@ async function findManyHealthPlansRawLegacy(): Promise<HealthPlan[]> {
       additional_notes: plan.additional_notes,
       pdf_url: plan.pdf_url,
       pdf_public_id: plan.pdf_public_id,
+      zones: plan.zones ?? [],
       coverage: mapCoverageMap(plan.unique_code, coverages),
     };
   });
@@ -226,7 +234,8 @@ async function findHealthPlanByCodeRawLegacy(
         has_top,
         additional_notes,
         pdf_url,
-        pdf_public_id
+        pdf_public_id,
+        zones
       FROM plans
       WHERE unique_code = ${uniqueCode}
       LIMIT 1
@@ -249,6 +258,7 @@ async function findHealthPlanByCodeRawLegacy(
     additional_notes: plan.additional_notes,
     pdf_url: plan.pdf_url,
     pdf_public_id: plan.pdf_public_id,
+    zones: plan.zones ?? [],
     coverage: mapCoverageMap(plan.unique_code, coverages),
   };
 }

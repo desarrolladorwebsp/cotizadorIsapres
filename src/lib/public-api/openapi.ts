@@ -120,7 +120,7 @@ export function buildPublicApiAgentGuide(request: Request) {
             vista: "solicitar | precio | overview (default: solicitar)",
             region: "string",
             edad: "number",
-            sexo: "m | f",
+            sexo: "m | f (opcional, obsoleto — ya no requerido en la UI)",
             ingreso: "string — CLP sin formato",
             cargas: "number[] — edades de cargas",
             nombre: "string",
@@ -145,6 +145,18 @@ export function buildPublicApiAgentGuide(request: Request) {
             },
             meta: { endpoint: "string", version: "string" },
           },
+        },
+      },
+      {
+        method: "GET",
+        path: `${baseUrl.replace(/\/api\/public\/v1$/, "")}/api/public/v1/ui/filters`,
+        summary:
+          "Guía de filtros del cotizador — zonas geográficas y sectores RM (sin autenticación)",
+        auth_required: false,
+        response: {
+          content_type: "application/json",
+          description:
+            "Definición de cada zona/sector (RM Oriente, Norte, Valparaíso, etc.), lógica de filtrado, deep link zonas= y textos ui_help para el ícono informativo. Versión actual: 1.0.0.",
         },
       },
       {

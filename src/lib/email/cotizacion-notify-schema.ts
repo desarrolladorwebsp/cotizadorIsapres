@@ -14,7 +14,7 @@ export const cotizacionNotifyInputSchema = z.object({
   email: z.string().trim().email(),
   region: z.string().trim().min(1),
   edad: z.number().int().min(0).max(120),
-  sexo: z.string().trim().min(1),
+  sexo: z.string().trim().min(1).optional(),
   ingreso: z.string().trim().optional(),
   cargas: z.array(z.number().int().min(0).max(120)).optional(),
   busqueda: z.string().trim().optional(),
