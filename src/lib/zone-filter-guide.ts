@@ -1,4 +1,9 @@
-import { ZONE_FILTER_OPTIONS } from "@/lib/filter-options";
+import {
+  PLAN_TYPE_FILTER_DEFAULT_IDS,
+  PLAN_TYPE_FILTER_OPTIONS,
+  ZONE_FILTER_OPTIONS,
+} from "@/lib/filter-options";
+import { FILTER_HELP } from "@/lib/filter-help-content";
 import { PUBLIC_API_VERSION } from "@/lib/public-api/constants";
 import type { ZoneId } from "@/types/zone";
 
@@ -149,6 +154,7 @@ const ZONE_FILTER_INTRO = [
   "Un plan aparece si tiene al menos un prestador (clínica o centro) en alguna de las zonas que marques.",
   "Las zonas se calculan desde las clínicas de la cobertura del plan. Si el plan no tiene detalle de clínicas, se usan zonas asignadas al importarlo (ej. planes de regiones).",
   "Puedes marcar varias zonas a la vez: se muestran planes que coincidan con cualquiera de ellas.",
+  "Para ver planes de cualquier zona, desmarca todas las opciones o usa «Limpiar filtros» en el panel.",
 ] as const;
 
 const ZONE_FILTER_FOOTNOTE =
@@ -255,17 +261,105 @@ export function buildZoneFilterApiGuide(request: Request) {
   } as const;
 }
 
-export function buildFiltersUiGuide(request: Request) {
-  const zoneGuide = buildZoneFilterApiGuide(request);
+export const FILTER_CLEARING_HELP_UI = {
+  title: "¿Cómo limpiar filtros y ver todos los planes?",
+  paragraphs: [
+    "El botón «Limpiar filtros» del panel desactiva Isapres, zonas, tipos de plan y umbrales de cobertura.",
+    "En cada grupo de checkboxes, si ninguna opción está marcada, ese filtro no se aplica (se incluyen todos los valores de ese eje).",
+    "«Limpiar todo» en la barra superior además resetea región, ingreso, edad, cargas, precio y resultados de búsqueda.",
+  ],
+  button_labels: {
+    clear_filters: "Limpiar filtros",
+    reset_all: "Limpiar todo",
+  },
+} as const;
 
+export function buildPlanTypeFilterApiGuide() {
   return {
     version: "1.0.0",
+    component: "plan_type_filter",
+    title: "Guía — Filtro por tipo de plan",
+    filter_logic: {
+      matching_rule:
+        "OR — el plan se incluye si su tipo inferido coincide con al menos un tipo marcado.",
+      inference_rules: [
+        "preferred: has_top, o nombre/notas contienen «preferente».",
+        "free_choice: nombre/notas contienen «libre elección» o patrón «le ».",
+        "closed: nombre contiene «cerrado» o «-sf», o notas contienen «cerrado».",
+        "Si no se infiere ninguno, se asume free_choice.",
+      ],
+      no_plan_type_filter_active:
+        "Si ningún tipo está marcado, no se aplica filtro por modalidad (muestra todos los planes).",
+      default_active_type_ids: PLAN_TYPE_FILTER_DEFAULT_IDS,
+    },
+    types: PLAN_TYPE_FILTER_OPTIONS.map((option) => {
+      const helpItem = FILTER_HELP.planType.items.find((item) => {
+        const normalized = item.label
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/\p{Diacritic}/gu, "");
+        const optionLabel = option.label
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/\p{Diacritic}/gu, "");
+        return normalized === optionLabel;
+      });
+      return {
+        id: option.id,
+        label: option.label,
+        description: helpItem?.text ?? option.label,
+      };
+    }),
+    deep_link: {
+      param: "tipoPlan",
+      format: "Lista separada por comas de plan type id (ej. tipoPlan=closed,preferred)",
+      example: "tipoPlan=closed,free_choice,preferred",
+      behavior:
+        "Al abrir el cotizador vía URL, solo quedan activos los tipos listados; los demás se desactivan.",
+    },
+    ui_help: FILTER_HELP.planType,
+  } as const;
+}
+
+export function buildFilterClearingApiGuide() {
+  return {
+    version: "1.0.0",
+    component: "filter_clearing",
+    title: "Guía — Limpiar filtros y mostrar todos los planes",
+    cleared_filters_state: {
+      isapres: "ninguna isapre marcada → sin filtro por isapre",
+      zones: "ninguna zona marcada → sin filtro geográfico",
+      plan_types: "ningún tipo marcado → sin filtro por modalidad",
+      hospital_coverage_percent: null,
+      ambulatory_coverage_percent: null,
+    },
+    default_filters_state: {
+      note: "Estado inicial al abrir el cotizador o al usar «Limpiar todo» (solo la parte de filtros).",
+      isapres: ["consalud"],
+      zones: ["rm-metropolitana", "rm-oriente", "rm-centro"],
+      plan_types: PLAN_TYPE_FILTER_DEFAULT_IDS,
+      hospital_coverage_percent: null,
+      ambulatory_coverage_percent: null,
+    },
+    ui_help: FILTER_CLEARING_HELP_UI,
+  } as const;
+}
+
+export function buildFiltersUiGuide(request: Request) {
+  const zoneGuide = buildZoneFilterApiGuide(request);
+  const planTypeGuide = buildPlanTypeFilterApiGuide();
+  const clearingGuide = buildFilterClearingApiGuide();
+
+  return {
+    version: "1.1.0",
     title: "Guía UI — Filtros del cotizador",
     description:
-      "Documentación de filtros del panel lateral para integradores. Por ahora incluye el filtro por zona geográfica.",
+      "Documentación de filtros del panel lateral para integradores: zonas, tipos de plan y cómo limpiar filtros.",
     canonical_url: zoneGuide.canonical_url,
     sections: {
       zone_filter: zoneGuide,
+      plan_type_filter: planTypeGuide,
+      filter_clearing: clearingGuide,
     },
   } as const;
 }

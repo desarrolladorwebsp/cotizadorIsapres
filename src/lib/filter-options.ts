@@ -37,6 +37,10 @@ export const PLAN_TYPE_FILTER_OPTIONS: {
   { id: "preferred", label: "Preferente" },
 ];
 
+export const PLAN_TYPE_FILTER_DEFAULT_IDS = PLAN_TYPE_FILTER_OPTIONS.map(
+  (option) => option.id,
+);
+
 export const COVERAGE_PERCENTAGE_OPTIONS: CoveragePercentageOption[] = [
   40, 50, 60, 70, 80, 100,
 ];
@@ -73,6 +77,20 @@ export function createDefaultDashboardFilters(): DashboardFiltersState {
       "rm-oriente",
       "rm-centro",
     ]),
+    planTypes: buildCheckboxDefaults(
+      PLAN_TYPE_FILTER_OPTIONS.map((o) => ({ id: o.id, label: o.label })),
+      PLAN_TYPE_FILTER_DEFAULT_IDS,
+    ),
+    hospitalCoveragePercent: null,
+    ambulatoryCoveragePercent: null,
+  };
+}
+
+/** Sin restricciones: ningún checkbox activo → se muestran todos los planes por cada eje. */
+export function createClearedDashboardFilters(): DashboardFiltersState {
+  return {
+    isapres: buildCheckboxDefaults(ISAPRE_FILTER_OPTIONS),
+    zones: buildCheckboxDefaults(ZONE_FILTER_OPTIONS),
     planTypes: buildCheckboxDefaults(
       PLAN_TYPE_FILTER_OPTIONS.map((o) => ({ id: o.id, label: o.label })),
     ),

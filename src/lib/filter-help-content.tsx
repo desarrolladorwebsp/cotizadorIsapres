@@ -17,6 +17,11 @@ export const FILTER_HELP = {
   },
   planType: {
     title: "Tipos de plan",
+    paragraphs: [
+      "Por defecto los tres tipos están marcados (Cerrado, Libre Elección y Preferente).",
+      "Si desmarcas todos los tipos, no se aplica este filtro y se muestran planes de cualquier modalidad.",
+      "Usa «Limpiar filtros» en el panel para quitar todas las restricciones de una vez.",
+    ],
     items: [
       {
         label: "Libre elección",

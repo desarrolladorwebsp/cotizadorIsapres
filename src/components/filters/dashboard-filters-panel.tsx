@@ -1,7 +1,7 @@
 "use client";
 
 import {
-  createDefaultDashboardFilters,
+  createClearedDashboardFilters,
   ISAPRE_FILTER_OPTIONS,
   PLAN_TYPE_FILTER_OPTIONS,
   toggleCheckboxFilter,
@@ -19,27 +19,20 @@ import { FilterSection } from "./filter-section";
 export interface DashboardFiltersPanelProps {
   value: DashboardFiltersState;
   onChange: (next: DashboardFiltersState) => void;
-  /** Si se define, reemplaza el reset local de checkboxes (ej. limpiar todo el cotizador). */
-  onClearAll?: () => void;
   className?: string;
 }
 
 export function DashboardFiltersPanel({
   value,
   onChange,
-  onClearAll,
   className,
 }: DashboardFiltersPanelProps) {
   function update(partial: Partial<DashboardFiltersState>) {
     onChange({ ...value, ...partial });
   }
 
-  function clearAllFilters() {
-    if (onClearAll) {
-      onClearAll();
-      return;
-    }
-    onChange(createDefaultDashboardFilters());
+  function clearFilters() {
+    onChange(createClearedDashboardFilters());
   }
 
   return (
@@ -47,14 +40,14 @@ export function DashboardFiltersPanel({
       <div className="mb-4 flex justify-end">
         <button
           type="button"
-          onClick={clearAllFilters}
+          onClick={clearFilters}
           className={joinClasses(
             "inline-flex items-center gap-1.5 rounded-lg px-4 text-xs font-semibold",
             touchTarget,
             ui.dangerGhost,
           )}
         >
-          Limpiar todo
+          Limpiar filtros
         </button>
       </div>
 
@@ -117,6 +110,7 @@ export function DashboardFiltersPanel({
           info={
             <FilterHelpBlock
               title={FILTER_HELP.planType.title}
+              paragraphs={FILTER_HELP.planType.paragraphs}
               items={FILTER_HELP.planType.items}
               footnote={FILTER_HELP.planType.footnote}
               source={FILTER_HELP.planType.source}

@@ -19,7 +19,6 @@ export interface PublicFiltersSidebarProps {
   onPriceMaxChange: (value: number) => void;
   filters: DashboardFiltersState;
   onFiltersChange: (next: DashboardFiltersState) => void;
-  onResetAll?: () => void;
 }
 
 function CloseIcon() {
@@ -45,7 +44,6 @@ export function PublicFiltersSidebar({
   onPriceMaxChange,
   filters,
   onFiltersChange,
-  onResetAll,
 }: PublicFiltersSidebarProps) {
   const isLargeScreen = useIsLargeScreen();
 
@@ -157,7 +155,6 @@ export function PublicFiltersSidebar({
             <DashboardFiltersPanel
               value={filters}
               onChange={onFiltersChange}
-              onClearAll={onResetAll}
             />
           </div>
         </div>

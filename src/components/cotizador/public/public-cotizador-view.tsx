@@ -628,7 +628,6 @@ function PublicCotizadorViewInner() {
                   onPriceMaxChange={dashboard.setPriceMax}
                   filters={dashboard.dashboardFilters}
                   onFiltersChange={dashboard.setDashboardFilters}
-                  onResetAll={handleResetAll}
                 />
               ) : null}
 

@@ -156,7 +156,7 @@ export function buildPublicApiAgentGuide(request: Request) {
         response: {
           content_type: "application/json",
           description:
-            "Definición de cada zona/sector (RM Oriente, Norte, Valparaíso, etc.), lógica de filtrado, deep link zonas= y textos ui_help para el ícono informativo. Versión actual: 1.0.0.",
+            "Definición de zonas/sectores, tipos de plan, lógica de filtrado, limpiar filtros, deep links zonas=/tipoPlan= y textos ui_help. Versión actual: 1.1.0.",
         },
       },
       {
