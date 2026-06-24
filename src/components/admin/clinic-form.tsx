@@ -6,6 +6,7 @@ import { FieldGroup, FieldHint, FieldLabel } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { slugifyClinicId } from "@/domain";
 import { resolveClinicZoneIds } from "@/lib/clinic-zones";
+import { ClinicZoneBadges } from "@/components/admin/clinic-plans-modal";
 import { ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type { Clinic } from "@/domain";
@@ -117,6 +118,23 @@ export function ClinicForm({
           <FieldHint>Se genera automáticamente desde el nombre.</FieldHint>
         )}
       </FieldGroup>
+
+      {form.id.trim() ? (
+        <FieldGroup>
+          <FieldLabel>Zonas geográficas</FieldLabel>
+          <ClinicZoneBadges
+            zoneIds={
+              form.zones.length > 0
+                ? form.zones
+                : resolveClinicZoneIds(form.id.trim())
+            }
+          />
+          <FieldHint>
+            Se asignan automáticamente según el catálogo de zonas. Al guardar se
+            persisten en la clínica.
+          </FieldHint>
+        </FieldGroup>
+      ) : null}
 
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
         <Button type="button" variant="ghost" onClick={onCancel}>

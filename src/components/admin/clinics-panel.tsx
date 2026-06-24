@@ -20,11 +20,24 @@ import {
   AdminToolbar,
 } from "@/components/admin/admin-data-table";
 import {
+  ClinicPlansModalContent,
+  ClinicZoneBadges,
+} from "@/components/admin/clinic-plans-modal";
+import {
   createClinic,
   createEmptyClinic,
   deleteClinic,
   updateClinic,
 } from "@/lib/api/admin-client";
+import {
+  clinicMatchesZoneFilter,
+  countCoverageEntries,
+  getClinicZoneIds,
+  getPlansForClinic,
+  sortClinics,
+  type ClinicSortKey,
+} from "@/lib/clinic-admin";
+import { ZONE_FILTER_OPTIONS } from "@/lib/filter-options";
 import { ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type { Clinic, HealthPlan } from "@/domain";
@@ -40,15 +53,6 @@ export interface ClinicsPanelProps {
 
 type FormMode = "create" | "edit" | null;
 
-function countUsage(plans: HealthPlan[], clinicId: string): number {
-  return plans.reduce(
-    (total, plan) =>
-      total +
-      plan.coverage.filter((entry) => entry.clinic_id === clinicId).length,
-    0,
-  );
-}
-
 export function ClinicsPanel({
   clinics,
   plans,
@@ -57,20 +61,30 @@ export function ClinicsPanel({
   onNotify,
 }: ClinicsPanelProps) {
   const [search, setSearch] = useState("");
+  const [zoneFilter, setZoneFilter] = useState<string>("all");
+  const [sortKey, setSortKey] = useState<ClinicSortKey>("name_asc");
   const [formMode, setFormMode] = useState<FormMode>(null);
   const [draftClinic, setDraftClinic] = useState<Clinic>(createEmptyClinic());
+  const [plansModalClinic, setPlansModalClinic] = useState<Clinic | null>(null);
   const [saving, setSaving] = useState(false);
 
   const filteredClinics = useMemo(() => {
     const query = search.trim().toLowerCase();
-    if (!query) return clinics;
 
-    return clinics.filter(
-      (clinic) =>
+    const matched = clinics.filter((clinic) => {
+      if (!clinicMatchesZoneFilter(clinic, zoneFilter)) return false;
+      if (!query) return true;
+
+      const zoneLabels = getClinicZoneIds(clinic).join(" ");
+      return (
         clinic.name.toLowerCase().includes(query) ||
-        clinic.id.toLowerCase().includes(query),
-    );
-  }, [clinics, search]);
+        clinic.id.toLowerCase().includes(query) ||
+        zoneLabels.toLowerCase().includes(query)
+      );
+    });
+
+    return sortClinics(matched, plans, sortKey);
+  }, [clinics, plans, search, zoneFilter, sortKey]);
 
   function openCreateForm() {
     setDraftClinic(createEmptyClinic());
@@ -111,7 +125,7 @@ export function ClinicsPanel({
   }
 
   async function handleDelete(clinic: Clinic) {
-    const usage = countUsage(plans, clinic.id);
+    const usage = countCoverageEntries(plans, clinic.id);
     if (usage > 0) {
       onNotify(
         `No se puede eliminar: está asociada a ${usage} cobertura(s).`,
@@ -157,41 +171,65 @@ export function ClinicsPanel({
         }
       />
 
-      <AdminToolbar className="lg:grid-cols-[minmax(0,1fr)_12rem]">
+      <AdminToolbar className="lg:grid-cols-[minmax(0,1fr)_12rem_12rem]">
         <Input
           type="search"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          placeholder="Buscar por nombre o identificador…"
+          placeholder="Buscar por nombre, identificador o zona…"
           className={joinClasses("h-11", ui.input)}
         />
-        <div className="flex items-center rounded-xl border bg-bg-layout/50 px-4 text-sm text-muted">
-          <span className="font-semibold text-foreground">{clinics.length}</span>
-          <span className="ml-1">prestadores</span>
-        </div>
+        <select
+          value={zoneFilter}
+          onChange={(event) => setZoneFilter(event.target.value)}
+          className={joinClasses("h-11 rounded-xl px-3 text-sm", ui.input)}
+          aria-label="Filtrar por zona"
+        >
+          <option value="all">Todas las zonas</option>
+          <option value="none">Sin zona asignada</option>
+          {ZONE_FILTER_OPTIONS.map((zone) => (
+            <option key={zone.id} value={zone.id}>
+              {zone.label}
+            </option>
+          ))}
+        </select>
+        <select
+          value={sortKey}
+          onChange={(event) => setSortKey(event.target.value as ClinicSortKey)}
+          className={joinClasses("h-11 rounded-xl px-3 text-sm", ui.input)}
+          aria-label="Ordenar clínicas"
+        >
+          <option value="name_asc">Nombre A → Z</option>
+          <option value="name_desc">Nombre Z → A</option>
+          <option value="zone_asc">Zona (A → Z)</option>
+          <option value="plans_desc">Más planes primero</option>
+          <option value="plans_asc">Menos planes primero</option>
+        </select>
       </AdminToolbar>
 
       <AdminTableCard
         loading={loading}
         empty={!loading && filteredClinics.length === 0}
         emptyTitle="No hay clínicas para mostrar"
-        emptyDescription="Agrega un prestador o ajusta la búsqueda."
+        emptyDescription="Agrega un prestador o ajusta la búsqueda y filtros."
         loadingMessage="Cargando clínicas…"
         footer={`Mostrando ${filteredClinics.length} de ${clinics.length} prestadores.`}
       >
-        <AdminTable minWidth="52rem">
+        <AdminTable minWidth="64rem">
           <AdminTableHead>
             <tr>
               <AdminTableHeaderCell>Nombre</AdminTableHeaderCell>
               <AdminTableHeaderCell>Identificador</AdminTableHeaderCell>
-              <AdminTableHeaderCell align="center">Coberturas</AdminTableHeaderCell>
-              <AdminTableHeaderCell align="center">Zonas</AdminTableHeaderCell>
+              <AdminTableHeaderCell>Zonas geográficas</AdminTableHeaderCell>
+              <AdminTableHeaderCell align="center">Planes</AdminTableHeaderCell>
               <AdminTableHeaderCell align="right">Acciones</AdminTableHeaderCell>
             </tr>
           </AdminTableHead>
           <AdminTableBody>
             {filteredClinics.map((clinic) => {
-              const usage = countUsage(plans, clinic.id);
+              const zoneIds = getClinicZoneIds(clinic);
+              const linkedPlans = getPlansForClinic(plans, clinic.id);
+              const coverageCount = countCoverageEntries(plans, clinic.id);
 
               return (
                 <AdminTableRow
@@ -206,13 +244,29 @@ export function ClinicsPanel({
                       {clinic.id}
                     </code>
                   </AdminTableCell>
-                  <AdminTableCell align="center">
-                    <AdminBadge tone={usage > 0 ? "info" : "neutral"}>
-                      {usage}
-                    </AdminBadge>
+                  <AdminTableCell>
+                    <ClinicZoneBadges zoneIds={zoneIds} />
                   </AdminTableCell>
                   <AdminTableCell align="center">
-                    <AdminBadge tone="primary">{clinic.zones?.length ?? 0}</AdminBadge>
+                    <div className="flex flex-col items-center gap-2">
+                      <AdminBadge tone={linkedPlans.length > 0 ? "info" : "neutral"}>
+                        {linkedPlans.length}
+                      </AdminBadge>
+                      {coverageCount > linkedPlans.length ? (
+                        <span className="text-[10px] text-muted">
+                          {coverageCount} coberturas
+                        </span>
+                      ) : null}
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        disabled={linkedPlans.length === 0}
+                        onClick={() => setPlansModalClinic(clinic)}
+                      >
+                        Ver planes
+                      </Button>
+                    </div>
                   </AdminTableCell>
                   <AdminTableCell align="right">
                     <AdminRowActions>
@@ -228,7 +282,7 @@ export function ClinicsPanel({
                         type="button"
                         size="sm"
                         variant="danger"
-                        disabled={usage > 0}
+                        disabled={coverageCount > 0}
                         onClick={() => void handleDelete(clinic)}
                       >
                         Eliminar
@@ -261,6 +315,22 @@ export function ClinicsPanel({
           onSubmit={handleSave}
           onCancel={closeForm}
         />
+      </AdminFormModal>
+
+      <AdminFormModal
+        open={plansModalClinic !== null}
+        title={plansModalClinic ? `Planes — ${plansModalClinic.name}` : "Planes"}
+        description={
+          plansModalClinic
+            ? `Prestador ${plansModalClinic.id}`
+            : undefined
+        }
+        onClose={() => setPlansModalClinic(null)}
+        size="xl"
+      >
+        {plansModalClinic ? (
+          <ClinicPlansModalContent clinic={plansModalClinic} plans={plans} />
+        ) : null}
       </AdminFormModal>
     </AdminPanel>
   );
