@@ -20,6 +20,7 @@ export interface PlanFormProps {
   clinics: Clinic[];
   isEditing: boolean;
   saving: boolean;
+  embedded?: boolean;
   onSubmit: (plan: HealthPlan) => Promise<void>;
   onCancel: () => void;
 }
@@ -39,6 +40,7 @@ export function PlanForm({
   clinics,
   isEditing,
   saving,
+  embedded = false,
   onSubmit,
   onCancel,
 }: PlanFormProps) {
@@ -168,18 +170,20 @@ export function PlanForm({
     <form
       onSubmit={handleSubmit}
       className={joinClasses(
-        "space-y-6 rounded-xl border bg-white p-5 shadow-card sm:p-6",
-        ui.border,
+        "space-y-6",
+        embedded ? "" : joinClasses("rounded-xl border bg-white p-5 shadow-card sm:p-6", ui.border),
       )}
     >
-      <div>
-        <h2 className="text-lg font-bold text-primary-dark">
-          {isEditing ? "Editar plan" : "Nuevo plan"}
-        </h2>
-        <p className="mt-1 text-sm text-muted">
-          Configura los datos base y las coberturas por prestador.
-        </p>
-      </div>
+      {embedded ? null : (
+        <div>
+          <h2 className="text-lg font-bold text-primary-dark">
+            {isEditing ? "Editar plan" : "Nuevo plan"}
+          </h2>
+          <p className="mt-1 text-sm text-muted">
+            Configura los datos base y las coberturas por prestador.
+          </p>
+        </div>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <FieldGroup>

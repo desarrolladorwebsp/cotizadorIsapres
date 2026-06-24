@@ -35,7 +35,7 @@ import {
   ui,
 } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
-import type { HealthPlanSummary } from "@/domain";
+import type { DashboardFiltersState, HealthPlanSummary } from "@/domain";
 import type { HealthPlan } from "@/types/plan";
 import type { PartnerEntityPublic } from "@/types/partner-entity";
 import { ContractPlanModal } from "./contract-plan-modal";
@@ -167,13 +167,16 @@ function PublicCotizadorViewInner() {
   ]);
 
   const runSearch = useCallback(
-    (limit = resultsLimit, options?: { force?: boolean }) => {
+    (
+      limit = resultsLimit,
+      options?: { force?: boolean; filters?: DashboardFiltersState },
+    ) => {
       return search(
         {
           q: searchText,
           priceMin: dashboard.priceMin,
           priceMax: dashboard.priceMax,
-          filters: dashboard.dashboardFilters,
+          filters: options?.filters ?? dashboard.dashboardFilters,
           limit,
         },
         options,
@@ -186,6 +189,37 @@ function PublicCotizadorViewInner() {
       dashboard.priceMax,
       dashboard.dashboardFilters,
       resultsLimit,
+    ],
+  );
+
+  const handleFiltersChange = useCallback(
+    (next: DashboardFiltersState) => {
+      dashboard.setDashboardFilters(next);
+      if (!hasSearched) return;
+
+      resetSearchCache();
+      skipDebouncedSearchRef.current = true;
+      setResultsLimit(INITIAL_PLANS_PAGE_SIZE);
+
+      void search(
+        {
+          q: searchText,
+          priceMin: dashboard.priceMin,
+          priceMax: dashboard.priceMax,
+          filters: next,
+          limit: INITIAL_PLANS_PAGE_SIZE,
+        },
+        { force: true },
+      );
+    },
+    [
+      dashboard.setDashboardFilters,
+      dashboard.priceMin,
+      dashboard.priceMax,
+      hasSearched,
+      resetSearchCache,
+      search,
+      searchText,
     ],
   );
 
@@ -627,7 +661,7 @@ function PublicCotizadorViewInner() {
                   onPriceMinChange={dashboard.setPriceMin}
                   onPriceMaxChange={dashboard.setPriceMax}
                   filters={dashboard.dashboardFilters}
-                  onFiltersChange={dashboard.setDashboardFilters}
+                  onFiltersChange={handleFiltersChange}
                 />
               ) : null}
 

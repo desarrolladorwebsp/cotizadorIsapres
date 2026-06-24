@@ -206,5 +206,8 @@ export function describeActiveFilters(filters: DashboardFiltersState): string {
   if (isCheckboxGroupActive(filters.planTypes)) {
     parts.push(`tipos:${getActiveCheckboxIds(filters.planTypes).join(",")}`);
   }
+  if (isCheckboxGroupActive(filters.zones)) {
+    parts.push(`zonas:${getActiveCheckboxIds(filters.zones).join(",")}`);
+  }
   return parts.join(" ");
 }

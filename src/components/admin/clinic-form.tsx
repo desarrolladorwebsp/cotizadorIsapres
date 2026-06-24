@@ -14,6 +14,7 @@ export interface ClinicFormProps {
   initialValue: Clinic;
   isEditing: boolean;
   saving: boolean;
+  embedded?: boolean;
   onSubmit: (clinic: Clinic) => Promise<void>;
   onCancel: () => void;
 }
@@ -22,6 +23,7 @@ export function ClinicForm({
   initialValue,
   isEditing,
   saving,
+  embedded = false,
   onSubmit,
   onCancel,
 }: ClinicFormProps) {
@@ -58,18 +60,20 @@ export function ClinicForm({
     <form
       onSubmit={handleSubmit}
       className={joinClasses(
-        "space-y-5 rounded-xl border bg-white p-5 shadow-card sm:p-6",
-        ui.border,
+        "space-y-5",
+        embedded ? "" : joinClasses("rounded-xl border bg-white p-5 shadow-card sm:p-6", ui.border),
       )}
     >
-      <div>
-        <h2 className="text-lg font-bold text-primary-dark">
-          {isEditing ? "Editar clínica" : "Nueva clínica"}
-        </h2>
-        <p className="mt-1 text-sm text-muted">
-          El identificador se usa en las coberturas de los planes.
-        </p>
-      </div>
+      {embedded ? null : (
+        <div>
+          <h2 className="text-lg font-bold text-primary-dark">
+            {isEditing ? "Editar clínica" : "Nueva clínica"}
+          </h2>
+          <p className="mt-1 text-sm text-muted">
+            El identificador se usa en las coberturas de los planes.
+          </p>
+        </div>
+      )}
 
       <FieldGroup>
         <FieldLabel htmlFor="clinic-name">Nombre comercial</FieldLabel>

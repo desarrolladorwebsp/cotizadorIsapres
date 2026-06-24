@@ -1,10 +1,25 @@
 "use client";
 
 import { Fragment, useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  AdminBadge,
+  AdminPanel,
+  AdminPanelHeader,
+  AdminRefreshButton,
+  AdminTable,
+  AdminTableBody,
+  AdminTableCard,
+  AdminTableCell,
+  AdminTableHead,
+  AdminTableHeaderCell,
+  AdminTableRow,
+  AdminToolbar,
+} from "@/components/admin/admin-data-table";
 import { formatPlanClp, formatQuotedUf } from "@/lib/plan-format";
 import { REGION_OPTIONS, SEX_OPTIONS } from "@/lib/quote-criteria-options";
-import { touchTarget, ui } from "@/lib/ui-tokens";
+import { ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type { QuoteRecord } from "@/types/quote";
 
@@ -21,11 +36,11 @@ const STATUS_LABELS: Record<QuoteRecord["status"], string> = {
   CANCELLED: "Cancelada",
 };
 
-const STATUS_STYLES: Record<QuoteRecord["status"], string> = {
-  PENDING: "bg-amber-100 text-amber-900",
-  CONTACTED: "bg-sky-100 text-sky-900",
-  CONVERTED: "bg-emerald-100 text-emerald-900",
-  CANCELLED: "bg-zinc-100 text-zinc-600",
+const STATUS_TONES: Record<QuoteRecord["status"], "warning" | "info" | "success" | "neutral"> = {
+  PENDING: "warning",
+  CONTACTED: "info",
+  CONVERTED: "success",
+  CANCELLED: "neutral",
 };
 
 function formatDate(value: string): string {
@@ -160,28 +175,12 @@ export function QuotesPanel({ quotes, loading, onRefresh }: QuotesPanelProps) {
   }, [quotes, search, partnerFilter, statusFilter]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-primary-dark">Cotizaciones</h2>
-          <p className="mt-1 max-w-2xl text-sm text-muted">
-            Solicitudes enviadas desde el cotizador. Revisa quién pidió el plan,
-            sus datos de contacto y el origen de cada solicitud.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => void onRefresh()}
-          className={joinClasses(
-            touchTarget,
-            "rounded-lg px-4 text-sm font-semibold",
-            ui.ctaOutline,
-          )}
-        >
-          Actualizar
-        </button>
-      </div>
+    <AdminPanel>
+      <AdminPanelHeader
+        title="Cotizaciones"
+        description="Solicitudes enviadas desde el cotizador. Revisa datos de contacto, plan solicitado y origen de cada solicitud."
+        actions={<AdminRefreshButton onClick={() => void onRefresh()} />}
+      />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {[
@@ -211,7 +210,7 @@ export function QuotesPanel({ quotes, loading, onRefresh }: QuotesPanelProps) {
         ))}
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_12rem_12rem]">
+      <AdminToolbar className="lg:grid-cols-[minmax(0,1fr)_12rem_12rem]">
         <Input
           value={search}
           onChange={(event) => setSearch(event.target.value)}
@@ -248,223 +247,196 @@ export function QuotesPanel({ quotes, loading, onRefresh }: QuotesPanelProps) {
             </option>
           ))}
         </select>
-      </div>
+      </AdminToolbar>
 
-      <div
-        className={joinClasses(
-          "overflow-hidden rounded-2xl border bg-white shadow-sm",
-          ui.border,
-        )}
+      <AdminTableCard
+        loading={loading}
+        empty={!loading && filteredQuotes.length === 0}
+        emptyTitle="No hay cotizaciones para mostrar"
+        emptyDescription='Las solicitudes aparecerán aquí cuando alguien use "Solicitar con ejecutivo" en el cotizador.'
+        loadingMessage="Cargando cotizaciones…"
+        footer={`Mostrando ${filteredQuotes.length} de ${quotes.length} cotizaciones.`}
       >
-        {loading ? (
-          <p className="px-6 py-16 text-center text-sm text-muted">
-            Cargando cotizaciones…
-          </p>
-        ) : filteredQuotes.length === 0 ? (
-          <div className="px-6 py-16 text-center">
-            <p className="text-sm font-semibold text-foreground">
-              No hay cotizaciones para mostrar
-            </p>
-            <p className="mt-2 text-sm text-muted">
-              Las solicitudes aparecerán aquí cuando alguien use
-              &quot;Solicitar con ejecutivo&quot; en el cotizador.
-            </p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-[72rem] w-full text-left text-sm">
-              <thead className="border-b bg-bg-layout/70 text-xs uppercase tracking-wide text-muted">
-                <tr>
-                  <th className="px-4 py-3 font-semibold">Fecha</th>
-                  <th className="px-4 py-3 font-semibold">Solicitante</th>
-                  <th className="px-4 py-3 font-semibold">Contacto</th>
-                  <th className="px-4 py-3 font-semibold">Perfil</th>
-                  <th className="px-4 py-3 font-semibold">Plan solicitado</th>
-                  <th className="px-4 py-3 font-semibold">Precio est.</th>
-                  <th className="px-4 py-3 font-semibold">Origen</th>
-                  <th className="px-4 py-3 font-semibold">Estado</th>
-                  <th className="px-4 py-3 font-semibold" />
-                </tr>
-              </thead>
-              <tbody>
-                {filteredQuotes.map((quote) => {
-                  const isExpanded = expandedId === quote.id;
+        <AdminTable minWidth="72rem">
+          <AdminTableHead>
+            <tr>
+              <AdminTableHeaderCell>Fecha</AdminTableHeaderCell>
+              <AdminTableHeaderCell>Solicitante</AdminTableHeaderCell>
+              <AdminTableHeaderCell>Contacto</AdminTableHeaderCell>
+              <AdminTableHeaderCell>Perfil</AdminTableHeaderCell>
+              <AdminTableHeaderCell>Plan solicitado</AdminTableHeaderCell>
+              <AdminTableHeaderCell align="right">Precio est.</AdminTableHeaderCell>
+              <AdminTableHeaderCell>Origen</AdminTableHeaderCell>
+              <AdminTableHeaderCell>Estado</AdminTableHeaderCell>
+              <AdminTableHeaderCell align="right">Detalle</AdminTableHeaderCell>
+            </tr>
+          </AdminTableHead>
+          <AdminTableBody>
+            {filteredQuotes.map((quote) => {
+              const isExpanded = expandedId === quote.id;
 
-                  return (
-                    <Fragment key={quote.id}>
-                      <tr className="border-b transition hover:bg-bg-layout/40">
-                        <td className="px-4 py-4 align-top whitespace-nowrap text-muted">
-                          {formatDate(quote.createdAt)}
-                        </td>
+              return (
+                <Fragment key={quote.id}>
+                  <AdminTableRow>
+                    <AdminTableCell className="whitespace-nowrap text-muted">
+                      {formatDate(quote.createdAt)}
+                    </AdminTableCell>
 
-                        <td className="px-4 py-4 align-top">
-                          <p className="font-semibold text-foreground">
-                            {quote.fullName}
-                          </p>
-                          <p className="mt-1 text-xs text-muted">
-                            RUT: {quote.rut?.trim() || "—"}
-                          </p>
-                        </td>
+                    <AdminTableCell>
+                      <p className="font-semibold text-foreground">
+                        {quote.fullName}
+                      </p>
+                      <p className="mt-1 text-xs text-muted">
+                        RUT: {quote.rut?.trim() || "—"}
+                      </p>
+                    </AdminTableCell>
 
-                        <td className="px-4 py-4 align-top">
-                          <a
-                            href={`mailto:${quote.email}`}
-                            className="block text-primary-dark underline-offset-2 hover:underline"
-                          >
-                            {quote.email}
-                          </a>
-                          <a
-                            href={`tel:${normalizePhoneHref(quote.phone)}`}
-                            className="mt-1 block text-xs text-muted underline-offset-2 hover:text-foreground hover:underline"
-                          >
-                            {quote.phone}
-                          </a>
-                        </td>
+                    <AdminTableCell>
+                      <a
+                        href={`mailto:${quote.email}`}
+                        className="block text-primary-dark underline-offset-2 hover:underline"
+                      >
+                        {quote.email}
+                      </a>
+                      <a
+                        href={`tel:${normalizePhoneHref(quote.phone)}`}
+                        className="mt-1 block text-xs text-muted underline-offset-2 hover:text-foreground hover:underline"
+                      >
+                        {quote.phone}
+                      </a>
+                    </AdminTableCell>
 
-                        <td className="px-4 py-4 align-top text-xs leading-relaxed text-muted">
-                          <p>{resolveRegionLabel(quote.region)}</p>
-                          <p className="mt-1">
-                            {resolveSexLabel(quote.sex)}
-                            {quote.contributorAge != null
-                              ? ` · ${quote.contributorAge} años`
-                              : ""}
-                          </p>
-                          <p className="mt-1">{formatIncome(quote.monthlyIncome)}</p>
-                          <p className="mt-1">{formatBeneficiaries(quote)}</p>
-                        </td>
+                    <AdminTableCell className="text-xs leading-relaxed text-muted">
+                      <p>{resolveRegionLabel(quote.region)}</p>
+                      <p className="mt-1">
+                        {resolveSexLabel(quote.sex)}
+                        {quote.contributorAge != null
+                          ? ` · ${quote.contributorAge} años`
+                          : ""}
+                      </p>
+                      <p className="mt-1">{formatIncome(quote.monthlyIncome)}</p>
+                      <p className="mt-1">{formatBeneficiaries(quote)}</p>
+                    </AdminTableCell>
 
-                        <td className="px-4 py-4 align-top">
-                          {quote.planName || quote.planIsapre ? (
-                            <>
-                              {quote.planIsapre ? (
-                                <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-                                  {quote.planIsapre}
-                                </p>
-                              ) : null}
-                              <p className="mt-1 font-semibold text-foreground">
-                                {quote.planName ?? "Plan sin nombre"}
-                              </p>
-                            </>
-                          ) : (
-                            <p className="font-semibold text-foreground">—</p>
-                          )}
-                          {quote.planCode ? (
-                            <p className="mt-1 font-mono text-xs text-muted">
-                              {quote.planCode}
+                    <AdminTableCell>
+                      {quote.planName || quote.planIsapre ? (
+                        <>
+                          {quote.planIsapre ? (
+                            <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+                              {quote.planIsapre}
                             </p>
                           ) : null}
-                        </td>
-
-                        <td className="px-4 py-4 align-top whitespace-nowrap">
-                          {quote.finalPriceClp != null ? (
-                            <>
-                              <p className="font-semibold tabular-nums text-foreground">
-                                {formatPlanClp(quote.finalPriceClp)}
-                              </p>
-                              {quote.finalPriceUf != null ? (
-                                <p className="mt-1 text-xs tabular-nums text-muted">
-                                  {formatQuotedUf(quote.finalPriceUf)}
-                                </p>
-                              ) : null}
-                            </>
-                          ) : (
-                            <span className="text-muted">—</span>
-                          )}
-                        </td>
-
-                        <td className="px-4 py-4 align-top">
-                          <p className="font-semibold text-foreground">
-                            {resolvePartnerLabel(quote)}
+                          <p className="mt-1 font-semibold text-foreground">
+                            {quote.planName ?? "Plan sin nombre"}
                           </p>
-                          {quote.partnerEntitySlug ? (
-                            <p className="text-xs text-muted">
-                              /{quote.partnerEntitySlug}
-                            </p>
-                          ) : null}
-                        </td>
-
-                        <td className="px-4 py-4 align-top">
-                          <span
-                            className={joinClasses(
-                              "inline-flex rounded-full px-2.5 py-1 text-xs font-semibold",
-                              STATUS_STYLES[quote.status],
-                            )}
-                          >
-                            {STATUS_LABELS[quote.status]}
-                          </span>
-                        </td>
-
-                        <td className="px-4 py-4 align-top">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setExpandedId(isExpanded ? null : quote.id)
-                            }
-                            className={joinClasses(
-                              "rounded-lg px-2 py-1 text-xs font-semibold text-primary-dark",
-                              ui.hoverSurface,
-                            )}
-                            aria-expanded={isExpanded}
-                          >
-                            {isExpanded ? "Ocultar" : "Detalle"}
-                          </button>
-                        </td>
-                      </tr>
-
-                      {isExpanded ? (
-                        <tr className="border-b bg-bg-layout/30">
-                          <td colSpan={9} className="px-4 py-4">
-                            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                              <DetailBlock
-                                label="Motivo"
-                                value={quote.quoteReason ?? "—"}
-                              />
-                              <DetailBlock
-                                label="Notas"
-                                value={quote.notes ?? "—"}
-                              />
-                              <DetailBlock
-                                label="Preferencia de contacto"
-                                value={quote.contactPreference ?? "—"}
-                              />
-                              <DetailBlock
-                                label="Factores de riesgo"
-                                value={
-                                  quote.totalFactors != null
-                                    ? String(quote.totalFactors)
-                                    : "—"
-                                }
-                              />
-                              <DetailBlock
-                                label="Valor UF al cotizar"
-                                value={
-                                  quote.ufValue != null
-                                    ? formatPlanClp(quote.ufValue)
-                                    : "—"
-                                }
-                              />
-                              <DetailBlock
-                                label="ID solicitud"
-                                value={quote.id}
-                                mono
-                              />
-                            </div>
-                          </td>
-                        </tr>
+                        </>
+                      ) : (
+                        <p className="font-semibold text-foreground">—</p>
+                      )}
+                      {quote.planCode ? (
+                        <p className="mt-1 font-mono text-xs text-muted">
+                          {quote.planCode}
+                        </p>
                       ) : null}
-                    </Fragment>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+                    </AdminTableCell>
 
-      <p className="text-xs text-muted">
-        Mostrando {filteredQuotes.length} de {quotes.length} cotizaciones.
-      </p>
-    </div>
+                    <AdminTableCell align="right" className="whitespace-nowrap">
+                      {quote.finalPriceClp != null ? (
+                        <>
+                          <p className="font-semibold tabular-nums text-foreground">
+                            {formatPlanClp(quote.finalPriceClp)}
+                          </p>
+                          {quote.finalPriceUf != null ? (
+                            <p className="mt-1 text-xs tabular-nums text-muted">
+                              {formatQuotedUf(quote.finalPriceUf)}
+                            </p>
+                          ) : null}
+                        </>
+                      ) : (
+                        <span className="text-muted">—</span>
+                      )}
+                    </AdminTableCell>
+
+                    <AdminTableCell>
+                      <p className="font-semibold text-foreground">
+                        {resolvePartnerLabel(quote)}
+                      </p>
+                      {quote.partnerEntitySlug ? (
+                        <p className="text-xs text-muted">
+                          /{quote.partnerEntitySlug}
+                        </p>
+                      ) : null}
+                    </AdminTableCell>
+
+                    <AdminTableCell>
+                      <AdminBadge tone={STATUS_TONES[quote.status]}>
+                        {STATUS_LABELS[quote.status]}
+                      </AdminBadge>
+                    </AdminTableCell>
+
+                    <AdminTableCell align="right">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() =>
+                          setExpandedId(isExpanded ? null : quote.id)
+                        }
+                        aria-expanded={isExpanded}
+                      >
+                        {isExpanded ? "Ocultar" : "Ver"}
+                      </Button>
+                    </AdminTableCell>
+                  </AdminTableRow>
+
+                  {isExpanded ? (
+                    <tr className="border-b bg-bg-layout/30">
+                      <td colSpan={9} className="px-4 py-4">
+                        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                          <DetailBlock
+                            label="Motivo"
+                            value={quote.quoteReason ?? "—"}
+                          />
+                          <DetailBlock
+                            label="Notas"
+                            value={quote.notes ?? "—"}
+                          />
+                          <DetailBlock
+                            label="Preferencia de contacto"
+                            value={quote.contactPreference ?? "—"}
+                          />
+                          <DetailBlock
+                            label="Factores de riesgo"
+                            value={
+                              quote.totalFactors != null
+                                ? String(quote.totalFactors)
+                                : "—"
+                            }
+                          />
+                          <DetailBlock
+                            label="Valor UF al cotizar"
+                            value={
+                              quote.ufValue != null
+                                ? formatPlanClp(quote.ufValue)
+                                : "—"
+                            }
+                          />
+                          <DetailBlock
+                            label="ID solicitud"
+                            value={quote.id}
+                            mono
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                  ) : null}
+                </Fragment>
+              );
+            })}
+          </AdminTableBody>
+        </AdminTable>
+      </AdminTableCard>
+    </AdminPanel>
   );
 }
 

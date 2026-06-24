@@ -4,15 +4,30 @@ import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  AdminFormModal,
+  AdminPanel,
+  AdminPanelHeader,
+  AdminRefreshButton,
+  AdminRowActions,
+  AdminBadge,
+  AdminTable,
+  AdminTableBody,
+  AdminTableCard,
+  AdminTableCell,
+  AdminTableHead,
+  AdminTableHeaderCell,
+  AdminTableRow,
+  AdminToolbar,
+} from "@/components/admin/admin-data-table";
+import {
   createClinic,
   createEmptyClinic,
   deleteClinic,
   updateClinic,
 } from "@/lib/api/admin-client";
-import { touchTarget, ui } from "@/lib/ui-tokens";
+import { ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
-import type { Clinic } from "@/domain";
-import type { HealthPlan } from "@/domain";
+import type { Clinic, HealthPlan } from "@/domain";
 import { ClinicForm } from "./clinic-form";
 
 export interface ClinicsPanelProps {
@@ -128,24 +143,21 @@ export function ClinicsPanel({
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:items-start">
-      <section
-        className={joinClasses(
-          "space-y-4 rounded-xl border bg-white p-4 shadow-card sm:p-5",
-          ui.border,
-          formMode ? "hidden lg:block" : "",
-        )}
-      >
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-base font-bold text-primary-dark">Clínicas</h2>
-            <p className="text-sm text-muted">{clinics.length} prestadores</p>
-          </div>
-          <Button size="sm" onClick={openCreateForm}>
-            Nueva clínica
-          </Button>
-        </div>
+    <AdminPanel>
+      <AdminPanelHeader
+        title="Clínicas y prestadores"
+        description="Prestadores reutilizables al configurar coberturas en los planes de salud."
+        actions={
+          <>
+            <AdminRefreshButton onClick={() => void onRefresh()} />
+            <Button size="sm" onClick={openCreateForm}>
+              Agregar clínica
+            </Button>
+          </>
+        }
+      />
 
+      <AdminToolbar className="lg:grid-cols-[minmax(0,1fr)_12rem]">
         <Input
           type="search"
           value={search}
@@ -153,106 +165,103 @@ export function ClinicsPanel({
           placeholder="Buscar por nombre o identificador…"
           className={joinClasses("h-11", ui.input)}
         />
+        <div className="flex items-center rounded-xl border bg-bg-layout/50 px-4 text-sm text-muted">
+          <span className="font-semibold text-foreground">{clinics.length}</span>
+          <span className="ml-1">prestadores</span>
+        </div>
+      </AdminToolbar>
 
-        {loading ? (
-          <p className="py-8 text-center text-sm text-muted">
-            Cargando clínicas…
-          </p>
-        ) : filteredClinics.length === 0 ? (
-          <p className="rounded-lg border border-dashed px-4 py-8 text-center text-sm text-muted">
-            No hay clínicas que coincidan con la búsqueda.
-          </p>
-        ) : (
-          <ul className="max-h-[32rem] space-y-2 overflow-y-auto pr-1">
+      <AdminTableCard
+        loading={loading}
+        empty={!loading && filteredClinics.length === 0}
+        emptyTitle="No hay clínicas para mostrar"
+        emptyDescription="Agrega un prestador o ajusta la búsqueda."
+        loadingMessage="Cargando clínicas…"
+        footer={`Mostrando ${filteredClinics.length} de ${clinics.length} prestadores.`}
+      >
+        <AdminTable minWidth="52rem">
+          <AdminTableHead>
+            <tr>
+              <AdminTableHeaderCell>Nombre</AdminTableHeaderCell>
+              <AdminTableHeaderCell>Identificador</AdminTableHeaderCell>
+              <AdminTableHeaderCell align="center">Coberturas</AdminTableHeaderCell>
+              <AdminTableHeaderCell align="center">Zonas</AdminTableHeaderCell>
+              <AdminTableHeaderCell align="right">Acciones</AdminTableHeaderCell>
+            </tr>
+          </AdminTableHead>
+          <AdminTableBody>
             {filteredClinics.map((clinic) => {
               const usage = countUsage(plans, clinic.id);
 
               return (
-                <li key={clinic.id}>
-                  <button
-                    type="button"
-                    onClick={() => openEditForm(clinic)}
-                    className={joinClasses(
-                      "w-full rounded-lg border px-4 py-3 text-left transition",
-                      draftClinic.id === clinic.id && formMode === "edit"
-                        ? "border-primary bg-primary/5"
-                        : joinClasses(ui.borderHairline, ui.hoverSurface),
-                    )}
-                  >
-                    <p className="truncate text-sm font-semibold text-primary-dark">
-                      {clinic.name}
-                    </p>
-                    <p className="mt-1 truncate font-mono text-xs text-muted">
+                <AdminTableRow
+                  key={clinic.id}
+                  selected={formMode === "edit" && draftClinic.id === clinic.id}
+                >
+                  <AdminTableCell>
+                    <p className="font-semibold text-foreground">{clinic.name}</p>
+                  </AdminTableCell>
+                  <AdminTableCell>
+                    <code className="rounded bg-bg-layout px-1.5 py-0.5 font-mono text-xs text-muted">
                       {clinic.id}
-                    </p>
-                    <p className="mt-2 text-xs text-muted">
-                      Usada en {usage} cobertura{usage === 1 ? "" : "s"}
-                    </p>
-                  </button>
-                </li>
+                    </code>
+                  </AdminTableCell>
+                  <AdminTableCell align="center">
+                    <AdminBadge tone={usage > 0 ? "info" : "neutral"}>
+                      {usage}
+                    </AdminBadge>
+                  </AdminTableCell>
+                  <AdminTableCell align="center">
+                    <AdminBadge tone="primary">{clinic.zones?.length ?? 0}</AdminBadge>
+                  </AdminTableCell>
+                  <AdminTableCell align="right">
+                    <AdminRowActions>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => openEditForm(clinic)}
+                      >
+                        Editar
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="danger"
+                        disabled={usage > 0}
+                        onClick={() => void handleDelete(clinic)}
+                      >
+                        Eliminar
+                      </Button>
+                    </AdminRowActions>
+                  </AdminTableCell>
+                </AdminTableRow>
               );
             })}
-          </ul>
-        )}
-      </section>
+          </AdminTableBody>
+        </AdminTable>
+      </AdminTableCard>
 
-      {formMode ? (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between lg:hidden">
-            <Button type="button" variant="ghost" size="sm" onClick={closeForm}>
-              ← Volver al listado
-            </Button>
-            {formMode === "edit" ? (
-              <Button
-                type="button"
-                variant="danger"
-                size="sm"
-                onClick={() => handleDelete(draftClinic)}
-              >
-                Eliminar
-              </Button>
-            ) : null}
-          </div>
-
-          <ClinicForm
-            initialValue={draftClinic}
-            isEditing={formMode === "edit"}
-            saving={saving}
-            onSubmit={handleSave}
-            onCancel={closeForm}
-          />
-
-          {formMode === "edit" ? (
-            <div className="hidden justify-end lg:flex">
-              <Button
-                type="button"
-                variant="danger"
-                className={touchTarget}
-                onClick={() => handleDelete(draftClinic)}
-              >
-                Eliminar clínica
-              </Button>
-            </div>
-          ) : null}
-        </div>
-      ) : (
-        <div
-          className={joinClasses(
-            "hidden rounded-xl border border-dashed bg-white px-6 py-16 text-center lg:flex lg:flex-col lg:items-center lg:justify-center",
-            ui.border,
-          )}
-        >
-          <p className="text-base font-medium text-foreground">
-            Selecciona una clínica o crea una nueva
-          </p>
-          <p className="mt-2 max-w-md text-sm text-muted">
-            Los prestadores se reutilizan al configurar coberturas en los planes.
-          </p>
-          <Button className="mt-6" onClick={openCreateForm}>
-            Crear prestador
-          </Button>
-        </div>
-      )}
-    </div>
+      <AdminFormModal
+        open={formMode !== null}
+        title={formMode === "create" ? "Nueva clínica" : "Editar clínica"}
+        description={
+          formMode === "edit"
+            ? `Identificador: ${draftClinic.id}`
+            : "El identificador se usa en las coberturas de los planes."
+        }
+        onClose={closeForm}
+        size="md"
+      >
+        <ClinicForm
+          initialValue={draftClinic}
+          isEditing={formMode === "edit"}
+          saving={saving}
+          embedded
+          onSubmit={handleSave}
+          onCancel={closeForm}
+        />
+      </AdminFormModal>
+    </AdminPanel>
   );
 }
