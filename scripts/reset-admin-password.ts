@@ -8,8 +8,8 @@ config({ path: path.join(process.cwd(), ".env.local") });
 const prisma = new PrismaClient();
 
 const ADMIN_PROFILES: Record<string, string> = {
-  "admin@isaprespremium.cl": "Administrador Isapres Premium",
-  "superadmin@isaprespremium.cl": "Carolina Rojas",
+  "admin@isaprespremium.cl": "Usuario Prueba Admin 1",
+  "superadmin@isaprespremium.cl": "Usuario Prueba",
 };
 
 async function upsertAdminPassword(email: string, password: string) {

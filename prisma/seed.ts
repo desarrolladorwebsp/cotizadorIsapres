@@ -18,25 +18,25 @@ const CLINICS_PATH = path.join(process.cwd(), "src/assets/clinics.json");
 const ADMIN_ACCOUNTS = [
   {
     email: "admin@isaprespremium.cl",
-    fullName: "Administrador Isapres Premium",
+    fullName: "Usuario Prueba Admin 1",
   },
   {
     email: "superadmin@isaprespremium.cl",
-    fullName: "Carolina Rojas",
+    fullName: "Usuario Prueba",
   },
 ];
 
 const EXECUTIVE_ACCOUNTS = [
   {
     email: "ejecutivo@isaprespremium.cl",
-    fullName: "María González",
+    fullName: "Usuario Prueba Ejecutivo 1",
     phone: "+56911223344",
     rut: "15.555.555-5",
     subscriptionStatus: "TRIAL" as const,
   },
   {
     email: "ventas@isaprespremium.cl",
-    fullName: "Pedro Sánchez",
+    fullName: "Usuario Prueba Ejecutivo 2",
     phone: "+56944332211",
     rut: "16.666.666-6",
     subscriptionStatus: "ACTIVE" as const,
@@ -46,21 +46,21 @@ const EXECUTIVE_ACCOUNTS = [
 const CLIENT_USERS = [
   {
     email: "juan.perez@demo.cl",
-    fullName: "Juan Pérez",
+    fullName: "Usuario Prueba Cliente 1",
     phone: "+56999887766",
     rut: "12.345.678-9",
     role: "CLIENT" as const,
   },
   {
     email: "ana.torres@demo.cl",
-    fullName: "Ana Torres",
+    fullName: "Usuario Prueba Cliente 2",
     phone: "+56988776655",
     rut: "18.765.432-1",
     role: "CLIENT" as const,
   },
   {
     email: "carlos.munoz@demo.cl",
-    fullName: "Carlos Muñoz",
+    fullName: "Usuario Prueba Cliente 3",
     phone: "+56977665544",
     rut: "19.876.543-2",
     role: "CLIENT" as const,
@@ -285,7 +285,7 @@ async function seedQuotes(plans: HealthPlan[]) {
       beneficiaryCount: 1,
       totalFactors: 1.0,
       quoteReason: "Solicitud desde comparador",
-      notes: "Cliente contactado por ejecutivo María González",
+      notes: "Cliente contactado por ejecutivo de prueba",
     },
     {
       clientIndex: 2,
