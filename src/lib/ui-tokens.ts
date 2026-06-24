@@ -133,4 +133,26 @@ export function resolveBadgeTone(label: string): StatusBadgeTone {
   return "neutral";
 }
 
+/**
+ * Elevación y superficies de las cards de plan (PublicPlanCard / PlanCard).
+ * Tokens CSS en globals.css: --shadow-plan-card, --plan-card-border, etc.
+ */
+export const planCard = {
+  root: `${motionGpu} overflow-hidden rounded-xl border bg-[var(--plan-card-surface)] shadow-plan-card ring-1 ring-inset ring-[var(--plan-card-ring)]`,
+  header:
+    "flex flex-col gap-3 border-b border-[var(--plan-card-border)] bg-[var(--plan-card-header-bg)] px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-4",
+  coverageGrid: "grid bg-[var(--plan-card-coverage-bg)] md:grid-cols-2",
+  footer:
+    "border-t border-[var(--plan-card-border)] bg-[var(--plan-card-coverage-bg)] px-3 py-2 text-center text-[11px] text-muted",
+  listStack: "flex flex-col gap-5 sm:gap-6",
+  elevation: {
+    shadowRest: "var(--shadow-plan-card)",
+    shadowHover: "var(--shadow-plan-card-hover)",
+    borderRest: "var(--plan-card-border)",
+    borderHover: "var(--primary)",
+    hoverLiftPx: 4,
+    spring: { type: "spring" as const, stiffness: 380, damping: 30 },
+  },
+} as const;
+
 export const coverageBarGradient = "h-2 rounded-full bg-coverage-gradient";

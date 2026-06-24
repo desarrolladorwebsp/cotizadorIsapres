@@ -21,7 +21,7 @@ import {
 import { useInView } from "@/hooks/use-in-view";
 import { usePlanDetail } from "@/hooks/use-plan-detail";
 import {
-  motionGpu,
+  planCard,
   touchTarget,
   ui,
 } from "@/lib/ui-tokens";
@@ -43,12 +43,6 @@ export interface PublicPlanCardProps {
   currency: CurrencyDisplay;
   onRequest: () => void;
 }
-
-const planCardShadowRest =
-  "0 1px 2px rgb(0 0 0 / 0.04), 0 6px 20px -4px rgb(0 0 0 / 0.1)";
-
-const planCardShadowHover =
-  "0 0 0 1px var(--primary), var(--shadow-card-hover)";
 
 const metaChip =
   "inline-flex shrink-0 items-center gap-1 rounded-lg border px-2.5 py-1 text-[10px] font-semibold leading-tight sm:text-[11px]";
@@ -226,24 +220,19 @@ export function PublicPlanCard({
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
       animate={{
-        y: isHovered ? -4 : 0,
-        borderColor: isHovered ? "var(--primary)" : "var(--border)",
-        boxShadow: isHovered ? planCardShadowHover : planCardShadowRest,
+        y: isHovered ? -planCard.elevation.hoverLiftPx : 0,
+        borderColor: isHovered
+          ? planCard.elevation.borderHover
+          : planCard.elevation.borderRest,
+        boxShadow: isHovered
+          ? planCard.elevation.shadowHover
+          : planCard.elevation.shadowRest,
       }}
-      transition={{ type: "spring", stiffness: 380, damping: 30 }}
-      className={joinClasses(
-        motionGpu,
-        "overflow-hidden rounded-xl border bg-white",
-      )}
+      transition={planCard.elevation.spring}
+      className={planCard.root}
     >
       {/* Cabecera — hero del plan */}
-      <div
-        className={joinClasses(
-          "flex flex-col gap-3 border-b px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-4",
-          ui.border,
-          "bg-white",
-        )}
-      >
+      <div className={planCard.header}>
         <div className="flex min-w-0 flex-1 items-start gap-2.5 sm:gap-3">
           <IsapreLogo isapre={plan.isapre} size="sm" />
 
@@ -327,7 +316,7 @@ export function PublicPlanCard({
       </div>
 
       {/* Coberturas — estilo competencia: 1 barra + lista */}
-      <div className="grid bg-white md:grid-cols-2">
+      <div className={planCard.coverageGrid}>
         <CoverageColumnCompact
           title="Cobertura hospitalaria"
           icon={<HospitalCoverageIcon />}
@@ -354,12 +343,7 @@ export function PublicPlanCard({
       </div>
 
       {detailLoading && inView ? (
-        <p
-          className={joinClasses(
-            "border-t bg-white px-3 py-2 text-center text-[11px] text-muted",
-            ui.border,
-          )}
-        >
+        <p className={planCard.footer}>
           Cargando prestadores…
         </p>
       ) : null}

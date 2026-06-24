@@ -84,6 +84,7 @@ Skill de proyecto que sintetiza tres enfoques probados:
 
 - **Vista pública** (`/cotizador`): header sticky, barra criterios, sidebar filtros, cards de plan, modal solicitud estilo QuePlan.
 - **Cards de plan**: logo isapre, precio destacado, coberturas resumidas, acciones alineadas a la derecha en desktop.
+- **Elevación plan-card** (`planCard` en `ui-tokens.ts`): sombra multicapa `--shadow-plan-card`, borde `--plan-card-border`, ring interior, header/coberturas con fondos distintos, gap 20–24px entre cards. Guía API: `/api/public/v1/ui/plan-card` v1.1.0.
 - **Modal solicitar**: dos columnas en `lg+` (beneficios + formulario), precio visible, tabs decorativas con “Solicitar” activo.
 
 ## Anti-patrones (rechazar)

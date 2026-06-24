@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { motionGpu } from "@/lib/ui-tokens";
+import { motionGpu, planCard } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type { BeneficiaryGroupSummary } from "@/domain";
 import type { HealthPlanSummary } from "@/domain";
@@ -45,7 +45,7 @@ export function PublicPlanResultsList({
       variants={listVariants}
       initial="hidden"
       animate="visible"
-      className="flex flex-col gap-4"
+      className={planCard.listStack}
     >
       {plans.map((plan) => (
         <motion.div

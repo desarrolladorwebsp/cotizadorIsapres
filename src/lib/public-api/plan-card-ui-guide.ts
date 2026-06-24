@@ -23,6 +23,15 @@ const DEFAULT_THEME = {
     "0 12px 32px -10px rgb(0 177 89 / 0.22)",
   shadowCta:
     "0 8px 24px -8px rgb(0 177 89 / 0.45)",
+  shadowPlanCard:
+    "0 1px 2px rgb(0 0 0 / 0.05), 0 2px 8px -2px rgb(0 77 38 / 0.07), 0 10px 28px -8px rgb(0 77 38 / 0.11)",
+  shadowPlanCardHover:
+    "0 0 0 1px var(--primary), 0 4px 14px -4px rgb(0 177 89 / 0.14), 0 16px 40px -10px rgb(0 177 89 / 0.2)",
+  planCardSurface: "#ffffff",
+  planCardHeaderBg: "color-mix(in srgb, var(--bg-layout) 26%, white)",
+  planCardCoverageBg: "color-mix(in srgb, var(--bg-layout) 10%, white)",
+  planCardBorder: "color-mix(in srgb, var(--border) 72%, var(--foreground) 28%)",
+  planCardRing: "rgb(15 31 23 / 0.045)",
 } as const;
 
 function resolveBrandTheme(brand: PlanCardUiBrand | null) {
@@ -47,6 +56,17 @@ function resolveBrandTheme(brand: PlanCardUiBrand | null) {
         card: "0 4px 24px -8px rgb(0 0 0 / 0.06)",
         card_hover: "0 12px 32px -10px rgb(0 0 0 / 0.1)",
         cta: "0 8px 24px -8px rgb(237 125 17 / 0.4)",
+        plan_card:
+          "0 1px 2px rgb(0 0 0 / 0.05), 0 2px 8px -2px rgb(0 0 0 / 0.06), 0 10px 28px -8px rgb(0 0 0 / 0.09)",
+        plan_card_hover:
+          "0 0 0 1px var(--primary), 0 4px 14px -4px rgb(237 125 17 / 0.12), 0 16px 40px -10px rgb(237 125 17 / 0.16)",
+      },
+      plan_card_surfaces: {
+        surface: "#ffffff",
+        header_bg: "color-mix(in srgb, var(--bg-layout) 14%, white)",
+        coverage_bg: "#fafafa",
+        border: "color-mix(in srgb, var(--border) 80%, var(--foreground) 20%)",
+        ring: "rgb(0 0 0 / 0.05)",
       },
     };
   }
@@ -71,6 +91,15 @@ function resolveBrandTheme(brand: PlanCardUiBrand | null) {
       card: DEFAULT_THEME.shadowCard,
       card_hover: DEFAULT_THEME.shadowCardHover,
       cta: DEFAULT_THEME.shadowCta,
+      plan_card: DEFAULT_THEME.shadowPlanCard,
+      plan_card_hover: DEFAULT_THEME.shadowPlanCardHover,
+    },
+    plan_card_surfaces: {
+      surface: DEFAULT_THEME.planCardSurface,
+      header_bg: DEFAULT_THEME.planCardHeaderBg,
+      coverage_bg: DEFAULT_THEME.planCardCoverageBg,
+      border: DEFAULT_THEME.planCardBorder,
+      ring: DEFAULT_THEME.planCardRing,
     },
   };
 }
@@ -98,7 +127,7 @@ export function buildPlanCardUiGuide(
   const guideUrl = resolveGuideUrl(request);
 
   return {
-    version: "1.0.0",
+    version: "1.1.0",
     component: "plan_card",
     title: "Guía UI — Card de plan de salud",
     description:
@@ -120,10 +149,17 @@ export function buildPlanCardUiGuide(
       card: {
         border_radius: "12px",
         border_width: "1px",
-        background: "#ffffff",
+        background: "var(--plan-card-surface)",
         overflow: "hidden",
         hover_lift_px: 4,
         hover_border: "var(--primary)",
+        ring_inset: "1px solid var(--plan-card-ring)",
+        list_gap: "20px mobile / 24px sm+",
+      },
+      surfaces: {
+        header: "var(--plan-card-header-bg) — tinte sutil del layout para separar metadata del cuerpo",
+        coverage: "var(--plan-card-coverage-bg) — fondo ligeramente distinto al header para jerarquía interna",
+        canvas: "var(--bg-layout) — el contraste card/fondo se logra con sombra + gap del listado",
       },
       header: {
         padding: "12px 16px",
@@ -171,14 +207,42 @@ export function buildPlanCardUiGuide(
     spacing: {
       scale: "8pt (4, 8, 12, 16, 20, 24, 32px)",
       card_padding_x: "12px mobile / 16px desktop",
+      card_list_gap: "20px (gap-5) mobile / 24px (gap-6) sm+",
       chip_gap: "6px",
       action_gap: "8px",
       touch_target_min: "48px mobile / 40px desktop",
     },
+    elevation: {
+      purpose:
+        "Separar visualmente cada plan del listado y del fondo de página sin sombras duras. Tres capas: borde tintado, ring interior y sombra multicapa.",
+      rest: {
+        box_shadow: "var(--shadow-plan-card)",
+        border: "1px solid var(--plan-card-border)",
+        ring: "inset 1px var(--plan-card-ring)",
+        tailwind: "shadow-plan-card ring-1 ring-inset ring-[var(--plan-card-ring)]",
+      },
+      hover: {
+        translate_y: "-4px",
+        box_shadow: "var(--shadow-plan-card-hover)",
+        border: "1px solid var(--primary)",
+        motion: "spring stiffness 380 damping 30",
+      },
+      tokens_module: "planCard en src/lib/ui-tokens.ts",
+      css_variables: [
+        "--plan-card-surface",
+        "--plan-card-header-bg",
+        "--plan-card-coverage-bg",
+        "--plan-card-border",
+        "--plan-card-ring",
+        "--shadow-plan-card",
+        "--shadow-plan-card-hover",
+      ],
+    },
     shadows: {
-      rest: "0 1px 2px rgb(0 0 0 / 0.04), 0 6px 20px -4px rgb(0 0 0 / 0.1)",
-      hover:
-        "0 0 0 1px var(--primary), var(--shadow-card-hover)",
+      rest: "var(--shadow-plan-card)",
+      hover: "var(--shadow-plan-card-hover)",
+      legacy_card: DEFAULT_THEME.shadowCard,
+      legacy_card_hover: DEFAULT_THEME.shadowCardHover,
       ...theme.shadows,
       cta: theme.shadows.cta,
     },
@@ -224,6 +288,7 @@ export function buildPlanCardUiGuide(
         background: "#ffffff",
         border: "1px solid var(--border)",
         hover: "border-primary/35 bg-primary/5 text-primary-dark",
+        disabled: "opacity-50 pointer-events-none cursor-not-allowed",
         icon_circle: "bg-primary/10 text-primary-dark",
       },
     },
@@ -281,9 +346,10 @@ export function buildPlanCardUiGuide(
       image_fit: "object-contain object-center px-2 py-1",
     },
     interaction: {
-      hover: "translateY(-4px), border primary, shadow hover",
+      hover: "translateY(-4px), border primary, shadow plan-card-hover",
       motion: "spring stiffness 380 damping 30",
       active_button: "scale 0.98",
+      list_stagger: "staggerChildren 0.05 en PublicPlanResultsList",
     },
     css_variables: {
       required: [
@@ -296,9 +362,17 @@ export function buildPlanCardUiGuide(
         "--foreground",
         "--muted",
         "--border",
+        "--bg-layout",
         "--surface-hover",
         "--shadow-card-hover",
         "--shadow-cta",
+        "--plan-card-surface",
+        "--plan-card-header-bg",
+        "--plan-card-coverage-bg",
+        "--plan-card-border",
+        "--plan-card-ring",
+        "--shadow-plan-card",
+        "--shadow-plan-card-hover",
       ],
       cotizalo_antes_wrapper:
         'Aplicar data-brand="cotizalo-antes" en un ancestro para tema naranja.',
@@ -307,7 +381,10 @@ export function buildPlanCardUiGuide(
         : "<div>...</div>",
     },
     tailwind_mapping: {
-      card: "overflow-hidden rounded-xl border bg-white",
+      card: "overflow-hidden rounded-xl border bg-[var(--plan-card-surface)] shadow-plan-card ring-1 ring-inset ring-[var(--plan-card-ring)]",
+      card_header: "border-b border-[var(--plan-card-border)] bg-[var(--plan-card-header-bg)]",
+      card_coverage: "bg-[var(--plan-card-coverage-bg)]",
+      card_list: "flex flex-col gap-5 sm:gap-6",
       section_title: "text-primary-dark",
       muted: "text-muted",
       hospital_accent: "text-primary-dark bg-primary/10 border-primary/25",
@@ -317,19 +394,23 @@ export function buildPlanCardUiGuide(
         "rounded-full border bg-white hover:border-primary/35 hover:bg-primary/5",
     },
     do: [
-      "Usar cards blancas con borde sutil y sombra suave en reposo.",
+      "Usar elevación plan-card (sombra multicapa + borde tintado + ring interior) para separar tarjetas del fondo.",
+      "Mantener gap vertical de 20–24px entre cards en el listado.",
+      "Diferenciar header (tinte layout) y cuerpo de coberturas (fondo más neutro) dentro de cada card.",
       "Mostrar logo de isapre en marco blanco con borde.",
       "Nombre del plan en MAYÚSCULAS, peso bold, color primary-dark.",
       "Chips para código, base UF, tipo de plan y badge Top.",
       "Dos columnas de cobertura: hospitalaria (verde/primary) y ambulatoria (azul/secondary).",
       "Mostrar siempre el porcentaje máximo en badge + barra de progreso + listado con «% prestador».",
       "Si la API solo entrega coverage_summary, mostrar los porcentajes como «Coberturas 40% · 60%».",
-      "Botón primario pill «Solicitar» y secundario «PDF» si hay archivo.",
+      "Botón primario pill «Solicitar» y secundario «PDF» (deshabilitado si no hay archivo).",
       "Precios con label «Desde» y números tabulares.",
       "Respetar touch targets ≥ 48px en móvil.",
     ],
     dont: [
-      "No usar bordes gruesos ni sombras duras tipo material elevation 8+.",
+      "No usar bordes gruesos (>1px) ni sombras duras tipo material elevation 8+.",
+      "No apilar cards con gap < 16px — se pierde la separación visual.",
+      "No usar fondo blanco plano en header y coberturas sin variación sutil.",
       "No mezclar más de 2 colores de acento por card (primary + secondary).",
       "No ocultar el código del plan ni la isapre.",
       "No usar tipografía script o colores neón fuera de la paleta.",
@@ -341,7 +422,8 @@ export function buildPlanCardUiGuide(
       "Replica la jerarquía visual del componente PublicPlanCard: cabecera densa con metadata, cuerpo en 2 columnas de cobertura.",
       `Para Cotízalo Antes usa brand=cotizalo-antes (${COTIZALO_ANTES_THEME.primary} primario, ${COTIZALO_ANTES_THEME.secondary} secundario).`,
       "Si implementas en HTML/CSS puro, define las CSS variables listadas en css_variables.",
-      "Si implementas en Tailwind, usa tailwind_mapping como referencia de clases.",
+      "Si implementas en Tailwind, usa tailwind_mapping y el módulo planCard de ui-tokens.ts.",
+      "Define --shadow-plan-card y superficies --plan-card-* para replicar la elevación entre tarjetas.",
       "Mantén consistencia entre listados, modales y embeds: misma card, mismos chips, mismos botones pill.",
       "Los precios mostrados deben calcularse con la API de planes; esta guía solo define presentación visual.",
     ].join("\n"),

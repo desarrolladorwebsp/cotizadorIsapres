@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { splitCoverageByType } from "@/domain";
 import { buildPlanFinalPriceQuote } from "@/domain";
 import { getPlanPdfDownloadUrl, planHasPdf } from "@/lib/plan-pdf";
-import { motionGpu, ui } from "@/lib/ui-tokens";
+import { planCard, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type { BeneficiaryGroupSummary } from "@/domain";
 import type { HealthPlan } from "@/domain";
@@ -96,17 +96,19 @@ export function PlanCard({
       onHoverEnd={() => setIsHovered(false)}
       style={{ willChange: isHovered ? "transform, box-shadow" : "auto" }}
       animate={{
-        y: isHovered ? -4 : 0,
-        borderColor: isSelected || isHovered ? "var(--primary)" : "var(--border)",
+        y: isHovered ? -planCard.elevation.hoverLiftPx : 0,
+        borderColor:
+          isSelected || isHovered
+            ? planCard.elevation.borderHover
+            : planCard.elevation.borderRest,
         boxShadow:
           isHovered || isSelected
-            ? "var(--shadow-card-hover)"
-            : "var(--shadow-card)",
+            ? planCard.elevation.shadowHover
+            : planCard.elevation.shadowRest,
       }}
-      transition={{ type: "spring", stiffness: 380, damping: 30 }}
+      transition={planCard.elevation.spring}
       className={joinClasses(
-        motionGpu,
-        "overflow-hidden rounded-xl border-2 bg-white",
+        planCard.root,
         isSelected && "ring-2 ring-primary/20",
         className,
       )}

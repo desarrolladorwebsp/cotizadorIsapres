@@ -41,6 +41,21 @@
   --shadow-card-hover: 0 12px 32px -10px rgb(0 177 89 / 0.22);
   --shadow-cta: 0 8px 24px -8px rgb(0 177 89 / 0.45);
 
+  /* Plan cards — elevación y separación entre tarjetas del listado */
+  --plan-card-surface: #ffffff;
+  --plan-card-header-bg: color-mix(in srgb, var(--bg-layout) 26%, white);
+  --plan-card-coverage-bg: color-mix(in srgb, var(--bg-layout) 10%, white);
+  --plan-card-border: color-mix(in srgb, var(--border) 72%, var(--foreground) 28%);
+  --plan-card-ring: rgb(15 31 23 / 0.045);
+  --shadow-plan-card:
+    0 1px 2px rgb(0 0 0 / 0.05),
+    0 2px 8px -2px rgb(0 77 38 / 0.07),
+    0 10px 28px -8px rgb(0 77 38 / 0.11);
+  --shadow-plan-card-hover:
+    0 0 0 1px var(--primary),
+    0 4px 14px -4px rgb(0 177 89 / 0.14),
+    0 16px 40px -10px rgb(0 177 89 / 0.2);
+
   /* Barra de criterios (estilo QuePlan, tono crema Isapres) */
   --criteria-surface: #fff8e8;
   --criteria-ring: #f0e4c8;
@@ -80,6 +95,19 @@
   --shadow-card: 0 4px 24px -8px rgb(0 0 0 / 0.06);
   --shadow-card-hover: 0 12px 32px -10px rgb(0 0 0 / 0.1);
   --shadow-cta: 0 8px 24px -8px rgb(237 125 17 / 0.4);
+
+  --plan-card-header-bg: color-mix(in srgb, var(--bg-layout) 14%, white);
+  --plan-card-coverage-bg: #fafafa;
+  --plan-card-border: color-mix(in srgb, var(--border) 80%, var(--foreground) 20%);
+  --plan-card-ring: rgb(0 0 0 / 0.05);
+  --shadow-plan-card:
+    0 1px 2px rgb(0 0 0 / 0.05),
+    0 2px 8px -2px rgb(0 0 0 / 0.06),
+    0 10px 28px -8px rgb(0 0 0 / 0.09);
+  --shadow-plan-card-hover:
+    0 0 0 1px var(--primary),
+    0 4px 14px -4px rgb(237 125 17 / 0.12),
+    0 16px 40px -10px rgb(237 125 17 / 0.16);
 
   --criteria-surface: #ffffff;
   --criteria-ring: #e5e7eb;

@@ -39,6 +39,8 @@ const config = {
       boxShadow: {
         card: "var(--shadow-card)",
         "card-hover": "var(--shadow-card-hover)",
+        "plan-card": "var(--shadow-plan-card)",
+        "plan-card-hover": "var(--shadow-plan-card-hover)",
         md: "0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.06)",
       },
       backgroundImage: {

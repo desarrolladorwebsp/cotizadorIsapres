@@ -159,7 +159,7 @@ export function buildPublicApiAgentGuide(request: Request) {
         response: {
           content_type: "application/json",
           description:
-            "Tokens de color, layout, tipografía, badges, botones y reglas do/dont para replicar PublicPlanCard.",
+            "Tokens de color, elevación (sombras/bordes/superficies), layout, tipografía, badges, botones y reglas do/dont para replicar PublicPlanCard. Versión actual: 1.1.0.",
         },
       },
     ],
