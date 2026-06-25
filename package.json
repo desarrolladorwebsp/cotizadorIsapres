@@ -16,6 +16,7 @@
     "db:studio": "prisma studio",
     "upload-pdfs": "tsx scripts/upload-plan-pdfs.ts",
     "import-banmedica": "tsx scripts/import-banmedica-plans.ts",
+    "import-colmena": "tsx scripts/import-colmena-plans.ts",
     "backfill-plan-zones": "tsx scripts/backfill-plan-zones.ts",
     "verify-blob": "tsx scripts/verify-blob-connection.ts",
     "sync-pdf-urls": "tsx scripts/sync-pdf-urls-from-blob.ts",

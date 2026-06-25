@@ -50,6 +50,11 @@ CLINIC_NAME_TO_ID = {
 SKIP_CLINIC_LABELS = {"hospitalario", "ambulatorio"}
 PERCENT_LINE = re.compile(r"^(\d+)%$")
 
+# Celdas con formato de fecha erróneo en el Excel de origen.
+PRICE_OVERRIDES: dict[str, float] = {
+    "BNSLU2411C1": 3.62,
+}
+
 
 def slugify_clinic_id(name: str) -> str:
     normalized = (
@@ -153,7 +158,9 @@ def parse_workbook(xlsx_path: Path, default_zones: list[str] | None = None) -> l
             continue
 
         code = normalize_cell_text(code_raw).upper()
-        base_price_uf = parse_price(price_raw)
+        base_price_uf = PRICE_OVERRIDES.get(code)
+        if base_price_uf is None:
+            base_price_uf = parse_price(price_raw)
         if base_price_uf is None:
             print(
                 f"Plan omitido por precio inválido: {code} ({price_raw!r})",
