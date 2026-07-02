@@ -30,7 +30,9 @@ export const cotizacionNotifyInputSchema = z.object({
 export type CotizacionNotifyInput = z.infer<typeof cotizacionNotifyInputSchema>;
 export type CotizacionNotifyPlan = z.infer<typeof cotizacionNotifyPlanSchema>;
 
-export function parseCotizacionNotifyInput(payload: unknown): CotizacionNotifyInput {
+export function parseCotizacionNotifyInput(
+  payload: unknown,
+): CotizacionNotifyInput {
   const result = cotizacionNotifyInputSchema.safeParse(payload);
 
   if (!result.success) {

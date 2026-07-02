@@ -99,6 +99,36 @@ export function createClearedDashboardFilters(): DashboardFiltersState {
   };
 }
 
+/** Widget embebido: sin filtro por porcentaje de cobertura. */
+export function withoutCoverageFilters(
+  filters: DashboardFiltersState,
+): DashboardFiltersState {
+  return {
+    ...filters,
+    hospitalCoveragePercent: null,
+    ambulatoryCoveragePercent: null,
+  };
+}
+
+/** Widget embebido: sin filtro por tipo de plan (cerrado, libre elección, preferente). */
+export function withoutPlanTypeFilters(
+  filters: DashboardFiltersState,
+): DashboardFiltersState {
+  return {
+    ...filters,
+    planTypes: buildCheckboxDefaults(
+      PLAN_TYPE_FILTER_OPTIONS.map((o) => ({ id: o.id, label: o.label })),
+    ),
+  };
+}
+
+/** Widget embebido: quita filtros no disponibles en el iframe. */
+export function withoutEmbedWidgetFilters(
+  filters: DashboardFiltersState,
+): DashboardFiltersState {
+  return withoutPlanTypeFilters(withoutCoverageFilters(filters));
+}
+
 export function getActiveCheckboxIds(state: Record<string, boolean>): string[] {
   return Object.entries(state)
     .filter(([, active]) => active)

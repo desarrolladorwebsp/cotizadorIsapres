@@ -113,6 +113,31 @@
   --criteria-ring: #e5e7eb;
 }
 
+[data-brand="desdetu7"] {
+  --primary: #ff6600;
+  --primary-hover: #ff8533;
+  --primary-dark: #cc5200;
+  --primary-foreground: #ffffff;
+
+  --secondary: #111827;
+  --secondary-muted: #f5f7fa;
+
+  --bg-layout: #ffffff;
+  --foreground: #111827;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --surface-hover: #f4f4f5;
+
+  --shadow-card: 0 4px 24px -8px rgb(0 0 0 / 0.06);
+  --shadow-card-hover: 0 12px 32px -10px rgb(255 102 0 / 0.18);
+  --shadow-cta: 0 8px 24px -8px rgb(255 102 0 / 0.4);
+
+  --plan-card-header-bg: color-mix(in srgb, var(--bg-layout) 14%, white);
+  --plan-card-coverage-bg: #fafafa;
+  --criteria-surface: #ffffff;
+  --criteria-ring: #e5e7eb;
+}
+
 @theme inline {
   --color-primary: var(--primary);
   --color-primary-hover: var(--primary-hover);
@@ -202,4 +227,41 @@ body {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Widget embebido: altura natural, sin recortar contenido */
+html[data-cotizador-embed="true"],
+html[data-cotizador-embed="true"] body {
+  height: auto !important;
+  min-height: 0 !important;
+  overflow-x: clip;
+  overflow-y: visible !important;
+  overscroll-behavior: none;
+}
+
+html[data-cotizador-embed="true"] body {
+  display: block !important;
+}
+
+@media (max-width: 768px) {
+  html[data-cotizador-embed="true"],
+  html[data-cotizador-embed="true"] body {
+    height: auto !important;
+    min-height: 100% !important;
+    overflow-x: clip;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: auto;
+  }
+}
+
+[data-embed="true"] {
+  overflow: visible !important;
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+/* Widget embebido: sin FAB de WhatsApp */
+[data-embed="true"] [data-public-whatsapp-fab] {
+  display: none !important;
 }

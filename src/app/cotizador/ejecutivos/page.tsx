@@ -1,5 +1,5 @@
-import { CotizadorWorkspace } from "@/components/cotizador";
+import { ExecutiveDashboard } from "@/components/executive/executive-dashboard";
 
 export default function CotizadorExecutivesPage() {
-  return <CotizadorWorkspace variant="executive" />;
+  return <ExecutiveDashboard />;
 }

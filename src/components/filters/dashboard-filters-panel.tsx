@@ -20,12 +20,18 @@ export interface DashboardFiltersPanelProps {
   value: DashboardFiltersState;
   onChange: (next: DashboardFiltersState) => void;
   className?: string;
+  /** Oculta el bloque de cobertura hospitalaria/ambulatoria (widget embebido). */
+  hideCoverageFilter?: boolean;
+  /** Oculta el bloque de tipo de plan (widget embebido). */
+  hidePlanTypeFilter?: boolean;
 }
 
 export function DashboardFiltersPanel({
   value,
   onChange,
   className,
+  hideCoverageFilter = false,
+  hidePlanTypeFilter = false,
 }: DashboardFiltersPanelProps) {
   function update(partial: Partial<DashboardFiltersState>) {
     onChange({ ...value, ...partial });
@@ -103,6 +109,7 @@ export function DashboardFiltersPanel({
           />
         </FilterSection>
 
+        {hidePlanTypeFilter ? null : (
         <FilterSection
           title="Filtrado por Tipo de Plan"
           description="Modalidad de contratación del plan de salud."
@@ -132,7 +139,9 @@ export function DashboardFiltersPanel({
             }
           />
         </FilterSection>
+        )}
 
+        {hideCoverageFilter ? null : (
         <FilterSection
           title="Filtrado por Cobertura"
           description="Umbral mínimo de cobertura hospitalaria y ambulatoria."
@@ -168,6 +177,7 @@ export function DashboardFiltersPanel({
             </div>
           </div>
         </FilterSection>
+        )}
       </div>
     </div>
   );

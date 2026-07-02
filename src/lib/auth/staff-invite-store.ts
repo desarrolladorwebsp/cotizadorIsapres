@@ -1,0 +1,254 @@
+import { createHash, randomBytes } from "crypto";
+import { prisma } from "@/lib/prisma";
+import { ApiError } from "@/lib/api/api-error";
+import {
+  hashPassword,
+  normalizeEmail,
+  validatePasswordStrength,
+} from "@/lib/auth/password";
+import { issueSession } from "@/lib/auth/session";
+import { formatRut, isValidRut, normalizeRut, rutMatches } from "@/lib/auth/rut";
+import type { StaffRealm } from "@/types/staff-account";
+import type { SubscriptionStatus } from "@prisma/client";
+
+const INVITE_TTL_DAYS = 7;
+
+export interface StaffInvitePublic {
+  email: string;
+  realm: StaffRealm;
+  rut: string | null;
+  expiresAt: string;
+}
+
+export interface ActivateStaffAccountInput {
+  token: string;
+  firstName: string;
+  lastName: string;
+  rut: string;
+  password: string;
+}
+
+function hashToken(token: string): string {
+  return createHash("sha256").update(token).digest("hex");
+}
+
+function generateInviteToken(): string {
+  return randomBytes(32).toString("hex");
+}
+
+function isValidRealm(value: string): value is StaffRealm {
+  return value === "admin" || value === "executive";
+}
+
+export async function createStaffInvite(input: {
+  email: string;
+  realm: StaffRealm;
+  rut?: string;
+  invitedByAdminId?: string;
+}): Promise<{ token: string; inviteId: string }> {
+  const email = normalizeEmail(input.email);
+  const rut = input.rut?.trim() ? formatRut(input.rut) : null;
+
+  if (rut && !isValidRut(rut)) {
+    throw new ApiError("El RUT indicado no es válido.", 400, "INVALID_RUT");
+  }
+
+  const [existingAdmin, existingExecutive] = await Promise.all([
+    prisma.adminAccount.findUnique({ where: { email } }),
+    prisma.executiveAccount.findUnique({ where: { email } }),
+  ]);
+
+  if (existingAdmin || existingExecutive) {
+    throw new ApiError("Ya existe una cuenta activa con ese correo.", 409, "EMAIL_EXISTS");
+  }
+
+  await prisma.staffInvite.updateMany({
+    where: { email, acceptedAt: null },
+    data: { acceptedAt: new Date() },
+  });
+
+  const token = generateInviteToken();
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + INVITE_TTL_DAYS);
+
+  const invite = await prisma.staffInvite.create({
+    data: {
+      email,
+      rut,
+      realm: input.realm,
+      tokenHash: hashToken(token),
+      expiresAt,
+      invitedByAdminId: input.invitedByAdminId ?? null,
+    },
+  });
+
+  return { token, inviteId: invite.id };
+}
+
+export async function readStaffInviteByToken(
+  token: string,
+): Promise<StaffInvitePublic | null> {
+  const invite = await prisma.staffInvite.findFirst({
+    where: {
+      tokenHash: hashToken(token.trim()),
+      acceptedAt: null,
+      expiresAt: { gt: new Date() },
+    },
+  });
+
+  if (!invite || !isValidRealm(invite.realm)) return null;
+
+  return {
+    email: invite.email,
+    realm: invite.realm,
+    rut: invite.rut,
+    expiresAt: invite.expiresAt.toISOString(),
+  };
+}
+
+export async function activateStaffAccountFromInvite(
+  input: ActivateStaffAccountInput,
+): Promise<{ realm: StaffRealm; loginPath: string }> {
+  const strengthError = validatePasswordStrength(input.password);
+  if (strengthError) {
+    throw new ApiError(strengthError, 400, "WEAK_PASSWORD");
+  }
+
+  const firstName = input.firstName.trim();
+  const lastName = input.lastName.trim();
+  const fullName = `${firstName} ${lastName}`.trim();
+
+  if (!firstName || !lastName) {
+    throw new ApiError("Nombre y apellido son obligatorios.", 400, "INVALID_INPUT");
+  }
+
+  if (!isValidRut(input.rut)) {
+    throw new ApiError("El RUT no es válido.", 400, "INVALID_RUT");
+  }
+
+  const formattedRut = formatRut(input.rut);
+
+  const invite = await prisma.staffInvite.findFirst({
+    where: {
+      tokenHash: hashToken(input.token.trim()),
+      acceptedAt: null,
+      expiresAt: { gt: new Date() },
+    },
+  });
+
+  if (!invite || !isValidRealm(invite.realm)) {
+    throw new ApiError(
+      "El enlace de invitación no es válido o expiró.",
+      400,
+      "INVALID_INVITE",
+    );
+  }
+
+  if (!rutMatches(invite.rut, formattedRut)) {
+    throw new ApiError(
+      "El RUT no coincide con la invitación enviada al correo.",
+      400,
+      "RUT_MISMATCH",
+    );
+  }
+
+  const passwordHash = await hashPassword(input.password);
+
+  if (invite.realm === "admin") {
+    const account = await prisma.adminAccount.create({
+      data: {
+        email: invite.email,
+        fullName,
+        rut: formattedRut,
+        passwordHash,
+        active: true,
+        mustChangePassword: false,
+      },
+    });
+
+    await prisma.staffInvite.update({
+      where: { id: invite.id },
+      data: { acceptedAt: new Date() },
+    });
+
+    await issueSession({
+      accountId: account.id,
+      email: account.email,
+      realm: "admin",
+      mustChangePassword: false,
+    });
+
+    return { realm: "admin", loginPath: "/cotizador/admin" };
+  }
+
+  const trialExpiresAt = new Date();
+  trialExpiresAt.setDate(trialExpiresAt.getDate() + 30);
+  const subscriptionStatus: SubscriptionStatus = "TRIAL";
+
+  const account = await prisma.executiveAccount.create({
+    data: {
+      email: invite.email,
+      fullName,
+      rut: formattedRut,
+      passwordHash,
+      active: true,
+      mustChangePassword: false,
+      subscriptionStatus,
+      subscriptionExpiresAt: trialExpiresAt,
+    },
+  });
+
+  await prisma.staffInvite.update({
+    where: { id: invite.id },
+    data: { acceptedAt: new Date() },
+  });
+
+  await issueSession({
+    accountId: account.id,
+    email: account.email,
+    realm: "executive",
+    mustChangePassword: false,
+  });
+
+  return { realm: "executive", loginPath: "/cotizador/ejecutivos" };
+}
+
+export async function resendStaffInviteForEmail(input: {
+  email: string;
+  realm: StaffRealm;
+  rut?: string;
+  invitedByAdminId?: string;
+}): Promise<{ token: string }> {
+  return createStaffInvite(input);
+}
+
+export async function listPendingStaffInvites(): Promise<
+  Array<{
+    id: string;
+    email: string;
+    realm: StaffRealm;
+    rut: string | null;
+    expiresAt: string;
+    createdAt: string;
+  }>
+> {
+  const invites = await prisma.staffInvite.findMany({
+    where: { acceptedAt: null, expiresAt: { gt: new Date() } },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return invites
+    .filter((invite): invite is typeof invite & { realm: StaffRealm } =>
+      isValidRealm(invite.realm),
+    )
+    .map((invite) => ({
+      id: invite.id,
+      email: invite.email,
+      realm: invite.realm,
+      rut: invite.rut,
+      expiresAt: invite.expiresAt.toISOString(),
+      createdAt: invite.createdAt.toISOString(),
+    }));
+}
+
+export { normalizeRut, formatRut };

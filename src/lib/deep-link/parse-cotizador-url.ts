@@ -230,7 +230,9 @@ export function parseCotizadorUrl(
     ),
   };
 
-  const entidad = params.get(DEEP_LINK_PARAMS.entidad)?.trim().toLowerCase();
+  const agent = params.get(DEEP_LINK_PARAMS.agent)?.trim().toLowerCase();
+  const entidadLegacy = params.get(DEEP_LINK_PARAMS.entidad)?.trim().toLowerCase();
+  const entidad = agent || entidadLegacy || undefined;
   const planCode = parseOptionalText(params.get(DEEP_LINK_PARAMS.plan));
   const email = parseEmail(params.get(DEEP_LINK_PARAMS.email));
   const requestPrefill: SolicitarRequestPrefill = {
@@ -245,7 +247,7 @@ export function parseCotizadorUrl(
     (planCode ? "request" : undefined);
 
   return {
-    entidad: entidad || undefined,
+    entidad,
     criteria,
     beneficiaries,
     beneficiarySummary: buildBeneficiaryGroupSummary(beneficiaries),

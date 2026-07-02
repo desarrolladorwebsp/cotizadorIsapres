@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
+import { EMBED_DOCUMENT_HEADER } from "@/lib/embed/is-embed-request";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -14,21 +16,31 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Cotizador Virtual",
-  description: "Sistema inteligente de cotizaciones para planes de Isapre.",
+  title: "Cotizador Premium",
+  description: "Plataforma inteligente de cotizaciones para planes de Isapre.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const headerList = await headers();
+  const isEmbedDocument = headerList.get(EMBED_DOCUMENT_HEADER) === "1";
+
   return (
     <html
       lang="es"
-      className={`${geistSans.variable} ${geistMono.variable} h-full overflow-x-clip overscroll-none antialiased`}
+      data-cotizador-embed={isEmbedDocument ? "true" : undefined}
+      className={`${geistSans.variable} ${geistMono.variable} ${isEmbedDocument ? "" : "h-full"} overflow-x-clip overscroll-none antialiased`}
     >
-      <body className="flex min-h-full max-w-full flex-col overflow-x-clip overscroll-none bg-bg-layout text-foreground">
+      <body
+        className={
+          isEmbedDocument
+            ? "block max-w-full overflow-x-clip overscroll-none bg-bg-layout text-foreground"
+            : "flex min-h-full max-w-full flex-col overflow-x-clip overscroll-none bg-bg-layout text-foreground"
+        }
+      >
         {children}
         <Analytics />
       </body>

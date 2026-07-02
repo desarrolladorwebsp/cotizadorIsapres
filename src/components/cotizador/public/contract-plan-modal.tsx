@@ -26,11 +26,17 @@ import {
 import { joinClasses } from "@/lib/utils";
 import { usePlanDetail } from "@/hooks/use-plan-detail";
 import { usePartnerEntity } from "@/components/partner/partner-entity-provider";
-import type { BeneficiaryGroupSummary, FamilyBeneficiariesState } from "@/domain";
+import type {
+  BeneficiaryGroupSummary,
+  FamilyBeneficiariesState,
+} from "@/domain";
 import type { HealthPlanSummary } from "@/domain";
 import type { QuoteCriteria } from "./public-quote-criteria-bar";
 import { notifyCotizacionByEmail } from "@/lib/cotizacion-notify/client";
-import type { ParsedCotizadorDeepLink, SolicitarModalTab } from "@/lib/deep-link/parse-cotizador-url";
+import type {
+  ParsedCotizadorDeepLink,
+  SolicitarModalTab,
+} from "@/lib/deep-link/parse-cotizador-url";
 import type { QuoteSortKey } from "@/lib/quote-criteria-options";
 import type { CurrencyDisplay } from "./public-results-toolbar";
 import type { DashboardFiltersState } from "@/types/filters";
@@ -56,6 +62,8 @@ export interface ContractPlanModalProps {
   deepLink: ParsedCotizadorDeepLink;
   initialTab?: SolicitarModalTab;
   onClose: () => void;
+  /** Widget embebido: posicionamiento absoluto y altura natural (sin fixed). */
+  embedded?: boolean;
 }
 
 type ModalTabId = "overview" | "price" | "request";
@@ -126,6 +134,7 @@ export function ContractPlanModal({
   deepLink,
   initialTab,
   onClose,
+  embedded = false,
 }: ContractPlanModalProps) {
   const { plan: detailPlan, loading: detailLoading } = usePlanDetail(
     planSummary?.unique_code ?? null,
@@ -177,7 +186,7 @@ export function ContractPlanModal({
   }, [open, initialTab, deepLink.requestPrefill, deepLink.email]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || embedded) return;
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") onClose();
     }
@@ -189,7 +198,18 @@ export function ContractPlanModal({
       document.body.style.overflow = "";
       document.body.style.overscrollBehavior = "";
     };
-  }, [open, onClose]);
+  }, [open, embedded, onClose]);
+
+  useEffect(() => {
+    if (!open || !embedded) return;
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open, embedded, onClose]);
 
   const priceQuote = useMemo(() => {
     if (!planSummary) return null;
@@ -286,8 +306,7 @@ export function ContractPlanModal({
             isCurrentIsapre === "yes"
               ? `Ya es afiliado a ${summary.isapre}`
               : `No es afiliado actualmente a ${summary.isapre}`,
-          partnerEntitySlug:
-            partnerEntity?.slug ?? deepLink.entidad ?? null,
+          partnerEntitySlug: partnerEntity?.slug ?? deepLink.entidad ?? null,
           partnerEntityName: partnerEntity?.name ?? null,
         }),
       });
@@ -339,28 +358,37 @@ export function ContractPlanModal({
     <AnimatePresence>
       {open ? (
         <motion.div
-          className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4"
+          data-embed-measure
+          className={joinClasses(
+            embedded
+              ? "relative z-50 w-full overflow-visible py-2 sm:py-4"
+              : "fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4",
+          )}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
-          <button
-            type="button"
-            aria-label="Cerrar"
-            className="absolute inset-0 bg-primary-dark/55 backdrop-blur-[3px]"
-            onClick={onClose}
-          />
+          {embedded ? null : (
+            <button
+              type="button"
+              aria-label="Cerrar"
+              className="absolute inset-0 bg-primary-dark/55 backdrop-blur-[3px]"
+              onClick={onClose}
+            />
+          )}
 
           <motion.div
             role="dialog"
             aria-modal="true"
             aria-labelledby="contract-plan-title"
-            initial={{ opacity: 0, y: 32 }}
+            initial={{ opacity: 0, y: embedded ? 16 : 32 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 24 }}
+            exit={{ opacity: 0, y: embedded ? 12 : 24 }}
             className={joinClasses(
               safeWidth,
-              "relative z-10 flex max-h-[96dvh] w-full max-w-full flex-col overflow-hidden overscroll-none rounded-t-2xl border bg-white shadow-2xl sm:max-h-[92dvh] sm:max-w-6xl sm:rounded-2xl",
+              embedded
+                ? "relative z-10 mx-auto flex w-full max-w-full flex-col overflow-visible rounded-2xl border bg-white shadow-2xl sm:max-w-6xl"
+                : "relative z-10 flex max-h-[96dvh] w-full max-w-full flex-col overflow-hidden overscroll-none rounded-t-2xl border bg-white shadow-2xl sm:max-h-[92dvh] sm:max-w-6xl sm:rounded-2xl",
               ui.border,
             )}
           >
@@ -429,7 +457,9 @@ export function ContractPlanModal({
                 >
                   {commercialName}
                 </h2>
-                <p className="font-mono text-xs text-muted">{summary.unique_code}</p>
+                <p className="font-mono text-xs text-muted">
+                  {summary.unique_code}
+                </p>
               </div>
 
               <div
@@ -449,7 +479,10 @@ export function ContractPlanModal({
                   )}
                 >
                   Desde {formatPlanClp(priceQuote.finalPriceClp)}
-                  <span className="text-sm font-semibold text-muted"> /mes</span>
+                  <span className="text-sm font-semibold text-muted">
+                    {" "}
+                    /mes
+                  </span>
                 </p>
                 <p
                   className={joinClasses(
@@ -503,7 +536,13 @@ export function ContractPlanModal({
               })}
             </div>
 
-            <div className="min-h-0 flex-1 overflow-x-clip overflow-y-auto overscroll-y-contain">
+            <div
+              className={
+                embedded
+                  ? "overflow-x-clip overflow-y-visible"
+                  : "min-h-0 flex-1 overflow-x-clip overflow-y-auto overscroll-y-contain"
+              }
+            >
               {submitted ? (
                 <div className="space-y-4 px-6 py-12 text-center">
                   <div
@@ -519,9 +558,9 @@ export function ContractPlanModal({
                   </p>
                   <p className="mx-auto max-w-md text-sm leading-relaxed text-muted">
                     Tu información fue cargada correctamente. Un ejecutivo
-                    especializado de Isapres Premium se pondrá en contacto contigo
-                    próximamente para entregarte el precio final y acompañarte en
-                    tu incorporación a {summary.isapre}.
+                    especializado de Isapres Premium se pondrá en contacto
+                    contigo próximamente para entregarte el precio final y
+                    acompañarte en tu incorporación a {summary.isapre}.
                   </p>
                   {emailNotifyFailed ? (
                     <p
@@ -529,13 +568,13 @@ export function ContractPlanModal({
                       role="alert"
                     >
                       Tu solicitud quedó registrada, pero no pudimos enviar el
-                      correo de confirmación en este momento. Revisa tu bandeja más
-                      tarde o contáctanos si no recibes respuesta.
+                      correo de confirmación en este momento. Revisa tu bandeja
+                      más tarde o contáctanos si no recibes respuesta.
                     </p>
                   ) : (
                     <p className="mx-auto mt-3 max-w-md text-sm font-medium text-primary">
-                      Te enviamos un correo de confirmación a {email.trim()}.
-                      Si no lo ves en unos minutos, revisa tu carpeta de spam o
+                      Te enviamos un correo de confirmación a {email.trim()}. Si
+                      no lo ves en unos minutos, revisa tu carpeta de spam o
                       correo no deseado.
                     </p>
                   )}
@@ -549,25 +588,25 @@ export function ContractPlanModal({
                     Cargando coberturas del plan…
                   </p>
                 ) : (
-                <ModalPlanOverviewPanel
-                  plan={detailPlan}
-                  planIsapre={summary.isapre}
-                  name={name}
-                  onNameChange={setName}
-                  rut={rut}
-                  onRutChange={setRut}
-                  email={email}
-                  onEmailChange={setEmail}
-                  phone={phone}
-                  onPhoneChange={setPhone}
-                  isCurrentIsapre={isCurrentIsapre}
-                  onIsCurrentIsapreChange={setIsCurrentIsapre}
-                  attemptedSubmit={attemptedSubmit}
-                  validationErrors={validationErrors}
-                  submitError={submitError}
-                  submitting={submitting}
-                  onSubmit={handleSubmit}
-                />
+                  <ModalPlanOverviewPanel
+                    plan={detailPlan}
+                    planIsapre={summary.isapre}
+                    name={name}
+                    onNameChange={setName}
+                    rut={rut}
+                    onRutChange={setRut}
+                    email={email}
+                    onEmailChange={setEmail}
+                    phone={phone}
+                    onPhoneChange={setPhone}
+                    isCurrentIsapre={isCurrentIsapre}
+                    onIsCurrentIsapreChange={setIsCurrentIsapre}
+                    attemptedSubmit={attemptedSubmit}
+                    validationErrors={validationErrors}
+                    submitError={submitError}
+                    submitting={submitting}
+                    onSubmit={handleSubmit}
+                  />
                 )
               ) : activeTab === "price" ? (
                 <ModalPricePanel

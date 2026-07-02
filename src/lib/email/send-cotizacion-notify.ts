@@ -68,7 +68,10 @@ export async function sendCotizacionNotifyEmails(
   const adminId = adminResult.data?.id;
 
   if (!userId || !adminId) {
-    throw new ApiError("Resend no devolvió los IDs de los correos enviados.", 500);
+    throw new ApiError(
+      "Resend no devolvió los IDs de los correos enviados.",
+      500,
+    );
   }
 
   return { userId, adminId };

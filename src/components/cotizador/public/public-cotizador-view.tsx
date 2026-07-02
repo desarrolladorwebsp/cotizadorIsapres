@@ -1,6 +1,13 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useSearchParams } from "next/navigation";
 import { FiltersFab } from "@/components/filters";
 import {
@@ -9,8 +16,27 @@ import {
 } from "@/components/partner/partner-entity-provider";
 import { useCotizadorDashboard } from "@/hooks/use-cotizador-dashboard";
 import { usePlanCatalogBounds } from "@/hooks/use-plan-catalog-bounds";
+import { useEmbedResize, postEmbedExitNavigate } from "@/hooks/use-embed-resize";
 import { usePlanSearch } from "@/hooks/use-plan-search";
-import { buildPlanFinalPriceQuote, buildBeneficiaryGroupSummary, createDefaultDashboardFilters } from "@/domain";
+import {
+  buildPlanFinalPriceQuote,
+  buildBeneficiaryGroupSummary,
+  createDefaultDashboardFilters,
+  withoutEmbedWidgetFilters,
+} from "@/domain";
+import {
+  buildEmbedSearchExitUrl,
+  navigateTopLevel,
+  validateEmbedQuoteCriteria,
+  validateEmbedSolicitarCriteria,
+} from "@/lib/deep-link/build-embed-exit-url";
+import { EMBED_EXIT_LOADING_TITLE } from "@/lib/embed/constants";
+import {
+  clearEmbedExitSearchPending,
+  markEmbedExitSearchPending,
+  readEmbedExitSearchPending,
+} from "@/lib/embed/exit-search-session";
+import { resolveAppBaseUrl } from "@/lib/platform/routing";
 import { parseCotizadorUrl } from "@/lib/deep-link/parse-cotizador-url";
 import {
   SOLICITAR_DEEP_LINK_RECOVERY_MS,
@@ -21,6 +47,7 @@ import { mapHealthPlanToSummary } from "@/lib/api/plan-summary";
 import { primePlanDetailCache } from "@/hooks/use-plan-detail";
 import { notifyCotizacionByEmail } from "@/lib/cotizacion-notify/client";
 import {
+  EMBED_WIDGET_PLANS_LIMIT,
   INITIAL_PLANS_PAGE_SIZE,
   PLANS_PAGE_SIZE_STEP,
 } from "@/lib/plan-search-config";
@@ -39,6 +66,7 @@ import type { DashboardFiltersState, HealthPlanSummary } from "@/domain";
 import type { HealthPlan } from "@/types/plan";
 import type { PartnerEntityPublic } from "@/types/partner-entity";
 import { ContractPlanModal } from "./contract-plan-modal";
+import { EmbedExitLoadingOverlay } from "./embed-exit-loading-overlay";
 import { PublicCotizadorNotice } from "./public-cotizador-notice";
 import { PublicCotizadorHeader } from "./public-cotizador-header";
 import { PublicWhatsAppFab } from "./public-whatsapp-fab";
@@ -59,28 +87,53 @@ import {
 
 export interface PublicCotizadorViewProps {
   entity?: PartnerEntityPublic | null;
+  /** Vista optimizada para iframe embebido (sin chrome de salida ni FAB). */
+  embedMode?: boolean;
 }
 
 export function PublicCotizadorView({
   entity = null,
+  embedMode = false,
 }: PublicCotizadorViewProps) {
   return (
     <PartnerEntityProvider entity={entity}>
       <Suspense
         fallback={
-          <div className="flex min-h-screen items-center justify-center bg-bg-layout text-sm text-muted">
-            Cargando cotizador…
+          <div
+            className={
+              embedMode
+                ? "flex flex-col items-center justify-center gap-3 bg-bg-layout px-4 py-12 text-center"
+                : "flex min-h-[320px] flex-col items-center justify-center gap-3 bg-bg-layout px-4 text-center"
+            }
+          >
+            <div className="size-10 motion-safe:animate-spin rounded-full border-2 border-primary/15 border-t-primary" />
+            <p className="text-sm font-semibold text-primary-dark">
+              Buscando el mejor plan para ti…
+            </p>
+            <p className="text-xs text-muted">Cargando cotizador</p>
           </div>
         }
       >
-        <PublicCotizadorViewInner />
+        <PublicCotizadorViewInner embedMode={embedMode} />
       </Suspense>
     </PartnerEntityProvider>
   );
 }
 
-function PublicCotizadorViewInner() {
+function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
+  const rootRef = useRef<HTMLDivElement>(null);
   const searchParams = useSearchParams();
+  const isEmbedded =
+    embedMode ||
+    searchParams.get("embed") === "1" ||
+    searchParams.get("embed") === "true";
+  const activePlansLimit = isEmbedded
+    ? EMBED_WIDGET_PLANS_LIMIT
+    : INITIAL_PLANS_PAGE_SIZE;
+  const activePlansStep = isEmbedded
+    ? EMBED_WIDGET_PLANS_LIMIT
+    : PLANS_PAGE_SIZE_STEP;
+
   const deepLinkParamKey = searchParams.toString();
   const deepLink = useMemo(
     () => parseCotizadorUrl(searchParams),
@@ -91,20 +144,32 @@ function PublicCotizadorViewInner() {
   const dashboard = useCotizadorDashboard([], {
     initialBeneficiaries: deepLink.beneficiaries,
     initialBeneficiarySummary: deepLink.beneficiarySummary,
-    initialDashboardFilters: deepLink.filters,
+    initialDashboardFilters: isEmbedded
+      ? withoutEmbedWidgetFilters(deepLink.filters)
+      : deepLink.filters,
     initialPriceMin: deepLink.priceMin,
     initialPriceMax: deepLink.priceMax,
   });
   const { bounds, loading: boundsLoading } = usePlanCatalogBounds();
-  const { plans, total, loading, error, hasSearched, search, resetSearchCache, resetSearch } =
-    usePlanSearch();
+  const {
+    plans,
+    total,
+    loading,
+    error,
+    hasSearched,
+    search,
+    resetSearchCache,
+    resetSearch,
+  } = usePlanSearch();
   const resultsRef = useRef<HTMLElement>(null);
+  const criteriaBarRef = useRef<HTMLDivElement>(null);
   const initialSearchDoneRef = useRef(false);
   const skipDebouncedSearchRef = useRef(false);
   const solicitarFetchStartedRef = useRef<string | null>(null);
   const solicitarRecoveryDoneRef = useRef(false);
   const [formReady, setFormReady] = useState(false);
   const [recoveryNotice, setRecoveryNotice] = useState<string | null>(null);
+  const [recoveryNoticeKey, setRecoveryNoticeKey] = useState(0);
   const [solicitarFlowActive, setSolicitarFlowActive] = useState(
     () => deepLink.hasSolicitarDeepLink,
   );
@@ -123,9 +188,38 @@ function PublicCotizadorViewInner() {
     "overview" | "price" | "request" | undefined
   >(deepLink.modalTab);
   const [searchText, setSearchText] = useState(deepLink.q ?? "");
-  const [resultsLimit, setResultsLimit] = useState(INITIAL_PLANS_PAGE_SIZE);
+  const [resultsLimit, setResultsLimit] = useState(activePlansLimit);
   const [notifyEmail, setNotifyEmail] = useState(deepLink.email ?? "");
   const searchNotifySentRef = useRef(false);
+  const [embedExitLoading, setEmbedExitLoading] = useState(false);
+  const [bootstrappedExitSearch, setBootstrappedExitSearch] = useState(false);
+
+  useEffect(() => {
+    setBootstrappedExitSearch(readEmbedExitSearchPending());
+  }, []);
+
+  const embedMeasureKey = [
+    hasSearched,
+    loading,
+    plans.length,
+    recoveryNotice,
+    embedExitLoading,
+    contractPlan?.unique_code ?? "",
+    dashboard.sidebarOpen,
+  ].join("|");
+
+  useEmbedResize(isEmbedded, rootRef, embedMeasureKey);
+
+  const showEmbedValidationNotice = useCallback((message: string) => {
+    setRecoveryNotice(message);
+    setRecoveryNoticeKey((key) => key + 1);
+    window.requestAnimationFrame(() => {
+      criteriaBarRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  }, []);
 
   useEffect(() => {
     if (deepLink.hasDeepLinkParams || deepLink.hasSolicitarDeepLink) {
@@ -141,7 +235,11 @@ function PublicCotizadorViewInner() {
         deepLink.beneficiaries,
         deepLink.beneficiarySummary,
       );
-      dashboard.setDashboardFilters(deepLink.filters);
+      dashboard.setDashboardFilters(
+        isEmbedded
+          ? withoutEmbedWidgetFilters(deepLink.filters)
+          : deepLink.filters,
+      );
 
       if (deepLink.priceMin !== undefined) {
         dashboard.setPriceMin(deepLink.priceMin);
@@ -165,6 +263,13 @@ function PublicCotizadorViewInner() {
     dashboard.handleBeneficiariesChange,
     resetSearchCache,
   ]);
+
+  useEffect(() => {
+    if (hasSearched && bootstrappedExitSearch) {
+      clearEmbedExitSearchPending();
+      setBootstrappedExitSearch(false);
+    }
+  }, [hasSearched, bootstrappedExitSearch]);
 
   const runSearch = useCallback(
     (
@@ -194,25 +299,27 @@ function PublicCotizadorViewInner() {
 
   const handleFiltersChange = useCallback(
     (next: DashboardFiltersState) => {
-      dashboard.setDashboardFilters(next);
+      const effective = isEmbedded ? withoutEmbedWidgetFilters(next) : next;
+      dashboard.setDashboardFilters(effective);
       if (!hasSearched) return;
 
       resetSearchCache();
       skipDebouncedSearchRef.current = true;
-      setResultsLimit(INITIAL_PLANS_PAGE_SIZE);
+      setResultsLimit(activePlansLimit);
 
       void search(
         {
           q: searchText,
           priceMin: dashboard.priceMin,
           priceMax: dashboard.priceMax,
-          filters: next,
-          limit: INITIAL_PLANS_PAGE_SIZE,
+          filters: effective,
+          limit: activePlansLimit,
         },
         { force: true },
       );
     },
     [
+      isEmbedded,
       dashboard.setDashboardFilters,
       dashboard.priceMin,
       dashboard.priceMax,
@@ -220,6 +327,7 @@ function PublicCotizadorViewInner() {
       resetSearchCache,
       search,
       searchText,
+      activePlansLimit,
     ],
   );
 
@@ -288,7 +396,7 @@ function PublicCotizadorViewInner() {
         priceMin,
         priceMax,
         filters,
-        limit: INITIAL_PLANS_PAGE_SIZE,
+        limit: activePlansLimit,
       },
       { force: true },
     ).then(() => {
@@ -326,14 +434,14 @@ function PublicCotizadorViewInner() {
       return;
     }
 
-    setResultsLimit(INITIAL_PLANS_PAGE_SIZE);
+    setResultsLimit(activePlansLimit);
     const timer = window.setTimeout(() => {
       void search({
         q: searchText,
         priceMin: dashboard.priceMin,
         priceMax: dashboard.priceMax,
         filters: dashboard.dashboardFilters,
-        limit: INITIAL_PLANS_PAGE_SIZE,
+        limit: activePlansLimit,
       });
     }, 350);
 
@@ -445,7 +553,13 @@ function PublicCotizadorViewInner() {
       controller.abort();
       window.clearTimeout(fetchTimeout);
     };
-  }, [formReady, solicitarFlowActive, deepLink.planCode, deepLink.modalTab, contractPlan?.unique_code]);
+  }, [
+    formReady,
+    solicitarFlowActive,
+    deepLink.planCode,
+    deepLink.modalTab,
+    contractPlan?.unique_code,
+  ]);
 
   useEffect(() => {
     if (
@@ -473,7 +587,7 @@ function PublicCotizadorViewInner() {
             priceMin: dashboard.priceMin,
             priceMax: dashboard.priceMax,
             filters: dashboard.dashboardFilters,
-            limit: INITIAL_PLANS_PAGE_SIZE,
+            limit: activePlansLimit,
           },
           { force: true },
         );
@@ -500,10 +614,13 @@ function PublicCotizadorViewInner() {
     dashboard.dashboardFilters,
   ]);
 
-  const awaitingAutoSearch =
-    deepLink.shouldAutoSearch && !hasSearched && !error;
-  const showFullLoading =
-    (loading || boundsLoading) && awaitingAutoSearch;
+  const pendingFullPageAutoSearch =
+    !isEmbedded &&
+    !hasSearched &&
+    !error &&
+    (deepLink.shouldAutoSearch || bootstrappedExitSearch);
+
+  const showFullLoading = pendingFullPageAutoSearch;
   const hasMoreResults = total > plans.length;
   const showInlineLoading = loading && hasSearched && plans.length > 0;
 
@@ -527,7 +644,7 @@ function PublicCotizadorViewInner() {
     setSearchText("");
     setSortKey("price_asc");
     setCurrency("clp");
-    setResultsLimit(INITIAL_PLANS_PAGE_SIZE);
+    setResultsLimit(activePlansLimit);
     setContractPlan(null);
     setContractModalTab(undefined);
     setSolicitarFlowActive(false);
@@ -538,8 +655,65 @@ function PublicCotizadorViewInner() {
     resetSearch();
   }
 
+  const buildEmbedExitInput = useCallback(
+    () => ({
+      baseUrl: resolveAppBaseUrl(),
+      entidad: entity?.embedKey ?? entity?.slug ?? deepLink.entidad ?? "cotizaloantes",
+      criteria,
+      beneficiarySummary: dashboard.beneficiarySummary,
+      beneficiaries: dashboard.beneficiaries,
+      dashboardFilters: dashboard.dashboardFilters,
+      priceMin: dashboard.priceMin,
+      priceMax: dashboard.priceMax,
+      searchText,
+      sortKey,
+      currency,
+      email: notifyEmail.trim() || deepLink.email,
+    }),
+    [
+      entity?.embedKey,
+      entity?.slug,
+      deepLink.entidad,
+      deepLink.email,
+      criteria,
+      dashboard.beneficiarySummary,
+      dashboard.beneficiaries,
+      dashboard.dashboardFilters,
+      dashboard.priceMin,
+      dashboard.priceMax,
+      searchText,
+      sortKey,
+      currency,
+      notifyEmail,
+    ],
+  );
+
+  function redirectEmbedToFullCotizador() {
+    const validationError = validateEmbedQuoteCriteria({
+      criteria,
+      beneficiarySummary: dashboard.beneficiarySummary,
+      beneficiaries: dashboard.beneficiaries,
+    });
+
+    if (validationError) {
+      showEmbedValidationNotice(validationError);
+      return;
+    }
+
+    const exitUrl = buildEmbedSearchExitUrl(buildEmbedExitInput());
+    setEmbedExitLoading(true);
+    markEmbedExitSearchPending();
+    postEmbedExitNavigate();
+    navigateTopLevel(exitUrl, 420);
+  }
+
   function handleCalculate() {
-    setResultsLimit(INITIAL_PLANS_PAGE_SIZE);
+    if (isEmbedded) {
+      redirectEmbedToFullCotizador();
+      return;
+    }
+
+    setResultsLimit(activePlansLimit);
     skipDebouncedSearchRef.current = true;
     void search(
       {
@@ -547,7 +721,7 @@ function PublicCotizadorViewInner() {
         priceMin: dashboard.priceMin,
         priceMax: dashboard.priceMax,
         filters: dashboard.dashboardFilters,
-        limit: INITIAL_PLANS_PAGE_SIZE,
+        limit: activePlansLimit,
       },
       { force: true },
     ).then(() => {
@@ -556,8 +730,28 @@ function PublicCotizadorViewInner() {
     resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
+  function handleEmbedSolicitar(plan: HealthPlanSummary) {
+    const validationError = validateEmbedSolicitarCriteria({
+      criteria,
+      beneficiarySummary: dashboard.beneficiarySummary,
+      beneficiaries: dashboard.beneficiaries,
+    });
+
+    if (validationError) {
+      showEmbedValidationNotice(validationError);
+      return;
+    }
+
+    setContractModalTab("request");
+    setContractPlan(plan);
+  }
+
+  function handleEmbedViewAllPlans() {
+    redirectEmbedToFullCotizador();
+  }
+
   function handleLoadMore() {
-    const nextLimit = resultsLimit + PLANS_PAGE_SIZE_STEP;
+    const nextLimit = resultsLimit + activePlansStep;
     setResultsLimit(nextLimit);
     skipDebouncedSearchRef.current = true;
     void search(
@@ -574,53 +768,77 @@ function PublicCotizadorViewInner() {
 
   const brandKey = isBranded ? entity!.brandKey : undefined;
 
+  const shellRoot = isEmbedded
+    ? "relative flex w-full max-w-none flex-col overflow-visible"
+    : appShellRoot;
+  const shellScroll = isEmbedded
+    ? "w-full max-w-none overflow-visible"
+    : appShellScroll;
+  const contentShell = isEmbedded
+    ? "w-full max-w-none space-y-3"
+    : joinClasses(publicCotizadorShell, safeWidth, "space-y-5");
+
   return (
     <div
+      ref={rootRef}
       data-brand={brandKey}
       data-partner={isBranded ? entity!.slug : undefined}
+      data-embed={isEmbedded ? "true" : undefined}
       style={isBranded ? themeStyle : undefined}
-      className={joinClasses(appShellRoot, ui.canvas)}
+      className={joinClasses(shellRoot, ui.canvas)}
     >
-      <PublicCotizadorHeader />
+      {isEmbedded ? null : <PublicCotizadorHeader />}
 
       <main
         className={joinClasses(
-          appShellScroll,
-          safeWidth,
-          "px-3 py-5 sm:px-4 sm:py-6 lg:px-6",
+          shellScroll,
+          isEmbedded ? "w-full max-w-none" : safeWidth,
+          isEmbedded
+            ? "px-2 py-2 sm:px-3 sm:py-2"
+            : "px-3 py-5 sm:px-4 sm:py-6 lg:px-6",
         )}
       >
-        <div className={joinClasses(publicCotizadorShell, safeWidth, "space-y-5")}>
-          <header
-            className={joinClasses(safeWidth, "motion-safe-fade-in space-y-2")}
-          >
-            <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">
-              Cotizador en línea
-            </p>
-            <h1 className="text-2xl font-bold tracking-tight text-primary-dark sm:text-3xl">
-              Encuentra tu plan de salud
-            </h1>
-          </header>
+        <div className={contentShell}>
+          {isEmbedded ? null : (
+            <header
+              className={joinClasses(
+                safeWidth,
+                "motion-safe-fade-in space-y-2",
+              )}
+            >
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">
+                Cotizador en línea
+              </p>
+              <h1 className="text-2xl font-bold tracking-tight text-primary-dark sm:text-3xl">
+                Encuentra tu plan de salud
+              </h1>
+            </header>
+          )}
 
-          <PublicQuoteCriteriaBar
-            criteria={criteria}
-            onCriteriaChange={(patch) =>
-              setCriteria((current) => ({ ...current, ...patch }))
-            }
-            beneficiaries={dashboard.beneficiaries}
-            onBeneficiariesChange={dashboard.handleBeneficiariesChange}
-            onCalculate={handleCalculate}
-            onResetAll={handleResetAll}
-            showPreloadedDependents={
-              deepLink.hasDeepLinkParams &&
-              dashboard.beneficiaries.dependents.length > 0
-            }
-          />
+          <div ref={criteriaBarRef}>
+            <PublicQuoteCriteriaBar
+              criteria={criteria}
+              onCriteriaChange={(patch) =>
+                setCriteria((current) => ({ ...current, ...patch }))
+              }
+              beneficiaries={dashboard.beneficiaries}
+              onBeneficiariesChange={dashboard.handleBeneficiariesChange}
+              onCalculate={handleCalculate}
+              onResetAll={handleResetAll}
+              showPreloadedDependents={
+                deepLink.hasDeepLinkParams &&
+                dashboard.beneficiaries.dependents.length > 0
+              }
+            />
+          </div>
 
           <section
             id="resultados"
             ref={resultsRef}
-            className="scroll-mt-24 space-y-4"
+            className={joinClasses(
+              isEmbedded ? "scroll-mt-4" : "scroll-mt-24",
+              "space-y-4",
+            )}
           >
             {hasSearched ? (
               <PublicResultsToolbar
@@ -649,7 +867,10 @@ function PublicCotizadorViewInner() {
             ) : null}
 
             <div
-              className={joinClasses(safeWidth, "flex min-h-0 gap-0 lg:gap-5")}
+              className={joinClasses(
+                safeWidth,
+                isEmbedded ? "flex gap-0 lg:gap-5" : "flex min-h-0 gap-0 lg:gap-5",
+              )}
             >
               {hasSearched ? (
                 <PublicFiltersSidebar
@@ -662,12 +883,14 @@ function PublicCotizadorViewInner() {
                   onPriceMaxChange={dashboard.setPriceMax}
                   filters={dashboard.dashboardFilters}
                   onFiltersChange={handleFiltersChange}
+                  hideCoverageFilter={isEmbedded}
+                  hidePlanTypeFilter={isEmbedded}
                 />
               ) : null}
 
               <div className="min-w-0 flex-1">
                 {showFullLoading ? (
-                  <PublicPlanResultsLoading />
+                  <PublicPlanResultsLoading message={EMBED_EXIT_LOADING_TITLE} />
                 ) : !hasSearched && !deepLink.shouldAutoSearch ? (
                   <div
                     className={joinClasses(
@@ -709,6 +932,10 @@ function PublicCotizadorViewInner() {
                       ufToClp={dashboard.ufToClp}
                       currency={currency}
                       onRequestPlan={(plan) => {
+                        if (isEmbedded) {
+                          handleEmbedSolicitar(plan);
+                          return;
+                        }
                         setContractModalTab(undefined);
                         setContractPlan(plan);
                       }}
@@ -722,16 +949,18 @@ function PublicCotizadorViewInner() {
                       <div className="mt-6 flex justify-center">
                         <button
                           type="button"
-                          onClick={handleLoadMore}
+                          onClick={
+                            isEmbedded ? handleEmbedViewAllPlans : handleLoadMore
+                          }
                           className={joinClasses(
                             touchTarget,
                             "rounded-full border px-8 text-sm font-semibold text-primary-dark transition hover:border-primary/40 hover:bg-primary/5",
                             ui.border,
                           )}
                         >
-                          Ver más planes (
-                          {Math.min(PLANS_PAGE_SIZE_STEP, total - plans.length)}{" "}
-                          adicionales)
+                          {isEmbedded
+                            ? `Ver todos los planes (${total})`
+                            : `Ver más planes (${Math.min(activePlansStep, total - plans.length)} adicionales)`}
                         </button>
                       </div>
                     ) : null}
@@ -790,15 +1019,23 @@ function PublicCotizadorViewInner() {
         onClick={() => dashboard.setSidebarOpen(true)}
       />
 
-      <PublicWhatsAppFab />
+      <PublicWhatsAppFab hidden={isEmbedded} />
 
       <PublicCotizadorNotice
         message={recoveryNotice}
+        noticeKey={recoveryNoticeKey}
         onDismiss={() => setRecoveryNotice(null)}
+        prominent={isEmbedded}
+        title="Completa los datos del cotizador"
       />
+
+      {embedExitLoading ? (
+        <EmbedExitLoadingOverlay embedded={isEmbedded} />
+      ) : null}
 
       <ContractPlanModal
         open={contractPlan !== null}
+        embedded={isEmbedded}
         planSummary={contractPlan}
         beneficiarySummary={dashboard.beneficiarySummary}
         dependents={dashboard.beneficiaries.dependents}
@@ -815,6 +1052,10 @@ function PublicCotizadorViewInner() {
           setContractModalTab(undefined);
         }}
       />
+
+      {isEmbedded ? (
+        <div data-embed-height-sentinel aria-hidden className="block h-0 w-full shrink-0" />
+      ) : null}
     </div>
   );
 }

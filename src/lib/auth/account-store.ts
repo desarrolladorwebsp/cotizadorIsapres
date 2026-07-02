@@ -268,16 +268,18 @@ export async function listStaffAccounts(): Promise<StaffAccountRecord[]> {
     subscriptionExpiresAt: account.subscriptionExpiresAt?.toISOString() ?? null,
   }));
 
-  return [...adminRecords, ...executiveRecords].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-  );
+  return [...adminRecords, ...executiveRecords]
+    .filter((account) => account.realm === "admin" || account.realm === "executive")
+    .sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
 }
 
 export async function createStaffAccount(
   input: CreateStaffAccountInput,
 ): Promise<{ account: StaffAccountRecord; temporaryPassword: string }> {
   const email = normalizeEmail(input.email);
-  const fullName = input.fullName.trim();
+  const fullName = input.fullName?.trim() || email.split("@")[0];
   const temporaryPassword = generateTemporaryPassword();
   const passwordHash = await hashPassword(temporaryPassword);
 

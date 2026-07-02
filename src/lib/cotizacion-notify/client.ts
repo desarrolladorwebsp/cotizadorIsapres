@@ -1,6 +1,9 @@
 import { buildCotizadorUrlFromParsed } from "@/lib/deep-link/build-cotizador-url";
 import type { ParsedCotizadorDeepLink } from "@/lib/deep-link/parse-cotizador-url";
-import type { CotizacionNotifyInput, CotizacionNotifyPlan } from "@/lib/email/cotizacion-notify-schema";
+import type {
+  CotizacionNotifyInput,
+  CotizacionNotifyPlan,
+} from "@/lib/email/cotizacion-notify-schema";
 import {
   getActiveCheckboxIds,
   ISAPRE_FILTER_OPTIONS,
@@ -46,14 +49,20 @@ function resolveRegionLabel(regionValue: string): string {
 }
 
 function resolveSexLabel(sexValue: string): string {
-  return SEX_OPTIONS.find((option) => option.value === sexValue)?.label ?? sexValue;
+  return (
+    SEX_OPTIONS.find((option) => option.value === sexValue)?.label ?? sexValue
+  );
 }
 
 function resolveSortLabel(sortKey: QuoteSortKey): string {
-  return SORT_OPTIONS.find((option) => option.value === sortKey)?.label ?? sortKey;
+  return (
+    SORT_OPTIONS.find((option) => option.value === sortKey)?.label ?? sortKey
+  );
 }
 
-function resolveFilteredIsapres(filters: DashboardFiltersState): string[] | undefined {
+function resolveFilteredIsapres(
+  filters: DashboardFiltersState,
+): string[] | undefined {
   const activeIds = getActiveCheckboxIds(filters.isapres);
   if (activeIds.length === ISAPRE_FILTER_OPTIONS.length) return undefined;
   if (activeIds.length === 0) return undefined;
@@ -108,7 +117,8 @@ export function buildCotizacionNotifyPayload(
     moneda: input.currency,
     isapres: resolveFilteredIsapres(input.filters),
     cotizadorUrl: resolveCotizadorUrl(input.deepLink, input.cotizadorUrl),
-    partnerEntitySlug: input.partnerEntitySlug?.trim().toLowerCase() || undefined,
+    partnerEntitySlug:
+      input.partnerEntitySlug?.trim().toLowerCase() || undefined,
     partnerEntityName: input.partnerEntityName?.trim() || undefined,
   };
 

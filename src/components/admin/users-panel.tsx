@@ -29,6 +29,7 @@ import { ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type {
   CreateStaffAccountInput,
+  PendingStaffInviteRecord,
   StaffAccountRecord,
   StaffRealm,
 } from "@/types/staff-account";
@@ -42,6 +43,16 @@ const REALM_LABELS: Record<StaffRealm, string> = {
   executive: "Ejecutivo",
 };
 
+const STAFF_REALMS = new Set<StaffRealm>(["admin", "executive"]);
+
+type StaffDirectoryRow =
+  | { kind: "account"; account: StaffAccountRecord; sortAt: string }
+  | { kind: "invite"; invite: PendingStaffInviteRecord; sortAt: string };
+
+function isStaffRealm(realm: string): realm is StaffRealm {
+  return STAFF_REALMS.has(realm as StaffRealm);
+}
+
 function formatDate(value: string | null): string {
   if (!value) return "—";
   return new Intl.DateTimeFormat("es-CL", {
@@ -53,16 +64,15 @@ function formatDate(value: string | null): string {
 
 export function UsersPanel({ onNotify }: UsersPanelProps) {
   const [accounts, setAccounts] = useState<StaffAccountRecord[]>([]);
+  const [pendingInvites, setPendingInvites] = useState<PendingStaffInviteRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [realmFilter, setRealmFilter] = useState<StaffRealm | "all">("all");
   const [modalOpen, setModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState<CreateStaffAccountInput>({
-    realm: "admin",
+    realm: "executive",
     email: "",
-    fullName: "",
-    phone: "",
     rut: "",
     subscriptionStatus: "TRIAL",
   });
@@ -70,8 +80,11 @@ export function UsersPanel({ onNotify }: UsersPanelProps) {
   async function loadAccounts() {
     setLoading(true);
     try {
-      const nextAccounts = await fetchStaffAccounts();
-      setAccounts(nextAccounts);
+      const data = await fetchStaffAccounts();
+      setAccounts(data.accounts.filter((account) => isStaffRealm(account.realm)));
+      setPendingInvites(
+        data.pendingInvites.filter((invite) => isStaffRealm(invite.realm)),
+      );
     } catch (error) {
       onNotify(
         error instanceof Error ? error.message : "No se pudieron cargar los usuarios.",
@@ -86,25 +99,57 @@ export function UsersPanel({ onNotify }: UsersPanelProps) {
     void loadAccounts();
   }, []);
 
-  const filteredAccounts = useMemo(() => {
+  const directoryRows = useMemo(() => {
+    const rows: StaffDirectoryRow[] = [
+      ...accounts.map(
+        (account): StaffDirectoryRow => ({
+          kind: "account",
+          account,
+          sortAt: account.createdAt,
+        }),
+      ),
+      ...pendingInvites.map(
+        (invite): StaffDirectoryRow => ({
+          kind: "invite",
+          invite,
+          sortAt: invite.createdAt,
+        }),
+      ),
+    ];
+
+    return rows.sort(
+      (a, b) => new Date(b.sortAt).getTime() - new Date(a.sortAt).getTime(),
+    );
+  }, [accounts, pendingInvites]);
+
+  const filteredRows = useMemo(() => {
     const query = search.trim().toLowerCase();
 
-    return accounts.filter((account) => {
-      if (realmFilter !== "all" && account.realm !== realmFilter) return false;
+    return directoryRows.filter((row) => {
+      const realm = row.kind === "account" ? row.account.realm : row.invite.realm;
+      if (realmFilter !== "all" && realm !== realmFilter) return false;
       if (!query) return true;
 
-      return [account.fullName, account.email, account.phone, account.rut]
+      const values =
+        row.kind === "account"
+          ? [
+              row.account.fullName,
+              row.account.email,
+              row.account.phone,
+              row.account.rut,
+            ]
+          : [row.invite.email, row.invite.rut];
+
+      return values
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(query));
     });
-  }, [accounts, search, realmFilter]);
+  }, [directoryRows, search, realmFilter]);
 
   function openModal() {
     setDraft({
-      realm: "admin",
+      realm: "executive",
       email: "",
-      fullName: "",
-      phone: "",
       rut: "",
       subscriptionStatus: "TRIAL",
     });
@@ -119,8 +164,6 @@ export function UsersPanel({ onNotify }: UsersPanelProps) {
       const result = await createStaffAccount({
         realm: draft.realm,
         email: draft.email.trim(),
-        fullName: draft.fullName.trim(),
-        phone: draft.phone?.trim() || undefined,
         rut: draft.rut?.trim() || undefined,
         subscriptionStatus:
           draft.realm === "executive" ? draft.subscriptionStatus : undefined,
@@ -172,8 +215,8 @@ export function UsersPanel({ onNotify }: UsersPanelProps) {
   return (
     <AdminPanel>
       <AdminPanelHeader
-        title="Usuarios del sistema"
-        description="Cuentas de administradores y ejecutivos. Se envía una clave temporal al correo y el usuario debe cambiarla al ingresar."
+        title="Usuarios staff"
+        description="Solo cuentas con rol Administrador o Ejecutivo. Los clientes del cotizador no aparecen aquí."
         actions={
           <>
             <AdminRefreshButton onClick={() => void loadAccounts()} />
@@ -198,18 +241,19 @@ export function UsersPanel({ onNotify }: UsersPanelProps) {
           }
           className={joinClasses("h-11 rounded-xl px-3 text-sm", ui.input)}
         >
-          <option value="all">Todos los roles</option>
-          <option value="admin">Administradores</option>
-          <option value="executive">Ejecutivos</option>
+          <option value="all">Administrador y ejecutivo</option>
+          <option value="admin">Solo administradores</option>
+          <option value="executive">Solo ejecutivos</option>
         </select>
       </AdminToolbar>
 
       <AdminTableCard
         loading={loading}
-        empty={!loading && filteredAccounts.length === 0}
-        emptyTitle="No hay usuarios para mostrar"
+        empty={!loading && filteredRows.length === 0}
+        emptyTitle="No hay usuarios staff para mostrar"
+        emptyDescription="Invita un administrador o ejecutivo con el botón Agregar usuario."
         loadingMessage="Cargando usuarios…"
-        footer={`Mostrando ${filteredAccounts.length} de ${accounts.length} usuarios.`}
+        footer={`Mostrando ${filteredRows.length} de ${directoryRows.length} usuarios (administrador o ejecutivo).`}
       >
         <AdminTable minWidth="56rem">
           <AdminTableHead>
@@ -223,81 +267,127 @@ export function UsersPanel({ onNotify }: UsersPanelProps) {
             </tr>
           </AdminTableHead>
           <AdminTableBody>
-            {filteredAccounts.map((account) => (
-              <AdminTableRow key={`${account.realm}-${account.id}`}>
-                <AdminTableCell>
-                  <p className="font-semibold text-foreground">
-                    {account.fullName}
-                  </p>
-                  <p className="mt-1 text-xs text-muted">
-                    Creado {formatDate(account.createdAt)}
-                  </p>
-                </AdminTableCell>
-                <AdminTableCell>
-                  <AdminBadge tone="primary">
-                    {REALM_LABELS[account.realm]}
-                  </AdminBadge>
-                  {account.realm === "executive" &&
-                  account.subscriptionStatus ? (
-                    <p className="mt-2 text-xs text-muted">
-                      {account.subscriptionStatus}
+            {filteredRows.map((row) => {
+              if (row.kind === "invite") {
+                const { invite } = row;
+
+                return (
+                  <AdminTableRow key={`invite-${invite.id}`}>
+                    <AdminTableCell>
+                      <p className="font-semibold text-foreground">
+                        {invite.email}
+                      </p>
+                      <p className="mt-1 text-xs text-muted">
+                        Invitación enviada {formatDate(invite.createdAt)}
+                      </p>
+                    </AdminTableCell>
+                    <AdminTableCell>
+                      <AdminBadge tone="primary">
+                        {REALM_LABELS[invite.realm]}
+                      </AdminBadge>
+                    </AdminTableCell>
+                    <AdminTableCell>
+                      <p>{invite.email}</p>
+                      {invite.rut ? (
+                        <p className="mt-1 text-xs text-muted">
+                          RUT {invite.rut}
+                        </p>
+                      ) : null}
+                    </AdminTableCell>
+                    <AdminTableCell>
+                      <AdminBadge tone="warning">Invitación pendiente</AdminBadge>
+                      <p className="mt-2 text-xs text-muted">
+                        Expira {formatDate(invite.expiresAt)}
+                      </p>
+                    </AdminTableCell>
+                    <AdminTableCell className="text-muted">—</AdminTableCell>
+                    <AdminTableCell align="right">
+                      <span className="text-xs text-muted">Esperando activación</span>
+                    </AdminTableCell>
+                  </AdminTableRow>
+                );
+              }
+
+              const { account } = row;
+
+              return (
+                <AdminTableRow key={`${account.realm}-${account.id}`}>
+                  <AdminTableCell>
+                    <p className="font-semibold text-foreground">
+                      {account.fullName}
                     </p>
-                  ) : null}
-                </AdminTableCell>
-                <AdminTableCell>
-                  <p>{account.email}</p>
-                  {account.phone ? (
-                    <p className="mt-1 text-xs text-muted">{account.phone}</p>
-                  ) : null}
-                  {account.rut ? (
-                    <p className="mt-1 text-xs text-muted">RUT {account.rut}</p>
-                  ) : null}
-                </AdminTableCell>
-                <AdminTableCell>
-                  <div className="space-y-2">
-                    <AdminBadge tone={account.active ? "success" : "neutral"}>
-                      {account.active ? "Activo" : "Inactivo"}
+                    <p className="mt-1 text-xs text-muted">
+                      Creado {formatDate(account.createdAt)}
+                    </p>
+                  </AdminTableCell>
+                  <AdminTableCell>
+                    <AdminBadge tone="primary">
+                      {REALM_LABELS[account.realm]}
                     </AdminBadge>
-                    {account.mustChangePassword ? (
-                      <p className="text-xs font-medium text-amber-700">
-                        Debe cambiar clave
+                    {account.realm === "executive" &&
+                    account.subscriptionStatus ? (
+                      <p className="mt-2 text-xs text-muted">
+                        {account.subscriptionStatus}
                       </p>
                     ) : null}
-                  </div>
-                </AdminTableCell>
-                <AdminTableCell className="text-muted">
-                  {formatDate(account.lastLoginAt)}
-                </AdminTableCell>
-                <AdminTableCell align="right">
-                  <AdminRowActions>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => void handleResendInvite(account)}
-                    >
-                      Reenviar clave
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant={account.active ? "danger" : "ghost"}
-                      onClick={() => void handleToggleActive(account)}
-                    >
-                      {account.active ? "Desactivar" : "Activar"}
-                    </Button>
-                  </AdminRowActions>
-                </AdminTableCell>
-              </AdminTableRow>
-            ))}
+                  </AdminTableCell>
+                  <AdminTableCell>
+                    <p>{account.email}</p>
+                    {account.phone ? (
+                      <p className="mt-1 text-xs text-muted">{account.phone}</p>
+                    ) : null}
+                    {account.rut ? (
+                      <p className="mt-1 text-xs text-muted">
+                        RUT {account.rut}
+                      </p>
+                    ) : null}
+                  </AdminTableCell>
+                  <AdminTableCell>
+                    <div className="space-y-2">
+                      <AdminBadge tone={account.active ? "success" : "neutral"}>
+                        {account.active ? "Activo" : "Inactivo"}
+                      </AdminBadge>
+                      {account.mustChangePassword ? (
+                        <p className="text-xs font-medium text-amber-700">
+                          Debe cambiar clave
+                        </p>
+                      ) : null}
+                    </div>
+                  </AdminTableCell>
+                  <AdminTableCell className="text-muted">
+                    {formatDate(account.lastLoginAt)}
+                  </AdminTableCell>
+                  <AdminTableCell align="right">
+                    <AdminRowActions>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => void handleResendInvite(account)}
+                      >
+                        Reenviar invitación
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={account.active ? "danger" : "ghost"}
+                        onClick={() => void handleToggleActive(account)}
+                      >
+                        {account.active ? "Desactivar" : "Activar"}
+                      </Button>
+                    </AdminRowActions>
+                  </AdminTableCell>
+                </AdminTableRow>
+              );
+            })}
           </AdminTableBody>
         </AdminTable>
       </AdminTableCard>
 
       <AdminFormModal
         open={modalOpen}
-        title="Agregar usuario"
-        description="Se enviará una clave temporal al correo indicado."
+        title="Invitar usuario"
+        description="Se enviará un enlace al correo. La persona completará nombre, apellido, RUT y contraseña."
         onClose={() => setModalOpen(false)}
         size="md"
       >
@@ -320,20 +410,6 @@ export function UsersPanel({ onNotify }: UsersPanelProps) {
           </label>
 
           <label className="block space-y-2">
-            <span className="text-sm font-medium">Nombre completo</span>
-            <Input
-              required
-              value={draft.fullName}
-              onChange={(event) =>
-                setDraft((current) => ({
-                  ...current,
-                  fullName: event.target.value,
-                }))
-              }
-            />
-          </label>
-
-          <label className="block space-y-2">
             <span className="text-sm font-medium">Correo</span>
             <Input
               type="email"
@@ -348,55 +424,44 @@ export function UsersPanel({ onNotify }: UsersPanelProps) {
             />
           </label>
 
+          <label className="block space-y-2">
+            <span className="text-sm font-medium">RUT (opcional en invitación)</span>
+            <Input
+              value={draft.rut ?? ""}
+              onChange={(event) =>
+                setDraft((current) => ({
+                  ...current,
+                  rut: event.target.value,
+                }))
+              }
+              placeholder="12.345.678-9"
+            />
+            <p className="text-xs text-muted">
+              Si lo registras aquí, deberá coincidir al activar la cuenta.
+            </p>
+          </label>
+
           {draft.realm === "executive" ? (
-            <>
-              <label className="block space-y-2">
-                <span className="text-sm font-medium">Teléfono</span>
-                <Input
-                  value={draft.phone ?? ""}
-                  onChange={(event) =>
-                    setDraft((current) => ({
-                      ...current,
-                      phone: event.target.value,
-                    }))
-                  }
-                />
-              </label>
-
-              <label className="block space-y-2">
-                <span className="text-sm font-medium">RUT</span>
-                <Input
-                  value={draft.rut ?? ""}
-                  onChange={(event) =>
-                    setDraft((current) => ({
-                      ...current,
-                      rut: event.target.value,
-                    }))
-                  }
-                />
-              </label>
-
-              <label className="block space-y-2">
-                <span className="text-sm font-medium">Suscripción</span>
-                <select
-                  value={draft.subscriptionStatus ?? "TRIAL"}
-                  onChange={(event) =>
-                    setDraft((current) => ({
-                      ...current,
-                      subscriptionStatus: event.target
-                        .value as CreateStaffAccountInput["subscriptionStatus"],
-                    }))
-                  }
-                  className={joinClasses(
-                    "h-11 w-full rounded-xl px-3 text-sm",
-                    ui.input,
-                  )}
-                >
-                  <option value="TRIAL">Trial</option>
-                  <option value="ACTIVE">Activa</option>
-                </select>
-              </label>
-            </>
+            <label className="block space-y-2">
+              <span className="text-sm font-medium">Suscripción</span>
+              <select
+                value={draft.subscriptionStatus ?? "TRIAL"}
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    subscriptionStatus: event.target
+                      .value as CreateStaffAccountInput["subscriptionStatus"],
+                  }))
+                }
+                className={joinClasses(
+                  "h-11 w-full rounded-xl px-3 text-sm",
+                  ui.input,
+                )}
+              >
+                <option value="TRIAL">Trial</option>
+                <option value="ACTIVE">Activa</option>
+              </select>
+            </label>
           ) : null}
 
           <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
@@ -408,7 +473,7 @@ export function UsersPanel({ onNotify }: UsersPanelProps) {
               Cancelar
             </Button>
             <Button type="submit" disabled={saving}>
-              {saving ? "Creando..." : "Crear y enviar clave"}
+              {saving ? "Enviando..." : "Enviar invitación"}
             </Button>
           </div>
         </form>

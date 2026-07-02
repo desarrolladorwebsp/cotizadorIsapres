@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Parsea el Excel de Colmena Santiago y genera JSON alineado con los PDFs locales."""
+"""Parsea Excel de Colmena (Santiago / Regiones) y genera JSON alineado con PDFs locales."""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ ISAPRE_NAME = "Colmena"
 DEFAULT_FOLDER = Path(__file__).resolve().parent.parent / "storage" / "planes-pdf" / "colmena"
 OUTPUT_PATH = Path(__file__).resolve().parent / ".colmena-plans-parsed.json"
 
-PREFIX_TO_FAMILY = {
+SANTIAGO_PREFIX_TO_FAMILY = {
     "BU": "COLMENA BLUE",
     "DU": "COLMENA DELUXE ULTRA",
     "EL": "COLMENA ELITE",
@@ -27,7 +27,17 @@ PREFIX_TO_FAMILY = {
     "SL": "COLMENA SILVER",
     "ST": "COLMENA STAR",
 }
-FAMILY_TO_PREFIX = {value: key for key, value in PREFIX_TO_FAMILY.items()}
+SANTIAGO_FAMILY_TO_PREFIX = {value: key for key, value in SANTIAGO_PREFIX_TO_FAMILY.items()}
+
+REGION_PREFIX_TO_FAMILY = {
+    "NP": "COLMENA MAX NORTE PF",
+    "SP": "COLMENA MAX SUR PF",
+    "CP": "COLMENA MAX CENTRO PF",
+    "CS": "MAX CENTROSUR",
+    "QP": "MAX QUINTA PF",
+    "MX": "COLMENA MAX",
+}
+REGION_FAMILY_TO_PREFIX = {value: key for key, value in REGION_PREFIX_TO_FAMILY.items()}
 
 RM_ZONES = [
     "rm-metropolitana",
@@ -37,6 +47,7 @@ RM_ZONES = [
     "rm-poniente",
     "rm-centro",
 ]
+REGION_ZONES = ["norte", "octava"]
 
 SKIP_CLINIC_LABELS = {"hospitalario", "ambulatorio", "libre eleccion", "libre elección"}
 PERCENT_LINE = re.compile(r"^(\d+)%$")
@@ -213,51 +224,31 @@ def parse_coverage(text: str, coverage_type: str) -> list[dict]:
     return entries
 
 
-def parse_workbook(xlsx_path: Path) -> dict[tuple[str, str], dict]:
-    workbook = openpyxl.load_workbook(xlsx_path, data_only=True)
-    worksheet = workbook.active
-    rows: dict[tuple[str, str], dict] = {}
+def parse_workbook_row(row) -> dict | None:
+    code_raw, price_raw, hospitalario_raw, ambulatorio_raw = (row + (None,) * 4)[:4]
+    if not code_raw:
+        return None
 
-    for row in worksheet.iter_rows(min_row=2, values_only=True):
-        code_raw, price_raw, hospitalario_raw, ambulatorio_raw = (row + (None,) * 4)[:4]
-        if not code_raw:
-            continue
+    raw = normalize_cell_text(code_raw).upper()
+    family, suffix, prefix = parse_plan_identity(raw)
+    if not prefix:
+        print(f"Plan omitido (sin prefijo): {raw}", file=sys.stderr)
+        return None
 
-        raw = normalize_cell_text(code_raw).upper()
-        parts = raw.split()
-        suffix = parts[-1]
-        family = " ".join(parts[:-1])
-        base_price_uf = parse_price(price_raw)
-        if base_price_uf is None:
-            print(
-                f"Plan omitido por precio inválido: {raw} ({price_raw!r})",
-                file=sys.stderr,
-            )
-            continue
+    base_price_uf = parse_price(price_raw)
+    if base_price_uf is None:
+        print(f"Plan omitido por precio inválido: {raw} ({price_raw!r})", file=sys.stderr)
+        return None
 
-        coverage: list[dict] = []
-        if hospitalario_raw:
-            coverage.extend(parse_coverage(hospitalario_raw, "hospitalaria"))
-        if ambulatorio_raw:
-            coverage.extend(parse_coverage(ambulatorio_raw, "ambulatoria"))
+    coverage: list[dict] = []
+    if hospitalario_raw:
+        coverage.extend(parse_coverage(hospitalario_raw, "hospitalaria"))
+    if ambulatorio_raw:
+        coverage.extend(parse_coverage(ambulatorio_raw, "ambulatoria"))
 
-        rows[(family, suffix)] = {
-            "family": family,
-            "suffix": suffix,
-            "base_price_uf": base_price_uf,
-            "coverage": coverage,
-        }
+    unique_code = f"{prefix}{suffix}"
+    zones = RM_ZONES if prefix in SANTIAGO_PREFIX_TO_FAMILY else REGION_ZONES
 
-    return rows
-
-
-def build_plan(
-    unique_code: str,
-    family: str,
-    suffix: str,
-    base_price_uf: float,
-    coverage: list[dict],
-) -> dict:
     return {
         "isapre": ISAPRE_NAME,
         "plan_name": title_plan_name(family, suffix),
@@ -267,50 +258,114 @@ def build_plan(
         "additional_notes": None,
         "pdf_url": None,
         "pdf_public_id": None,
-        "zones": list(RM_ZONES),
+        "zones": list(zones),
         "coverage": coverage,
     }
 
 
+def parse_plan_identity(raw: str) -> tuple[str, str, str | None]:
+    """Devuelve (familia, sufijo, prefijo PDF)."""
+    match = re.match(r"^(MAX CENTROSUR)\s+(PF[\dA-Z]+)$", raw)
+    if match:
+        suffix = match.group(2)[2:]
+        return match.group(1), suffix, "CS"
+
+    match = re.match(r"^(COLMENA MAX)\s+([\dA-Z]+)$", raw)
+    if match:
+        return match.group(1), match.group(2), "MX"
+
+    parts = raw.split()
+    suffix = parts[-1]
+    family = " ".join(parts[:-1])
+
+    if family in SANTIAGO_FAMILY_TO_PREFIX:
+        return family, suffix, SANTIAGO_FAMILY_TO_PREFIX[family]
+
+    if family in REGION_FAMILY_TO_PREFIX:
+        return family, suffix, REGION_FAMILY_TO_PREFIX[family]
+
+    return family, suffix, None
+
+
+def parse_workbook(xlsx_path: Path) -> dict[str, dict]:
+    workbook = openpyxl.load_workbook(xlsx_path, data_only=True)
+    worksheet = workbook.active
+    rows: dict[str, dict] = {}
+
+    for row in worksheet.iter_rows(min_row=2, values_only=True):
+        plan = parse_workbook_row(row)
+        if plan:
+            rows[plan["unique_code"]] = plan
+
+    return rows
+
+
+def find_file(colmena_dir: Path, patterns: list[str]) -> Path | None:
+    for pattern in patterns:
+        matches = sorted(colmena_dir.glob(pattern))
+        if matches:
+            return matches[-1]
+    return None
+
+
+def collect_pdf_codes(*pdf_dirs: Path) -> set[str]:
+    codes: set[str] = set()
+    for pdf_dir in pdf_dirs:
+        if not pdf_dir.is_dir():
+            continue
+        for path in pdf_dir.glob("*.pdf"):
+            codes.add(path.stem.upper())
+    return codes
+
+
 def main() -> None:
     colmena_dir = Path(sys.argv[1]).expanduser().resolve() if len(sys.argv) > 1 else DEFAULT_FOLDER
-    xlsx_path = colmena_dir / "BASE DE DATOS COLMENA SANTIAGO.xlsx"
-    pdf_dir = colmena_dir / "PDF COLMENA SANTIAGO"
     output_path = (
         Path(sys.argv[2]).expanduser().resolve()
         if len(sys.argv) > 2
         else OUTPUT_PATH
     )
 
-    if not xlsx_path.is_file():
-        print(f"Excel no encontrado: {xlsx_path}", file=sys.stderr)
+    santiago_xlsx = find_file(
+        colmena_dir,
+        ["BASE DE DATOS COLMENA SANTIAGO*.xlsx", "BASE DE DATOS COLMENA SANTIAGO.xlsx"],
+    )
+    regiones_xlsx = find_file(
+        colmena_dir,
+        ["BASE DE DATOS COLMENA REGIONES*.xlsx", "BASE DE DATOS COLMENA REGIONES.xlsx"],
+    )
+    santiago_pdf_dir = find_file(
+        colmena_dir,
+        ["PDF COLMENA SANTIAGO*", "PDF COLMENA SANTIAGO"],
+    )
+    regiones_pdf_dir = find_file(
+        colmena_dir,
+        ["PDF COLMENA REGIONES*", "PDF COLMENA REGIONES"],
+    )
+
+    if not santiago_xlsx or not santiago_pdf_dir:
+        print("No se encontró Excel/PDF de Santiago en colmena.", file=sys.stderr)
         sys.exit(1)
 
-    excel_rows = parse_workbook(xlsx_path)
-    pdf_codes = sorted(path.stem.upper() for path in pdf_dir.glob("*.pdf"))
+    all_rows: dict[str, dict] = {}
+    if santiago_xlsx:
+        parsed = parse_workbook(santiago_xlsx)
+        print(f"{santiago_xlsx.name}: {len(parsed)} filas", file=sys.stderr)
+        all_rows.update(parsed)
 
-    plans: list[dict] = []
-    missing_pdf: list[str] = []
+    if regiones_xlsx:
+        parsed = parse_workbook(regiones_xlsx)
+        print(f"{regiones_xlsx.name}: {len(parsed)} filas", file=sys.stderr)
+        all_rows.update(parsed)
 
-    for family, prefix in FAMILY_TO_PREFIX.items():
-        for (row_family, suffix), row in excel_rows.items():
-            if row_family != family:
-                continue
-            unique_code = f"{prefix}{suffix}"
-            plan = build_plan(
-                unique_code,
-                row_family,
-                suffix,
-                row["base_price_uf"],
-                row["coverage"],
-            )
-            if unique_code in pdf_codes:
-                plans.append(plan)
-            else:
-                missing_pdf.append(unique_code)
+    pdf_codes = collect_pdf_codes(
+        santiago_pdf_dir,
+        regiones_pdf_dir if regiones_pdf_dir else Path(),
+    )
 
-    parsed_codes = {plan["unique_code"] for plan in plans}
-    orphan_pdfs = [code for code in pdf_codes if code not in parsed_codes]
+    plans = [plan for code, plan in sorted(all_rows.items()) if code in pdf_codes]
+    missing_pdf = sorted(code for code in all_rows if code not in pdf_codes)
+    orphan_pdfs = sorted(code for code in pdf_codes if code not in all_rows)
 
     output_path.write_text(json.dumps(plans, ensure_ascii=False, indent=2), encoding="utf-8")
 
@@ -319,6 +374,7 @@ def main() -> None:
         f"Planes parseados: {len(plans)} (con cobertura: {with_cov}) -> {output_path}",
         file=sys.stderr,
     )
+    print(f"PDFs en storage: {len(pdf_codes)}", file=sys.stderr)
     if missing_pdf:
         print(
             f"Filas Excel sin PDF ({len(missing_pdf)}): {', '.join(missing_pdf[:8])}"

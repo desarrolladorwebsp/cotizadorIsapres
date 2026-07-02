@@ -8,6 +8,8 @@ export interface UserRecord {
   rut: string | null;
   role: UserRole;
   active: boolean;
+  assignedExecutiveId?: string | null;
+  assignedExecutiveName?: string | null;
   createdAt: string;
   updatedAt: string;
 }

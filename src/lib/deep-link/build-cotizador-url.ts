@@ -8,6 +8,11 @@ import {
 } from "@/lib/filter-options";
 import { DEEP_LINK_PARAMS } from "@/lib/deep-link/params";
 import { normalizeIncomeDigits } from "@/lib/deep-link/income";
+import {
+  PREMIUM_COTIZADOR_PATH,
+  resolveAppBaseUrl,
+  usesPremiumRouting,
+} from "@/lib/platform/routing";
 import type {
   ParsedCotizadorDeepLink,
   SolicitarModalTab,
@@ -16,6 +21,8 @@ import type {
 export interface BuildCotizadorUrlInput {
   baseUrl?: string;
   entidad?: string;
+  /** Alias explícito de entidad (agent key / embed key). */
+  agent?: string;
   region?: string;
   edad?: number;
   sexo?: string;
@@ -40,6 +47,11 @@ export interface BuildCotizadorUrlInput {
   telefono?: string;
 }
 
+export interface BuildCotizadorUrlOptions {
+  /** Siempre usa /cotizador?agent= (salida del widget embebido). */
+  forcePremiumPath?: boolean;
+}
+
 function resolveVistaParam(
   vista: BuildCotizadorUrlInput["vista"],
 ): string | undefined {
@@ -49,14 +61,20 @@ function resolveVistaParam(
   return "overview";
 }
 
-export function buildCotizadorUrl(input: BuildCotizadorUrlInput): string {
-  const base = (input.baseUrl ?? "https://cotizador.cotizaloantes.cl").replace(
-    /\/$/,
-    "",
-  );
-  const params = new URLSearchParams();
+function appendCotizadorQueryParams(
+  params: URLSearchParams,
+  input: BuildCotizadorUrlInput,
+  usePremiumAgentParam: boolean,
+): void {
+  const agent = (input.agent ?? input.entidad)?.trim().toLowerCase();
 
-  if (input.entidad) params.set(DEEP_LINK_PARAMS.entidad, input.entidad);
+  if (agent) {
+    if (usePremiumAgentParam) {
+      params.set(DEEP_LINK_PARAMS.agent, agent);
+    } else {
+      params.set(DEEP_LINK_PARAMS.entidad, agent);
+    }
+  }
   if (input.region) params.set(DEEP_LINK_PARAMS.region, input.region);
   if (input.edad !== undefined) params.set(DEEP_LINK_PARAMS.edad, String(input.edad));
   if (input.sexo) params.set(DEEP_LINK_PARAMS.sexo, input.sexo);
@@ -101,15 +119,36 @@ export function buildCotizadorUrl(input: BuildCotizadorUrlInput): string {
   if (input.nombre) params.set(DEEP_LINK_PARAMS.nombre, input.nombre.trim());
   if (input.rut) params.set(DEEP_LINK_PARAMS.rut, input.rut.trim());
   if (input.telefono) params.set(DEEP_LINK_PARAMS.telefono, input.telefono.trim());
+}
 
-  const path = input.entidad?.trim() ? `/${input.entidad.trim()}` : "";
+export function buildCotizadorUrl(
+  input: BuildCotizadorUrlInput,
+  options: BuildCotizadorUrlOptions = {},
+): string {
+  const base = resolveAppBaseUrl(input.baseUrl);
+  const usePremiumPath =
+    options.forcePremiumPath ?? usesPremiumRouting(base);
+  const params = new URLSearchParams();
+
+  appendCotizadorQueryParams(params, input, usePremiumPath);
+
   const query = params.toString();
+
+  if (usePremiumPath) {
+    return query
+      ? `${base}${PREMIUM_COTIZADOR_PATH}?${query}`
+      : `${base}${PREMIUM_COTIZADOR_PATH}`;
+  }
+
+  const agent = (input.agent ?? input.entidad)?.trim().toLowerCase();
+  const path = agent ? `/${agent}` : "";
   return query ? `${base}${path}?${query}` : `${base}${path}`;
 }
 
 export function buildCotizadorUrlFromParsed(
   parsed: ParsedCotizadorDeepLink,
   baseUrl?: string,
+  options: BuildCotizadorUrlOptions = {},
 ): string {
   return buildCotizadorUrl({
     baseUrl,
@@ -138,18 +177,19 @@ export function buildCotizadorUrlFromParsed(
     nombre: parsed.requestPrefill?.name,
     rut: parsed.requestPrefill?.rut,
     telefono: parsed.requestPrefill?.phone,
-  });
+  }, options);
 }
 
 export function buildSolicitarUrl(
   input: BuildCotizadorUrlInput & { plan: string },
+  options: BuildCotizadorUrlOptions = {},
 ): string {
   return buildCotizadorUrl({
     ...input,
     vista: input.vista ?? "solicitar",
     q: input.q ?? input.plan,
     auto: input.auto ?? Boolean(input.region || input.edad !== undefined),
-  });
+  }, options);
 }
 
 export function getSolicitarDeepLinkDocumentation(
@@ -581,6 +621,13 @@ $params = http_build_query([
 ]);
 header('Location: ${cotizadorBase}/?' . $params);
 exit;`,
+    },
+    api_builder: {
+      method: "POST",
+      path: "/api/public/v1/cotizador/url",
+      auth_required: true,
+      description:
+        "Genera la URL de redirección al cotizador completo con validación de parámetros. Misma lógica que el widget embebido al pulsar «Buscar mejor plan».",
     },
     notes_for_integrators: [
       "El deep link es público: no necesitas PUBLIC_API_SECRET para redirigir usuarios al cotizador.",

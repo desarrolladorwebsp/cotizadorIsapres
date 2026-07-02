@@ -10,6 +10,7 @@ const prisma = new PrismaClient();
 const ADMIN_PROFILES: Record<string, string> = {
   "admin@isaprespremium.cl": "Usuario Prueba Admin 1",
   "superadmin@isaprespremium.cl": "Usuario Prueba",
+  "soyalfredo.dev@gmail.com": "Alfredo Hurtado",
 };
 
 async function upsertAdminPassword(email: string, password: string) {

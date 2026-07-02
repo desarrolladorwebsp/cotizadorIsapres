@@ -3,12 +3,13 @@ import {
   apiErrorResponse,
   parseJsonBody,
 } from "@/lib/api/api-error";
-import {
-  createStaffAccount,
-  listStaffAccounts,
-} from "@/lib/auth/account-store";
+import { readAdminById } from "@/lib/auth/account-store";
 import { requireAdminSession } from "@/lib/auth/require-auth";
-import { sendStaffInviteEmail } from "@/lib/email/send-staff-invite";
+import { createStaffInvite } from "@/lib/auth/staff-invite-store";
+import { isValidRut, formatRut } from "@/lib/auth/rut";
+import { sendStaffActivationEmail } from "@/lib/email/send-staff-invite";
+import { listPendingStaffInvites } from "@/lib/auth/staff-invite-store";
+import { listStaffAccounts } from "@/lib/auth/account-store";
 import type { CreateStaffAccountInput, StaffRealm } from "@/types/staff-account";
 import type { SubscriptionStatus } from "@prisma/client";
 
@@ -29,8 +30,7 @@ function isValidCreateInput(payload: unknown): payload is CreateStaffAccountInpu
     (data.realm === "admin" || data.realm === "executive") &&
     typeof data.email === "string" &&
     data.email.trim().length > 0 &&
-    typeof data.fullName === "string" &&
-    data.fullName.trim().length > 0 &&
+    (data.fullName === undefined || typeof data.fullName === "string") &&
     (data.phone === undefined || typeof data.phone === "string") &&
     (data.rut === undefined || typeof data.rut === "string") &&
     (data.subscriptionStatus === undefined ||
@@ -42,8 +42,11 @@ function isValidCreateInput(payload: unknown): payload is CreateStaffAccountInpu
 export async function GET(request: Request) {
   try {
     await requireAdminSession(request);
-    const accounts = await listStaffAccounts();
-    return NextResponse.json(accounts);
+    const [accounts, pendingInvites] = await Promise.all([
+      listStaffAccounts(),
+      listPendingStaffInvites(),
+    ]);
+    return NextResponse.json({ accounts, pendingInvites });
   } catch (error) {
     const { body, status } = apiErrorResponse(error);
     return NextResponse.json(body, { status });
@@ -52,29 +55,40 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    await requireAdminSession(request);
+    const { session } = await requireAdminSession(request);
     const payload = await parseJsonBody(request);
 
     if (!isValidCreateInput(payload)) {
       return NextResponse.json(
-        { error: "Datos de usuario inválidos." },
+        { error: "Datos de invitación inválidos." },
         { status: 400 },
       );
     }
 
-    const { account, temporaryPassword } = await createStaffAccount(payload);
+    const rutRaw = payload.rut?.trim();
+    if (rutRaw && !isValidRut(rutRaw)) {
+      return NextResponse.json({ error: "El RUT no es válido." }, { status: 400 });
+    }
 
-    await sendStaffInviteEmail({
-      fullName: account.fullName,
-      email: account.email,
-      temporaryPassword,
+    const admin = await readAdminById(session.sub);
+    const { token } = await createStaffInvite({
+      email: payload.email,
       realm: payload.realm as StaffRealm,
+      rut: rutRaw ? formatRut(rutRaw) : undefined,
+      invitedByAdminId: admin?.id,
+    });
+
+    await sendStaffActivationEmail({
+      email: payload.email.trim().toLowerCase(),
+      realm: payload.realm as StaffRealm,
+      activationToken: token,
+      rut: rutRaw ? formatRut(rutRaw) : null,
     });
 
     return NextResponse.json(
       {
-        account,
-        message: "Usuario creado. Se envió la clave temporal al correo indicado.",
+        message:
+          "Invitación enviada. La persona debe abrir el enlace del correo para crear su cuenta.",
       },
       { status: 201 },
     );

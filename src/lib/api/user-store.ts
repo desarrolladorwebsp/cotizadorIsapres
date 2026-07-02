@@ -1,8 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import type { UserRecord, UserRole } from "@/types/user";
-import type { User as DbUser } from "@prisma/client";
+import type { User as DbUser, ExecutiveAccount } from "@prisma/client";
 
-function mapDbUser(user: DbUser): UserRecord {
+type UserWithExecutive = DbUser & {
+  assignedExecutive?: Pick<ExecutiveAccount, "id" | "fullName" | "email"> | null;
+};
+
+function mapDbUser(user: UserWithExecutive): UserRecord {
   return {
     id: user.id,
     email: user.email,
@@ -11,6 +15,8 @@ function mapDbUser(user: DbUser): UserRecord {
     rut: user.rut,
     role: user.role as UserRole,
     active: user.active,
+    assignedExecutiveId: user.assignedExecutiveId,
+    assignedExecutiveName: user.assignedExecutive?.fullName ?? null,
     createdAt: user.createdAt.toISOString(),
     updatedAt: user.updatedAt.toISOString(),
   };
@@ -20,13 +26,25 @@ export async function readUsers(role?: UserRole): Promise<UserRecord[]> {
   const users = await prisma.user.findMany({
     where: role ? { role } : undefined,
     orderBy: [{ role: "asc" }, { fullName: "asc" }],
+    include: {
+      assignedExecutive: {
+        select: { id: true, fullName: true, email: true },
+      },
+    },
   });
 
   return users.map(mapDbUser);
 }
 
 export async function readUserById(id: string): Promise<UserRecord | null> {
-  const user = await prisma.user.findUnique({ where: { id } });
+  const user = await prisma.user.findUnique({
+    where: { id },
+    include: {
+      assignedExecutive: {
+        select: { id: true, fullName: true, email: true },
+      },
+    },
+  });
   return user ? mapDbUser(user) : null;
 }
 
@@ -35,6 +53,11 @@ export async function readUserByEmail(
 ): Promise<UserRecord | null> {
   const user = await prisma.user.findUnique({
     where: { email: email.trim().toLowerCase() },
+    include: {
+      assignedExecutive: {
+        select: { id: true, fullName: true, email: true },
+      },
+    },
   });
   return user ? mapDbUser(user) : null;
 }
@@ -57,6 +80,11 @@ export async function createUser(input: CreateUserInput): Promise<UserRecord> {
       rut: input.rut?.trim() ?? null,
       role: input.role ?? "CLIENT",
       active: input.active ?? true,
+    },
+    include: {
+      assignedExecutive: {
+        select: { id: true, fullName: true, email: true },
+      },
     },
   });
 
@@ -84,6 +112,28 @@ export async function upsertUserByEmail(
       rut: input.rut?.trim() ?? null,
       role: input.role ?? undefined,
       active: input.active ?? undefined,
+    },
+    include: {
+      assignedExecutive: {
+        select: { id: true, fullName: true, email: true },
+      },
+    },
+  });
+
+  return mapDbUser(user);
+}
+
+export async function assignUserToExecutive(
+  userId: string,
+  executiveAccountId: string | null,
+): Promise<UserRecord> {
+  const user = await prisma.user.update({
+    where: { id: userId },
+    data: { assignedExecutiveId: executiveAccountId },
+    include: {
+      assignedExecutive: {
+        select: { id: true, fullName: true, email: true },
+      },
     },
   });
 

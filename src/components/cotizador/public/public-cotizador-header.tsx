@@ -21,7 +21,11 @@ function ExitIcon() {
   );
 }
 
-export function PublicCotizadorHeader() {
+interface PublicCotizadorHeaderProps {
+  embedMode?: boolean;
+}
+
+export function PublicCotizadorHeader({ embedMode = false }: PublicCotizadorHeaderProps) {
   const { ufToClp, loading, isFallback } = useUfValue();
   const { entity, isBranded } = usePartnerEntity();
 
@@ -37,10 +41,24 @@ export function PublicCotizadorHeader() {
     ? entity!.logoUrl
     : "/images/logo-cotizalo-antes.png";
 
+  const logoImage = (
+    <Image
+      src={logoSrc}
+      alt={logoAlt}
+      width={224}
+      height={59}
+      className="h-9 w-auto max-w-[min(100%,13rem)] object-contain object-left sm:h-11 sm:max-w-none"
+      priority
+      unoptimized={logoSrc.startsWith("http")}
+    />
+  );
+
   return (
     <header
       className={joinClasses(
-        "sticky top-0 z-30 shrink-0 border-b bg-white/95 shadow-sm backdrop-blur-md supports-[backdrop-filter]:bg-white/90 lg:sticky",
+        embedMode
+          ? "shrink-0 border-b bg-white/95 shadow-sm"
+          : "sticky top-0 z-30 shrink-0 border-b bg-white/95 shadow-sm backdrop-blur-md supports-[backdrop-filter]:bg-white/90 lg:sticky",
         ui.border,
       )}
     >
@@ -50,28 +68,24 @@ export function PublicCotizadorHeader() {
           "flex h-14 w-full min-w-0 items-center gap-3 px-3 sm:h-16 sm:gap-4 sm:px-4 lg:px-6",
         )}
       >
-        <a
-          href={logoHref}
-          {...(isBranded
-            ? { target: "_blank", rel: "noopener noreferrer" }
-            : {})}
-          className="flex min-w-0 shrink items-center rounded-lg transition hover:opacity-90 focus-visible:outline-offset-4"
-        >
-          <Image
-            src={logoSrc}
-            alt={logoAlt}
-            width={224}
-            height={59}
-            className="h-9 w-auto max-w-[min(100%,13rem)] object-contain object-left sm:h-11 sm:max-w-none"
-            priority
-            unoptimized={logoSrc.startsWith("http")}
-          />
-        </a>
+        {embedMode ? (
+          <div className="flex min-w-0 shrink items-center">{logoImage}</div>
+        ) : (
+          <a
+            href={logoHref}
+            {...(isBranded
+              ? { target: "_blank", rel: "noopener noreferrer" }
+              : {})}
+            className="flex min-w-0 shrink items-center rounded-lg transition hover:opacity-90 focus-visible:outline-offset-4"
+          >
+            {logoImage}
+          </a>
+        )}
 
         <div className="ml-auto flex items-center gap-2 sm:gap-3 text-xs sm:text-sm">
           <span
             className={joinClasses(
-              "hidden items-center gap-1.5 font-semibold sm:inline-flex",
+              "inline-flex items-center gap-1.5 font-semibold",
               loading ? "text-muted/70" : "text-muted",
             )}
             title={
@@ -86,7 +100,7 @@ export function PublicCotizadorHeader() {
             ) : null}
           </span>
 
-          {isBranded ? (
+          {isBranded && !embedMode ? (
             <a
               href={entity!.websiteUrl}
               className={joinClasses(

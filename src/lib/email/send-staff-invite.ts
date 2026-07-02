@@ -1,10 +1,12 @@
 import { Resend } from "resend";
 import { ApiError } from "@/lib/api/api-error";
 import {
-  ADMIN_LOGIN_PATH,
-  EXECUTIVE_LOGIN_PATH,
+  ADMIN_ACTIVATE_ACCOUNT_PATH,
+  EXECUTIVE_ACTIVATE_ACCOUNT_PATH,
 } from "@/lib/auth/constants";
 import {
+  buildStaffActivationEmailHtml,
+  buildStaffActivationEmailSubject,
   buildStaffInviteEmailHtml,
   buildStaffInviteEmailSubject,
 } from "@/lib/email/staff-invite-templates";
@@ -14,7 +16,7 @@ function getResendConfig() {
   const apiKey = process.env.RESEND_API_KEY?.trim();
   const fromEmail =
     process.env.RESEND_FROM_EMAIL?.trim() ||
-    "Cotízalo Antes <noreply@cotizaloantes.cl>";
+    "Cotizador Premium <noreply@cotizadorpremium.cl>";
 
   if (!apiKey) {
     throw new ApiError(
@@ -36,9 +38,53 @@ function resolveAppBaseUrl(): string {
     return configured.startsWith("http") ? configured : `https://${configured}`;
   }
 
-  return "http://localhost:3000";
+  return "http://localhost:3001";
 }
 
+/** Invitación con enlace de activación (flujo principal). */
+export async function sendStaffActivationEmail(input: {
+  email: string;
+  realm: StaffRealm;
+  activationToken: string;
+  rut?: string | null;
+}): Promise<string> {
+  const { apiKey, fromEmail } = getResendConfig();
+  const resend = new Resend(apiKey);
+  const baseUrl = resolveAppBaseUrl().replace(/\/$/, "");
+  const activatePath =
+    input.realm === "admin"
+      ? ADMIN_ACTIVATE_ACCOUNT_PATH
+      : EXECUTIVE_ACTIVATE_ACCOUNT_PATH;
+  const activationUrl = `${baseUrl}${activatePath}?token=${encodeURIComponent(input.activationToken)}`;
+
+  const result = await resend.emails.send({
+    from: fromEmail,
+    to: input.email,
+    subject: buildStaffActivationEmailSubject(input.realm),
+    html: buildStaffActivationEmailHtml({
+      email: input.email,
+      activationUrl,
+      realm: input.realm,
+      rut: input.rut,
+    }),
+  });
+
+  if (result.error) {
+    throw new ApiError(
+      `No se pudo enviar el correo de invitación: ${result.error.message}`,
+      500,
+    );
+  }
+
+  const messageId = result.data?.id;
+  if (!messageId) {
+    throw new ApiError("Resend no devolvió el ID del correo enviado.", 500);
+  }
+
+  return messageId;
+}
+
+/** Legacy: clave temporal (cuentas creadas antes del flujo por enlace). */
 export async function sendStaffInviteEmail(input: {
   fullName: string;
   email: string;
@@ -47,10 +93,12 @@ export async function sendStaffInviteEmail(input: {
 }): Promise<string> {
   const { apiKey, fromEmail } = getResendConfig();
   const resend = new Resend(apiKey);
-  const baseUrl = resolveAppBaseUrl();
+  const baseUrl = resolveAppBaseUrl().replace(/\/$/, "");
   const loginPath =
-    input.realm === "admin" ? ADMIN_LOGIN_PATH : EXECUTIVE_LOGIN_PATH;
-  const loginUrl = `${baseUrl.replace(/\/$/, "")}${loginPath}`;
+    input.realm === "admin"
+      ? "/cotizador/admin/login"
+      : "/cotizador/ejecutivos/login";
+  const loginUrl = `${baseUrl}${loginPath}`;
 
   const result = await resend.emails.send({
     from: fromEmail,

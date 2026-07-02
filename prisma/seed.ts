@@ -6,7 +6,10 @@ import {
   ISAPRE_CATALOG,
   resolveIsapreIdFromName,
 } from "../src/lib/isapre-catalog";
-import { ISAPRE_GES_DEFAULTS, DEFAULT_GES_PREMIUM_UF } from "../src/lib/isapre-ges-defaults";
+import {
+  ISAPRE_GES_DEFAULTS,
+  DEFAULT_GES_PREMIUM_UF,
+} from "../src/lib/isapre-ges-defaults";
 import type { Clinic } from "../src/types/clinic";
 import type { HealthPlan } from "../src/types/plan";
 
@@ -23,6 +26,10 @@ const ADMIN_ACCOUNTS = [
   {
     email: "superadmin@isaprespremium.cl",
     fullName: "Usuario Prueba",
+  },
+  {
+    email: "soyalfredo.dev@gmail.com",
+    fullName: "Alfredo Hurtado",
   },
 ];
 
@@ -162,8 +169,7 @@ async function seedClinicsAndPlans() {
 }
 
 async function seedAuthAccounts() {
-  const password =
-    process.env.SEED_ACCOUNT_PASSWORD?.trim() || "ChangeMe123!";
+  const password = process.env.SEED_ACCOUNT_PASSWORD?.trim() || "ChangeMe123!";
   const passwordHash = await seedAuthAccountPassword(password);
 
   for (const admin of ADMIN_ACCOUNTS) {
@@ -361,6 +367,7 @@ async function seedQuotes(plans: HealthPlan[]) {
 const PARTNER_ENTITIES = [
   {
     slug: "cotizaloantes",
+    embedKey: "cotizaloantes",
     name: "Cotízalo Antes",
     logoUrl: "/images/logo-cotizalo-antes.png",
     websiteUrl: "https://cotizaloantes.cl",
@@ -384,6 +391,32 @@ const PARTNER_ENTITIES = [
       criteriaRing: "#e5e7eb",
     },
   },
+  {
+    slug: "desdetu7",
+    embedKey: "desdetu7",
+    name: "Desde Tu 7",
+    logoUrl: "https://desdetu7.cl/logo.png",
+    websiteUrl: "https://desdetu7.cl",
+    whatsappNumber: "56964133848",
+    whatsappMessage: "Hola, quiero cotizar un plan de salud desde Desde Tu 7",
+    exitLabel: "Volver a Desde Tu 7",
+    brandKey: "desdetu7",
+    theme: {
+      primary: "#ff6600",
+      primaryHover: "#ff8533",
+      primaryDark: "#cc5200",
+      primaryForeground: "#ffffff",
+      secondary: "#111827",
+      secondaryMuted: "#f5f7fa",
+      bgLayout: "#ffffff",
+      foreground: "#111827",
+      muted: "#6b7280",
+      border: "#e5e7eb",
+      surfaceHover: "#f4f4f5",
+      criteriaSurface: "#ffffff",
+      criteriaRing: "#e5e7eb",
+    },
+  },
 ];
 
 async function seedPartnerEntities() {
@@ -392,6 +425,7 @@ async function seedPartnerEntities() {
       where: { slug: partner.slug },
       create: {
         slug: partner.slug,
+        embedKey: partner.embedKey,
         name: partner.name,
         logoUrl: partner.logoUrl,
         websiteUrl: partner.websiteUrl,
@@ -403,6 +437,7 @@ async function seedPartnerEntities() {
         active: true,
       },
       update: {
+        embedKey: partner.embedKey,
         name: partner.name,
         logoUrl: partner.logoUrl,
         websiteUrl: partner.websiteUrl,

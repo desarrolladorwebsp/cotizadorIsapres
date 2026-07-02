@@ -29,6 +29,7 @@ function mapDbPartnerEntity(entity: DbPartnerEntity): PartnerEntityRecord {
   return {
     id: entity.id,
     slug: entity.slug,
+    embedKey: entity.embedKey,
     name: entity.name,
     logoUrl: entity.logoUrl,
     websiteUrl: entity.websiteUrl,
@@ -58,6 +59,7 @@ export function toPublicPartnerEntity(
 ): PartnerEntityPublic {
   return {
     slug: entity.slug,
+    embedKey: entity.embedKey,
     name: entity.name,
     logoUrl: entity.logoUrl,
     websiteUrl: entity.websiteUrl,
@@ -98,6 +100,54 @@ export async function readPartnerEntityBySlug(
 
   const fallback = getFallbackPartnerEntity(normalized);
   return fallback ? mapFallbackToRecord(fallback) : null;
+}
+
+export async function readPartnerEntityByEmbedKey(
+  embedKey: string,
+): Promise<PartnerEntityRecord | null> {
+  const normalized = embedKey.trim().toLowerCase();
+
+  if (
+    !isPartnerEntityDbUnavailable() &&
+    typeof prisma.partnerEntity?.findFirst === "function"
+  ) {
+    try {
+      const entity = await prisma.partnerEntity.findFirst({
+        where: { embedKey: normalized, active: true },
+      });
+
+      if (entity) {
+        return mapDbPartnerEntity(entity);
+      }
+    } catch (error) {
+      if (isPartnerEntitySchemaError(error)) {
+        markPartnerEntityDbUnavailable();
+        logPartnerEntitySchemaWarning();
+      } else {
+        console.error("readPartnerEntityByEmbedKey: error de base de datos", error);
+      }
+    }
+  }
+
+  const fallback = getFallbackPartnerEntity(normalized);
+  if (fallback && fallback.embedKey === normalized) {
+    return mapFallbackToRecord(fallback);
+  }
+
+  return readPartnerEntityBySlug(normalized);
+}
+
+/** Resuelve agent key (embedKey o slug) hacia la entidad aliada activa. */
+export async function readPartnerEntityByAgentKey(
+  agentKey: string,
+): Promise<PartnerEntityRecord | null> {
+  const normalized = agentKey.trim().toLowerCase();
+  if (!normalized) return null;
+
+  const byEmbedKey = await readPartnerEntityByEmbedKey(normalized);
+  if (byEmbedKey) return byEmbedKey;
+
+  return readPartnerEntityBySlug(normalized);
 }
 
 export async function readActivePartnerSlugs(): Promise<string[]> {

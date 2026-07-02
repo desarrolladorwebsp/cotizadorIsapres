@@ -107,6 +107,49 @@ export function buildPublicApiAgentGuide(request: Request) {
       },
       {
         method: "POST",
+        path: `${baseUrl}/cotizador/url`,
+        summary:
+          "Genera la URL de redirección al cotizador completo con criterios de búsqueda en query params",
+        auth_required: true,
+        request: {
+          content_type: "application/json",
+          shape: {
+            agent: "string — agent key / embed key del socio (premium: ?agent=)",
+            entidad: "string — alias legacy de agent",
+            region: "string",
+            edad: "number",
+            sexo: "m | f (opcional, obsoleto)",
+            ingreso: "string — CLP sin formato",
+            cargas: "number[] — edades de cargas",
+            q: "string — búsqueda por nombre/código/isapre",
+            precioMin: "number — UF",
+            precioMax: "number — UF",
+            isapres: "string[]",
+            zonas: "string[]",
+            tipoPlan: "string[]",
+            coberturaH: "number",
+            coberturaA: "number",
+            orden: "price_asc | price_desc | coverage",
+            moneda: "clp | uf",
+            email: "string",
+            auto: "boolean — default true",
+            baseUrl: "string — URL base del cotizador (opcional)",
+          },
+        },
+        response: {
+          content_type: "application/json",
+          shape: {
+            data: {
+              url: "string — URL completa para redirigir al usuario",
+              agent: "string | null",
+              has_quote_criteria: "boolean",
+              instructions: "string",
+            },
+          },
+        },
+      },
+      {
+        method: "POST",
         path: `${baseUrl}/solicitar/url`,
         summary:
           "Genera la URL de redirección al cotizador para abrir el modal de solicitud de un plan",

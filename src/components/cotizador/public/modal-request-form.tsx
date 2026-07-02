@@ -33,7 +33,12 @@ function InfoIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" className="size-3.5" aria-hidden>
       <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M12 10v5M12 8h.01" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path
+        d="M12 10v5M12 8h.01"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
@@ -85,7 +90,9 @@ export function ModalRequestForm({
         <h3
           className={joinClasses(
             "font-bold",
-            variant === "card" ? "text-lg text-secondary" : "text-lg text-primary-dark",
+            variant === "card"
+              ? "text-lg text-secondary"
+              : "text-lg text-primary-dark",
           )}
         >
           Solicitar
@@ -199,7 +206,10 @@ export function ModalRequestForm({
           <legend className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground">
             ¿Es {planIsapre} tu Isapre actual?
             <span className="text-accent-danger">*</span>
-            <span className={accent.valueSecondary} title="Información sobre tu afiliación actual">
+            <span
+              className={accent.valueSecondary}
+              title="Información sobre tu afiliación actual"
+            >
               <InfoIcon />
             </span>
           </legend>
@@ -276,7 +286,11 @@ export function ModalRequestForm({
   }
 
   return (
-    <form onSubmit={onSubmit} noValidate className={joinClasses(safeWidth, "space-y-5")}>
+    <form
+      onSubmit={onSubmit}
+      noValidate
+      className={joinClasses(safeWidth, "space-y-5")}
+    >
       {formContent}
     </form>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 import { PLAN_LOADING_SKELETON_COUNT } from "@/lib/plan-search-config";
 import { ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
@@ -65,14 +65,9 @@ export function PublicPlanResultsLoading({
   count = PLAN_LOADING_SKELETON_COUNT,
   message = "Buscando los mejores planes para ti…",
 }: PublicPlanResultsLoadingProps) {
-  const reduceMotion = useReducedMotion();
-
   return (
-    <motion.div
-      initial={reduceMotion ? false : { opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.2 }}
-      className="flex flex-col gap-4"
+    <div
+      className="flex flex-col gap-4 motion-safe:animate-fade-in"
       role="status"
       aria-live="polite"
       aria-busy="true"
@@ -91,7 +86,7 @@ export function PublicPlanResultsLoading({
           <PlanCardSkeleton key={index} index={index} />
         ))}
       </div>
-    </motion.div>
+    </div>
   );
 }
 

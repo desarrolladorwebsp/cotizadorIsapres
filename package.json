@@ -1,5 +1,5 @@
 {
-  "name": "cotizador-web",
+  "name": "cotizador-premium",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -17,13 +17,16 @@
     "upload-pdfs": "tsx scripts/upload-plan-pdfs.ts",
     "import-banmedica": "tsx scripts/import-banmedica-plans.ts",
     "import-colmena": "tsx scripts/import-colmena-plans.ts",
+    "export-missing-pdfs": "tsx scripts/export-plan-reports.ts",
+    "export-plan-reports": "tsx scripts/export-plan-reports.ts",
     "backfill-plan-zones": "tsx scripts/backfill-plan-zones.ts",
     "verify-blob": "tsx scripts/verify-blob-connection.ts",
     "sync-pdf-urls": "tsx scripts/sync-pdf-urls-from-blob.ts",
     "test-cotizacion-notify": "tsx scripts/test-cotizacion-notify.ts",
     "test-plan-query": "tsx scripts/test-plan-query.ts",
     "test-uf-service": "tsx scripts/test-uf-service.ts",
-    "reset-admin-password": "tsx scripts/reset-admin-password.ts"
+    "reset-admin-password": "tsx scripts/reset-admin-password.ts",
+    "upsert-admin-account": "tsx scripts/upsert-admin-account.ts"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"

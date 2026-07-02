@@ -20,10 +20,20 @@ export interface StaffAccountRecord {
 export interface CreateStaffAccountInput {
   realm: StaffRealm;
   email: string;
-  fullName: string;
+  /** Opcional al invitar; se completa en la activación. */
+  fullName?: string;
   phone?: string;
   rut?: string;
   subscriptionStatus?: SubscriptionStatus;
+}
+
+export interface PendingStaffInviteRecord {
+  id: string;
+  email: string;
+  realm: StaffRealm;
+  rut: string | null;
+  expiresAt: string;
+  createdAt: string;
 }
 
 export interface UpdateStaffAccountInput {

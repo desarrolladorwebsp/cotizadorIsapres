@@ -5,7 +5,6 @@ import { fileURLToPath } from "node:url";
 const rootDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const colmenaDir = path.join(rootDir, "storage", "planes-pdf", "colmena");
 const parsedJson = path.join(rootDir, "scripts", ".colmena-plans-parsed.json");
-const pdfDir = path.join(colmenaDir, "PDF COLMENA SANTIAGO");
 
 function run(command: string) {
   console.log(`\n> ${command}`);
@@ -14,6 +13,6 @@ function run(command: string) {
 
 run(`python3 scripts/parse-colmena-excel.py "${colmenaDir}" "${parsedJson}"`);
 run(`npx tsx scripts/sync-consalud-plans.ts "${parsedJson}" Colmena`);
-run(`npx tsx scripts/upload-plan-pdfs.ts "${pdfDir}"`);
+run(`npx tsx scripts/upload-plan-pdfs.ts "${colmenaDir}"`);
 
 console.log("\nImportación Colmena finalizada.");

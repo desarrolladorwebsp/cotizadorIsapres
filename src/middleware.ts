@@ -1,19 +1,24 @@
 import { NextResponse, type NextRequest } from "next/server";
 import {
+  ADMIN_ACTIVATE_ACCOUNT_PATH,
   ADMIN_CHANGE_PASSWORD_PATH,
   AUTH_REALM,
+  EXECUTIVE_ACTIVATE_ACCOUNT_PATH,
   EXECUTIVE_CHANGE_PASSWORD_PATH,
   SESSION_COOKIE,
 } from "@/lib/auth/constants";
 import { verifySessionToken } from "@/lib/auth/jwt";
 import type { SessionPayload } from "@/lib/auth/types";
 import {
+  AGENT_QUERY_PARAM,
   DEFAULT_PARTNER_ENTITY_SLUG,
   PARTNER_ENTITY_COOKIE,
   PARTNER_ENTITY_COOKIE_MAX_AGE,
   PARTNER_ENTITY_QUERY_PARAM,
   RESERVED_ROOT_SEGMENTS,
 } from "@/lib/partner-entity/constants";
+import { isValidAgentKeySegment } from "@/lib/platform/routing";
+import { forwardRequest } from "@/lib/embed/middleware-embed";
 
 const ADMIN_PREFIX = "/cotizador/admin";
 const EXECUTIVE_PREFIX = "/cotizador/ejecutivos";
@@ -67,24 +72,51 @@ function applyPartnerCookieFromPath(
   return setPartnerEntityCookie(response, slug);
 }
 
-export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-
-  if (pathname === "/" || pathname === "/cotizador") {
-    const entidad = request.nextUrl.searchParams
+function readAgentKeyFromSearchParams(request: NextRequest): string | null {
+  const agent =
+    request.nextUrl.searchParams.get(AGENT_QUERY_PARAM)?.trim().toLowerCase() ??
+    request.nextUrl.searchParams
       .get(PARTNER_ENTITY_QUERY_PARAM)
       ?.trim()
       .toLowerCase();
 
-    if (entidad && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(entidad)) {
-      const redirectUrl = new URL(`/${entidad}`, request.url);
-      redirectUrl.search = request.nextUrl.search;
-      redirectUrl.searchParams.delete(PARTNER_ENTITY_QUERY_PARAM);
-      const redirect = NextResponse.redirect(redirectUrl);
-      return setPartnerEntityCookie(redirect, entidad);
+  if (!agent || !isValidAgentKeySegment(agent)) {
+    return null;
+  }
+
+  return agent;
+}
+
+function redirectToCotizadorWithAgent(
+  request: NextRequest,
+  agent: string,
+): NextResponse {
+  const redirectUrl = new URL("/cotizador", request.url);
+  redirectUrl.search = request.nextUrl.search;
+  redirectUrl.searchParams.set(AGENT_QUERY_PARAM, agent);
+  redirectUrl.searchParams.delete(PARTNER_ENTITY_QUERY_PARAM);
+  return setPartnerEntityCookie(NextResponse.redirect(redirectUrl), agent);
+}
+
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  if (pathname === "/") {
+    const agent = readAgentKeyFromSearchParams(request);
+    if (agent) {
+      return redirectToCotizadorWithAgent(request, agent);
+    }
+    return forwardRequest(request);
+  }
+
+  if (pathname === "/cotizador") {
+    const agent = readAgentKeyFromSearchParams(request);
+    const response = forwardRequest(request);
+
+    if (agent) {
+      return setPartnerEntityCookie(response, agent);
     }
 
-    const response = NextResponse.next();
     if (!request.cookies.get(PARTNER_ENTITY_COOKIE)?.value) {
       setPartnerEntityCookie(response, DEFAULT_PARTNER_ENTITY_SLUG);
     }
@@ -94,7 +126,12 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith(ADMIN_PREFIX)) {
     const session = await readStaffSession(request, AUTH_REALM.admin);
     const isLoginPage = pathname === ADMIN_LOGIN;
+    const isActivatePage = pathname === ADMIN_ACTIVATE_ACCOUNT_PATH;
     const isChangePasswordPage = pathname === ADMIN_CHANGE_PASSWORD_PATH;
+
+    if (isActivatePage) {
+      return forwardRequest(request);
+    }
 
     if (isLoginPage) {
       if (session) {
@@ -103,7 +140,7 @@ export async function middleware(request: NextRequest) {
           : ADMIN_PREFIX;
         return NextResponse.redirect(new URL(target, request.url));
       }
-      return NextResponse.next();
+      return forwardRequest(request);
     }
 
     if (isChangePasswordPage) {
@@ -112,7 +149,7 @@ export async function middleware(request: NextRequest) {
         loginUrl.searchParams.set("next", ADMIN_CHANGE_PASSWORD_PATH);
         return NextResponse.redirect(loginUrl);
       }
-      return NextResponse.next();
+      return forwardRequest(request);
     }
 
     if (!session) {
@@ -127,13 +164,18 @@ export async function middleware(request: NextRequest) {
       );
     }
 
-    return NextResponse.next();
+    return forwardRequest(request);
   }
 
   if (pathname.startsWith(EXECUTIVE_PREFIX)) {
     const session = await readStaffSession(request, AUTH_REALM.executive);
     const isLoginPage = pathname === EXECUTIVE_LOGIN;
+    const isActivatePage = pathname === EXECUTIVE_ACTIVATE_ACCOUNT_PATH;
     const isChangePasswordPage = pathname === EXECUTIVE_CHANGE_PASSWORD_PATH;
+
+    if (isActivatePage) {
+      return forwardRequest(request);
+    }
 
     if (isLoginPage) {
       if (session) {
@@ -142,7 +184,7 @@ export async function middleware(request: NextRequest) {
           : EXECUTIVE_PREFIX;
         return NextResponse.redirect(new URL(target, request.url));
       }
-      return NextResponse.next();
+      return forwardRequest(request);
     }
 
     if (isChangePasswordPage) {
@@ -151,7 +193,7 @@ export async function middleware(request: NextRequest) {
         loginUrl.searchParams.set("next", EXECUTIVE_CHANGE_PASSWORD_PATH);
         return NextResponse.redirect(loginUrl);
       }
-      return NextResponse.next();
+      return forwardRequest(request);
     }
 
     if (!session) {
@@ -166,10 +208,10 @@ export async function middleware(request: NextRequest) {
       );
     }
 
-    return NextResponse.next();
+    return forwardRequest(request);
   }
 
-  const response = NextResponse.next();
+  const response = forwardRequest(request);
   return applyPartnerCookieFromPath(request, response);
 }
 
@@ -177,6 +219,7 @@ export const config = {
   matcher: [
     "/",
     "/cotizador",
+    "/embed/:path*",
     "/:partnerSlug",
     "/cotizador/admin/:path*",
     "/cotizador/ejecutivos/:path*",

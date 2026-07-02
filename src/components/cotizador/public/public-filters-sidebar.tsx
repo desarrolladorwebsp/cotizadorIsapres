@@ -19,6 +19,8 @@ export interface PublicFiltersSidebarProps {
   onPriceMaxChange: (value: number) => void;
   filters: DashboardFiltersState;
   onFiltersChange: (next: DashboardFiltersState) => void;
+  hideCoverageFilter?: boolean;
+  hidePlanTypeFilter?: boolean;
 }
 
 function CloseIcon() {
@@ -44,6 +46,8 @@ export function PublicFiltersSidebar({
   onPriceMaxChange,
   filters,
   onFiltersChange,
+  hideCoverageFilter = false,
+  hidePlanTypeFilter = false,
 }: PublicFiltersSidebarProps) {
   const isLargeScreen = useIsLargeScreen();
 
@@ -155,6 +159,8 @@ export function PublicFiltersSidebar({
             <DashboardFiltersPanel
               value={filters}
               onChange={onFiltersChange}
+              hideCoverageFilter={hideCoverageFilter}
+              hidePlanTypeFilter={hidePlanTypeFilter}
             />
           </div>
         </div>

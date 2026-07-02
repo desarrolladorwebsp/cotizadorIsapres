@@ -54,10 +54,11 @@ function writeCachedBounds(bounds: PlanCatalogBounds) {
 }
 
 export function usePlanCatalogBounds() {
-  const [bounds, setBounds] = useState<PlanCatalogBounds>(() => {
-    return readCachedBounds() ?? DEFAULT_BOUNDS;
-  });
-  const [loading, setLoading] = useState(() => readCachedBounds() === null);
+  // Always start with consistent initial state to avoid hydration mismatches.
+  // sessionStorage is only available on the client, so reading it during
+  // useState would produce different values on server vs client.
+  const [bounds, setBounds] = useState<PlanCatalogBounds>(DEFAULT_BOUNDS);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const cached = readCachedBounds();

@@ -89,18 +89,21 @@ model CoverageEntry {
 
 /// Clientes del cotizador público (sin credenciales de acceso).
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  phone     String?
-  fullName  String   @map("full_name")
-  rut       String?
-  role      UserRole @default(CLIENT)
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  quotes    Quote[]
+  id                   String            @id @default(cuid())
+  email                String            @unique
+  phone                String?
+  fullName             String            @map("full_name")
+  rut                  String?
+  role                 UserRole          @default(CLIENT)
+  active               Boolean           @default(true)
+  assignedExecutiveId  String?           @map("assigned_executive_id")
+  createdAt            DateTime          @default(now()) @map("created_at")
+  updatedAt            DateTime          @updatedAt @map("updated_at")
+  quotes               Quote[]
+  assignedExecutive    ExecutiveAccount? @relation("AssignedClients", fields: [assignedExecutiveId], references: [id], onDelete: SetNull)
 
   @@index([role])
+  @@index([assignedExecutiveId])
   @@map("users")
 }
 
@@ -110,6 +113,7 @@ model AdminAccount {
   email               String    @unique
   passwordHash        String    @map("password_hash")
   fullName            String    @map("full_name")
+  rut                 String?
   active              Boolean   @default(true)
   failedLoginAttempts Int       @default(0) @map("failed_login_attempts")
   lockedUntil         DateTime? @map("locked_until")
@@ -142,9 +146,28 @@ model ExecutiveAccount {
   mustChangePassword    Boolean            @default(false) @map("must_change_password")
   createdAt             DateTime           @default(now()) @map("created_at")
   updatedAt             DateTime           @updatedAt @map("updated_at")
+  assignedQuotes        Quote[]
+  assignedClients       User[]             @relation("AssignedClients")
 
   @@index([subscriptionStatus])
   @@map("executive_accounts")
+}
+
+/// Invitación por correo para crear cuenta admin o ejecutivo (enlace único).
+model StaffInvite {
+  id               String    @id @default(cuid())
+  email            String
+  rut              String?
+  realm            String
+  tokenHash        String    @unique @map("token_hash")
+  expiresAt        DateTime  @map("expires_at")
+  acceptedAt       DateTime? @map("accepted_at")
+  invitedByAdminId String?   @map("invited_by_admin_id")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  @@index([email])
+  @@map("staff_invites")
 }
 
 model Quote {
@@ -170,17 +193,20 @@ model Quote {
   beneficiaryCount  Int?        @map("beneficiary_count")
   totalFactors      Float?      @map("total_factors")
   notes             String?
-  partnerEntitySlug String?     @map("partner_entity_slug")
-  partnerEntityName String?     @map("partner_entity_name")
-  createdAt         DateTime    @default(now()) @map("created_at")
-  updatedAt         DateTime    @updatedAt @map("updated_at")
-  user              User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
-  plan              Plan?       @relation(fields: [planCode], references: [uniqueCode], onDelete: SetNull)
+  partnerEntitySlug String?           @map("partner_entity_slug")
+  partnerEntityName String?           @map("partner_entity_name")
+  executiveAccountId String?          @map("executive_account_id")
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @updatedAt @map("updated_at")
+  user              User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  plan              Plan?             @relation(fields: [planCode], references: [uniqueCode], onDelete: SetNull)
+  executiveAccount  ExecutiveAccount? @relation(fields: [executiveAccountId], references: [id], onDelete: SetNull)
 
   @@index([status])
   @@index([planCode])
   @@index([userId])
   @@index([partnerEntitySlug])
+  @@index([executiveAccountId])
   @@index([createdAt])
   @@map("quotes")
 }
@@ -189,6 +215,8 @@ model Quote {
 model PartnerEntity {
   id              String   @id @default(cuid())
   slug            String   @unique
+  /// Código público del widget y deep links (?agent=). Único por socio.
+  embedKey        String   @unique @map("embed_key")
   name            String
   logoUrl         String   @map("logo_url")
   websiteUrl      String   @map("website_url")

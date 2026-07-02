@@ -88,13 +88,18 @@ function renderButton(label: string, href: string): string {
   </p>`;
 }
 
-export function buildUserCotizacionEmailHtml(data: CotizacionNotifyInput): string {
+export function buildUserCotizacionEmailHtml(
+  data: CotizacionNotifyInput,
+): string {
   const rows = [
     renderTableRow("Región", escapeHtml(data.region)),
     renderTableRow("Edad titular", escapeHtml(String(data.edad))),
     renderTableRow("Sexo", escapeHtml(data.sexo ?? "No indicado")),
     renderTableRow("Ingreso mensual líquido", formatIncomeClp(data.ingreso)),
-    renderTableRow("Asegurados adicionales", escapeHtml(formatDependents(data.cargas))),
+    renderTableRow(
+      "Asegurados adicionales",
+      escapeHtml(formatDependents(data.cargas)),
+    ),
   ].join("");
 
   const body = `
@@ -111,7 +116,9 @@ export function buildUserCotizacionEmailHtml(data: CotizacionNotifyInput): strin
   return emailShell("Tu cotización de Isapre en Cotízalo Antes", body);
 }
 
-export function buildAdminCotizacionSubject(data: CotizacionNotifyInput): string {
+export function buildAdminCotizacionSubject(
+  data: CotizacionNotifyInput,
+): string {
   if (data.plan?.codigo) {
     return `Nueva cotización — ${data.plan.codigo} — ${data.email}`;
   }
@@ -121,7 +128,9 @@ export function buildAdminCotizacionSubject(data: CotizacionNotifyInput): string
   return `Nueva cotización — ${data.email}`;
 }
 
-export function buildAdminCotizacionEmailHtml(data: CotizacionNotifyInput): string {
+export function buildAdminCotizacionEmailHtml(
+  data: CotizacionNotifyInput,
+): string {
   const timestamp = new Intl.DateTimeFormat("es-CL", {
     timeZone: "America/Santiago",
     dateStyle: "full",
@@ -149,7 +158,10 @@ export function buildAdminCotizacionEmailHtml(data: CotizacionNotifyInput): stri
     renderTableRow("Búsqueda", escapeHtml(data.busqueda?.trim() || "—")),
     renderTableRow("Ordenar por", escapeHtml(data.orden?.trim() || "—")),
     renderTableRow("Moneda", escapeHtml(formatMoneda(data.moneda))),
-    renderTableRow("Isapres filtradas", escapeHtml(formatIsapres(data.isapres))),
+    renderTableRow(
+      "Isapres filtradas",
+      escapeHtml(formatIsapres(data.isapres)),
+    ),
     renderTableRow(
       "Sitio de origen",
       escapeHtml(data.partnerEntityName ?? data.partnerEntitySlug ?? "—"),

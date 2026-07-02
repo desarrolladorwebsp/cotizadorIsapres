@@ -8,10 +8,12 @@ import type { QuoteRecord } from "@/types/quote";
 import type { IsapreRecord, UpdateIsapreGesInput } from "@/types/isapre";
 import type {
   CreateStaffAccountInput,
+  PendingStaffInviteRecord,
   StaffAccountRecord,
   StaffRealm,
   UpdateStaffAccountInput,
 } from "@/types/staff-account";
+import type { UserRecord } from "@/types/user";
 
 async function parseJsonResponse<T>(response: Response): Promise<T> {
   let data: (T & { error?: string }) | null = null;
@@ -95,22 +97,50 @@ export async function updateIsapreGes(
   return parseJsonResponse<{ isapre: IsapreRecord }>(response);
 }
 
-export async function fetchStaffAccounts(): Promise<StaffAccountRecord[]> {
+export async function fetchStaffAccounts(): Promise<{
+  accounts: StaffAccountRecord[];
+  pendingInvites: PendingStaffInviteRecord[];
+}> {
   const response = await fetch("/api/admin/accounts");
-  return parseJsonResponse<StaffAccountRecord[]>(response);
+  return parseJsonResponse<{
+    accounts: StaffAccountRecord[];
+    pendingInvites: PendingStaffInviteRecord[];
+  }>(response);
 }
 
 export async function createStaffAccount(
   input: CreateStaffAccountInput,
-): Promise<{ account: StaffAccountRecord; message: string }> {
+): Promise<{ message: string }> {
   const response = await fetch("/api/admin/accounts", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
   });
-  return parseJsonResponse<{ account: StaffAccountRecord; message: string }>(
-    response,
-  );
+  return parseJsonResponse<{ message: string }>(response);
+}
+
+export async function assignQuoteToExecutive(
+  quoteId: string,
+  input: { assignToMe?: boolean; executiveAccountId?: string | null },
+): Promise<QuoteRecord> {
+  const response = await fetch(`/api/quotes/${encodeURIComponent(quoteId)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  return parseJsonResponse<QuoteRecord>(response);
+}
+
+export async function assignClientToExecutive(
+  userId: string,
+  executiveAccountId: string | null,
+): Promise<UserRecord> {
+  const response = await fetch(`/api/users/${encodeURIComponent(userId)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ assignedExecutiveId: executiveAccountId }),
+  });
+  return parseJsonResponse<UserRecord>(response);
 }
 
 export async function updateStaffAccount(

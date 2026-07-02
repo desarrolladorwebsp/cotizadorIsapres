@@ -1,13 +1,14 @@
 import { prisma } from "@/lib/prisma";
 import type { CreateQuoteInput, QuoteRecord, QuoteStatus } from "@/types/quote";
-import type { Quote as DbQuote, Plan, Isapre } from "@prisma/client";
+import type { Quote as DbQuote, Plan, Isapre, ExecutiveAccount } from "@prisma/client";
 import { upsertUserByEmail } from "./user-store";
 
-function mapDbQuote(
-  quote: DbQuote & {
-    plan?: (Pick<Plan, "planName"> & { isapreRef: Pick<Isapre, "name"> }) | null;
-  },
-): QuoteRecord {
+type QuoteWithRelations = DbQuote & {
+  plan?: (Pick<Plan, "planName"> & { isapreRef: Pick<Isapre, "name"> }) | null;
+  executiveAccount?: Pick<ExecutiveAccount, "fullName"> | null;
+};
+
+function mapDbQuote(quote: QuoteWithRelations): QuoteRecord {
   const dependentAges = Array.isArray(quote.dependentAges)
     ? (quote.dependentAges as number[])
     : undefined;
@@ -37,6 +38,8 @@ function mapDbQuote(
     notes: quote.notes,
     partnerEntitySlug: quote.partnerEntitySlug,
     partnerEntityName: quote.partnerEntityName,
+    executiveAccountId: quote.executiveAccountId,
+    executiveName: quote.executiveAccount?.fullName ?? null,
     planName: quote.plan?.planName ?? null,
     planIsapre: quote.plan?.isapreRef?.name ?? null,
     createdAt: quote.createdAt.toISOString(),
@@ -44,24 +47,46 @@ function mapDbQuote(
   };
 }
 
+const quoteInclude = {
+  plan: {
+    select: {
+      planName: true,
+      isapreRef: { select: { name: true } },
+    },
+  },
+  executiveAccount: {
+    select: { fullName: true },
+  },
+} as const;
+
 export async function readQuotes(): Promise<QuoteRecord[]> {
   const quotes = await prisma.quote.findMany({
     orderBy: { createdAt: "desc" },
-    include: {
-      plan: {
-        select: {
-          planName: true,
-          isapreRef: { select: { name: true } },
-        },
-      },
+    include: quoteInclude,
+  });
+
+  return quotes.map(mapDbQuote);
+}
+
+export async function readQuotesForExecutive(
+  executiveAccountId: string,
+): Promise<QuoteRecord[]> {
+  const quotes = await prisma.quote.findMany({
+    where: {
+      OR: [{ executiveAccountId }, { executiveAccountId: null }],
     },
+    orderBy: { createdAt: "desc" },
+    include: quoteInclude,
   });
 
   return quotes.map(mapDbQuote);
 }
 
 export async function readQuoteById(id: string): Promise<QuoteRecord | null> {
-  const quote = await prisma.quote.findUnique({ where: { id } });
+  const quote = await prisma.quote.findUnique({
+    where: { id },
+    include: quoteInclude,
+  });
   return quote ? mapDbQuote(quote) : null;
 }
 
@@ -101,7 +126,39 @@ export async function createQuote(
       partnerEntitySlug: input.partnerEntitySlug?.trim().toLowerCase() || null,
       partnerEntityName: input.partnerEntityName?.trim() || null,
     },
+    include: quoteInclude,
   });
 
   return mapDbQuote(quote);
+}
+
+export async function updateQuoteAssignment(input: {
+  quoteId: string;
+  executiveAccountId: string | null;
+  status?: QuoteStatus;
+}): Promise<QuoteRecord> {
+  const quote = await prisma.quote.update({
+    where: { id: input.quoteId },
+    data: {
+      executiveAccountId: input.executiveAccountId,
+      status: input.status,
+    },
+    include: quoteInclude,
+  });
+
+  if (input.executiveAccountId && quote.userId) {
+    await prisma.user.update({
+      where: { id: quote.userId },
+      data: { assignedExecutiveId: input.executiveAccountId },
+    });
+  }
+
+  return mapDbQuote(quote);
+}
+
+export async function assignQuoteToExecutive(
+  quoteId: string,
+  executiveAccountId: string,
+): Promise<QuoteRecord> {
+  return updateQuoteAssignment({ quoteId, executiveAccountId });
 }

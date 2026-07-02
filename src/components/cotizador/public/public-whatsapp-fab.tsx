@@ -22,8 +22,10 @@ function WhatsAppIcon({ className }: { className?: string }) {
   );
 }
 
-export function PublicWhatsAppFab() {
+export function PublicWhatsAppFab({ hidden = false }: { hidden?: boolean }) {
   const { entity } = usePartnerEntity();
+
+  if (hidden) return null;
 
   const whatsappUrl = buildWhatsAppUrl(
     entity?.whatsappNumber ?? DEFAULT_WHATSAPP_NUMBER,
@@ -32,6 +34,7 @@ export function PublicWhatsAppFab() {
 
   return (
     <motion.div
+      data-public-whatsapp-fab
       initial={{ opacity: 0, scale: 0.8, y: 16 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 380, damping: 24, delay: 0.4 }}

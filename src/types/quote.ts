@@ -30,6 +30,8 @@ export interface QuoteRecord extends CreateQuoteInput {
   id: string;
   userId: string | null;
   status: QuoteStatus;
+  executiveAccountId?: string | null;
+  executiveName?: string | null;
   createdAt: string;
   updatedAt: string;
 }

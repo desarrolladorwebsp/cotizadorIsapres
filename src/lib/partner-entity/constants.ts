@@ -3,7 +3,10 @@ export const PARTNER_ENTITY_COOKIE = "ci_partner_entity";
 
 export const PARTNER_ENTITY_COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 días
 
-/** Query param alternativo: ?entidad=cotizaloantes */
+/** Query param principal en Cotizador Premium: ?agent=cotizaloantes */
+export const AGENT_QUERY_PARAM = "agent";
+
+/** Query param legacy: ?entidad=cotizaloantes */
 export const PARTNER_ENTITY_QUERY_PARAM = "entidad";
 
 /** Segmentos de ruta raíz reservados (no son slugs de entidad). */
@@ -11,6 +14,7 @@ export const RESERVED_ROOT_SEGMENTS = new Set([
   "admin",
   "api",
   "cotizador",
+  "embed",
   "login",
   "ejecutivos",
   "_next",

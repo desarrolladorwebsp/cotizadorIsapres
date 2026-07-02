@@ -4,6 +4,7 @@ import {
 } from "@/lib/partner-entity/constants";
 import { getDefaultPartnerEntity } from "@/lib/partner-entity/fallback-entities";
 import {
+  readPartnerEntityByAgentKey,
   readPartnerEntityBySlug,
   toPublicPartnerEntity,
 } from "@/lib/partner-entity/store";
@@ -21,15 +22,23 @@ export async function readPartnerEntityFromCookieSlug(
 ): Promise<PartnerEntityPublic | null> {
   if (!slug) return null;
 
-  const entity = await readPartnerEntityBySlug(slug);
+  const entity = await readPartnerEntityByAgentKey(slug);
   return entity ? toPublicPartnerEntity(entity) : null;
 }
 
-export async function resolvePartnerEntityForHome(
+/** Resuelve entidad para /cotizador (agent key, cookie o default). */
+export async function resolvePartnerEntityForCotizador(
+  agentKey?: string,
   cookieSlug?: string,
 ): Promise<PartnerEntityPublic> {
-  const fromCookie = await readPartnerEntityFromCookieSlug(cookieSlug);
-  if (fromCookie) return fromCookie;
+  const candidates = [agentKey, cookieSlug].filter(
+    (value): value is string => Boolean(value?.trim()),
+  );
+
+  for (const key of candidates) {
+    const entity = await readPartnerEntityByAgentKey(key);
+    if (entity) return toPublicPartnerEntity(entity);
+  }
 
   const entity = await readPartnerEntityBySlug(resolveDefaultSlug());
   if (entity) return toPublicPartnerEntity(entity);
@@ -37,10 +46,25 @@ export async function resolvePartnerEntityForHome(
   return getDefaultPartnerEntity();
 }
 
+export async function resolvePartnerEntityForHome(
+  cookieSlug?: string,
+): Promise<PartnerEntityPublic> {
+  return resolvePartnerEntityForCotizador(undefined, cookieSlug);
+}
+
 export async function loadPartnerEntityPage(
   slug: string,
 ): Promise<PartnerEntityPublic | null> {
   const entity = await readPartnerEntityBySlug(slug);
+  if (!entity) return null;
+
+  return toPublicPartnerEntity(entity);
+}
+
+export async function loadPartnerEntityByEmbedKey(
+  embedKey: string,
+): Promise<PartnerEntityPublic | null> {
+  const entity = await readPartnerEntityByAgentKey(embedKey);
   if (!entity) return null;
 
   return toPublicPartnerEntity(entity);

@@ -20,6 +20,7 @@ export interface PartnerEntityTheme {
 export interface PartnerEntityRecord {
   id: string;
   slug: string;
+  embedKey: string;
   name: string;
   logoUrl: string;
   websiteUrl: string;
@@ -35,6 +36,7 @@ export interface PartnerEntityRecord {
 
 export interface PartnerEntityPublic {
   slug: string;
+  embedKey: string;
   name: string;
   logoUrl: string;
   websiteUrl: string;

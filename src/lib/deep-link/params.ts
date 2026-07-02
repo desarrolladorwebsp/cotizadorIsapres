@@ -1,5 +1,6 @@
 /** Nombres de query params para deep linking del cotizador público. */
 export const DEEP_LINK_PARAMS = {
+  agent: "agent",
   entidad: "entidad",
   region: "region",
   edad: "edad",
@@ -67,6 +68,7 @@ export const VALID_CURRENCY = new Set(["clp", "uf"]);
 
 /** Params que no deben persistirse al limpiar la URL tras hidratar. */
 export const DEEP_LINK_BOOTSTRAP_PARAMS = new Set([
+  DEEP_LINK_PARAMS.agent,
   DEEP_LINK_PARAMS.entidad,
   DEEP_LINK_PARAMS.auto,
   DEEP_LINK_PARAMS.plan,
