@@ -41,6 +41,17 @@ enum SubscriptionStatus {
   EXPIRED
 }
 
+enum ClientPipelineStatus {
+  NUEVO
+  CONTACTADO
+  EN_SEGUIMIENTO
+  PROPUESTA_ENVIADA
+  DOCUMENTACION
+  ENVIADO_ISAPRE
+  CERRADO
+  PERDIDO
+}
+
 model Isapre {
   id                 String   @id
   name               String
@@ -107,10 +118,14 @@ model User {
   phone                String?
   fullName             String            @map("full_name")
   rut                  String?
-  role                 UserRole          @default(CLIENT)
-  active               Boolean           @default(true)
-  assignedExecutiveId  String?           @map("assigned_executive_id")
-  createdAt            DateTime          @default(now()) @map("created_at")
+  role                 UserRole              @default(CLIENT)
+  active               Boolean               @default(true)
+  assignedExecutiveId  String?               @map("assigned_executive_id")
+  pipelineStatus       ClientPipelineStatus  @default(NUEVO) @map("pipeline_status")
+  pipelineChecklist    Json?                 @map("pipeline_checklist")
+  pipelineClosedRecord Json?                 @map("pipeline_closed_record")
+  pipelineNotes        String?               @map("pipeline_notes")
+  createdAt            DateTime              @default(now()) @map("created_at")
   updatedAt            DateTime          @updatedAt @map("updated_at")
   quotes               Quote[]
   assignedExecutive    StaffAccount? @relation("AssignedClients", fields: [assignedExecutiveId], references: [id], onDelete: SetNull)

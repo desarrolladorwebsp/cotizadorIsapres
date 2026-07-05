@@ -24,6 +24,10 @@ import {
   fetchExecutiveClients,
 } from "@/lib/api/admin-client";
 import { useStaffSession } from "@/hooks/use-auth-session";
+import { ClientPipelineDrawer } from "@/components/executive/client-pipeline-drawer";
+import { ClientPipelineStatusBadge } from "@/components/executive/client-pipeline-status-badge";
+import { buildClientWhatsAppMessage } from "@/lib/client-pipeline/constants";
+import { buildWhatsAppUrl } from "@/lib/partner-entity/theme";
 import { ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type { StaffAccountRecord } from "@/types/staff-account";
@@ -50,6 +54,7 @@ export function ExecutiveClientsPanel({
   const [search, setSearch] = useState("");
   const [savingId, setSavingId] = useState<string | null>(null);
   const [distributing, setDistributing] = useState(false);
+  const [pipelineClient, setPipelineClient] = useState<UserRecord | null>(null);
 
   async function loadClients() {
     setLoading(true);
@@ -198,6 +203,7 @@ export function ExecutiveClientsPanel({
                 <AdminTableHeaderCell>Ejecutivo asignado</AdminTableHeaderCell>
               ) : null}
               <AdminTableHeaderCell>Registro</AdminTableHeaderCell>
+              <AdminTableHeaderCell>Acciones</AdminTableHeaderCell>
             </tr>
           </AdminTableHead>
           <AdminTableBody>
@@ -205,9 +211,9 @@ export function ExecutiveClientsPanel({
               <AdminTableRow key={client.id}>
                 <AdminTableCell>
                   <p className="font-semibold text-foreground">{client.fullName}</p>
-                  <p className="mt-1 text-xs text-muted">
-                    {client.active ? "Activo" : "Inactivo"}
-                  </p>
+                  <div className="mt-1">
+                    <ClientPipelineStatusBadge status={client.pipelineStatus} />
+                  </div>
                 </AdminTableCell>
                 <AdminTableCell>
                   <p>{client.email}</p>
@@ -248,11 +254,51 @@ export function ExecutiveClientsPanel({
                   </AdminTableCell>
                 ) : null}
                 <AdminTableCell>{formatDate(client.createdAt)}</AdminTableCell>
+                <AdminTableCell>
+                  <div className="flex flex-wrap gap-2">
+                    {client.phone ? (
+                      <a
+                        href={buildWhatsAppUrl(
+                          client.phone,
+                          buildClientWhatsAppMessage(client.fullName),
+                        )}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <Button size="sm" variant="secondary">
+                          WhatsApp
+                        </Button>
+                      </a>
+                    ) : (
+                      <Button size="sm" variant="secondary" disabled>
+                        WhatsApp
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      onClick={() => setPipelineClient(client)}
+                    >
+                      Gestionar
+                    </Button>
+                  </div>
+                </AdminTableCell>
               </AdminTableRow>
             ))}
           </AdminTableBody>
         </AdminTable>
       </AdminTableCard>
+
+      <ClientPipelineDrawer
+        client={pipelineClient}
+        open={Boolean(pipelineClient)}
+        onClose={() => setPipelineClient(null)}
+        onUpdated={(updated) => {
+          setClients((current) =>
+            current.map((row) => (row.id === updated.id ? updated : row)),
+          );
+        }}
+        onNotify={onNotify}
+      />
     </AdminPanel>
   );
 }

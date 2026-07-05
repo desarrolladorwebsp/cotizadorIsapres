@@ -274,6 +274,21 @@ export async function distributeUnassignedClients(): Promise<{
   }>(response);
 }
 
+export async function updateClientPipeline(
+  clientId: string,
+  input: import("@/types/client-pipeline").UpdateClientPipelineInput,
+): Promise<UserRecord> {
+  const response = await fetch(
+    `/api/executive/clients/${encodeURIComponent(clientId)}/pipeline`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+  );
+  return parseJsonResponse<UserRecord>(response);
+}
+
 export async function updateStaffAccount(
   realm: StaffRealm,
   id: string,

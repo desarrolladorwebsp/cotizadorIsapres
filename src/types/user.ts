@@ -1,3 +1,9 @@
+import type {
+  ClientChecklist,
+  ClientClosedRecord,
+  ClientPipelineStatus,
+} from "@/types/client-pipeline";
+
 export type UserRole = "CLIENT" | "EXECUTIVE" | "ADMIN";
 
 export interface UserRecord {
@@ -10,6 +16,10 @@ export interface UserRecord {
   active: boolean;
   assignedExecutiveId?: string | null;
   assignedExecutiveName?: string | null;
+  pipelineStatus?: ClientPipelineStatus;
+  checklist?: ClientChecklist;
+  closedRecord?: ClientClosedRecord | null;
+  pipelineNotes?: string | null;
   createdAt: string;
   updatedAt: string;
 }

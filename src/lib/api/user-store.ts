@@ -1,13 +1,18 @@
 import { prisma } from "@/lib/prisma";
 import { ApiError } from "@/lib/api/api-error";
+import {
+  parseClientClosedRecord,
+  resolveClientChecklist,
+} from "@/lib/client-pipeline/constants";
+import type { ClientPipelineStatus } from "@/types/client-pipeline";
 import type { UserRecord, UserRole } from "@/types/user";
 import type { User as DbUser, StaffAccount } from "@prisma/client";
 
-type UserWithExecutive = DbUser & {
+export type UserWithExecutive = DbUser & {
   assignedExecutive?: Pick<StaffAccount, "id" | "fullName" | "email"> | null;
 };
 
-function mapDbUser(user: UserWithExecutive): UserRecord {
+export function mapDbUser(user: UserWithExecutive): UserRecord {
   return {
     id: user.id,
     email: user.email,
@@ -18,6 +23,10 @@ function mapDbUser(user: UserWithExecutive): UserRecord {
     active: user.active,
     assignedExecutiveId: user.assignedExecutiveId,
     assignedExecutiveName: user.assignedExecutive?.fullName ?? null,
+    pipelineStatus: user.pipelineStatus as ClientPipelineStatus,
+    checklist: resolveClientChecklist(user.pipelineChecklist),
+    closedRecord: parseClientClosedRecord(user.pipelineClosedRecord),
+    pipelineNotes: user.pipelineNotes,
     createdAt: user.createdAt.toISOString(),
     updatedAt: user.updatedAt.toISOString(),
   };
