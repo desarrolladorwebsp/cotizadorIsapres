@@ -11,20 +11,8 @@ import {
   buildStaffInviteEmailSubject,
 } from "@/lib/email/staff-invite-templates";
 import { getEquipoFromEmail, getResendApiKey } from "@/lib/email/resend-config";
+import { resolveServerAppBaseUrl } from "@/lib/platform/routing";
 import type { StaffRealm } from "@/types/staff-account";
-
-function resolveAppBaseUrl(): string {
-  const configured =
-    process.env.NEXT_PUBLIC_APP_URL?.trim() ||
-    process.env.APP_BASE_URL?.trim() ||
-    process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim();
-
-  if (configured) {
-    return configured.startsWith("http") ? configured : `https://${configured}`;
-  }
-
-  return "http://localhost:3001";
-}
 
 /** Invitación con enlace de activación (flujo principal). */
 export async function sendStaffActivationEmail(input: {
@@ -32,10 +20,11 @@ export async function sendStaffActivationEmail(input: {
   realm: StaffRealm;
   activationToken: string;
   rut?: string | null;
+  request?: Request;
 }): Promise<string> {
   const resend = new Resend(getResendApiKey());
   const fromEmail = getEquipoFromEmail();
-  const baseUrl = resolveAppBaseUrl().replace(/\/$/, "");
+  const baseUrl = resolveServerAppBaseUrl(input.request).replace(/\/$/, "");
   const activatePath =
     input.realm === "admin"
       ? ADMIN_ACTIVATE_ACCOUNT_PATH
@@ -75,10 +64,11 @@ export async function sendStaffInviteEmail(input: {
   email: string;
   temporaryPassword: string;
   realm: StaffRealm;
+  request?: Request;
 }): Promise<string> {
   const resend = new Resend(getResendApiKey());
   const fromEmail = getEquipoFromEmail();
-  const baseUrl = resolveAppBaseUrl().replace(/\/$/, "");
+  const baseUrl = resolveServerAppBaseUrl(input.request).replace(/\/$/, "");
   const loginPath = "/cotizador/acceso";
   const loginUrl = `${baseUrl}${loginPath}`;
 

@@ -126,6 +126,7 @@ export async function POST(request: Request, context: RouteContext) {
         email: account.email,
         temporaryPassword,
         realm,
+        request,
       });
 
       return NextResponse.json({
@@ -171,6 +172,7 @@ export async function POST(request: Request, context: RouteContext) {
         realm: invite.realm,
         activationToken: token,
         rut: invite.rut,
+        request,
       });
 
       return NextResponse.json({

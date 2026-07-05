@@ -13,23 +13,60 @@ export const DEFAULT_APP_BASE_URL = PROD_APP_BASE_URL;
 /** Dominio legacy white-label (compatibilidad). */
 export const LEGACY_APP_BASE_URL = "https://cotizador.cotizaloantes.cl";
 
-export function resolveAppBaseUrl(override?: string): string {
-  if (override?.trim()) {
-    return override.replace(/\/$/, "");
+function normalizeBaseUrl(value: string): string {
+  const trimmed = value.trim().replace(/\/$/, "");
+  return trimmed.startsWith("http") ? trimmed : `https://${trimmed}`;
+}
+
+function readConfiguredAppBaseUrl(): string | null {
+  const fromEnv =
+    process.env.NEXT_PUBLIC_APP_URL?.trim() ||
+    process.env.APP_BASE_URL?.trim() ||
+    process.env.NEXT_PUBLIC_COTIZADOR_URL?.trim();
+
+  if (fromEnv) return normalizeBaseUrl(fromEnv);
+
+  const vercelProduction = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim();
+  if (vercelProduction && process.env.VERCEL_ENV === "production") {
+    return normalizeBaseUrl(vercelProduction);
   }
 
-  const fromEnv =
-    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
-    process.env.APP_BASE_URL?.replace(/\/$/, "") ||
-    process.env.NEXT_PUBLIC_COTIZADOR_URL?.replace(/\/$/, "");
+  return null;
+}
 
-  if (fromEnv) return fromEnv;
+export function resolveAppBaseUrl(override?: string): string {
+  if (override?.trim()) {
+    return normalizeBaseUrl(override);
+  }
+
+  const configured = readConfiguredAppBaseUrl();
+  if (configured) return configured;
 
   if (process.env.NODE_ENV === "development") {
     return DEV_APP_BASE_URL;
   }
 
   return PROD_APP_BASE_URL;
+}
+
+/**
+ * Base URL para enlaces generados en el servidor (correos, invitaciones).
+ * Prioriza el host real del request en producción para no depender solo de env.
+ */
+export function resolveServerAppBaseUrl(request?: Request): string {
+  if (request) {
+    const forwardedHost = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim();
+    const host = forwardedHost || request.headers.get("host")?.trim();
+
+    if (host && !/localhost|127\.0\.0\.1/i.test(host)) {
+      const proto =
+        request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() ||
+        (host.includes("localhost") ? "http" : "https");
+      return normalizeBaseUrl(`${proto}://${host}`);
+    }
+  }
+
+  return resolveAppBaseUrl();
 }
 
 /** true → URLs en /cotizador?agent= ; false → /{slug}?entidad= (legacy) */

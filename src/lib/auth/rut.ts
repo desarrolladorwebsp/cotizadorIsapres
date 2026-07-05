@@ -1,6 +1,26 @@
-/** Normaliza RUT chileno a formato sin puntos (cuerpo-DV). */
+/** Normaliza RUT chileno a cuerpo + dígito verificador (sin puntos ni guion). */
 export function normalizeRut(value: string): string {
-  return value.replace(/\./g, "").replace(/\s/g, "").toUpperCase();
+  return value
+    .replace(/\./g, "")
+    .replace(/-/g, "")
+    .replace(/\s/g, "")
+    .toUpperCase();
+}
+
+/** Limpia el valor mientras el usuario escribe (sin puntos; guion opcional antes del DV). */
+export function sanitizeRutInput(value: string): string {
+  const cleaned = value
+    .replace(/\./g, "")
+    .replace(/\s/g, "")
+    .toUpperCase()
+    .replace(/[^0-9K-]/g, "");
+
+  const parts = cleaned.split("-");
+  if (parts.length <= 1) return cleaned;
+
+  const body = parts.slice(0, -1).join("").replace(/-/g, "");
+  const digit = parts[parts.length - 1].replace(/-/g, "").slice(0, 1);
+  return digit ? `${body}-${digit}` : body;
 }
 
 function computeRutCheckDigit(body: number): string {

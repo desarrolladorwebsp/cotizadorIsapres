@@ -80,6 +80,7 @@ export async function POST(request: Request) {
       realm: payload.realm as StaffRealm,
       activationToken: token,
       rut: rutRaw ? formatRut(rutRaw) : null,
+      request,
     });
 
     return NextResponse.json(

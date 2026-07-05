@@ -28,6 +28,7 @@ import {
   resendPendingStaffInvite,
   updateStaffAccount,
 } from "@/lib/api/admin-client";
+import { sanitizeRutInput } from "@/lib/auth/rut";
 import { ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type {
@@ -83,6 +84,26 @@ function getAccountStatus(account: StaffAccountRecord): {
     return { label: "Contraseña pendiente", tone: "warning" };
   }
   return { label: "Activo", tone: "success" };
+}
+
+function RutFieldInfoIcon() {
+  return (
+    <span
+      className="inline-flex size-4 items-center justify-center rounded-full text-muted"
+      title="Formato: 25684045-6 (sin puntos, guion solo antes del dígito verificador)"
+      aria-label="Formato: 25684045-6 (sin puntos, guion solo antes del dígito verificador)"
+    >
+      <svg viewBox="0 0 24 24" fill="none" className="size-3.5" aria-hidden>
+        <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.6" />
+        <path
+          d="M12 10v5M12 8h.01"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+        />
+      </svg>
+    </span>
+  );
 }
 
 export function UsersPanel({
@@ -530,16 +551,26 @@ export function UsersPanel({
 
           {draft.realm === "executive" ? (
             <label className="block space-y-2">
-              <span className="text-sm font-medium">RUT</span>
+              <span className="inline-flex items-center gap-1.5 text-sm font-medium">
+                RUT
+                <RutFieldInfoIcon />
+              </span>
               <Input
                 required
                 value={draft.rut}
                 onChange={(event) =>
-                  setDraft((current) => ({ ...current, rut: event.target.value }))
+                  setDraft((current) => ({
+                    ...current,
+                    rut: sanitizeRutInput(event.target.value),
+                  }))
                 }
-                placeholder="12.345.678-9"
+                placeholder="25684045-6"
+                inputMode="text"
+                autoComplete="off"
+                spellCheck={false}
               />
               <p className="text-xs text-muted">
+                Sin puntos; usa un guion antes del dígito verificador (ej. 25684045-6).
                 Deberá coincidir al activar la cuenta desde el enlace del correo.
               </p>
             </label>
