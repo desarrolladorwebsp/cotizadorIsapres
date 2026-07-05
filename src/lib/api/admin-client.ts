@@ -142,13 +142,16 @@ export async function fetchStaffAccounts(): Promise<{
 
 export async function createStaffAccount(
   input: CreateStaffAccountInput,
-): Promise<{ message: string }> {
+): Promise<{ message: string; pendingInvite: PendingStaffInviteRecord }> {
   const response = await fetch("/api/admin/accounts", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
   });
-  return parseJsonResponse<{ message: string }>(response);
+  return parseJsonResponse<{
+    message: string;
+    pendingInvite: PendingStaffInviteRecord;
+  }>(response);
 }
 
 export async function assignQuoteToExecutive(
@@ -234,6 +237,16 @@ export async function resendPendingStaffInvite(
   return parseJsonResponse<{ message: string }>(response);
 }
 
+export async function cancelPendingStaffInvite(
+  inviteId: string,
+): Promise<{ message: string }> {
+  const response = await fetch(
+    `/api/admin/accounts/${encodeURIComponent(inviteId)}?action=cancel-pending-invite`,
+    { method: "POST" },
+  );
+  return parseJsonResponse<{ message: string }>(response);
+}
+
 export async function assignClientToExecutive(
   userId: string,
   executiveAccountId: string | null,
@@ -244,6 +257,21 @@ export async function assignClientToExecutive(
     body: JSON.stringify({ assignedExecutiveId: executiveAccountId }),
   });
   return parseJsonResponse<UserRecord>(response);
+}
+
+export async function distributeUnassignedClients(): Promise<{
+  assigned: number;
+  remaining: number;
+  message: string;
+}> {
+  const response = await fetch("/api/executive/clients/distribute", {
+    method: "POST",
+  });
+  return parseJsonResponse<{
+    assigned: number;
+    remaining: number;
+    message: string;
+  }>(response);
 }
 
 export async function updateStaffAccount(

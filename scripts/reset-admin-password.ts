@@ -17,22 +17,26 @@ async function upsertAdminPassword(email: string, password: string) {
   const passwordHash = await hashPassword(password);
   const fullName = ADMIN_PROFILES[email] ?? "Administrador";
 
-  await prisma.adminAccount.upsert({
+  await prisma.staffAccount.upsert({
     where: { email },
     create: {
       email,
       fullName,
+      role: "ADMIN",
       passwordHash,
       active: true,
       mustChangePassword: false,
+      onboardingCompleted: true,
     },
     update: {
       passwordHash,
+      role: "ADMIN",
       failedLoginAttempts: 0,
       lockedUntil: null,
       passwordChangedAt: new Date(),
       active: true,
       mustChangePassword: false,
+      onboardingCompleted: true,
     },
   });
 

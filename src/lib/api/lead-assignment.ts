@@ -2,14 +2,15 @@ import { prisma } from "@/lib/prisma";
 import { isSubscriptionActive } from "@/lib/auth/subscription";
 
 /**
- * Ejecutivos elegibles para recibir nuevos leads:
+ * Ejecutivos elegibles para recibir nuevos clientes:
  * activos, onboarding completo, sin suspensión de asignaciones y suscripción vigente.
  */
 export async function listEligibleExecutivesForAssignment(): Promise<
   { id: string }[]
 > {
-  const executives = await prisma.executiveAccount.findMany({
+  const executives = await prisma.staffAccount.findMany({
     where: {
+      role: "EXECUTIVE",
       active: true,
       onboardingCompleted: true,
       assignmentsSuspended: false,
@@ -25,7 +26,7 @@ export async function listEligibleExecutivesForAssignment(): Promise<
   return executives
     .filter((executive) =>
       isSubscriptionActive({
-        subscriptionStatus: executive.subscriptionStatus,
+        subscriptionStatus: executive.subscriptionStatus ?? "TRIAL",
         subscriptionExpiresAt: executive.subscriptionExpiresAt,
       }),
     )
@@ -33,38 +34,44 @@ export async function listEligibleExecutivesForAssignment(): Promise<
 }
 
 /**
- * Elige el ejecutivo elegible con menos leads asignados (round-robin por carga).
- * En empate, prioriza el que lleva más tiempo sin recibir un lead nuevo.
+ * Round-robin 1×1 por clientes asignados: elige al ejecutivo elegible con
+ * menos clientes vinculados. En empate, prioriza al que lleva más tiempo sin recibir uno.
  */
 export async function pickExecutiveRoundRobin(): Promise<string | null> {
   const executives = await listEligibleExecutivesForAssignment();
 
   if (executives.length === 0) return null;
 
-  const counts = await prisma.quote.groupBy({
-    by: ["executiveAccountId"],
-    where: { executiveAccountId: { not: null } },
+  const counts = await prisma.user.groupBy({
+    by: ["assignedExecutiveId"],
+    where: {
+      role: "CLIENT",
+      assignedExecutiveId: { not: null },
+    },
     _count: { id: true },
   });
 
   const countByExecutive = new Map(
     counts
-      .filter((row) => row.executiveAccountId)
-      .map((row) => [row.executiveAccountId as string, row._count.id]),
+      .filter((row) => row.assignedExecutiveId)
+      .map((row) => [row.assignedExecutiveId as string, row._count.id]),
   );
 
-  const lastAssigned = await prisma.quote.groupBy({
-    by: ["executiveAccountId"],
-    where: { executiveAccountId: { not: null } },
-    _max: { createdAt: true },
+  const lastAssigned = await prisma.user.groupBy({
+    by: ["assignedExecutiveId"],
+    where: {
+      role: "CLIENT",
+      assignedExecutiveId: { not: null },
+    },
+    _max: { updatedAt: true },
   });
 
   const lastByExecutive = new Map(
     lastAssigned
-      .filter((row) => row.executiveAccountId)
+      .filter((row) => row.assignedExecutiveId)
       .map((row) => [
-        row.executiveAccountId as string,
-        row._max.createdAt?.getTime() ?? 0,
+        row.assignedExecutiveId as string,
+        row._max.updatedAt?.getTime() ?? 0,
       ]),
   );
 
@@ -87,4 +94,59 @@ export async function pickExecutiveRoundRobin(): Promise<string | null> {
   }
 
   return pickedId;
+}
+
+/** Asigna automáticamente un cliente sin ejecutivo. Devuelve el id asignado o null. */
+export async function autoAssignClientExecutive(
+  userId: string,
+): Promise<string | null> {
+  const client = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { assignedExecutiveId: true, role: true },
+  });
+
+  if (!client || client.role !== "CLIENT") return null;
+  if (client.assignedExecutiveId) return client.assignedExecutiveId;
+
+  const executiveId = await pickExecutiveRoundRobin();
+  if (!executiveId) return null;
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { assignedExecutiveId: executiveId },
+  });
+
+  return executiveId;
+}
+
+/** Asigna en lote clientes sin ejecutivo usando round-robin equitativo. */
+export async function distributeUnassignedClients(): Promise<{
+  assigned: number;
+  remaining: number;
+}> {
+  const unassigned = await prisma.user.findMany({
+    where: { role: "CLIENT", assignedExecutiveId: null },
+    orderBy: { createdAt: "asc" },
+    select: { id: true },
+  });
+
+  let assigned = 0;
+
+  for (const client of unassigned) {
+    const executiveId = await autoAssignClientExecutive(client.id);
+    if (!executiveId) break;
+
+    await prisma.quote.updateMany({
+      where: { userId: client.id, executiveAccountId: null },
+      data: { executiveAccountId: executiveId },
+    });
+
+    assigned += 1;
+  }
+
+  const remaining = await prisma.user.count({
+    where: { role: "CLIENT", assignedExecutiveId: null },
+  });
+
+  return { assigned, remaining };
 }

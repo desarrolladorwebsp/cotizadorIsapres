@@ -28,6 +28,11 @@ enum QuoteActivityType {
   DISTRIBUTED
 }
 
+enum StaffRole {
+  ADMIN
+  EXECUTIVE
+}
+
 enum SubscriptionStatus {
   TRIAL
   ACTIVE
@@ -108,61 +113,44 @@ model User {
   createdAt            DateTime          @default(now()) @map("created_at")
   updatedAt            DateTime          @updatedAt @map("updated_at")
   quotes               Quote[]
-  assignedExecutive    ExecutiveAccount? @relation("AssignedClients", fields: [assignedExecutiveId], references: [id], onDelete: SetNull)
+  assignedExecutive    StaffAccount? @relation("AssignedClients", fields: [assignedExecutiveId], references: [id], onDelete: SetNull)
 
   @@index([role])
   @@index([assignedExecutiveId])
   @@map("users")
 }
 
-/// Cuentas de administración — tabla aislada con credenciales propias.
-model AdminAccount {
-  id                  String    @id @default(cuid())
-  email               String    @unique
-  passwordHash        String    @map("password_hash")
-  fullName            String    @map("full_name")
-  rut                 String?
-  active              Boolean   @default(true)
-  failedLoginAttempts Int       @default(0) @map("failed_login_attempts")
-  lockedUntil         DateTime? @map("locked_until")
-  lastLoginAt         DateTime? @map("last_login_at")
-  passwordChangedAt   DateTime  @default(now()) @map("password_changed_at")
-  mustChangePassword  Boolean   @default(false) @map("must_change_password")
-  createdAt           DateTime  @default(now()) @map("created_at")
-  updatedAt           DateTime  @updatedAt @map("updated_at")
-
-  @@map("admin_accounts")
-}
-
-/// Cuentas de ejecutivos — tabla aislada; suscripción lista para facturación futura.
-model ExecutiveAccount {
-  id                    String             @id @default(cuid())
-  email                 String             @unique
-  passwordHash          String             @map("password_hash")
-  fullName              String             @map("full_name")
+/// Cuentas del panel (administradores y ejecutivos) con credenciales compartidas.
+model StaffAccount {
+  id                    String              @id @default(cuid())
+  email                 String              @unique
+  passwordHash          String              @map("password_hash")
+  fullName              String              @map("full_name")
+  role                  StaffRole
   phone                 String?
   rut                   String?
-  active                Boolean            @default(true)
-  /// Sin recibir nuevos clientes/solicitudes, pero con acceso al panel.
-  assignmentsSuspended  Boolean            @default(false) @map("assignments_suspended")
-  /// Perfil obligatorio (teléfono, datos personales) completado tras activación.
-  onboardingCompleted   Boolean            @default(false) @map("onboarding_completed")
-  subscriptionStatus    SubscriptionStatus @default(TRIAL) @map("subscription_status")
-  subscriptionPlanId    String?            @map("subscription_plan_id")
-  subscriptionExpiresAt DateTime?          @map("subscription_expires_at")
-  stripeCustomerId      String?            @unique @map("stripe_customer_id")
-  failedLoginAttempts   Int                @default(0) @map("failed_login_attempts")
-  lockedUntil           DateTime?          @map("locked_until")
-  lastLoginAt           DateTime?          @map("last_login_at")
-  passwordChangedAt     DateTime           @default(now()) @map("password_changed_at")
-  mustChangePassword    Boolean            @default(false) @map("must_change_password")
-  createdAt             DateTime           @default(now()) @map("created_at")
-  updatedAt             DateTime           @updatedAt @map("updated_at")
+  active                Boolean             @default(true)
+  /// Sin recibir nuevos clientes/solicitudes (solo ejecutivos).
+  assignmentsSuspended  Boolean             @default(false) @map("assignments_suspended")
+  /// Perfil obligatorio completado tras activación (solo ejecutivos).
+  onboardingCompleted   Boolean             @default(false) @map("onboarding_completed")
+  subscriptionStatus    SubscriptionStatus? @map("subscription_status")
+  subscriptionPlanId    String?             @map("subscription_plan_id")
+  subscriptionExpiresAt DateTime?           @map("subscription_expires_at")
+  stripeCustomerId      String?             @unique @map("stripe_customer_id")
+  failedLoginAttempts   Int                 @default(0) @map("failed_login_attempts")
+  lockedUntil           DateTime?           @map("locked_until")
+  lastLoginAt           DateTime?           @map("last_login_at")
+  passwordChangedAt     DateTime            @default(now()) @map("password_changed_at")
+  mustChangePassword    Boolean             @default(false) @map("must_change_password")
+  createdAt             DateTime            @default(now()) @map("created_at")
+  updatedAt             DateTime            @updatedAt @map("updated_at")
   assignedQuotes        Quote[]
-  assignedClients       User[]             @relation("AssignedClients")
+  assignedClients       User[]              @relation("AssignedClients")
 
+  @@index([role])
   @@index([subscriptionStatus])
-  @@map("executive_accounts")
+  @@map("staff_accounts")
 }
 
 /// Invitación por correo para crear cuenta admin o ejecutivo (enlace único).
@@ -212,7 +200,7 @@ model Quote {
   updatedAt         DateTime          @updatedAt @map("updated_at")
   user              User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
   plan              Plan?             @relation(fields: [planCode], references: [uniqueCode], onDelete: SetNull)
-  executiveAccount  ExecutiveAccount? @relation(fields: [executiveAccountId], references: [id], onDelete: SetNull)
+  executiveAccount  StaffAccount? @relation(fields: [executiveAccountId], references: [id], onDelete: SetNull)
   activities        QuoteActivity[]
 
   @@index([status])

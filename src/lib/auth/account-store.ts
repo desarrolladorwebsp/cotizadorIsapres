@@ -11,6 +11,12 @@ import {
 } from "@/lib/auth/password";
 import { issueSession } from "@/lib/auth/session";
 import {
+  isAdminRole,
+  isExecutiveRole,
+  staffRealmToRole,
+  staffRoleToRealm,
+} from "@/lib/auth/staff-role";
+import {
   getSubscriptionBlockReason,
   isSubscriptionActive,
 } from "@/lib/auth/subscription";
@@ -26,25 +32,36 @@ import type {
   StaffRealm,
   UpdateStaffAccountInput,
 } from "@/types/staff-account";
-import type { SubscriptionStatus } from "@prisma/client";
+import type { StaffAccount, SubscriptionStatus } from "@prisma/client";
 import { ApiError } from "@/lib/api/api-error";
 
 const GENERIC_LOGIN_ERROR = "Correo o contraseña incorrectos.";
 
-function mapExecutiveSessionUser(account: {
-  id: string;
-  email: string;
-  fullName: string;
-  phone: string | null;
-  rut: string | null;
-  subscriptionStatus: SubscriptionStatus;
-  subscriptionExpiresAt: Date | null;
-  mustChangePassword: boolean;
-  onboardingCompleted: boolean;
-  assignmentsSuspended: boolean;
-}): ExecutiveSessionUser {
+function mapStaffRecord(account: StaffAccount): StaffAccountRecord {
+  const realm = staffRoleToRealm(account.role);
+
+  return {
+    id: account.id,
+    realm,
+    email: account.email,
+    fullName: account.fullName,
+    active: account.active,
+    mustChangePassword: account.mustChangePassword,
+    lastLoginAt: account.lastLoginAt?.toISOString() ?? null,
+    createdAt: account.createdAt.toISOString(),
+    phone: account.phone,
+    rut: account.rut,
+    subscriptionStatus: account.subscriptionStatus ?? undefined,
+    subscriptionExpiresAt: account.subscriptionExpiresAt?.toISOString() ?? null,
+    assignmentsSuspended: account.assignmentsSuspended,
+    onboardingCompleted: account.onboardingCompleted,
+  };
+}
+
+function mapExecutiveSessionUser(account: StaffAccount): ExecutiveSessionUser {
+  const subscriptionStatus = account.subscriptionStatus ?? "TRIAL";
   const subscriptionActive = isSubscriptionActive({
-    subscriptionStatus: account.subscriptionStatus,
+    subscriptionStatus,
     subscriptionExpiresAt: account.subscriptionExpiresAt,
   });
 
@@ -54,7 +71,7 @@ function mapExecutiveSessionUser(account: {
     fullName: account.fullName,
     phone: account.phone,
     rut: account.rut,
-    subscriptionStatus: account.subscriptionStatus,
+    subscriptionStatus,
     subscriptionExpiresAt: account.subscriptionExpiresAt?.toISOString() ?? null,
     subscriptionActive,
     mustChangePassword: account.mustChangePassword,
@@ -63,36 +80,12 @@ function mapExecutiveSessionUser(account: {
   };
 }
 
-function mapExecutiveStaffRecord(account: {
-  id: string;
-  email: string;
-  fullName: string;
-  active: boolean;
-  mustChangePassword: boolean;
-  lastLoginAt: Date | null;
-  createdAt: Date;
-  phone: string | null;
-  rut: string | null;
-  subscriptionStatus: SubscriptionStatus;
-  subscriptionExpiresAt: Date | null;
-  assignmentsSuspended: boolean;
-  onboardingCompleted: boolean;
-}): StaffAccountRecord {
+function mapAdminSessionUser(account: StaffAccount): AdminSessionUser {
   return {
     id: account.id,
-    realm: "executive",
     email: account.email,
     fullName: account.fullName,
-    active: account.active,
     mustChangePassword: account.mustChangePassword,
-    lastLoginAt: account.lastLoginAt?.toISOString() ?? null,
-    createdAt: account.createdAt.toISOString(),
-    phone: account.phone,
-    rut: account.rut,
-    subscriptionStatus: account.subscriptionStatus,
-    subscriptionExpiresAt: account.subscriptionExpiresAt?.toISOString() ?? null,
-    assignmentsSuspended: account.assignmentsSuspended,
-    onboardingCompleted: account.onboardingCompleted,
   };
 }
 
@@ -100,29 +93,14 @@ function isAccountLocked(lockedUntil: Date | null): boolean {
   return Boolean(lockedUntil && lockedUntil.getTime() > Date.now());
 }
 
-async function registerFailedLogin(
-  realm: AuthRealm,
-  accountId: string,
-  failedAttempts: number,
-): Promise<void> {
+async function registerFailedLogin(accountId: string, failedAttempts: number): Promise<void> {
   const nextAttempts = failedAttempts + 1;
   const shouldLock = nextAttempts >= LOGIN_LOCKOUT.maxAttempts;
   const lockedUntil = shouldLock
     ? new Date(Date.now() + LOGIN_LOCKOUT.lockMinutes * 60 * 1000)
     : null;
 
-  if (realm === "admin") {
-    await prisma.adminAccount.update({
-      where: { id: accountId },
-      data: {
-        failedLoginAttempts: nextAttempts,
-        lockedUntil,
-      },
-    });
-    return;
-  }
-
-  await prisma.executiveAccount.update({
+  await prisma.staffAccount.update({
     where: { id: accountId },
     data: {
       failedLoginAttempts: nextAttempts,
@@ -131,127 +109,129 @@ async function registerFailedLogin(
   });
 }
 
-async function registerSuccessfulLogin(
-  realm: AuthRealm,
-  accountId: string,
-): Promise<void> {
-  const data = {
-    failedLoginAttempts: 0,
-    lockedUntil: null,
-    lastLoginAt: new Date(),
-  };
+async function registerSuccessfulLogin(accountId: string): Promise<void> {
+  await prisma.staffAccount.update({
+    where: { id: accountId },
+    data: {
+      failedLoginAttempts: 0,
+      lockedUntil: null,
+      lastLoginAt: new Date(),
+    },
+  });
+}
 
-  if (realm === "admin") {
-    await prisma.adminAccount.update({ where: { id: accountId }, data });
-    return;
+async function readStaffByEmail(email: string): Promise<StaffAccount | null> {
+  return prisma.staffAccount.findUnique({
+    where: { email: normalizeEmail(email) },
+  });
+}
+
+async function assertStaffRealm(
+  id: string,
+  expectedRealm: StaffRealm,
+): Promise<StaffAccount> {
+  const account = await prisma.staffAccount.findUnique({ where: { id } });
+
+  if (!account) {
+    throw new ApiError("Usuario no encontrado.", 404, "NOT_FOUND");
   }
 
-  await prisma.executiveAccount.update({ where: { id: accountId }, data });
+  if (staffRoleToRealm(account.role) !== expectedRealm) {
+    throw new ApiError("El rol del usuario no coincide.", 400, "ROLE_MISMATCH");
+  }
+
+  return account;
+}
+
+async function authenticateStaffAccount(
+  account: StaffAccount,
+  credentials: LoginCredentials,
+): Promise<{ realm: AuthRealm; user: AdminSessionUser | ExecutiveSessionUser }> {
+  if (!account.active) {
+    throw new ApiError(GENERIC_LOGIN_ERROR, 401, "INVALID_CREDENTIALS");
+  }
+
+  if (isAccountLocked(account.lockedUntil)) {
+    throw new ApiError(
+      "Cuenta bloqueada temporalmente por intentos fallidos. Intenta más tarde.",
+      423,
+      "ACCOUNT_LOCKED",
+    );
+  }
+
+  const passwordValid = await verifyPassword(
+    credentials.password,
+    account.passwordHash,
+  );
+
+  if (!passwordValid) {
+    await registerFailedLogin(account.id, account.failedLoginAttempts);
+    throw new ApiError(GENERIC_LOGIN_ERROR, 401, "INVALID_CREDENTIALS");
+  }
+
+  const realm = staffRoleToRealm(account.role);
+
+  if (isExecutiveRole(account.role)) {
+    const subscriptionStatus = account.subscriptionStatus ?? "TRIAL";
+    const subscriptionActive = isSubscriptionActive({
+      subscriptionStatus,
+      subscriptionExpiresAt: account.subscriptionExpiresAt,
+    });
+
+    if (!subscriptionActive) {
+      const reason = getSubscriptionBlockReason({
+        subscriptionStatus,
+        subscriptionExpiresAt: account.subscriptionExpiresAt,
+      });
+
+      throw new ApiError(
+        reason ?? "Suscripción inactiva.",
+        403,
+        "SUBSCRIPTION_INACTIVE",
+      );
+    }
+  }
+
+  await registerSuccessfulLogin(account.id);
+  await issueSession({
+    accountId: account.id,
+    email: account.email,
+    realm,
+    mustChangePassword: account.mustChangePassword,
+  });
+
+  return {
+    realm,
+    user: isAdminRole(account.role)
+      ? mapAdminSessionUser(account)
+      : mapExecutiveSessionUser(account),
+  };
 }
 
 export async function authenticateAdmin(
   credentials: LoginCredentials,
 ): Promise<AdminSessionUser> {
-  const email = normalizeEmail(credentials.email);
-  const account = await prisma.adminAccount.findUnique({ where: { email } });
+  const account = await readStaffByEmail(credentials.email);
 
-  if (!account || !account.active) {
+  if (!account || !isAdminRole(account.role)) {
     throw new ApiError(GENERIC_LOGIN_ERROR, 401, "INVALID_CREDENTIALS");
   }
 
-  if (isAccountLocked(account.lockedUntil)) {
-    throw new ApiError(
-      "Cuenta bloqueada temporalmente por intentos fallidos. Intenta más tarde.",
-      423,
-      "ACCOUNT_LOCKED",
-    );
-  }
-
-  const passwordValid = await verifyPassword(
-    credentials.password,
-    account.passwordHash,
-  );
-
-  if (!passwordValid) {
-    await registerFailedLogin("admin", account.id, account.failedLoginAttempts);
-    throw new ApiError(GENERIC_LOGIN_ERROR, 401, "INVALID_CREDENTIALS");
-  }
-
-  await registerSuccessfulLogin("admin", account.id);
-  await issueSession({
-    accountId: account.id,
-    email: account.email,
-    realm: "admin",
-    mustChangePassword: account.mustChangePassword,
-  });
-
-  return {
-    id: account.id,
-    email: account.email,
-    fullName: account.fullName,
-    mustChangePassword: account.mustChangePassword,
-  };
+  const { user } = await authenticateStaffAccount(account, credentials);
+  return user as AdminSessionUser;
 }
 
 export async function authenticateExecutive(
   credentials: LoginCredentials,
 ): Promise<ExecutiveSessionUser> {
-  const email = normalizeEmail(credentials.email);
-  const account = await prisma.executiveAccount.findUnique({ where: { email } });
+  const account = await readStaffByEmail(credentials.email);
 
-  if (!account || !account.active) {
+  if (!account || !isExecutiveRole(account.role)) {
     throw new ApiError(GENERIC_LOGIN_ERROR, 401, "INVALID_CREDENTIALS");
   }
 
-  if (isAccountLocked(account.lockedUntil)) {
-    throw new ApiError(
-      "Cuenta bloqueada temporalmente por intentos fallidos. Intenta más tarde.",
-      423,
-      "ACCOUNT_LOCKED",
-    );
-  }
-
-  const passwordValid = await verifyPassword(
-    credentials.password,
-    account.passwordHash,
-  );
-
-  if (!passwordValid) {
-    await registerFailedLogin(
-      "executive",
-      account.id,
-      account.failedLoginAttempts,
-    );
-    throw new ApiError(GENERIC_LOGIN_ERROR, 401, "INVALID_CREDENTIALS");
-  }
-
-  const subscriptionActive = isSubscriptionActive({
-    subscriptionStatus: account.subscriptionStatus,
-    subscriptionExpiresAt: account.subscriptionExpiresAt,
-  });
-
-  if (!subscriptionActive) {
-    const reason = getSubscriptionBlockReason({
-      subscriptionStatus: account.subscriptionStatus,
-      subscriptionExpiresAt: account.subscriptionExpiresAt,
-    });
-
-    throw new ApiError(
-      reason ?? "Suscripción inactiva.",
-      403,
-      "SUBSCRIPTION_INACTIVE",
-    );
-  }
-
-  await registerSuccessfulLogin("executive", account.id);
-  await issueSession({
-    accountId: account.id,
-    email: account.email,
-    realm: "executive",
-    mustChangePassword: account.mustChangePassword,
-  });
-
-  return mapExecutiveSessionUser(account);
+  const { user } = await authenticateStaffAccount(account, credentials);
+  return user as ExecutiveSessionUser;
 }
 
 export async function authenticateStaff(
@@ -260,96 +240,64 @@ export async function authenticateStaff(
   realm: AuthRealm;
   user: AdminSessionUser | ExecutiveSessionUser;
 }> {
-  const email = normalizeEmail(credentials.email);
-  const admin = await prisma.adminAccount.findUnique({ where: { email } });
+  const account = await readStaffByEmail(credentials.email);
 
-  if (admin) {
-    return {
-      realm: "admin",
-      user: await authenticateAdmin(credentials),
-    };
+  if (!account) {
+    throw new ApiError(GENERIC_LOGIN_ERROR, 401, "INVALID_CREDENTIALS");
   }
 
-  const executive = await prisma.executiveAccount.findUnique({ where: { email } });
-
-  if (executive) {
-    return {
-      realm: "executive",
-      user: await authenticateExecutive(credentials),
-    };
-  }
-
-  throw new ApiError(GENERIC_LOGIN_ERROR, 401, "INVALID_CREDENTIALS");
+  return authenticateStaffAccount(account, credentials);
 }
 
 export async function readAdminById(
   id: string,
 ): Promise<AdminSessionUser | null> {
-  const account = await prisma.adminAccount.findUnique({ where: { id } });
+  const account = await prisma.staffAccount.findUnique({ where: { id } });
 
-  if (!account || !account.active) return null;
+  if (!account || !account.active || !isAdminRole(account.role)) return null;
 
-  return {
-    id: account.id,
-    email: account.email,
-    fullName: account.fullName,
-    mustChangePassword: account.mustChangePassword,
-  };
+  return mapAdminSessionUser(account);
 }
 
 export async function readAdminByEmail(
   email: string,
 ): Promise<AdminSessionUser | null> {
-  const account = await prisma.adminAccount.findUnique({
-    where: { email: normalizeEmail(email) },
-  });
+  const account = await readStaffByEmail(email);
 
-  if (!account || !account.active) return null;
+  if (!account || !account.active || !isAdminRole(account.role)) return null;
 
-  return {
-    id: account.id,
-    email: account.email,
-    fullName: account.fullName,
-    mustChangePassword: account.mustChangePassword,
-  };
+  return mapAdminSessionUser(account);
 }
 
 export async function readExecutiveById(
   id: string,
 ): Promise<ExecutiveSessionUser | null> {
-  const account = await prisma.executiveAccount.findUnique({ where: { id } });
+  const account = await prisma.staffAccount.findUnique({ where: { id } });
 
-  if (!account || !account.active) return null;
+  if (!account || !account.active || !isExecutiveRole(account.role)) return null;
 
   return mapExecutiveSessionUser(account);
 }
 
+export async function readStaffById(id: string): Promise<StaffAccount | null> {
+  return prisma.staffAccount.findUnique({ where: { id } });
+}
+
 export async function listStaffAccounts(): Promise<StaffAccountRecord[]> {
-  const [admins, executives] = await Promise.all([
-    prisma.adminAccount.findMany({ orderBy: { createdAt: "desc" } }),
-    prisma.executiveAccount.findMany({ orderBy: { createdAt: "desc" } }),
-  ]);
+  const accounts = await prisma.staffAccount.findMany({
+    orderBy: { createdAt: "desc" },
+  });
 
-  const adminRecords: StaffAccountRecord[] = admins.map((account) => ({
-    id: account.id,
-    realm: "admin",
-    email: account.email,
-    fullName: account.fullName,
-    active: account.active,
-    mustChangePassword: account.mustChangePassword,
-    lastLoginAt: account.lastLoginAt?.toISOString() ?? null,
-    createdAt: account.createdAt.toISOString(),
-  }));
+  return accounts.map(mapStaffRecord);
+}
 
-  const executiveRecords: StaffAccountRecord[] = executives.map((account) =>
-    mapExecutiveStaffRecord(account),
-  );
+export async function listExecutiveStaffAccounts(): Promise<StaffAccountRecord[]> {
+  const accounts = await prisma.staffAccount.findMany({
+    where: { role: "EXECUTIVE" },
+    orderBy: { createdAt: "desc" },
+  });
 
-  return [...adminRecords, ...executiveRecords]
-    .filter((account) => account.realm === "admin" || account.realm === "executive")
-    .sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    );
+  return accounts.map(mapStaffRecord);
 }
 
 export async function createStaffAccount(
@@ -359,44 +307,32 @@ export async function createStaffAccount(
   const fullName = input.fullName?.trim() || email.split("@")[0];
   const temporaryPassword = generateTemporaryPassword();
   const passwordHash = await hashPassword(temporaryPassword);
+  const role = staffRealmToRole(input.realm);
 
   if (!fullName) {
     throw new ApiError("El nombre es obligatorio.", 400, "INVALID_INPUT");
   }
 
-  const [existingAdmin, existingExecutive] = await Promise.all([
-    prisma.adminAccount.findUnique({ where: { email } }),
-    prisma.executiveAccount.findUnique({ where: { email } }),
-  ]);
+  const existing = await prisma.staffAccount.findUnique({ where: { email } });
 
-  if (existingAdmin || existingExecutive) {
+  if (existing) {
     throw new ApiError("Ya existe una cuenta con ese correo.", 409, "EMAIL_EXISTS");
   }
 
-  if (input.realm === "admin") {
-    const account = await prisma.adminAccount.create({
+  if (isAdminRole(role)) {
+    const account = await prisma.staffAccount.create({
       data: {
         email,
         fullName,
+        role,
         passwordHash,
         active: true,
         mustChangePassword: true,
+        onboardingCompleted: true,
       },
     });
 
-    return {
-      temporaryPassword,
-      account: {
-        id: account.id,
-        realm: "admin",
-        email: account.email,
-        fullName: account.fullName,
-        active: account.active,
-        mustChangePassword: account.mustChangePassword,
-        lastLoginAt: null,
-        createdAt: account.createdAt.toISOString(),
-      },
-    };
+    return { temporaryPassword, account: mapStaffRecord(account) };
   }
 
   const trialExpiresAt = new Date();
@@ -404,10 +340,11 @@ export async function createStaffAccount(
   const subscriptionStatus: SubscriptionStatus =
     input.subscriptionStatus ?? "TRIAL";
 
-  const account = await prisma.executiveAccount.create({
+  const account = await prisma.staffAccount.create({
     data: {
       email,
       fullName,
+      role,
       phone: input.phone?.trim() || null,
       rut: input.rut?.trim() || null,
       passwordHash,
@@ -419,23 +356,7 @@ export async function createStaffAccount(
     },
   });
 
-  return {
-    temporaryPassword,
-    account: {
-      id: account.id,
-      realm: "executive",
-      email: account.email,
-      fullName: account.fullName,
-      active: account.active,
-      mustChangePassword: account.mustChangePassword,
-      lastLoginAt: null,
-      createdAt: account.createdAt.toISOString(),
-      phone: account.phone,
-      rut: account.rut,
-      subscriptionStatus: account.subscriptionStatus,
-      subscriptionExpiresAt: account.subscriptionExpiresAt?.toISOString() ?? null,
-    },
-  };
+  return { temporaryPassword, account: mapStaffRecord(account) };
 }
 
 export async function updateStaffAccount(
@@ -443,8 +364,10 @@ export async function updateStaffAccount(
   id: string,
   input: UpdateStaffAccountInput,
 ): Promise<StaffAccountRecord> {
+  await assertStaffRealm(id, realm);
+
   if (realm === "admin") {
-    const account = await prisma.adminAccount.update({
+    const account = await prisma.staffAccount.update({
       where: { id },
       data: {
         active: input.active,
@@ -452,19 +375,10 @@ export async function updateStaffAccount(
       },
     });
 
-    return {
-      id: account.id,
-      realm: "admin",
-      email: account.email,
-      fullName: account.fullName,
-      active: account.active,
-      mustChangePassword: account.mustChangePassword,
-      lastLoginAt: account.lastLoginAt?.toISOString() ?? null,
-      createdAt: account.createdAt.toISOString(),
-    };
+    return mapStaffRecord(account);
   }
 
-  const account = await prisma.executiveAccount.update({
+  const account = await prisma.staffAccount.update({
     where: { id },
     data: {
       active: input.active,
@@ -476,44 +390,19 @@ export async function updateStaffAccount(
     },
   });
 
-  return mapExecutiveStaffRecord(account);
+  return mapStaffRecord(account);
 }
 
 export async function resetStaffTemporaryPassword(
   realm: StaffRealm,
   id: string,
 ): Promise<{ account: StaffAccountRecord; temporaryPassword: string }> {
+  await assertStaffRealm(id, realm);
+
   const temporaryPassword = generateTemporaryPassword();
   const passwordHash = await hashPassword(temporaryPassword);
 
-  if (realm === "admin") {
-    const account = await prisma.adminAccount.update({
-      where: { id },
-      data: {
-        passwordHash,
-        mustChangePassword: true,
-        failedLoginAttempts: 0,
-        lockedUntil: null,
-        passwordChangedAt: new Date(),
-      },
-    });
-
-    return {
-      temporaryPassword,
-      account: {
-        id: account.id,
-        realm: "admin",
-        email: account.email,
-        fullName: account.fullName,
-        active: account.active,
-        mustChangePassword: account.mustChangePassword,
-        lastLoginAt: account.lastLoginAt?.toISOString() ?? null,
-        createdAt: account.createdAt.toISOString(),
-      },
-    };
-  }
-
-  const account = await prisma.executiveAccount.update({
+  const account = await prisma.staffAccount.update({
     where: { id },
     data: {
       passwordHash,
@@ -524,42 +413,26 @@ export async function resetStaffTemporaryPassword(
     },
   });
 
-  return {
-    temporaryPassword,
-    account: mapExecutiveStaffRecord(account),
-  };
+  return { temporaryPassword, account: mapStaffRecord(account) };
 }
 
 export async function deleteStaffAccount(
   realm: StaffRealm,
   id: string,
 ): Promise<void> {
-  if (realm === "admin") {
-    const account = await prisma.adminAccount.findUnique({ where: { id } });
-    if (!account) {
-      throw new ApiError("Usuario no encontrado.", 404, "NOT_FOUND");
-    }
-    await prisma.adminAccount.delete({ where: { id } });
-    return;
-  }
-
-  const account = await prisma.executiveAccount.findUnique({ where: { id } });
-  if (!account) {
-    throw new ApiError("Usuario no encontrado.", 404, "NOT_FOUND");
-  }
-
-  await prisma.executiveAccount.delete({ where: { id } });
+  await assertStaffRealm(id, realm);
+  await prisma.staffAccount.delete({ where: { id } });
 }
 
 export async function completeExecutiveOnboarding(
   accountId: string,
   input: { firstName: string; lastName: string; phone: string; rut: string },
 ): Promise<ExecutiveSessionUser> {
-  const account = await prisma.executiveAccount.findUnique({
+  const account = await prisma.staffAccount.findUnique({
     where: { id: accountId },
   });
 
-  if (!account || !account.active) {
+  if (!account || !account.active || !isExecutiveRole(account.role)) {
     throw new ApiError("Cuenta no encontrada.", 404, "NOT_FOUND");
   }
 
@@ -588,7 +461,7 @@ export async function completeExecutiveOnboarding(
     throw new ApiError("El RUT no coincide con el registrado en tu invitación.", 400, "RUT_MISMATCH");
   }
 
-  const updated = await prisma.executiveAccount.update({
+  const updated = await prisma.staffAccount.update({
     where: { id: accountId },
     data: {
       fullName,
@@ -627,58 +500,7 @@ export async function changeStaffPassword(
     );
   }
 
-  if (realm === "admin") {
-    const account = await prisma.adminAccount.findUnique({
-      where: { id: accountId },
-    });
-
-    if (!account || !account.active) {
-      throw new ApiError("Cuenta no encontrada.", 404, "NOT_FOUND");
-    }
-
-    const passwordValid = await verifyPassword(
-      currentPassword,
-      account.passwordHash,
-    );
-
-    if (!passwordValid) {
-      throw new ApiError("La contraseña actual no es correcta.", 401, "INVALID_PASSWORD");
-    }
-
-    const passwordHash = await hashPassword(newPassword);
-    const updated = await prisma.adminAccount.update({
-      where: { id: accountId },
-      data: {
-        passwordHash,
-        mustChangePassword: false,
-        passwordChangedAt: new Date(),
-        failedLoginAttempts: 0,
-        lockedUntil: null,
-      },
-    });
-
-    await issueSession({
-      accountId: updated.id,
-      email: updated.email,
-      realm: "admin",
-      mustChangePassword: false,
-    });
-
-    return {
-      id: updated.id,
-      email: updated.email,
-      fullName: updated.fullName,
-      mustChangePassword: false,
-    };
-  }
-
-  const account = await prisma.executiveAccount.findUnique({
-    where: { id: accountId },
-  });
-
-  if (!account || !account.active) {
-    throw new ApiError("Cuenta no encontrada.", 404, "NOT_FOUND");
-  }
+  const account = await assertStaffRealm(accountId, realm);
 
   const passwordValid = await verifyPassword(
     currentPassword,
@@ -689,17 +511,20 @@ export async function changeStaffPassword(
     throw new ApiError("La contraseña actual no es correcta.", 401, "INVALID_PASSWORD");
   }
 
-  const subscriptionActive = isSubscriptionActive({
-    subscriptionStatus: account.subscriptionStatus,
-    subscriptionExpiresAt: account.subscriptionExpiresAt,
-  });
+  if (isExecutiveRole(account.role)) {
+    const subscriptionStatus = account.subscriptionStatus ?? "TRIAL";
+    const subscriptionActive = isSubscriptionActive({
+      subscriptionStatus,
+      subscriptionExpiresAt: account.subscriptionExpiresAt,
+    });
 
-  if (!subscriptionActive) {
-    throw new ApiError("Tu suscripción no está activa.", 403, "SUBSCRIPTION_INACTIVE");
+    if (!subscriptionActive) {
+      throw new ApiError("Tu suscripción no está activa.", 403, "SUBSCRIPTION_INACTIVE");
+    }
   }
 
   const passwordHash = await hashPassword(newPassword);
-  const updated = await prisma.executiveAccount.update({
+  const updated = await prisma.staffAccount.update({
     where: { id: accountId },
     data: {
       passwordHash,
@@ -713,11 +538,13 @@ export async function changeStaffPassword(
   await issueSession({
     accountId: updated.id,
     email: updated.email,
-    realm: "executive",
+    realm,
     mustChangePassword: false,
   });
 
-  return mapExecutiveSessionUser(updated);
+  return isAdminRole(updated.role)
+    ? mapAdminSessionUser(updated)
+    : mapExecutiveSessionUser(updated);
 }
 
 export async function seedAuthAccountPassword(

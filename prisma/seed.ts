@@ -174,19 +174,23 @@ async function seedAuthAccounts() {
   const passwordHash = await seedAuthAccountPassword(password);
 
   for (const admin of ADMIN_ACCOUNTS) {
-    await prisma.adminAccount.upsert({
+    await prisma.staffAccount.upsert({
       where: { email: admin.email },
       create: {
         email: admin.email,
         fullName: admin.fullName,
+        role: "ADMIN",
         passwordHash,
         active: true,
         mustChangePassword: false,
+        onboardingCompleted: true,
       },
       update: {
         fullName: admin.fullName,
+        role: "ADMIN",
         active: true,
         mustChangePassword: false,
+        onboardingCompleted: true,
       },
     });
   }
@@ -195,26 +199,26 @@ async function seedAuthAccounts() {
   trialExpiresAt.setDate(trialExpiresAt.getDate() + 30);
 
   for (const executive of EXECUTIVE_ACCOUNTS) {
-    await prisma.executiveAccount.upsert({
+    const existing = await prisma.staffAccount.findUnique({
       where: { email: executive.email },
-      create: {
+    });
+
+    if (existing) continue;
+
+    await prisma.staffAccount.create({
+      data: {
         email: executive.email,
         fullName: executive.fullName,
+        role: "EXECUTIVE",
         phone: executive.phone,
         rut: executive.rut,
         passwordHash,
         active: true,
         mustChangePassword: false,
+        onboardingCompleted: true,
         subscriptionStatus: executive.subscriptionStatus,
         subscriptionExpiresAt:
           executive.subscriptionStatus === "TRIAL" ? trialExpiresAt : null,
-      },
-      update: {
-        fullName: executive.fullName,
-        phone: executive.phone,
-        rut: executive.rut,
-        active: true,
-        mustChangePassword: false,
       },
     });
   }

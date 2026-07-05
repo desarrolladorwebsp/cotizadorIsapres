@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import {
   AdminBadge,
   AdminFormModal,
@@ -20,6 +21,7 @@ import {
   AdminToolbar,
 } from "@/components/admin/admin-data-table";
 import {
+  cancelPendingStaffInvite,
   createStaffAccount,
   deleteStaffAccount,
   fetchStaffAccounts,
@@ -31,7 +33,17 @@ import { joinClasses } from "@/lib/utils";
 import type {
   PendingStaffInviteRecord,
   StaffAccountRecord,
+  StaffRealm,
 } from "@/types/staff-account";
+
+const ROLE_OPTIONS = [
+  { value: "executive", label: "Ejecutivo" },
+  { value: "admin", label: "Administrador" },
+] as const;
+
+function getRoleLabel(realm: StaffRealm): string {
+  return realm === "admin" ? "Administrador" : "Ejecutivo";
+}
 
 export interface UsersPanelProps {
   onNotify: (message: string, tone?: "success" | "error") => void;
@@ -54,25 +66,28 @@ function formatDate(value: string | null): string {
   }).format(new Date(value));
 }
 
-function getExecutiveStatus(account: StaffAccountRecord): {
+function getAccountStatus(account: StaffAccountRecord): {
   label: string;
   tone: "success" | "warning" | "neutral";
 } {
   if (!account.active) {
     return { label: "Usuario suspendido", tone: "neutral" };
   }
-  if (!account.onboardingCompleted) {
+  if (account.realm === "executive" && !account.onboardingCompleted) {
     return { label: "Perfil pendiente", tone: "warning" };
   }
-  if (account.assignmentsSuspended) {
+  if (account.realm === "executive" && account.assignmentsSuspended) {
     return { label: "Sin nuevas asignaciones", tone: "warning" };
+  }
+  if (account.mustChangePassword) {
+    return { label: "Contraseña pendiente", tone: "warning" };
   }
   return { label: "Activo", tone: "success" };
 }
 
 export function UsersPanel({
   onNotify,
-  executivesOnly = true,
+  executivesOnly = false,
   canManage = true,
 }: UsersPanelProps) {
   const [accounts, setAccounts] = useState<StaffAccountRecord[]>([]);
@@ -83,7 +98,11 @@ export function UsersPanel({
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<StaffAccountRecord | null>(null);
   const [saving, setSaving] = useState(false);
-  const [draft, setDraft] = useState({ email: "", rut: "" });
+  const [draft, setDraft] = useState<{
+    email: string;
+    rut: string;
+    realm: StaffRealm;
+  }>({ email: "", rut: "", realm: "executive" });
 
   async function loadAccounts() {
     setLoading(true);
@@ -152,7 +171,7 @@ export function UsersPanel({
               row.account.phone,
               row.account.rut,
             ]
-          : [row.invite.email, row.invite.rut];
+          : [row.invite.email, row.invite.rut, getRoleLabel(row.invite.realm)];
 
       return values
         .filter(Boolean)
@@ -161,7 +180,7 @@ export function UsersPanel({
   }, [directoryRows, search]);
 
   function openModal() {
-    setDraft({ email: "", rut: "" });
+    setDraft({ email: "", rut: "", realm: "executive" });
     setModalOpen(true);
   }
 
@@ -171,9 +190,16 @@ export function UsersPanel({
 
     try {
       const result = await createStaffAccount({
-        realm: "executive",
+        realm: draft.realm,
         email: draft.email.trim(),
-        rut: draft.rut.trim(),
+        rut: draft.realm === "executive" ? draft.rut.trim() : undefined,
+      });
+
+      setPendingInvites((current) => {
+        const withoutDuplicate = current.filter(
+          (invite) => invite.email !== result.pendingInvite.email,
+        );
+        return [result.pendingInvite, ...withoutDuplicate];
       });
 
       onNotify(result.message);
@@ -246,6 +272,21 @@ export function UsersPanel({
     }
   }
 
+  async function handleCancelPendingInvite(inviteId: string) {
+    try {
+      const result = await cancelPendingStaffInvite(inviteId);
+      setPendingInvites((current) =>
+        current.filter((invite) => invite.id !== inviteId),
+      );
+      onNotify(result.message);
+    } catch (error) {
+      onNotify(
+        error instanceof Error ? error.message : "No se pudo cancelar la invitación.",
+        "error",
+      );
+    }
+  }
+
   async function handleResendPendingInvite(inviteId: string) {
     try {
       const result = await resendPendingStaffInvite(inviteId);
@@ -262,13 +303,13 @@ export function UsersPanel({
     <AdminPanel>
       <AdminPanelHeader
         title="Usuarios"
-        description="Ejecutivos que reciben solicitudes de clientes. La invitación por correo es el único medio para crear un usuario en el sistema."
+        description="Administradores y ejecutivos del panel. La invitación por correo es el único medio para crear un usuario en el sistema."
         actions={
           <>
             <AdminRefreshButton onClick={() => void loadAccounts()} />
             {canManage ? (
               <Button size="sm" onClick={openModal}>
-                Invitar ejecutivo
+                Invitar usuario
               </Button>
             ) : null}
           </>
@@ -297,15 +338,16 @@ export function UsersPanel({
       <AdminTableCard
         loading={loading}
         empty={!loading && filteredRows.length === 0}
-        emptyTitle="No hay ejecutivos registrados"
-        emptyDescription="Invita a un ejecutivo con su RUT y correo electrónico."
+        emptyTitle="No hay usuarios registrados"
+        emptyDescription="Invita a un administrador o ejecutivo. Aparecerán como pendientes hasta que activen su cuenta."
         loadingMessage="Cargando usuarios…"
         footer={`Mostrando ${filteredRows.length} de ${directoryRows.length} registros.`}
       >
         <AdminTable minWidth="56rem">
           <AdminTableHead>
             <tr>
-              <AdminTableHeaderCell>Ejecutivo</AdminTableHeaderCell>
+              <AdminTableHeaderCell>Usuario</AdminTableHeaderCell>
+              <AdminTableHeaderCell>Rol</AdminTableHeaderCell>
               <AdminTableHeaderCell>Contacto</AdminTableHeaderCell>
               <AdminTableHeaderCell>Estado</AdminTableHeaderCell>
               <AdminTableHeaderCell>Último acceso</AdminTableHeaderCell>
@@ -322,8 +364,11 @@ export function UsersPanel({
                     <AdminTableCell>
                       <p className="font-semibold text-foreground">{invite.email}</p>
                       <p className="mt-1 text-xs text-muted">
-                        Invitación enviada {formatDate(invite.createdAt)}
+                        Invitado {formatDate(invite.createdAt)}
                       </p>
+                    </AdminTableCell>
+                    <AdminTableCell>
+                      <AdminBadge tone="neutral">{getRoleLabel(invite.realm)}</AdminBadge>
                     </AdminTableCell>
                     <AdminTableCell>
                       <p>{invite.email}</p>
@@ -332,9 +377,9 @@ export function UsersPanel({
                       ) : null}
                     </AdminTableCell>
                     <AdminTableCell>
-                      <AdminBadge tone="warning">Invitación pendiente</AdminBadge>
+                      <AdminBadge tone="warning">Pendiente por activar</AdminBadge>
                       <p className="mt-2 text-xs text-muted">
-                        Expira {formatDate(invite.expiresAt)}
+                        Debe crear su cuenta desde el correo · expira {formatDate(invite.expiresAt)}
                       </p>
                     </AdminTableCell>
                     <AdminTableCell className="text-muted">—</AdminTableCell>
@@ -349,6 +394,14 @@ export function UsersPanel({
                           >
                             Reenviar invitación
                           </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="danger"
+                            onClick={() => void handleCancelPendingInvite(invite.id)}
+                          >
+                            Cancelar
+                          </Button>
                         </AdminRowActions>
                       ) : (
                         <span className="text-xs text-muted">Esperando activación</span>
@@ -359,7 +412,7 @@ export function UsersPanel({
               }
 
               const { account } = row;
-              const status = getExecutiveStatus(account);
+              const status = getAccountStatus(account);
 
               return (
                 <AdminTableRow key={account.id}>
@@ -370,6 +423,9 @@ export function UsersPanel({
                     <p className="mt-1 text-xs text-muted">
                       Registrado {formatDate(account.createdAt)}
                     </p>
+                  </AdminTableCell>
+                  <AdminTableCell>
+                    <AdminBadge tone="neutral">{getRoleLabel(account.realm)}</AdminBadge>
                   </AdminTableCell>
                   <AdminTableCell>
                     <p>{account.email}</p>
@@ -389,7 +445,9 @@ export function UsersPanel({
                   <AdminTableCell align="right">
                     {canManage ? (
                       <AdminRowActions>
-                        {account.active && account.onboardingCompleted ? (
+                        {account.realm === "executive" &&
+                        account.active &&
+                        account.onboardingCompleted ? (
                           <Button
                             type="button"
                             size="sm"
@@ -432,12 +490,32 @@ export function UsersPanel({
       {canManage ? (
         <AdminFormModal
           open={modalOpen}
-          title="Invitar ejecutivo"
-        description="Se enviará un correo con un enlace único. La persona deberá validar su RUT y crear su contraseña."
+          title="Invitar usuario"
+        description="Se enviará un correo con un enlace único para activar la cuenta y crear la contraseña."
         onClose={() => setModalOpen(false)}
         size="md"
       >
         <form className="space-y-4" onSubmit={handleInvite}>
+          <label className="block space-y-2">
+            <span className="text-sm font-medium">Rol</span>
+            <Select
+              required
+              value={draft.realm}
+              options={[...ROLE_OPTIONS]}
+              onChange={(event) =>
+                setDraft((current) => ({
+                  ...current,
+                  realm: event.target.value as StaffRealm,
+                }))
+              }
+            />
+            <p className="text-xs text-muted">
+              {draft.realm === "admin"
+                ? "Acceso completo al panel, incluyendo configuración y usuarios."
+                : "Recibe y gestiona solicitudes de clientes y cotizaciones."}
+            </p>
+          </label>
+
           <label className="block space-y-2">
             <span className="text-sm font-medium">Correo electrónico</span>
             <Input
@@ -450,20 +528,22 @@ export function UsersPanel({
             />
           </label>
 
-          <label className="block space-y-2">
-            <span className="text-sm font-medium">RUT</span>
-            <Input
-              required
-              value={draft.rut}
-              onChange={(event) =>
-                setDraft((current) => ({ ...current, rut: event.target.value }))
-              }
-              placeholder="12.345.678-9"
-            />
-            <p className="text-xs text-muted">
-              Deberá coincidir al activar la cuenta desde el enlace del correo.
-            </p>
-          </label>
+          {draft.realm === "executive" ? (
+            <label className="block space-y-2">
+              <span className="text-sm font-medium">RUT</span>
+              <Input
+                required
+                value={draft.rut}
+                onChange={(event) =>
+                  setDraft((current) => ({ ...current, rut: event.target.value }))
+                }
+                placeholder="12.345.678-9"
+              />
+              <p className="text-xs text-muted">
+                Deberá coincidir al activar la cuenta desde el enlace del correo.
+              </p>
+            </label>
+          ) : null}
 
           <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
             <Button type="button" variant="ghost" onClick={() => setModalOpen(false)}>
@@ -480,10 +560,10 @@ export function UsersPanel({
       {canManage ? (
         <AdminFormModal
           open={Boolean(deleteTarget)}
-          title="Eliminar ejecutivo"
+          title="Eliminar usuario"
         description={
           deleteTarget
-            ? `¿Eliminar permanentemente a ${deleteTarget.fullName}? Esta acción no se puede deshacer.`
+            ? `¿Eliminar permanentemente a ${deleteTarget.fullName} (${getRoleLabel(deleteTarget.realm)})? Esta acción no se puede deshacer.`
             : ""
         }
         onClose={() => setDeleteTarget(null)}

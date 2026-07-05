@@ -126,7 +126,7 @@ export function ExecutiveDashboard() {
         ) : null}
 
         {section === "usuarios" && isAdmin ? (
-          <UsersPanel onNotify={notify} executivesOnly canManage />
+          <UsersPanel onNotify={notify} canManage />
         ) : null}
 
         {section === "clinicas" && isAdmin ? (

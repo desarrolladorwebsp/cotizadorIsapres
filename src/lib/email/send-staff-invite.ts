@@ -10,23 +10,8 @@ import {
   buildStaffInviteEmailHtml,
   buildStaffInviteEmailSubject,
 } from "@/lib/email/staff-invite-templates";
+import { getEquipoFromEmail, getResendApiKey } from "@/lib/email/resend-config";
 import type { StaffRealm } from "@/types/staff-account";
-
-function getResendConfig() {
-  const apiKey = process.env.RESEND_API_KEY?.trim();
-  const fromEmail =
-    process.env.RESEND_FROM_EMAIL?.trim() ||
-    "Cotizador Premium <noreply@cotizadorpremium.cl>";
-
-  if (!apiKey) {
-    throw new ApiError(
-      "Resend no está configurado. Agrega RESEND_API_KEY en las variables de entorno.",
-      500,
-    );
-  }
-
-  return { apiKey, fromEmail };
-}
 
 function resolveAppBaseUrl(): string {
   const configured =
@@ -48,8 +33,8 @@ export async function sendStaffActivationEmail(input: {
   activationToken: string;
   rut?: string | null;
 }): Promise<string> {
-  const { apiKey, fromEmail } = getResendConfig();
-  const resend = new Resend(apiKey);
+  const resend = new Resend(getResendApiKey());
+  const fromEmail = getEquipoFromEmail();
   const baseUrl = resolveAppBaseUrl().replace(/\/$/, "");
   const activatePath =
     input.realm === "admin"
@@ -91,8 +76,8 @@ export async function sendStaffInviteEmail(input: {
   temporaryPassword: string;
   realm: StaffRealm;
 }): Promise<string> {
-  const { apiKey, fromEmail } = getResendConfig();
-  const resend = new Resend(apiKey);
+  const resend = new Resend(getResendApiKey());
+  const fromEmail = getEquipoFromEmail();
   const baseUrl = resolveAppBaseUrl().replace(/\/$/, "");
   const loginPath = "/cotizador/acceso";
   const loginUrl = `${baseUrl}${loginPath}`;

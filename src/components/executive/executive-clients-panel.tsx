@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  AdminBadge,
   AdminPanel,
   AdminPanelHeader,
   AdminRefreshButton,
@@ -15,10 +17,16 @@ import {
   AdminTableRow,
   AdminToolbar,
 } from "@/components/admin/admin-data-table";
-import { fetchExecutiveClients } from "@/lib/api/admin-client";
+import {
+  assignClientToExecutive,
+  distributeUnassignedClients,
+  fetchExecutiveAccounts,
+  fetchExecutiveClients,
+} from "@/lib/api/admin-client";
 import { useStaffSession } from "@/hooks/use-auth-session";
 import { ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
+import type { StaffAccountRecord } from "@/types/staff-account";
 import type { UserRecord } from "@/types/user";
 
 export interface ExecutiveClientsPanelProps {
@@ -37,13 +45,21 @@ export function ExecutiveClientsPanel({
 }: ExecutiveClientsPanelProps) {
   const { isAdmin } = useStaffSession();
   const [clients, setClients] = useState<UserRecord[]>([]);
+  const [executives, setExecutives] = useState<StaffAccountRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [savingId, setSavingId] = useState<string | null>(null);
+  const [distributing, setDistributing] = useState(false);
 
   async function loadClients() {
     setLoading(true);
     try {
-      setClients(await fetchExecutiveClients());
+      const [nextClients, nextExecutives] = await Promise.all([
+        fetchExecutiveClients(),
+        isAdmin ? fetchExecutiveAccounts() : Promise.resolve([]),
+      ]);
+      setClients(nextClients);
+      setExecutives(nextExecutives);
     } catch (error) {
       onNotify(
         error instanceof Error
@@ -58,7 +74,7 @@ export function ExecutiveClientsPanel({
 
   useEffect(() => {
     void loadClients();
-  }, []);
+  }, [isAdmin]);
 
   const filteredClients = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -71,16 +87,82 @@ export function ExecutiveClientsPanel({
     );
   }, [clients, search]);
 
+  const unassignedCount = useMemo(
+    () => clients.filter((client) => !client.assignedExecutiveId).length,
+    [clients],
+  );
+
+  async function handleAssignExecutive(
+    client: UserRecord,
+    executiveAccountId: string | null,
+  ) {
+    setSavingId(client.id);
+    try {
+      const updated = await assignClientToExecutive(client.id, executiveAccountId);
+      setClients((current) =>
+        current.map((row) => (row.id === updated.id ? updated : row)),
+      );
+      onNotify(
+        executiveAccountId
+          ? `Cliente asignado a ${updated.assignedExecutiveName ?? "ejecutivo"}.`
+          : "Cliente sin ejecutivo asignado.",
+      );
+    } catch (error) {
+      onNotify(
+        error instanceof Error
+          ? error.message
+          : "No se pudo asignar el ejecutivo.",
+        "error",
+      );
+    } finally {
+      setSavingId(null);
+    }
+  }
+
+  async function handleDistributeUnassigned() {
+    setDistributing(true);
+    try {
+      const result = await distributeUnassignedClients();
+      onNotify(result.message, result.assigned > 0 ? "success" : "error");
+      await loadClients();
+    } catch (error) {
+      onNotify(
+        error instanceof Error
+          ? error.message
+          : "No se pudieron asignar los clientes pendientes.",
+        "error",
+      );
+    } finally {
+      setDistributing(false);
+    }
+  }
+
   return (
     <AdminPanel>
       <AdminPanelHeader
         title={isAdmin ? "Clientes del cotizador" : "Clientes asignados"}
         description={
           isAdmin
-            ? "Todos los clientes registrados en el cotizador público y su ejecutivo asignado."
+            ? "Clientes del cotizador público y widget. La asignación a ejecutivos es automática (round-robin 1×1) o manual si falla."
             : "Personas vinculadas a tu cuenta. Contacta directamente desde los datos registrados."
         }
-        actions={<AdminRefreshButton onClick={() => void loadClients()} />}
+        actions={
+          <>
+            <AdminRefreshButton onClick={() => void loadClients()} />
+            {isAdmin && unassignedCount > 0 ? (
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={distributing}
+                onClick={() => void handleDistributeUnassigned()}
+              >
+                {distributing
+                  ? "Asignando…"
+                  : `Asignar pendientes (${unassignedCount})`}
+              </Button>
+            ) : null}
+          </>
+        }
       />
 
       <AdminToolbar>
@@ -106,7 +188,7 @@ export function ExecutiveClientsPanel({
         loadingMessage="Cargando clientes…"
         footer={`Mostrando ${filteredClients.length} de ${clients.length} clientes.`}
       >
-        <AdminTable minWidth="48rem">
+        <AdminTable minWidth="52rem">
           <AdminTableHead>
             <tr>
               <AdminTableHeaderCell>Cliente</AdminTableHeaderCell>
@@ -136,9 +218,33 @@ export function ExecutiveClientsPanel({
                 <AdminTableCell>{client.rut ?? "—"}</AdminTableCell>
                 {isAdmin ? (
                   <AdminTableCell>
-                    {client.assignedExecutiveName ?? (
-                      <span className="text-muted">Sin asignar</span>
+                    {client.assignedExecutiveName ? (
+                      <AdminBadge tone="info">
+                        {client.assignedExecutiveName}
+                      </AdminBadge>
+                    ) : (
+                      <AdminBadge tone="warning">Sin asignar</AdminBadge>
                     )}
+                    <select
+                      value={client.assignedExecutiveId ?? ""}
+                      disabled={savingId === client.id}
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        void handleAssignExecutive(client, value || null);
+                      }}
+                      className={joinClasses(
+                        "mt-2 h-9 w-full min-w-[10rem] rounded-lg px-2 text-xs",
+                        ui.input,
+                      )}
+                      aria-label={`Asignar ejecutivo a ${client.fullName}`}
+                    >
+                      <option value="">Sin asignar</option>
+                      {executives.map((executive) => (
+                        <option key={executive.id} value={executive.id}>
+                          {executive.fullName}
+                        </option>
+                      ))}
+                    </select>
                   </AdminTableCell>
                 ) : null}
                 <AdminTableCell>{formatDate(client.createdAt)}</AdminTableCell>

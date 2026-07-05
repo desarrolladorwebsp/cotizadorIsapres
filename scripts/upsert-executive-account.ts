@@ -19,14 +19,16 @@ async function upsertExecutiveAccount(
   const trialExpiresAt = new Date();
   trialExpiresAt.setDate(trialExpiresAt.getDate() + 30);
 
-  await prisma.executiveAccount.upsert({
+  await prisma.staffAccount.upsert({
     where: { email: normalizedEmail },
     create: {
       email: normalizedEmail,
       fullName,
+      role: "EXECUTIVE",
       passwordHash,
       active: true,
       mustChangePassword: false,
+      onboardingCompleted: true,
       subscriptionStatus: "ACTIVE",
       subscriptionExpiresAt: null,
       failedLoginAttempts: 0,
@@ -35,9 +37,11 @@ async function upsertExecutiveAccount(
     },
     update: {
       fullName,
+      role: "EXECUTIVE",
       passwordHash,
       active: true,
       mustChangePassword: false,
+      onboardingCompleted: true,
       subscriptionStatus: "ACTIVE",
       subscriptionExpiresAt: null,
       failedLoginAttempts: 0,
@@ -47,7 +51,7 @@ async function upsertExecutiveAccount(
   });
 
   console.log(`Ejecutivo listo: ${normalizedEmail}`);
-  console.log("Login: /cotizador/ejecutivos/login");
+  console.log("Login: /cotizador/acceso");
 }
 
 async function main() {

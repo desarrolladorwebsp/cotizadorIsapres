@@ -87,8 +87,8 @@ export async function resolveExecutiveName(
 ): Promise<string | null> {
   if (!executiveId) return null;
 
-  const executive = await prisma.executiveAccount.findUnique({
-    where: { id: executiveId },
+  const executive = await prisma.staffAccount.findFirst({
+    where: { id: executiveId, role: "EXECUTIVE" },
     select: { fullName: true },
   });
 

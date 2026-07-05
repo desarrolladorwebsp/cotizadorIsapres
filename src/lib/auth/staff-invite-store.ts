@@ -8,6 +8,7 @@ import {
 } from "@/lib/auth/password";
 import { issueSession } from "@/lib/auth/session";
 import { EXECUTIVE_ONBOARDING_PATH } from "@/lib/auth/constants";
+import { staffRealmToRole } from "@/lib/auth/staff-role";
 import { formatRut, isValidRut, normalizeRut, rutMatches } from "@/lib/auth/rut";
 import type { StaffRealm } from "@/types/staff-account";
 import type { SubscriptionStatus } from "@prisma/client";
@@ -46,7 +47,18 @@ export async function createStaffInvite(input: {
   realm: StaffRealm;
   rut?: string;
   invitedByAdminId?: string;
-}): Promise<{ token: string; inviteId: string }> {
+}): Promise<{
+  token: string;
+  inviteId: string;
+  invite: {
+    id: string;
+    email: string;
+    realm: StaffRealm;
+    rut: string | null;
+    expiresAt: string;
+    createdAt: string;
+  };
+}> {
   const email = normalizeEmail(input.email);
   const rut = input.rut?.trim() ? formatRut(input.rut) : null;
 
@@ -58,12 +70,9 @@ export async function createStaffInvite(input: {
     throw new ApiError("El RUT indicado no es válido.", 400, "INVALID_RUT");
   }
 
-  const [existingAdmin, existingExecutive] = await Promise.all([
-    prisma.adminAccount.findUnique({ where: { email } }),
-    prisma.executiveAccount.findUnique({ where: { email } }),
-  ]);
+  const existing = await prisma.staffAccount.findUnique({ where: { email } });
 
-  if (existingAdmin || existingExecutive) {
+  if (existing) {
     throw new ApiError("Ya existe una cuenta activa con ese correo.", 409, "EMAIL_EXISTS");
   }
 
@@ -87,7 +96,18 @@ export async function createStaffInvite(input: {
     },
   });
 
-  return { token, inviteId: invite.id };
+  return {
+    token,
+    inviteId: invite.id,
+    invite: {
+      id: invite.id,
+      email: invite.email,
+      realm: input.realm,
+      rut: invite.rut,
+      expiresAt: invite.expiresAt.toISOString(),
+      createdAt: invite.createdAt.toISOString(),
+    },
+  };
 }
 
 export async function readStaffInviteByToken(
@@ -164,16 +184,19 @@ export async function activateStaffAccountFromInvite(
   }
 
   const passwordHash = await hashPassword(input.password);
+  const role = staffRealmToRole(invite.realm);
 
   if (invite.realm === "admin") {
-    const account = await prisma.adminAccount.create({
+    const account = await prisma.staffAccount.create({
       data: {
         email: invite.email,
         fullName,
+        role,
         rut: formattedRut,
         passwordHash,
         active: true,
         mustChangePassword: false,
+        onboardingCompleted: true,
       },
     });
 
@@ -196,10 +219,11 @@ export async function activateStaffAccountFromInvite(
   trialExpiresAt.setDate(trialExpiresAt.getDate() + 30);
   const subscriptionStatus: SubscriptionStatus = "TRIAL";
 
-  const account = await prisma.executiveAccount.create({
+  const account = await prisma.staffAccount.create({
     data: {
       email: invite.email,
       fullName,
+      role,
       rut: formattedRut,
       passwordHash,
       active: true,
@@ -223,6 +247,19 @@ export async function activateStaffAccountFromInvite(
   });
 
   return { realm: "executive", loginPath: EXECUTIVE_ONBOARDING_PATH };
+}
+
+export async function cancelPendingStaffInvite(inviteId: string): Promise<void> {
+  const invite = await prisma.staffInvite.findUnique({ where: { id: inviteId } });
+
+  if (!invite || invite.acceptedAt) {
+    throw new ApiError("Invitación no encontrada.", 404, "NOT_FOUND");
+  }
+
+  await prisma.staffInvite.update({
+    where: { id: inviteId },
+    data: { acceptedAt: new Date() },
+  });
 }
 
 export async function resendStaffInviteForEmail(input: {

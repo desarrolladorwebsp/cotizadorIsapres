@@ -332,6 +332,25 @@ export function ContractPlanModal({
           priceQuote: quote,
           partnerEntitySlug: partnerEntity?.slug ?? deepLink.entidad ?? null,
           partnerEntityName: partnerEntity?.name ?? null,
+          partnerEntityTheme: partnerEntity?.theme ?? null,
+          partnerEntityLogoUrl: partnerEntity?.logoUrl ?? null,
+          solicitante: {
+            nombre: name.trim(),
+            rut: rut.trim() || undefined,
+            telefono: phone.trim() || undefined,
+            isapreActual:
+              isCurrentIsapre === "yes"
+                ? `Sí — ${summary.isapre}`
+                : isCurrentIsapre === "no"
+                  ? `No — no es afiliado a ${summary.isapre}`
+                  : undefined,
+            notas:
+              isCurrentIsapre === "yes"
+                ? `Ya es afiliado a ${summary.isapre}`
+                : isCurrentIsapre === "no"
+                  ? `No es afiliado actualmente a ${summary.isapre}`
+                  : undefined,
+          },
         });
         setEmailNotifyFailed(false);
       } catch (notifyError) {

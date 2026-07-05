@@ -1,9 +1,10 @@
 import { prisma } from "@/lib/prisma";
+import { ApiError } from "@/lib/api/api-error";
 import type { UserRecord, UserRole } from "@/types/user";
-import type { User as DbUser, ExecutiveAccount } from "@prisma/client";
+import type { User as DbUser, StaffAccount } from "@prisma/client";
 
 type UserWithExecutive = DbUser & {
-  assignedExecutive?: Pick<ExecutiveAccount, "id" | "fullName" | "email"> | null;
+  assignedExecutive?: Pick<StaffAccount, "id" | "fullName" | "email"> | null;
 };
 
 function mapDbUser(user: UserWithExecutive): UserRecord {
@@ -142,10 +143,54 @@ export async function readClientsForExecutive(
   return users.map(mapDbUser);
 }
 
+async function syncClientQuotesExecutive(
+  userId: string,
+  executiveAccountId: string,
+): Promise<void> {
+  await prisma.quote.updateMany({
+    where: { userId, executiveAccountId: null },
+    data: { executiveAccountId },
+  });
+}
+
+async function assertAssignableExecutive(
+  executiveAccountId: string,
+): Promise<void> {
+  const executive = await prisma.staffAccount.findFirst({
+    where: {
+      id: executiveAccountId,
+      role: "EXECUTIVE",
+      active: true,
+    },
+    select: { id: true },
+  });
+
+  if (!executive) {
+    throw new ApiError(
+      "El ejecutivo seleccionado no existe o no está activo.",
+      400,
+      "INVALID_EXECUTIVE",
+    );
+  }
+}
+
 export async function assignUserToExecutive(
   userId: string,
   executiveAccountId: string | null,
 ): Promise<UserRecord> {
+  const existing = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true },
+  });
+
+  if (!existing || existing.role !== "CLIENT") {
+    throw new ApiError("Cliente no encontrado.", 404, "NOT_FOUND");
+  }
+
+  if (executiveAccountId) {
+    await assertAssignableExecutive(executiveAccountId);
+  }
+
   const user = await prisma.user.update({
     where: { id: userId },
     data: { assignedExecutiveId: executiveAccountId },
@@ -155,6 +200,10 @@ export async function assignUserToExecutive(
       },
     },
   });
+
+  if (executiveAccountId) {
+    await syncClientQuotesExecutive(userId, executiveAccountId);
+  }
 
   return mapDbUser(user);
 }

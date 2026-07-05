@@ -3,13 +3,20 @@ import type { ParsedCotizadorDeepLink } from "@/lib/deep-link/parse-cotizador-ur
 import type {
   CotizacionNotifyInput,
   CotizacionNotifyPlan,
+  CotizacionNotifySolicitante,
 } from "@/lib/email/cotizacion-notify-schema";
 import {
   getActiveCheckboxIds,
   ISAPRE_FILTER_OPTIONS,
   resolveIsapreDisplayName,
 } from "@/lib/filter-options";
-import { formatPlanClp, formatQuotedUf } from "@/lib/plan-format";
+import { formatPlanClp, formatPlanUf, formatQuotedUf } from "@/lib/plan-format";
+import {
+  PLAN_TYPE_LABELS,
+  resolveCommercialPlanName,
+  resolvePrimaryPlanType,
+} from "@/lib/plan-metadata";
+import { resolveAppBaseUrl } from "@/lib/platform/routing";
 import {
   REGION_OPTIONS,
   SORT_OPTIONS,
@@ -24,6 +31,7 @@ import type {
   PlanFinalPriceQuote,
 } from "@/domain";
 import type { DashboardFiltersState } from "@/types/filters";
+import type { PartnerEntityTheme } from "@/types/partner-entity";
 
 export interface BuildCotizacionNotifyPayloadInput {
   email: string;
@@ -39,6 +47,9 @@ export interface BuildCotizacionNotifyPayloadInput {
   cotizadorUrl?: string;
   partnerEntitySlug?: string | null;
   partnerEntityName?: string | null;
+  partnerEntityTheme?: PartnerEntityTheme | null;
+  partnerEntityLogoUrl?: string | null;
+  solicitante?: CotizacionNotifySolicitante;
 }
 
 function resolveRegionLabel(regionValue: string): string {
@@ -80,21 +91,42 @@ function resolveCotizadorUrl(
     return buildCotizadorUrlFromParsed(deepLink);
   }
 
-  return "https://cotizador.cotizaloantes.cl/";
+  return `${resolveAppBaseUrl()}/cotizador`;
+}
+
+function resolveAbsoluteLogoUrl(path: string | null | undefined): string | undefined {
+  if (!path?.trim()) return undefined;
+  const trimmed = path.trim();
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  const base = resolveAppBaseUrl().replace(/\/$/, "");
+  return `${base}${trimmed.startsWith("/") ? trimmed : `/${trimmed}`}`;
 }
 
 function buildPlanPayload(
   plan: HealthPlanSummary,
   priceQuote: PlanFinalPriceQuote,
+  beneficiarySummary: BeneficiaryGroupSummary,
 ): CotizacionNotifyPlan {
+  const planType = resolvePrimaryPlanType(plan);
+
   return {
     codigo: plan.unique_code,
     id: plan.unique_code.toLowerCase(),
+    nombre: resolveCommercialPlanName(plan),
     isapre: plan.isapre,
+    tipoPlan: PLAN_TYPE_LABELS[planType],
     precioUf: formatQuotedUf(priceQuote.finalPriceUf),
     precioClp: formatPlanClp(priceQuote.finalPriceClp),
+    precioBaseUf: formatPlanUf(plan.base_price_uf),
+    gesPremiumUf: formatPlanUf(plan.ges_premium_uf),
+    tieneTop: plan.has_top,
     coberturaHospitalaria: plan.coverage_summary.hospital_avg,
     coberturaAmbulatoria: plan.coverage_summary.ambulatory_avg,
+    clinicas: plan.coverage_summary.clinic_count,
+    notas: plan.additional_notes?.trim() || undefined,
+    pdfUrl: resolveAbsoluteLogoUrl(plan.pdf_url),
+    totalBeneficiarios: beneficiarySummary.beneficiaryCount,
+    factoresRiesgo: beneficiarySummary.totalFactors,
   };
 }
 
@@ -120,10 +152,17 @@ export function buildCotizacionNotifyPayload(
     partnerEntitySlug:
       input.partnerEntitySlug?.trim().toLowerCase() || undefined,
     partnerEntityName: input.partnerEntityName?.trim() || undefined,
+    partnerEntityTheme: input.partnerEntityTheme ?? undefined,
+    partnerEntityLogoUrl: resolveAbsoluteLogoUrl(input.partnerEntityLogoUrl),
+    solicitante: input.solicitante,
   };
 
   if (input.plan && input.priceQuote) {
-    payload.plan = buildPlanPayload(input.plan, input.priceQuote);
+    payload.plan = buildPlanPayload(
+      input.plan,
+      input.priceQuote,
+      input.beneficiarySummary,
+    );
   }
 
   return payload;

@@ -134,6 +134,16 @@ export async function POST(request: Request, context: RouteContext) {
       });
     }
 
+    if (action === "cancel-pending-invite") {
+      const { cancelPendingStaffInvite } = await import(
+        "@/lib/auth/staff-invite-store"
+      );
+      await cancelPendingStaffInvite(id);
+      return NextResponse.json({
+        message: "Invitación cancelada.",
+      });
+    }
+
     if (action === "resend-pending-invite") {
       const invite = await prisma.staffInvite.findUnique({ where: { id } });
 

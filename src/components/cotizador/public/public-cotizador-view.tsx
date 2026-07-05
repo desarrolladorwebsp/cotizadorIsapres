@@ -349,6 +349,8 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
         deepLink,
         partnerEntitySlug: entity?.slug ?? deepLink.entidad ?? null,
         partnerEntityName: entity?.name ?? null,
+        partnerEntityTheme: entity?.theme ?? null,
+        partnerEntityLogoUrl: entity?.logoUrl ?? null,
       });
     } catch (error) {
       searchNotifySentRef.current = false;
@@ -365,6 +367,8 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
     deepLink,
     entity?.slug,
     entity?.name,
+    entity?.theme,
+    entity?.logoUrl,
   ]);
 
   useEffect(() => {

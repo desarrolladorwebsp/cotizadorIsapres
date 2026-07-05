@@ -68,7 +68,7 @@ export async function POST(request: Request) {
     }
 
     const admin = await readAdminById(session.sub);
-    const { token } = await createStaffInvite({
+    const { token, invite } = await createStaffInvite({
       email: payload.email,
       realm: payload.realm as StaffRealm,
       rut: rutRaw ? formatRut(rutRaw) : undefined,
@@ -86,6 +86,7 @@ export async function POST(request: Request) {
       {
         message:
           "Invitación enviada. La persona debe abrir el enlace del correo para crear su cuenta.",
+        pendingInvite: invite,
       },
       { status: 201 },
     );

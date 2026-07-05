@@ -31,23 +31,27 @@ async function upsertAdminAccount(
   const normalizedEmail = normalizeEmail(email);
   const passwordHash = await hashPassword(password);
 
-  await prisma.adminAccount.upsert({
+  await prisma.staffAccount.upsert({
     where: { email: normalizedEmail },
     create: {
       email: normalizedEmail,
       fullName,
+      role: "ADMIN",
       passwordHash,
       active: true,
       mustChangePassword: false,
+      onboardingCompleted: true,
       failedLoginAttempts: 0,
       lockedUntil: null,
       passwordChangedAt: new Date(),
     },
     update: {
       fullName,
+      role: "ADMIN",
       passwordHash,
       active: true,
       mustChangePassword: false,
+      onboardingCompleted: true,
       failedLoginAttempts: 0,
       lockedUntil: null,
       passwordChangedAt: new Date(),
@@ -55,7 +59,7 @@ async function upsertAdminAccount(
   });
 
   console.log(`Administrador listo: ${normalizedEmail}`);
-  console.log("Login: /cotizador/admin/login");
+  console.log("Login: /cotizador/acceso");
 }
 
 async function main() {
