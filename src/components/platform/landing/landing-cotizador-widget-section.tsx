@@ -1,7 +1,7 @@
 "use client";
 
 import Script from "next/script";
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { landing } from "./landing-tokens";
 import {
@@ -59,12 +59,18 @@ function SparkIcon({ className }: { className?: string }) {
 export function LandingCotizadorWidgetSection() {
   const containerRef = useRef<HTMLElement>(null);
   const mountedRef = useRef(false);
+  const scriptReadyRef = useRef(false);
   const reducedMotion = useReducedMotion();
-  const baseUrl = resolveLandingWidgetBaseUrl();
+  const [baseUrl, setBaseUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    setBaseUrl(resolveLandingWidgetBaseUrl());
+  }, []);
 
   const mountWidget = useCallback(() => {
     const container = containerRef.current;
-    if (!container || mountedRef.current) return;
+    const resolvedBaseUrl = baseUrl ?? resolveLandingWidgetBaseUrl();
+    if (!container || mountedRef.current || !resolvedBaseUrl) return;
 
     if (container.dataset.cvMounted === "true") {
       mountedRef.current = true;
@@ -74,13 +80,23 @@ export function LandingCotizadorWidgetSection() {
     if (window.CotizadorWidget?.mount) {
       window.CotizadorWidget.mount(container, {
         partner: LANDING_WIDGET_AGENT_KEY,
-        baseUrl,
+        baseUrl: resolvedBaseUrl,
         minHeight: LANDING_WIDGET_MIN_HEIGHT,
         title: "Cotizador de planes Isapre — Cotizador Premium",
       });
       mountedRef.current = true;
     }
   }, [baseUrl]);
+
+  useEffect(() => {
+    if (!baseUrl || !scriptReadyRef.current) return;
+    mountWidget();
+  }, [baseUrl, mountWidget]);
+
+  const handleScriptReady = useCallback(() => {
+    scriptReadyRef.current = true;
+    mountWidget();
+  }, [mountWidget]);
 
   return (
     <section
@@ -133,7 +149,7 @@ export function LandingCotizadorWidgetSection() {
               data-cotizador-widget
               data-agent-key={LANDING_WIDGET_AGENT_KEY}
               data-partner={LANDING_WIDGET_AGENT_KEY}
-              data-base-url={baseUrl}
+              data-base-url={baseUrl ?? undefined}
               data-full-width="true"
               data-min-height={String(LANDING_WIDGET_MIN_HEIGHT)}
               data-title="Cotizador de planes Isapre — Cotizador Premium"
@@ -151,8 +167,8 @@ export function LandingCotizadorWidgetSection() {
       <Script
         src={LANDING_WIDGET_SCRIPT_URL}
         strategy="afterInteractive"
-        onLoad={mountWidget}
-        onReady={mountWidget}
+        onLoad={handleScriptReady}
+        onReady={handleScriptReady}
       />
     </section>
   );

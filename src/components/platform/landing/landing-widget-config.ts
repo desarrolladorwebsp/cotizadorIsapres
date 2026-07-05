@@ -1,4 +1,5 @@
 import { PLATFORM_AGENT_KEY } from "@/lib/partner-entity/platform-agent";
+import { PROD_APP_BASE_URL, resolveAppBaseUrl } from "@/lib/platform/routing";
 
 /** Agente / partner key de Cotizador Premium en la Landing. */
 export const LANDING_WIDGET_AGENT_KEY =
@@ -12,16 +13,22 @@ export const LANDING_WIDGET_SCRIPT_URL =
 
 export const LANDING_WIDGET_MIN_HEIGHT = 720;
 
+function isLocalHostUrl(value: string): boolean {
+  return /localhost|127\.0\.0\.1/i.test(value);
+}
+
+/**
+ * Base URL del cotizador embebido en la landing.
+ * En el navegador usa siempre el origen actual (evita localhost en producción).
+ */
 export function resolveLandingWidgetBaseUrl(): string {
-  const fromEnv =
-    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
-    process.env.NEXT_PUBLIC_COTIZADOR_URL?.replace(/\/$/, "");
-
-  if (fromEnv) return fromEnv;
-
   if (typeof window !== "undefined") {
-    return window.location.origin;
+    const origin = window.location.origin;
+    if (!isLocalHostUrl(origin)) return origin;
   }
 
-  return "http://localhost:3001";
+  const configured = resolveAppBaseUrl();
+  if (!isLocalHostUrl(configured)) return configured;
+
+  return PROD_APP_BASE_URL;
 }
