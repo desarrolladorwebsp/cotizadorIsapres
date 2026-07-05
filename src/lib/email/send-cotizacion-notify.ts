@@ -7,6 +7,7 @@ import {
   buildUserCotizacionEmailHtml,
   buildUserCotizacionSubject,
 } from "@/lib/email/cotizacion-notify-templates";
+import { buildInlineAttachmentsForHtml } from "@/lib/email/email-inline-assets";
 import {
   getCotizacionFromEmail,
   getEquipoFromEmail,
@@ -27,19 +28,26 @@ export async function sendCotizacionNotifyEmails(
   const equipoFrom = getEquipoFromEmail();
   const equipoNotify = getEquipoNotifyEmail();
 
+  const userHtml = buildUserCotizacionEmailHtml(data);
+  const adminHtml = buildAdminCotizacionEmailHtml(data);
+  const userAttachments = buildInlineAttachmentsForHtml(userHtml);
+  const adminAttachments = buildInlineAttachmentsForHtml(adminHtml);
+
   const [userResult, adminResult] = await Promise.all([
     resend.emails.send({
       from: cotizacionFrom,
       to: data.email,
       subject: buildUserCotizacionSubject(data),
-      html: buildUserCotizacionEmailHtml(data),
+      html: userHtml,
+      attachments: userAttachments.length > 0 ? userAttachments : undefined,
     }),
     resend.emails.send({
       from: equipoFrom,
       to: equipoNotify,
       replyTo: data.email,
       subject: buildAdminCotizacionSubject(data),
-      html: buildAdminCotizacionEmailHtml(data),
+      html: adminHtml,
+      attachments: adminAttachments.length > 0 ? adminAttachments : undefined,
     }),
   ]);
 

@@ -2,6 +2,7 @@ import path from "path";
 import { config } from "dotenv";
 import { PrismaClient } from "@prisma/client";
 import { buildCotizadorPremiumPartnerRecord } from "../src/lib/partner-entity/platform-agent";
+import { partnerThemeToPrismaJson } from "../src/lib/partner-entity/theme";
 
 config({ path: path.join(process.cwd(), ".env.local") });
 
@@ -22,7 +23,7 @@ async function main() {
       whatsappMessage: partner.whatsappMessage,
       exitLabel: partner.exitLabel,
       brandKey: partner.brandKey,
-      theme: partner.theme,
+      theme: partnerThemeToPrismaJson(partner.theme),
       active: true,
     },
     update: {
@@ -34,7 +35,7 @@ async function main() {
       whatsappMessage: partner.whatsappMessage,
       exitLabel: partner.exitLabel,
       brandKey: partner.brandKey,
-      theme: partner.theme,
+      theme: partnerThemeToPrismaJson(partner.theme),
       active: true,
     },
   });

@@ -2,10 +2,10 @@ import { escapeHtml } from "@/lib/email/escape-html";
 import type { CotizacionNotifyInput } from "@/lib/email/cotizacion-notify-schema";
 import {
   buildEmailShell,
-  PREMIUM_EMAIL_BRAND,
   renderEmailButton,
   renderHighlightBox,
   resolveAgentEmailBrand,
+  resolvePremiumEmailBrand,
 } from "@/lib/email/email-branding";
 
 function formatIncomeClp(raw: string | undefined): string {
@@ -192,7 +192,7 @@ function buildAdminPlanRows(data: CotizacionNotifyInput): string[] {
     rows.push(
       renderTableRow(
         "PDF del plan",
-        `<a href="${escapeHtml(data.plan.pdfUrl)}" style="color:${PREMIUM_EMAIL_BRAND.primary};">Descargar PDF</a>`,
+        `<a href="${escapeHtml(data.plan.pdfUrl)}" style="color:${resolvePremiumEmailBrand().primary};">Descargar PDF</a>`,
       ),
     );
   }
@@ -203,7 +203,7 @@ function buildAdminPlanRows(data: CotizacionNotifyInput): string[] {
 export function buildAdminCotizacionEmailHtml(
   data: CotizacionNotifyInput,
 ): string {
-  const brand = PREMIUM_EMAIL_BRAND;
+  const brand = resolvePremiumEmailBrand();
   const timestamp = new Intl.DateTimeFormat("es-CL", {
     timeZone: "America/Santiago",
     dateStyle: "full",

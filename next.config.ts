@@ -6,6 +6,9 @@ const embedFrameAncestors =
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ["@prisma/client", "prisma"],
+  outputFileTracingIncludes: {
+    "/api/**/*": ["./public/images/logo-cotizador-premium.jpeg"],
+  },
   async headers() {
     const frameAncestors = `frame-ancestors ${embedFrameAncestors}`;
     return [

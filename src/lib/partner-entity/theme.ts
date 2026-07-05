@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import type { Prisma } from "@prisma/client";
 import type { PartnerEntityTheme } from "@/types/partner-entity";
 
 const THEME_VAR_MAP: Record<keyof PartnerEntityTheme, string> = {
@@ -18,6 +19,12 @@ const THEME_VAR_MAP: Record<keyof PartnerEntityTheme, string> = {
   accentWarning: "--accent-warning",
   accentWarningForeground: "--accent-warning-foreground",
 };
+
+export function partnerThemeToPrismaJson(
+  theme: PartnerEntityTheme,
+): Prisma.InputJsonValue {
+  return theme as Prisma.InputJsonValue;
+}
 
 export function partnerThemeToCssProperties(
   theme: PartnerEntityTheme,

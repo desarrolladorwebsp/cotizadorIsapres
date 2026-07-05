@@ -11,6 +11,7 @@ import {
   buildStaffInviteEmailSubject,
 } from "@/lib/email/staff-invite-templates";
 import { getEquipoFromEmail, getResendApiKey } from "@/lib/email/resend-config";
+import { buildInlineAttachmentsForHtml } from "@/lib/email/email-inline-assets";
 import { resolveServerAppBaseUrl } from "@/lib/platform/routing";
 import type { StaffRealm } from "@/types/staff-account";
 
@@ -31,16 +32,20 @@ export async function sendStaffActivationEmail(input: {
       : EXECUTIVE_ACTIVATE_ACCOUNT_PATH;
   const activationUrl = `${baseUrl}${activatePath}?token=${encodeURIComponent(input.activationToken)}`;
 
-  const result = await resend.emails.send({
-    from: fromEmail,
-    to: input.email,
-    subject: buildStaffActivationEmailSubject(input.realm),
-    html: buildStaffActivationEmailHtml({
+  const html = buildStaffActivationEmailHtml({
       email: input.email,
       activationUrl,
       realm: input.realm,
       rut: input.rut,
-    }),
+    });
+  const attachments = buildInlineAttachmentsForHtml(html);
+
+  const result = await resend.emails.send({
+    from: fromEmail,
+    to: input.email,
+    subject: buildStaffActivationEmailSubject(input.realm),
+    html,
+    attachments: attachments.length > 0 ? attachments : undefined,
   });
 
   if (result.error) {
@@ -72,17 +77,21 @@ export async function sendStaffInviteEmail(input: {
   const loginPath = "/cotizador/acceso";
   const loginUrl = `${baseUrl}${loginPath}`;
 
-  const result = await resend.emails.send({
-    from: fromEmail,
-    to: input.email,
-    subject: buildStaffInviteEmailSubject(input.realm),
-    html: buildStaffInviteEmailHtml({
+  const html = buildStaffInviteEmailHtml({
       fullName: input.fullName,
       email: input.email,
       temporaryPassword: input.temporaryPassword,
       loginUrl,
       realm: input.realm,
-    }),
+    });
+  const attachments = buildInlineAttachmentsForHtml(html);
+
+  const result = await resend.emails.send({
+    from: fromEmail,
+    to: input.email,
+    subject: buildStaffInviteEmailSubject(input.realm),
+    html,
+    attachments: attachments.length > 0 ? attachments : undefined,
   });
 
   if (result.error) {

@@ -1,16 +1,12 @@
 import { escapeHtml } from "@/lib/email/escape-html";
 import {
   buildEmailShell,
-  PREMIUM_EMAIL_BRAND,
-  resolveAbsoluteAssetUrl,
+  resolvePremiumEmailBrand,
 } from "@/lib/email/email-branding";
 import type { StaffRealm } from "@/types/staff-account";
 
 function resolvePremiumBrand() {
-  return {
-    ...PREMIUM_EMAIL_BRAND,
-    logoUrl: resolveAbsoluteAssetUrl(PREMIUM_EMAIL_BRAND.logoUrl),
-  };
+  return resolvePremiumEmailBrand();
 }
 
 function resolveRealmLabel(realm: StaffRealm): string {

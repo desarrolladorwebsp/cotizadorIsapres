@@ -11,6 +11,7 @@ import {
   DEFAULT_GES_PREMIUM_UF,
 } from "../src/lib/isapre-ges-defaults";
 import { buildCotizadorPremiumPartnerRecord } from "../src/lib/partner-entity/platform-agent";
+import { partnerThemeToPrismaJson } from "../src/lib/partner-entity/theme";
 import type { Clinic } from "../src/types/clinic";
 import type { HealthPlan } from "../src/types/plan";
 
@@ -439,7 +440,7 @@ async function seedPartnerEntities() {
         whatsappMessage: partner.whatsappMessage,
         exitLabel: partner.exitLabel,
         brandKey: partner.brandKey,
-        theme: partner.theme,
+        theme: partnerThemeToPrismaJson(partner.theme),
         active: true,
       },
       update: {
@@ -451,7 +452,7 @@ async function seedPartnerEntities() {
         whatsappMessage: partner.whatsappMessage,
         exitLabel: partner.exitLabel,
         brandKey: partner.brandKey,
-        theme: partner.theme,
+        theme: partnerThemeToPrismaJson(partner.theme),
         active: true,
       },
     });

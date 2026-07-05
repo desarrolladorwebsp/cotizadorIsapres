@@ -1,6 +1,9 @@
 import { escapeHtml } from "@/lib/email/escape-html";
+import { PREMIUM_EMAIL_LOGO_CID } from "@/lib/email/email-inline-assets";
 import { COTIZADOR_PREMIUM_PALETTE } from "@/lib/partner-entity/cotizador-premium-palette";
-import { resolveAppBaseUrl } from "@/lib/platform/routing";
+import {
+  resolveServerAppBaseUrl,
+} from "@/lib/platform/routing";
 import type { PartnerEntityTheme } from "@/types/partner-entity";
 
 export interface EmailBrand {
@@ -10,6 +13,8 @@ export interface EmailBrand {
   primaryForeground: string;
   secondaryMuted: string;
   logoUrl?: string;
+  /** Referencia cid: para logo incrustado en el correo (más fiable que URL externa). */
+  logoContentId?: string;
 }
 
 export const PREMIUM_EMAIL_BRAND: EmailBrand = {
@@ -18,15 +23,23 @@ export const PREMIUM_EMAIL_BRAND: EmailBrand = {
   primaryDark: COTIZADOR_PREMIUM_PALETTE.primaryDark,
   primaryForeground: COTIZADOR_PREMIUM_PALETTE.primaryForeground,
   secondaryMuted: COTIZADOR_PREMIUM_PALETTE.secondaryMuted,
-  logoUrl: "/images/logo-cotizador-premium.jpeg",
+  logoContentId: PREMIUM_EMAIL_LOGO_CID,
 };
 
-export function resolveAbsoluteAssetUrl(path: string | undefined): string | undefined {
+export function resolveAbsoluteAssetUrl(
+  path: string | undefined,
+  request?: Request,
+): string | undefined {
   if (!path?.trim()) return undefined;
   const trimmed = path.trim();
   if (/^https?:\/\//i.test(trimmed)) return trimmed;
-  const base = resolveAppBaseUrl().replace(/\/$/, "");
+  const base = resolveServerAppBaseUrl(request).replace(/\/$/, "");
   return `${base}${trimmed.startsWith("/") ? trimmed : `/${trimmed}`}`;
+}
+
+/** Marca premium con logo incrustado (recomendado para correos transaccionales). */
+export function resolvePremiumEmailBrand(): EmailBrand {
+  return { ...PREMIUM_EMAIL_BRAND };
 }
 
 export function resolveAgentEmailBrand(input: {
@@ -42,12 +55,7 @@ export function resolveAgentEmailBrand(input: {
     input.partnerEntitySlug?.trim().toLowerCase() !== "cotizadorpremium";
 
   if (!hasAgent && !theme?.primary) {
-    return {
-      ...PREMIUM_EMAIL_BRAND,
-      logoUrl: resolveAbsoluteAssetUrl(
-        input.partnerEntityLogoUrl ?? "/images/logo-cotizador-premium.jpeg",
-      ),
-    };
+    return resolvePremiumEmailBrand();
   }
 
   return {
@@ -68,8 +76,12 @@ export function buildEmailShell(
   body: string,
   footerNote: string,
 ): string {
-  const headerContent = brand.logoUrl
-    ? `<img src="${escapeHtml(brand.logoUrl)}" alt="${escapeHtml(brand.name)}" width="180" style="display:block;max-width:180px;max-height:48px;height:auto;border:0;" />`
+  const logoSrc = brand.logoContentId
+    ? `cid:${brand.logoContentId}`
+    : brand.logoUrl;
+
+  const headerContent = logoSrc
+    ? `<img src="${escapeHtml(logoSrc)}" alt="${escapeHtml(brand.name)}" width="180" style="display:block;max-width:180px;max-height:48px;height:auto;border:0;" />`
     : `<p style="margin:0;font-size:22px;font-weight:700;color:${brand.primaryForeground};">${escapeHtml(brand.name)}</p>`;
 
   return `<!DOCTYPE html>
