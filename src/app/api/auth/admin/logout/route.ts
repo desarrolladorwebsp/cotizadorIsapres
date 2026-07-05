@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { AUTH_REALM } from "@/lib/auth/constants";
-import { clearSessionCookie } from "@/lib/auth/session";
+import { clearAllStaffSessionCookies } from "@/lib/auth/session";
 
+/** @deprecated Usar POST /api/auth/logout */
 export async function POST() {
-  await clearSessionCookie(AUTH_REALM.admin);
+  await clearAllStaffSessionCookies();
   return NextResponse.json({ ok: true });
 }

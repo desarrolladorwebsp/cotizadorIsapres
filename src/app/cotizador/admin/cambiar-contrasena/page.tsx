@@ -1,13 +1,6 @@
-import { ChangePasswordForm } from "@/components/auth/change-password-form";
-import { ADMIN_HOME_PATH } from "@/lib/auth/constants";
+import { redirect } from "next/navigation";
+import { EXECUTIVE_CHANGE_PASSWORD_PATH } from "@/lib/auth/constants";
 
-export default function AdminChangePasswordPage() {
-  return (
-    <ChangePasswordForm
-      realm="admin"
-      title="Actualiza tu contraseña"
-      subtitle="Por seguridad debes reemplazar la clave temporal antes de continuar."
-      redirectTo={ADMIN_HOME_PATH}
-    />
-  );
+export default function LegacyAdminChangePasswordPage() {
+  redirect(EXECUTIVE_CHANGE_PASSWORD_PATH);
 }

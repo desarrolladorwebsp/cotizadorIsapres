@@ -8,6 +8,8 @@ export interface SessionPayload {
   mustChangePassword: boolean;
   iat: number;
   exp: number;
+  /** Unix timestamp de la última actividad (sliding session). */
+  lastActive: number;
 }
 
 export interface AdminSessionUser {
@@ -22,14 +24,27 @@ export interface ExecutiveSessionUser {
   email: string;
   fullName: string;
   phone: string | null;
+  rut: string | null;
   subscriptionStatus: SubscriptionStatus;
   subscriptionExpiresAt: string | null;
   subscriptionActive: boolean;
   mustChangePassword: boolean;
+  onboardingCompleted: boolean;
+  assignmentsSuspended: boolean;
 }
 
 export interface LoginResponseUser {
   mustChangePassword: boolean;
+  realm: AuthRealm;
+}
+
+export interface StaffMeResponse {
+  realm: AuthRealm;
+  user: AdminSessionUser | ExecutiveSessionUser;
+  capabilities: {
+    adminPanel: boolean;
+    executivePanel: boolean;
+  };
 }
 
 export interface LoginCredentials {

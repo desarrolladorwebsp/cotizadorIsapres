@@ -11,15 +11,6 @@ import { sendStaffActivationEmail } from "@/lib/email/send-staff-invite";
 import { listPendingStaffInvites } from "@/lib/auth/staff-invite-store";
 import { listStaffAccounts } from "@/lib/auth/account-store";
 import type { CreateStaffAccountInput, StaffRealm } from "@/types/staff-account";
-import type { SubscriptionStatus } from "@prisma/client";
-
-const SUBSCRIPTION_STATUSES = new Set<SubscriptionStatus>([
-  "TRIAL",
-  "ACTIVE",
-  "PAST_DUE",
-  "CANCELLED",
-  "EXPIRED",
-]);
 
 function isValidCreateInput(payload: unknown): payload is CreateStaffAccountInput {
   if (!payload || typeof payload !== "object") return false;
@@ -30,12 +21,7 @@ function isValidCreateInput(payload: unknown): payload is CreateStaffAccountInpu
     (data.realm === "admin" || data.realm === "executive") &&
     typeof data.email === "string" &&
     data.email.trim().length > 0 &&
-    (data.fullName === undefined || typeof data.fullName === "string") &&
-    (data.phone === undefined || typeof data.phone === "string") &&
-    (data.rut === undefined || typeof data.rut === "string") &&
-    (data.subscriptionStatus === undefined ||
-      (typeof data.subscriptionStatus === "string" &&
-        SUBSCRIPTION_STATUSES.has(data.subscriptionStatus as SubscriptionStatus)))
+    (data.rut === undefined || typeof data.rut === "string")
   );
 }
 
@@ -66,7 +52,18 @@ export async function POST(request: Request) {
     }
 
     const rutRaw = payload.rut?.trim();
-    if (rutRaw && !isValidRut(rutRaw)) {
+
+    if (payload.realm === "executive") {
+      if (!rutRaw) {
+        return NextResponse.json(
+          { error: "El RUT es obligatorio para invitar ejecutivos." },
+          { status: 400 },
+        );
+      }
+      if (!isValidRut(rutRaw)) {
+        return NextResponse.json({ error: "El RUT no es válido." }, { status: 400 });
+      }
+    } else if (rutRaw && !isValidRut(rutRaw)) {
       return NextResponse.json({ error: "El RUT no es válido." }, { status: 400 });
     }
 

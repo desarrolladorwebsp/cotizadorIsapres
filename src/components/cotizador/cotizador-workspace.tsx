@@ -19,20 +19,34 @@ import { joinClasses } from "@/lib/utils";
 
 export interface CotizadorWorkspaceProps {
   variant: CotizadorHeaderVariant;
+  /** Oculta header y nav globales cuando el panel ejecutivo ya provee la navegación. */
+  embeddedInExecutiveShell?: boolean;
 }
 
-export function CotizadorWorkspace({ variant }: CotizadorWorkspaceProps) {
+export function CotizadorWorkspace({
+  variant,
+  embeddedInExecutiveShell = false,
+}: CotizadorWorkspaceProps) {
   const { plans, loading, error } = usePlansCatalog();
   const dashboard = useCotizadorDashboard(plans);
 
   return (
-    <div className={joinClasses(appShellRoot, ui.canvas)}>
-      <CotizadorHeader
-        variant={variant}
-        sidebarOpen={dashboard.sidebarOpen}
-        onToggleSidebar={() => dashboard.setSidebarOpen((open) => !open)}
-      />
-      <CotizadorNav />
+    <div
+      className={joinClasses(
+        embeddedInExecutiveShell ? "flex min-h-0 flex-1 flex-col" : appShellRoot,
+        !embeddedInExecutiveShell && ui.canvas,
+      )}
+    >
+      {!embeddedInExecutiveShell ? (
+        <>
+          <CotizadorHeader
+            variant={variant}
+            sidebarOpen={dashboard.sidebarOpen}
+            onToggleSidebar={() => dashboard.setSidebarOpen((open) => !open)}
+          />
+          <CotizadorNav />
+        </>
+      ) : null}
 
       <div className={joinClasses(appShellScroll, safeWidth, "flex min-h-0")}>
         {dashboard.sidebarReady ? (

@@ -15,15 +15,17 @@ export interface StaffAccountRecord {
   rut?: string | null;
   subscriptionStatus?: SubscriptionStatus;
   subscriptionExpiresAt?: string | null;
+  assignmentsSuspended?: boolean;
+  onboardingCompleted?: boolean;
 }
 
 export interface CreateStaffAccountInput {
   realm: StaffRealm;
   email: string;
-  /** Opcional al invitar; se completa en la activación. */
+  /** Obligatorio al invitar ejecutivos. */
+  rut?: string;
   fullName?: string;
   phone?: string;
-  rut?: string;
   subscriptionStatus?: SubscriptionStatus;
 }
 
@@ -42,4 +44,5 @@ export interface UpdateStaffAccountInput {
   phone?: string | null;
   rut?: string | null;
   subscriptionStatus?: SubscriptionStatus;
+  assignmentsSuspended?: boolean;
 }

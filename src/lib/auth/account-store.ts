@@ -31,6 +31,71 @@ import { ApiError } from "@/lib/api/api-error";
 
 const GENERIC_LOGIN_ERROR = "Correo o contraseña incorrectos.";
 
+function mapExecutiveSessionUser(account: {
+  id: string;
+  email: string;
+  fullName: string;
+  phone: string | null;
+  rut: string | null;
+  subscriptionStatus: SubscriptionStatus;
+  subscriptionExpiresAt: Date | null;
+  mustChangePassword: boolean;
+  onboardingCompleted: boolean;
+  assignmentsSuspended: boolean;
+}): ExecutiveSessionUser {
+  const subscriptionActive = isSubscriptionActive({
+    subscriptionStatus: account.subscriptionStatus,
+    subscriptionExpiresAt: account.subscriptionExpiresAt,
+  });
+
+  return {
+    id: account.id,
+    email: account.email,
+    fullName: account.fullName,
+    phone: account.phone,
+    rut: account.rut,
+    subscriptionStatus: account.subscriptionStatus,
+    subscriptionExpiresAt: account.subscriptionExpiresAt?.toISOString() ?? null,
+    subscriptionActive,
+    mustChangePassword: account.mustChangePassword,
+    onboardingCompleted: account.onboardingCompleted,
+    assignmentsSuspended: account.assignmentsSuspended,
+  };
+}
+
+function mapExecutiveStaffRecord(account: {
+  id: string;
+  email: string;
+  fullName: string;
+  active: boolean;
+  mustChangePassword: boolean;
+  lastLoginAt: Date | null;
+  createdAt: Date;
+  phone: string | null;
+  rut: string | null;
+  subscriptionStatus: SubscriptionStatus;
+  subscriptionExpiresAt: Date | null;
+  assignmentsSuspended: boolean;
+  onboardingCompleted: boolean;
+}): StaffAccountRecord {
+  return {
+    id: account.id,
+    realm: "executive",
+    email: account.email,
+    fullName: account.fullName,
+    active: account.active,
+    mustChangePassword: account.mustChangePassword,
+    lastLoginAt: account.lastLoginAt?.toISOString() ?? null,
+    createdAt: account.createdAt.toISOString(),
+    phone: account.phone,
+    rut: account.rut,
+    subscriptionStatus: account.subscriptionStatus,
+    subscriptionExpiresAt: account.subscriptionExpiresAt?.toISOString() ?? null,
+    assignmentsSuspended: account.assignmentsSuspended,
+    onboardingCompleted: account.onboardingCompleted,
+  };
+}
+
 function isAccountLocked(lockedUntil: Date | null): boolean {
   return Boolean(lockedUntil && lockedUntil.getTime() > Date.now());
 }
@@ -186,16 +251,35 @@ export async function authenticateExecutive(
     mustChangePassword: account.mustChangePassword,
   });
 
-  return {
-    id: account.id,
-    email: account.email,
-    fullName: account.fullName,
-    phone: account.phone,
-    subscriptionStatus: account.subscriptionStatus,
-    subscriptionExpiresAt: account.subscriptionExpiresAt?.toISOString() ?? null,
-    subscriptionActive,
-    mustChangePassword: account.mustChangePassword,
-  };
+  return mapExecutiveSessionUser(account);
+}
+
+export async function authenticateStaff(
+  credentials: LoginCredentials,
+): Promise<{
+  realm: AuthRealm;
+  user: AdminSessionUser | ExecutiveSessionUser;
+}> {
+  const email = normalizeEmail(credentials.email);
+  const admin = await prisma.adminAccount.findUnique({ where: { email } });
+
+  if (admin) {
+    return {
+      realm: "admin",
+      user: await authenticateAdmin(credentials),
+    };
+  }
+
+  const executive = await prisma.executiveAccount.findUnique({ where: { email } });
+
+  if (executive) {
+    return {
+      realm: "executive",
+      user: await authenticateExecutive(credentials),
+    };
+  }
+
+  throw new ApiError(GENERIC_LOGIN_ERROR, 401, "INVALID_CREDENTIALS");
 }
 
 export async function readAdminById(
@@ -212,6 +296,24 @@ export async function readAdminById(
     mustChangePassword: account.mustChangePassword,
   };
 }
+
+export async function readAdminByEmail(
+  email: string,
+): Promise<AdminSessionUser | null> {
+  const account = await prisma.adminAccount.findUnique({
+    where: { email: normalizeEmail(email) },
+  });
+
+  if (!account || !account.active) return null;
+
+  return {
+    id: account.id,
+    email: account.email,
+    fullName: account.fullName,
+    mustChangePassword: account.mustChangePassword,
+  };
+}
+
 export async function readExecutiveById(
   id: string,
 ): Promise<ExecutiveSessionUser | null> {
@@ -219,21 +321,7 @@ export async function readExecutiveById(
 
   if (!account || !account.active) return null;
 
-  const subscriptionActive = isSubscriptionActive({
-    subscriptionStatus: account.subscriptionStatus,
-    subscriptionExpiresAt: account.subscriptionExpiresAt,
-  });
-
-  return {
-    id: account.id,
-    email: account.email,
-    fullName: account.fullName,
-    phone: account.phone,
-    subscriptionStatus: account.subscriptionStatus,
-    subscriptionExpiresAt: account.subscriptionExpiresAt?.toISOString() ?? null,
-    subscriptionActive,
-    mustChangePassword: account.mustChangePassword,
-  };
+  return mapExecutiveSessionUser(account);
 }
 
 export async function listStaffAccounts(): Promise<StaffAccountRecord[]> {
@@ -253,20 +341,9 @@ export async function listStaffAccounts(): Promise<StaffAccountRecord[]> {
     createdAt: account.createdAt.toISOString(),
   }));
 
-  const executiveRecords: StaffAccountRecord[] = executives.map((account) => ({
-    id: account.id,
-    realm: "executive",
-    email: account.email,
-    fullName: account.fullName,
-    active: account.active,
-    mustChangePassword: account.mustChangePassword,
-    lastLoginAt: account.lastLoginAt?.toISOString() ?? null,
-    createdAt: account.createdAt.toISOString(),
-    phone: account.phone,
-    rut: account.rut,
-    subscriptionStatus: account.subscriptionStatus,
-    subscriptionExpiresAt: account.subscriptionExpiresAt?.toISOString() ?? null,
-  }));
+  const executiveRecords: StaffAccountRecord[] = executives.map((account) =>
+    mapExecutiveStaffRecord(account),
+  );
 
   return [...adminRecords, ...executiveRecords]
     .filter((account) => account.realm === "admin" || account.realm === "executive")
@@ -395,23 +472,11 @@ export async function updateStaffAccount(
       phone: input.phone,
       rut: input.rut,
       subscriptionStatus: input.subscriptionStatus,
+      assignmentsSuspended: input.assignmentsSuspended,
     },
   });
 
-  return {
-    id: account.id,
-    realm: "executive",
-    email: account.email,
-    fullName: account.fullName,
-    active: account.active,
-    mustChangePassword: account.mustChangePassword,
-    lastLoginAt: account.lastLoginAt?.toISOString() ?? null,
-    createdAt: account.createdAt.toISOString(),
-    phone: account.phone,
-    rut: account.rut,
-    subscriptionStatus: account.subscriptionStatus,
-    subscriptionExpiresAt: account.subscriptionExpiresAt?.toISOString() ?? null,
-  };
+  return mapExecutiveStaffRecord(account);
 }
 
 export async function resetStaffTemporaryPassword(
@@ -461,21 +526,86 @@ export async function resetStaffTemporaryPassword(
 
   return {
     temporaryPassword,
-    account: {
-      id: account.id,
-      realm: "executive",
-      email: account.email,
-      fullName: account.fullName,
-      active: account.active,
-      mustChangePassword: account.mustChangePassword,
-      lastLoginAt: account.lastLoginAt?.toISOString() ?? null,
-      createdAt: account.createdAt.toISOString(),
-      phone: account.phone,
-      rut: account.rut,
-      subscriptionStatus: account.subscriptionStatus,
-      subscriptionExpiresAt: account.subscriptionExpiresAt?.toISOString() ?? null,
-    },
+    account: mapExecutiveStaffRecord(account),
   };
+}
+
+export async function deleteStaffAccount(
+  realm: StaffRealm,
+  id: string,
+): Promise<void> {
+  if (realm === "admin") {
+    const account = await prisma.adminAccount.findUnique({ where: { id } });
+    if (!account) {
+      throw new ApiError("Usuario no encontrado.", 404, "NOT_FOUND");
+    }
+    await prisma.adminAccount.delete({ where: { id } });
+    return;
+  }
+
+  const account = await prisma.executiveAccount.findUnique({ where: { id } });
+  if (!account) {
+    throw new ApiError("Usuario no encontrado.", 404, "NOT_FOUND");
+  }
+
+  await prisma.executiveAccount.delete({ where: { id } });
+}
+
+export async function completeExecutiveOnboarding(
+  accountId: string,
+  input: { firstName: string; lastName: string; phone: string; rut: string },
+): Promise<ExecutiveSessionUser> {
+  const account = await prisma.executiveAccount.findUnique({
+    where: { id: accountId },
+  });
+
+  if (!account || !account.active) {
+    throw new ApiError("Cuenta no encontrada.", 404, "NOT_FOUND");
+  }
+
+  const firstName = input.firstName.trim();
+  const lastName = input.lastName.trim();
+  const fullName = `${firstName} ${lastName}`.trim();
+  const phone = input.phone.trim();
+
+  if (!firstName || !lastName) {
+    throw new ApiError("Nombre y apellido son obligatorios.", 400, "INVALID_INPUT");
+  }
+
+  if (!phone) {
+    throw new ApiError("El teléfono de contacto es obligatorio.", 400, "INVALID_INPUT");
+  }
+
+  const { formatRut, isValidRut, rutMatches } = await import("@/lib/auth/rut");
+
+  if (!isValidRut(input.rut)) {
+    throw new ApiError("El RUT no es válido.", 400, "INVALID_RUT");
+  }
+
+  const formattedRut = formatRut(input.rut);
+
+  if (!rutMatches(account.rut, formattedRut)) {
+    throw new ApiError("El RUT no coincide con el registrado en tu invitación.", 400, "RUT_MISMATCH");
+  }
+
+  const updated = await prisma.executiveAccount.update({
+    where: { id: accountId },
+    data: {
+      fullName,
+      phone,
+      rut: formattedRut,
+      onboardingCompleted: true,
+    },
+  });
+
+  await issueSession({
+    accountId: updated.id,
+    email: updated.email,
+    realm: "executive",
+    mustChangePassword: false,
+  });
+
+  return mapExecutiveSessionUser(updated);
 }
 
 export async function changeStaffPassword(
@@ -587,16 +717,7 @@ export async function changeStaffPassword(
     mustChangePassword: false,
   });
 
-  return {
-    id: updated.id,
-    email: updated.email,
-    fullName: updated.fullName,
-    phone: updated.phone,
-    subscriptionStatus: updated.subscriptionStatus,
-    subscriptionExpiresAt: updated.subscriptionExpiresAt?.toISOString() ?? null,
-    subscriptionActive,
-    mustChangePassword: false,
-  };
+  return mapExecutiveSessionUser(updated);
 }
 
 export async function seedAuthAccountPassword(

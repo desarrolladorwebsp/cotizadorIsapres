@@ -3,10 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserMenu } from "@/components/auth/user-menu";
-import { useAuthSession } from "@/hooks/use-auth-session";
+import { useStaffSession } from "@/hooks/use-auth-session";
 import {
   ADMIN_HOME_PATH,
-  ADMIN_LOGIN_PATH,
   ADMIN_USERS_PATH,
 } from "@/lib/auth/constants";
 import {
@@ -40,7 +39,7 @@ export function AdminShell({
   children,
 }: AdminShellProps) {
   const pathname = usePathname();
-  const { user: adminUser } = useAuthSession("admin");
+  const { user: staffUser, isAdmin } = useStaffSession();
   const onUsersPage = pathname === ADMIN_USERS_PATH;
   const useTabNavigation = Boolean(onSectionChange && activeSection);
 
@@ -79,12 +78,10 @@ export function AdminShell({
               Ir al cotizador
             </Link>
 
-            {adminUser ? (
+            {staffUser && isAdmin ? (
               <UserMenu
-                realm="admin"
-                fullName={adminUser.fullName}
+                fullName={staffUser.fullName}
                 subtitle="Administrador"
-                loginPath={ADMIN_LOGIN_PATH}
               />
             ) : null}
           </div>

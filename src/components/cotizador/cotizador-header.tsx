@@ -1,8 +1,7 @@
 "use client";
 
 import { UserMenu } from "@/components/auth/user-menu";
-import { useAuthSession } from "@/hooks/use-auth-session";
-import { EXECUTIVE_LOGIN_PATH } from "@/lib/auth/constants";
+import { useStaffSession } from "@/hooks/use-auth-session";
 import { touchTarget, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 
@@ -20,7 +19,7 @@ export function CotizadorHeader({
   onToggleSidebar,
 }: CotizadorHeaderProps) {
   const isExecutive = variant === "executive";
-  const { user: executiveUser } = useAuthSession("executive");
+  const { user: staffUser, isAdmin } = useStaffSession();
 
   return (
     <header
@@ -91,12 +90,10 @@ export function CotizadorHeader({
               </div>
             </div>
 
-            {executiveUser ? (
+            {staffUser ? (
               <UserMenu
-                realm="executive"
-                fullName={executiveUser.fullName}
-                subtitle="Ejecutivo comercial"
-                loginPath={EXECUTIVE_LOGIN_PATH}
+                fullName={staffUser.fullName}
+                subtitle={isAdmin ? "Administrador" : "Ejecutivo comercial"}
               />
             ) : null}
           </>

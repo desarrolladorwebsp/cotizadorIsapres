@@ -2,14 +2,14 @@
 
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
+import { STAFF_LOGIN_PATH } from "@/lib/auth/constants";
 import { touchTarget, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 
 export interface UserMenuProps {
-  realm: "admin" | "executive";
   fullName: string;
   subtitle: string;
-  loginPath: string;
+  loginPath?: string;
 }
 
 function getInitials(fullName: string): string {
@@ -20,10 +20,9 @@ function getInitials(fullName: string): string {
 }
 
 export function UserMenu({
-  realm,
   fullName,
   subtitle,
-  loginPath,
+  loginPath = STAFF_LOGIN_PATH,
 }: UserMenuProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -32,13 +31,13 @@ export function UserMenu({
     setLoading(true);
 
     try {
-      await fetch(`/api/auth/${realm}/logout`, { method: "POST" });
+      await fetch("/api/auth/logout", { method: "POST" });
       router.replace(loginPath);
       router.refresh();
     } finally {
       setLoading(false);
     }
-  }, [loginPath, realm, router]);
+  }, [loginPath, router]);
 
   return (
     <div className="ml-auto flex items-center gap-2 sm:gap-3">

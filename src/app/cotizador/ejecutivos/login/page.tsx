@@ -1,16 +1,12 @@
-import { Suspense } from "react";
-import {
-  PremiumExecutiveAuthFallback,
-  PremiumExecutiveShell,
-} from "@/components/executive/premium-executive-shell";
-import ExecutiveLoginClient from "./login-client";
+import { redirect } from "next/navigation";
+import { STAFF_LOGIN_PATH } from "@/lib/auth/constants";
 
-export default function ExecutiveLoginPage() {
-  return (
-    <PremiumExecutiveShell variant="auth">
-      <Suspense fallback={<PremiumExecutiveAuthFallback />}>
-        <ExecutiveLoginClient />
-      </Suspense>
-    </PremiumExecutiveShell>
-  );
+export default async function ExecutiveLoginRedirectPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>;
+}) {
+  const params = await searchParams;
+  const next = params.next ? `?next=${encodeURIComponent(params.next)}` : "";
+  redirect(`${STAFF_LOGIN_PATH}${next}`);
 }

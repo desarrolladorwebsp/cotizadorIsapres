@@ -1,15 +1,43 @@
 import { prisma } from "@/lib/prisma";
+import { isSubscriptionActive } from "@/lib/auth/subscription";
 
 /**
- * Elige el ejecutivo activo con menos leads asignados (round-robin por carga).
+ * Ejecutivos elegibles para recibir nuevos leads:
+ * activos, onboarding completo, sin suspensión de asignaciones y suscripción vigente.
+ */
+export async function listEligibleExecutivesForAssignment(): Promise<
+  { id: string }[]
+> {
+  const executives = await prisma.executiveAccount.findMany({
+    where: {
+      active: true,
+      onboardingCompleted: true,
+      assignmentsSuspended: false,
+    },
+    select: {
+      id: true,
+      subscriptionStatus: true,
+      subscriptionExpiresAt: true,
+    },
+    orderBy: { createdAt: "asc" },
+  });
+
+  return executives
+    .filter((executive) =>
+      isSubscriptionActive({
+        subscriptionStatus: executive.subscriptionStatus,
+        subscriptionExpiresAt: executive.subscriptionExpiresAt,
+      }),
+    )
+    .map(({ id }) => ({ id }));
+}
+
+/**
+ * Elige el ejecutivo elegible con menos leads asignados (round-robin por carga).
  * En empate, prioriza el que lleva más tiempo sin recibir un lead nuevo.
  */
 export async function pickExecutiveRoundRobin(): Promise<string | null> {
-  const executives = await prisma.executiveAccount.findMany({
-    where: { active: true },
-    select: { id: true },
-    orderBy: { createdAt: "asc" },
-  });
+  const executives = await listEligibleExecutivesForAssignment();
 
   if (executives.length === 0) return null;
 

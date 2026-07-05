@@ -1,10 +1,25 @@
+import { Suspense } from "react";
+import { ExecutiveAuthGate } from "@/components/auth/executive-auth-gate";
 import { PremiumExecutiveShell } from "@/components/executive/premium-executive-shell";
 import { ExecutiveDashboard } from "@/components/executive/executive-dashboard";
+import { requireExecutivePanelPage } from "@/lib/auth/guards";
 
-export default function CotizadorExecutivesPage() {
+export default async function CotizadorExecutivesPage() {
+  await requireExecutivePanelPage();
+
   return (
     <PremiumExecutiveShell variant="dashboard">
-      <ExecutiveDashboard />
+      <ExecutiveAuthGate>
+        <Suspense
+          fallback={
+            <div className="flex min-h-[40vh] items-center justify-center text-sm text-muted">
+              Cargando panel…
+            </div>
+          }
+        >
+          <ExecutiveDashboard />
+        </Suspense>
+      </ExecutiveAuthGate>
     </PremiumExecutiveShell>
   );
 }

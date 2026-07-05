@@ -94,10 +94,7 @@ export async function sendStaffInviteEmail(input: {
   const { apiKey, fromEmail } = getResendConfig();
   const resend = new Resend(apiKey);
   const baseUrl = resolveAppBaseUrl().replace(/\/$/, "");
-  const loginPath =
-    input.realm === "admin"
-      ? "/cotizador/admin/login"
-      : "/cotizador/ejecutivos/login";
+  const loginPath = "/cotizador/acceso";
   const loginUrl = `${baseUrl}${loginPath}`;
 
   const result = await resend.emails.send({

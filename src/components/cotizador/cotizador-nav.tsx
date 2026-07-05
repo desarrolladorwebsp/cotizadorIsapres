@@ -9,10 +9,10 @@ const NAV_ITEMS = [
   { href: "/", label: "Clientes", shortLabel: "Clientes" },
   {
     href: "/cotizador/ejecutivos",
-    label: "Ejecutivos",
-    shortLabel: "Ejecutivos",
+    label: "Panel comercial",
+    shortLabel: "Panel",
   },
-  { href: "/cotizador/admin", label: "Administración", shortLabel: "Admin" },
+  { href: "/cotizador/acceso", label: "Acceso staff", shortLabel: "Acceso" },
 ] as const;
 
 export function CotizadorNav() {

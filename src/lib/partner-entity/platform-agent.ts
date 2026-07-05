@@ -1,33 +1,35 @@
 import type { PartnerEntityPublic, PartnerEntityTheme } from "@/types/partner-entity";
+import {
+  COTIZADOR_PREMIUM_LOGO_PATH,
+  COTIZADOR_PREMIUM_PALETTE,
+} from "@/lib/partner-entity/cotizador-premium-palette";
 
 /** Agent key / slug de la plataforma principal (cotizadorpremium.cl). */
 export const PLATFORM_AGENT_KEY = "cotizadorpremium";
 
 export const PLATFORM_AGENT_WEBSITE = "https://cotizadorpremium.cl";
 
-/** Logo provisional hasta que exista el asset final. */
-export const PLATFORM_AGENT_LOGO_URL =
-  "/images/partners/cotizadorpremium-logo.svg";
+export const PLATFORM_AGENT_LOGO_URL = COTIZADOR_PREMIUM_LOGO_PATH;
 
 /**
- * Tema de marca Cotizador Premium (propuesta 5 — púrpura / índigo).
+ * Tema de marca Cotizador Premium — paleta del logo oficial (navy + cyan/azul).
  * Fuente de verdad en código para seed/fallback; en producción se persiste en
  * `partner_entities.theme` y puede editarse sin redeploy.
  */
 export const COTIZADOR_PREMIUM_THEME: PartnerEntityTheme = {
-  primary: "#6d28d9",
-  primaryHover: "#5b21b6",
-  primaryDark: "#111827",
-  primaryForeground: "#ffffff",
-  secondary: "#4f46e5",
-  secondaryMuted: "#f5f3ff",
-  bgLayout: "#fafafa",
-  foreground: "#111827",
-  muted: "#6b7280",
-  border: "#e5e7eb",
-  surfaceHover: "#f5f3ff",
-  criteriaSurface: "#f5f3ff",
-  criteriaRing: "#e9e5ff",
+  primary: COTIZADOR_PREMIUM_PALETTE.primary,
+  primaryHover: COTIZADOR_PREMIUM_PALETTE.primaryHover,
+  primaryDark: COTIZADOR_PREMIUM_PALETTE.primaryDark,
+  primaryForeground: COTIZADOR_PREMIUM_PALETTE.primaryForeground,
+  secondary: COTIZADOR_PREMIUM_PALETTE.secondary,
+  secondaryMuted: COTIZADOR_PREMIUM_PALETTE.secondaryMuted,
+  bgLayout: COTIZADOR_PREMIUM_PALETTE.bgLayout,
+  foreground: COTIZADOR_PREMIUM_PALETTE.foreground,
+  muted: COTIZADOR_PREMIUM_PALETTE.muted,
+  border: COTIZADOR_PREMIUM_PALETTE.border,
+  surfaceHover: COTIZADOR_PREMIUM_PALETTE.surfaceHover,
+  criteriaSurface: COTIZADOR_PREMIUM_PALETTE.criteriaSurface,
+  criteriaRing: COTIZADOR_PREMIUM_PALETTE.criteriaRing,
 };
 
 export function buildCotizadorPremiumPartnerRecord(): Omit<

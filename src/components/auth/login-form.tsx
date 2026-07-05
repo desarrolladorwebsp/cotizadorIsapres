@@ -3,26 +3,41 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import {
-  ADMIN_CHANGE_PASSWORD_PATH,
-  EXECUTIVE_CHANGE_PASSWORD_PATH,
+  AUTH_REALM,
+  STAFF_DEFAULT_HOME,
+  STAFF_LOGIN_PATH,
+  getChangePasswordPath,
+  type AuthRealm,
 } from "@/lib/auth/constants";
 import { touchTarget, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 
 export interface LoginFormProps {
-  realm: "admin" | "executive";
-  title: string;
-  subtitle: string;
-  redirectTo: string;
-  changePasswordPath?: string;
+  title?: string;
+  subtitle?: string;
+  redirectTo?: string;
+}
+
+function resolveRedirect(
+  realm: AuthRealm,
+  mustChangePassword: boolean,
+  next: string | null,
+): string {
+  if (mustChangePassword) {
+    return getChangePasswordPath(realm);
+  }
+
+  if (next && next.startsWith("/cotizador")) {
+    return next;
+  }
+
+  return STAFF_DEFAULT_HOME;
 }
 
 export function LoginForm({
-  realm,
-  title,
-  subtitle,
+  title = "Acceso al cotizador",
+  subtitle = "Ingresa con tu cuenta de administrador o ejecutivo comercial.",
   redirectTo,
-  changePasswordPath,
 }: LoginFormProps) {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -36,7 +51,7 @@ export function LoginForm({
     setError(null);
 
     try {
-      const response = await fetch(`/api/auth/${realm}/login`, {
+      const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -44,6 +59,7 @@ export function LoginForm({
 
       const data = (await response.json()) as {
         error?: string;
+        realm?: AuthRealm;
         user?: { mustChangePassword?: boolean };
       };
 
@@ -51,16 +67,16 @@ export function LoginForm({
         throw new Error(data.error ?? "No se pudo iniciar sesión.");
       }
 
+      const realm = data.realm ?? AUTH_REALM.executive;
       const mustChangePassword = Boolean(data.user?.mustChangePassword);
-      const defaultChangePath =
-        realm === "admin"
-          ? ADMIN_CHANGE_PASSWORD_PATH
-          : EXECUTIVE_CHANGE_PASSWORD_PATH;
+      const next =
+        typeof window !== "undefined"
+          ? new URLSearchParams(window.location.search).get("next")
+          : null;
 
       router.replace(
-        mustChangePassword
-          ? (changePasswordPath ?? defaultChangePath)
-          : redirectTo,
+        redirectTo ??
+          resolveRedirect(realm, mustChangePassword, next),
       );
       router.refresh();
     } catch (submitError) {
@@ -84,7 +100,7 @@ export function LoginForm({
       >
         <div className="mb-8 text-center">
           <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-primary text-sm font-bold text-primary-foreground shadow-sm">
-            CI
+            CP
           </div>
           <h1 className="text-xl font-bold tracking-tight text-primary-dark">
             {title}
@@ -147,6 +163,11 @@ export function LoginForm({
             {loading ? "Ingresando..." : "Iniciar sesión"}
           </button>
         </form>
+
+        <p className="mt-6 text-center text-xs text-muted">
+          Una sola cuenta para administradores y ejecutivos. Tu rol se detecta
+          automáticamente al ingresar.
+        </p>
       </div>
     </div>
   );

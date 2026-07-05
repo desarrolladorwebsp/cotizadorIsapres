@@ -1,5 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { pickExecutiveRoundRobin } from "@/lib/api/lead-assignment";
+import {
+  formatStatusLabel,
+  logQuoteActivity,
+  resolveExecutiveName,
+} from "@/lib/api/quote-activity-store";
+import type { QuoteActivityActor } from "@/types/quote-activity";
 import type { CreateQuoteInput, QuoteRecord, QuoteStatus } from "@/types/quote";
 import type { Quote as DbQuote, Plan, Isapre, ExecutiveAccount } from "@prisma/client";
 import { upsertUserByEmail } from "./user-store";
@@ -138,6 +144,26 @@ export async function createQuote(
     });
   }
 
+  await logQuoteActivity({
+    quoteId: quote.id,
+    activityType: "CREATED",
+    description: "Prospecto registrado desde el cotizador.",
+    actor: { realm: "system", name: "Sistema" },
+  });
+
+  if (executiveAccountId) {
+    const executiveName = await resolveExecutiveName(executiveAccountId);
+    await logQuoteActivity({
+      quoteId: quote.id,
+      activityType: "EXECUTIVE_ASSIGNED",
+      newValue: executiveAccountId,
+      description: executiveName
+        ? `Asignado automáticamente a ${executiveName}.`
+        : "Asignado automáticamente al ejecutivo con menor carga.",
+      actor: { realm: "system", name: "Sistema" },
+    });
+  }
+
   return mapDbQuote(quote);
 }
 
@@ -145,7 +171,10 @@ export async function updateQuoteAssignment(input: {
   quoteId: string;
   executiveAccountId: string | null;
   status?: QuoteStatus;
+  actor?: QuoteActivityActor;
 }): Promise<QuoteRecord> {
+  const existing = await readQuoteById(input.quoteId);
+
   const quote = await prisma.quote.update({
     where: { id: input.quoteId },
     data: {
@@ -162,31 +191,95 @@ export async function updateQuoteAssignment(input: {
     });
   }
 
+  if (existing && existing.executiveAccountId !== input.executiveAccountId) {
+    const previousName =
+      existing.executiveName ??
+      (await resolveExecutiveName(existing.executiveAccountId));
+    const nextName = await resolveExecutiveName(input.executiveAccountId);
+
+    if (input.executiveAccountId) {
+      await logQuoteActivity({
+        quoteId: input.quoteId,
+        activityType: existing.executiveAccountId
+          ? "EXECUTIVE_ASSIGNED"
+          : "EXECUTIVE_ASSIGNED",
+        previousValue: existing.executiveAccountId,
+        newValue: input.executiveAccountId,
+        actor: input.actor,
+        description: existing.executiveAccountId
+          ? `Reasignado de ${previousName ?? "sin ejecutivo"} a ${nextName ?? "ejecutivo"}.`
+          : `Asignado a ${nextName ?? "ejecutivo"}.`,
+      });
+    } else {
+      await logQuoteActivity({
+        quoteId: input.quoteId,
+        activityType: "EXECUTIVE_UNASSIGNED",
+        previousValue: existing.executiveAccountId,
+        actor: input.actor,
+        description: previousName
+          ? `Desasignado de ${previousName}.`
+          : "Prospecto sin ejecutivo asignado.",
+      });
+    }
+  }
+
+  if (
+    existing &&
+    input.status &&
+    existing.status !== input.status
+  ) {
+    await logQuoteActivity({
+      quoteId: input.quoteId,
+      activityType: "STATUS_CHANGED",
+      previousValue: existing.status,
+      newValue: input.status,
+      actor: input.actor,
+      description: `Estado actualizado de ${formatStatusLabel(existing.status)} a ${formatStatusLabel(input.status)}.`,
+    });
+  }
+
   return mapDbQuote(quote);
 }
 
 export async function assignQuoteToExecutive(
   quoteId: string,
   executiveAccountId: string,
+  actor?: QuoteActivityActor,
 ): Promise<QuoteRecord> {
-  return updateQuoteAssignment({ quoteId, executiveAccountId });
+  return updateQuoteAssignment({ quoteId, executiveAccountId, actor });
 }
 
 export async function updateQuoteStatus(
   quoteId: string,
   status: QuoteStatus,
+  actor?: QuoteActivityActor,
 ): Promise<QuoteRecord> {
+  const existing = await readQuoteById(quoteId);
+
   const quote = await prisma.quote.update({
     where: { id: quoteId },
     data: { status },
     include: quoteInclude,
   });
 
+  if (existing && existing.status !== status) {
+    await logQuoteActivity({
+      quoteId,
+      activityType: "STATUS_CHANGED",
+      previousValue: existing.status,
+      newValue: status,
+      actor,
+      description: `Estado actualizado de ${formatStatusLabel(existing.status)} a ${formatStatusLabel(status)}.`,
+    });
+  }
+
   return mapDbQuote(quote);
 }
 
 /** Asigna todos los leads sin ejecutivo usando round-robin equitativo. */
-export async function distributeUnassignedQuotes(): Promise<{
+export async function distributeUnassignedQuotes(
+  actor?: QuoteActivityActor,
+): Promise<{
   assigned: number;
   remaining: number;
 }> {
@@ -202,7 +295,12 @@ export async function distributeUnassignedQuotes(): Promise<{
     const executiveAccountId = await pickExecutiveRoundRobin();
     if (!executiveAccountId) break;
 
-    await updateQuoteAssignment({ quoteId: quote.id, executiveAccountId });
+    await updateQuoteAssignment({
+      quoteId: quote.id,
+      executiveAccountId,
+      actor: actor ?? { realm: "system", name: "Sistema" },
+    });
+
     assigned += 1;
   }
 

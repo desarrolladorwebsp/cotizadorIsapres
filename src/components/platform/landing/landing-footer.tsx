@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import { landing } from "./landing-tokens";
+import { LandingLogo } from "./landing-logo";
 import {
   LANDING_FOOTER_CONTACT,
   LANDING_FOOTER_DESCRIPTION,
@@ -165,9 +166,7 @@ export function LandingFooter() {
         <div className="grid gap-12 lg:grid-cols-12 lg:gap-10">
           <motion.div {...motionProps(0)} className="lg:col-span-5">
             <Link href="/" className="inline-flex items-center gap-3">
-              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-sm font-bold text-primary-foreground shadow-cta">
-                CP
-              </span>
+              <LandingLogo size="lg" className="rounded-2xl" />
               <div>
                 <p className="text-lg font-bold tracking-tight text-foreground">
                   Cotizador Premium

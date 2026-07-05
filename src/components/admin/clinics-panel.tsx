@@ -49,6 +49,7 @@ export interface ClinicsPanelProps {
   loading: boolean;
   onRefresh: () => Promise<void>;
   onNotify: (message: string, tone?: "success" | "error") => void;
+  canManage?: boolean;
 }
 
 type FormMode = "create" | "edit" | null;
@@ -59,6 +60,7 @@ export function ClinicsPanel({
   loading,
   onRefresh,
   onNotify,
+  canManage = true,
 }: ClinicsPanelProps) {
   const [search, setSearch] = useState("");
   const [zoneFilter, setZoneFilter] = useState<string>("all");
@@ -164,9 +166,11 @@ export function ClinicsPanel({
         actions={
           <>
             <AdminRefreshButton onClick={() => void onRefresh()} />
-            <Button size="sm" onClick={openCreateForm}>
-              Agregar clínica
-            </Button>
+            {canManage ? (
+              <Button size="sm" onClick={openCreateForm}>
+                Agregar clínica
+              </Button>
+            ) : null}
           </>
         }
       />
@@ -269,25 +273,29 @@ export function ClinicsPanel({
                     </div>
                   </AdminTableCell>
                   <AdminTableCell align="right">
-                    <AdminRowActions>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => openEditForm(clinic)}
-                      >
-                        Editar
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="danger"
-                        disabled={coverageCount > 0}
-                        onClick={() => void handleDelete(clinic)}
-                      >
-                        Eliminar
-                      </Button>
-                    </AdminRowActions>
+                    {canManage ? (
+                      <AdminRowActions>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => openEditForm(clinic)}
+                        >
+                          Editar
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="danger"
+                          disabled={coverageCount > 0}
+                          onClick={() => void handleDelete(clinic)}
+                        >
+                          Eliminar
+                        </Button>
+                      </AdminRowActions>
+                    ) : (
+                      <span className="text-xs text-muted">—</span>
+                    )}
                   </AdminTableCell>
                 </AdminTableRow>
               );
@@ -296,9 +304,10 @@ export function ClinicsPanel({
         </AdminTable>
       </AdminTableCard>
 
-      <AdminFormModal
-        open={formMode !== null}
-        title={formMode === "create" ? "Nueva clínica" : "Editar clínica"}
+      {canManage ? (
+        <AdminFormModal
+          open={formMode !== null}
+          title={formMode === "create" ? "Nueva clínica" : "Editar clínica"}
         description={
           formMode === "edit"
             ? `Identificador: ${draftClinic.id}`
@@ -316,6 +325,7 @@ export function ClinicsPanel({
           onCancel={closeForm}
         />
       </AdminFormModal>
+      ) : null}
 
       <AdminFormModal
         open={plansModalClinic !== null}

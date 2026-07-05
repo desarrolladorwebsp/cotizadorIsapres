@@ -7,6 +7,7 @@ import {
   validatePasswordStrength,
 } from "@/lib/auth/password";
 import { issueSession } from "@/lib/auth/session";
+import { EXECUTIVE_ONBOARDING_PATH } from "@/lib/auth/constants";
 import { formatRut, isValidRut, normalizeRut, rutMatches } from "@/lib/auth/rut";
 import type { StaffRealm } from "@/types/staff-account";
 import type { SubscriptionStatus } from "@prisma/client";
@@ -22,8 +23,8 @@ export interface StaffInvitePublic {
 
 export interface ActivateStaffAccountInput {
   token: string;
-  firstName: string;
-  lastName: string;
+  firstName?: string;
+  lastName?: string;
   rut: string;
   password: string;
 }
@@ -48,6 +49,10 @@ export async function createStaffInvite(input: {
 }): Promise<{ token: string; inviteId: string }> {
   const email = normalizeEmail(input.email);
   const rut = input.rut?.trim() ? formatRut(input.rut) : null;
+
+  if (input.realm === "executive" && !rut) {
+    throw new ApiError("El RUT es obligatorio para invitar ejecutivos.", 400, "INVALID_RUT");
+  }
 
   if (rut && !isValidRut(rut)) {
     throw new ApiError("El RUT indicado no es válido.", 400, "INVALID_RUT");
@@ -114,14 +119,6 @@ export async function activateStaffAccountFromInvite(
     throw new ApiError(strengthError, 400, "WEAK_PASSWORD");
   }
 
-  const firstName = input.firstName.trim();
-  const lastName = input.lastName.trim();
-  const fullName = `${firstName} ${lastName}`.trim();
-
-  if (!firstName || !lastName) {
-    throw new ApiError("Nombre y apellido son obligatorios.", 400, "INVALID_INPUT");
-  }
-
   if (!isValidRut(input.rut)) {
     throw new ApiError("El RUT no es válido.", 400, "INVALID_RUT");
   }
@@ -143,6 +140,20 @@ export async function activateStaffAccountFromInvite(
       "INVALID_INVITE",
     );
   }
+
+  const firstName = input.firstName?.trim() ?? "";
+  const lastName = input.lastName?.trim() ?? "";
+
+  if (invite.realm === "admin") {
+    if (!firstName || !lastName) {
+      throw new ApiError("Nombre y apellido son obligatorios.", 400, "INVALID_INPUT");
+    }
+  }
+
+  const fullName =
+    firstName && lastName
+      ? `${firstName} ${lastName}`.trim()
+      : invite.email.split("@")[0] ?? "Ejecutivo";
 
   if (!rutMatches(invite.rut, formattedRut)) {
     throw new ApiError(
@@ -178,7 +189,7 @@ export async function activateStaffAccountFromInvite(
       mustChangePassword: false,
     });
 
-    return { realm: "admin", loginPath: "/cotizador/admin" };
+    return { realm: "admin", loginPath: "/cotizador/ejecutivos" };
   }
 
   const trialExpiresAt = new Date();
@@ -193,6 +204,7 @@ export async function activateStaffAccountFromInvite(
       passwordHash,
       active: true,
       mustChangePassword: false,
+      onboardingCompleted: false,
       subscriptionStatus,
       subscriptionExpiresAt: trialExpiresAt,
     },
@@ -210,7 +222,7 @@ export async function activateStaffAccountFromInvite(
     mustChangePassword: false,
   });
 
-  return { realm: "executive", loginPath: "/cotizador/ejecutivos" };
+  return { realm: "executive", loginPath: EXECUTIVE_ONBOARDING_PATH };
 }
 
 export async function resendStaffInviteForEmail(input: {

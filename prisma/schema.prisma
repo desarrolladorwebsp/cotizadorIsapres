@@ -20,6 +20,14 @@ enum QuoteStatus {
   CANCELLED
 }
 
+enum QuoteActivityType {
+  CREATED
+  STATUS_CHANGED
+  EXECUTIVE_ASSIGNED
+  EXECUTIVE_UNASSIGNED
+  DISTRIBUTED
+}
+
 enum SubscriptionStatus {
   TRIAL
   ACTIVE
@@ -135,6 +143,10 @@ model ExecutiveAccount {
   phone                 String?
   rut                   String?
   active                Boolean            @default(true)
+  /// Sin recibir nuevos clientes/solicitudes, pero con acceso al panel.
+  assignmentsSuspended  Boolean            @default(false) @map("assignments_suspended")
+  /// Perfil obligatorio (teléfono, datos personales) completado tras activación.
+  onboardingCompleted   Boolean            @default(false) @map("onboarding_completed")
   subscriptionStatus    SubscriptionStatus @default(TRIAL) @map("subscription_status")
   subscriptionPlanId    String?            @map("subscription_plan_id")
   subscriptionExpiresAt DateTime?          @map("subscription_expires_at")
@@ -201,6 +213,7 @@ model Quote {
   user              User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
   plan              Plan?             @relation(fields: [planCode], references: [uniqueCode], onDelete: SetNull)
   executiveAccount  ExecutiveAccount? @relation(fields: [executiveAccountId], references: [id], onDelete: SetNull)
+  activities        QuoteActivity[]
 
   @@index([status])
   @@index([planCode])
@@ -209,6 +222,24 @@ model Quote {
   @@index([executiveAccountId])
   @@index([createdAt])
   @@map("quotes")
+}
+
+model QuoteActivity {
+  id            String            @id @default(cuid())
+  quoteId       String            @map("quote_id")
+  activityType  QuoteActivityType @map("activity_type")
+  previousValue String?           @map("previous_value")
+  newValue      String?           @map("new_value")
+  actorRealm    String?           @map("actor_realm")
+  actorId       String?           @map("actor_id")
+  actorName     String?           @map("actor_name")
+  description   String?
+  createdAt     DateTime          @default(now()) @map("created_at")
+  quote         Quote             @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+
+  @@index([quoteId])
+  @@index([createdAt])
+  @@map("quote_activities")
 }
 
 /// Entidades aliadas (ej. Cotízalo Antes) con branding white-label del cotizador.

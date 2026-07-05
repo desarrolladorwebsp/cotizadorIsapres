@@ -80,6 +80,38 @@ export async function fetchQuotes(): Promise<QuoteRecord[]> {
   return parseJsonResponse<QuoteRecord[]>(response);
 }
 
+export async function fetchExecutiveClients(): Promise<UserRecord[]> {
+  const response = await fetch("/api/executive/clients");
+  return parseJsonResponse<UserRecord[]>(response);
+}
+
+export async function fetchQuoteById(quoteId: string): Promise<QuoteRecord> {
+  const response = await fetch(`/api/quotes/${encodeURIComponent(quoteId)}`);
+  return parseJsonResponse<QuoteRecord>(response);
+}
+
+export async function fetchQuoteActivities(
+  quoteId: string,
+): Promise<import("@/types/quote-activity").QuoteActivityRecord[]> {
+  const response = await fetch(
+    `/api/quotes/${encodeURIComponent(quoteId)}/activities`,
+  );
+  return parseJsonResponse(response);
+}
+
+export async function fetchLatestQuoteActivities(
+  quoteIds: string[],
+): Promise<
+  Record<string, import("@/types/quote-activity").QuoteActivityRecord>
+> {
+  const response = await fetch("/api/quotes/activities/latest", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ quoteIds }),
+  });
+  return parseJsonResponse(response);
+}
+
 export async function fetchIsapres(): Promise<IsapreRecord[]> {
   const response = await fetch("/api/isapres");
   return parseJsonResponse<IsapreRecord[]>(response);
@@ -174,8 +206,32 @@ export async function fetchExecutiveAssignmentStats(): Promise<
 export async function fetchExecutiveAccounts(): Promise<StaffAccountRecord[]> {
   const { accounts } = await fetchStaffAccounts();
   return accounts.filter(
-    (account) => account.realm === "executive" && account.active,
+    (account) =>
+      account.realm === "executive" &&
+      account.active &&
+      account.onboardingCompleted !== false,
   );
+}
+
+export async function deleteStaffAccount(
+  realm: StaffRealm,
+  id: string,
+): Promise<{ message: string }> {
+  const response = await fetch(
+    `/api/admin/accounts/${encodeURIComponent(id)}?realm=${realm}`,
+    { method: "DELETE" },
+  );
+  return parseJsonResponse<{ message: string }>(response);
+}
+
+export async function resendPendingStaffInvite(
+  inviteId: string,
+): Promise<{ message: string }> {
+  const response = await fetch(
+    `/api/admin/accounts/${encodeURIComponent(inviteId)}?action=resend-pending-invite`,
+    { method: "POST" },
+  );
+  return parseJsonResponse<{ message: string }>(response);
 }
 
 export async function assignClientToExecutive(

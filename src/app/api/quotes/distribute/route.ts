@@ -5,8 +5,12 @@ import { requireAdminSession } from "@/lib/auth/require-auth";
 
 export async function POST(request: Request) {
   try {
-    await requireAdminSession(request);
-    const result = await distributeUnassignedQuotes();
+    const { user } = await requireAdminSession(request);
+    const result = await distributeUnassignedQuotes({
+      realm: "admin",
+      id: user.id,
+      name: user.fullName,
+    });
 
     return NextResponse.json({
       message:

@@ -6,6 +6,7 @@ import { LandingCotizadorWidgetSection } from "./landing/landing-cotizador-widge
 import { LandingFooter } from "./landing/landing-footer";
 import { LandingHero } from "./landing/landing-hero";
 import { LandingIsapresSection } from "./landing/landing-isapres-section";
+import { LandingLogo } from "./landing/landing-logo";
 import { LandingPageBackdrop } from "./landing/landing-page-backdrop";
 import { LandingPartnersSection } from "./landing/landing-partners-section";
 import { landing } from "./landing/landing-tokens";
@@ -30,25 +31,22 @@ export function PlatformLandingView({
       <header className={`${landing.header} landing-header-over-backdrop`}>
         <div className={landing.headerInner}>
           <Link href="/" className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-sm font-bold text-primary-foreground shadow-cta">
-              CP
-            </span>
-            <div>
+            <LandingLogo size="lg" />
+            <div className="min-w-0">
               <p className="text-base font-semibold tracking-tight text-foreground">
                 {platformEntity.name}
               </p>
-              <p className="text-xs text-muted">Salud prepaga en Chile</p>
+              <p className="text-xs text-muted">
+                Asesoría experta y personalizada
+              </p>
             </div>
           </Link>
           <nav className="flex items-center gap-1.5 sm:gap-2">
             <Link href={cotizadorHref} className={landing.navLink}>
               Cotizar
             </Link>
-            <Link
-              href="/cotizador/ejecutivos/login"
-              className={landing.navCta}
-            >
-              Acceso ejecutivos
+            <Link href="/cotizador/acceso" className={landing.navCta}>
+              Acceso staff
             </Link>
           </nav>
         </div>

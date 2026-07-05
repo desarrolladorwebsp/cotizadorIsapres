@@ -3,7 +3,7 @@ import {
   apiErrorResponse,
   parseJsonBody,
 } from "@/lib/api/api-error";
-import { authenticateExecutive } from "@/lib/auth/account-store";
+import { authenticateStaff } from "@/lib/auth/account-store";
 import type { LoginCredentials } from "@/lib/auth/types";
 
 function isValidCredentials(payload: unknown): payload is LoginCredentials {
@@ -18,6 +18,7 @@ function isValidCredentials(payload: unknown): payload is LoginCredentials {
   );
 }
 
+/** @deprecated Usar POST /api/auth/login */
 export async function POST(request: Request) {
   try {
     const payload = await parseJsonBody(request);
@@ -29,7 +30,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const user = await authenticateExecutive(payload);
+    const { user } = await authenticateStaff(payload);
     return NextResponse.json({ user });
   } catch (error) {
     console.error("POST /api/auth/executive/login", error);

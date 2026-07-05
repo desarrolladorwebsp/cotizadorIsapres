@@ -125,8 +125,14 @@ function ActivateAccountForm({ realm, title }: ActivateAccountFormProps) {
       <div className="w-full max-w-md rounded-2xl border border-border bg-background p-8 shadow-card">
         <h1 className="text-2xl font-bold text-foreground">{title}</h1>
         <p className="mt-2 text-sm text-muted">
-          Completa tus datos para crear tu contraseña. Solo quien recibió el
-          correo <strong>{invite?.email}</strong> puede usar este enlace.
+          {realm === "executive"
+            ? "Valida tu RUT y crea tu contraseña personalizada para acceder al panel."
+            : "Completa tus datos para crear tu contraseña. Solo quien recibió el correo"}{" "}
+          {realm !== "executive" ? (
+            <>
+              <strong>{invite?.email}</strong> puede usar este enlace.
+            </>
+          ) : null}
         </p>
 
         <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
@@ -135,23 +141,27 @@ function ActivateAccountForm({ realm, title }: ActivateAccountFormProps) {
             <Input value={invite?.email ?? ""} readOnly disabled />
           </label>
 
-          <label className="block space-y-2">
-            <span className="text-sm font-medium">Nombre</span>
-            <Input
-              required
-              value={firstName}
-              onChange={(event) => setFirstName(event.target.value)}
-            />
-          </label>
+          {realm === "admin" ? (
+            <>
+              <label className="block space-y-2">
+                <span className="text-sm font-medium">Nombre</span>
+                <Input
+                  required
+                  value={firstName}
+                  onChange={(event) => setFirstName(event.target.value)}
+                />
+              </label>
 
-          <label className="block space-y-2">
-            <span className="text-sm font-medium">Apellido</span>
-            <Input
-              required
-              value={lastName}
-              onChange={(event) => setLastName(event.target.value)}
-            />
-          </label>
+              <label className="block space-y-2">
+                <span className="text-sm font-medium">Apellido</span>
+                <Input
+                  required
+                  value={lastName}
+                  onChange={(event) => setLastName(event.target.value)}
+                />
+              </label>
+            </>
+          ) : null}
 
           <label className="block space-y-2">
             <span className="text-sm font-medium">RUT</span>
@@ -192,7 +202,11 @@ function ActivateAccountForm({ realm, title }: ActivateAccountFormProps) {
           ) : null}
 
           <Button type="submit" className="w-full" disabled={saving}>
-            {saving ? "Creando cuenta…" : "Crear cuenta e ingresar"}
+            {saving
+              ? "Creando cuenta…"
+              : realm === "executive"
+                ? "Crear contraseña e ingresar"
+                : "Crear cuenta e ingresar"}
           </Button>
         </form>
       </div>

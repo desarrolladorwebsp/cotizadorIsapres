@@ -4,24 +4,24 @@
  */
 
 [data-landing] {
-  /* Paleta Premium Cotizador — propuesta 5 */
-  --primary: #6d28d9;
-  --primary-hover: #5b21b6;
-  --primary-dark: #111827;
+  /* Paleta Cotizador Premium — logo oficial (navy + cyan/azul) */
+  --primary: #0077b6;
+  --primary-hover: #005f92;
+  --primary-dark: #0b2545;
   --primary-foreground: #ffffff;
 
-  --secondary: #4f46e5;
-  --secondary-muted: #f5f3ff;
+  --secondary: #48cae4;
+  --secondary-muted: #e8f6fb;
 
-  --accent-cyan: #4f46e5;
-  --text-secondary: #6b7280;
+  --accent-cyan: #48cae4;
+  --text-secondary: #6b8494;
 
-  --bg-layout: #fafafa;
+  --bg-layout: #f8fbfd;
   --background: #ffffff;
-  --foreground: #111827;
-  --muted: #6b7280;
-  --border: #e5e7eb;
-  --surface-hover: #f5f3ff;
+  --foreground: #0b2545;
+  --muted: #8d99ae;
+  --border: #d7e6ef;
+  --surface-hover: #edf6fa;
 
   --accent-warning: #f59e0b;
   --accent-warning-foreground: #3d2e00;
@@ -37,9 +37,9 @@
     var(--secondary) 100%
   );
 
-  --shadow-card: 0 4px 24px -8px rgb(17 24 39 / 0.07);
-  --shadow-card-hover: 0 12px 32px -10px rgb(109 40 217 / 0.18);
-  --shadow-cta: 0 8px 28px -8px rgb(109 40 217 / 0.38);
+  --shadow-card: 0 4px 24px -8px rgb(11 37 69 / 0.07);
+  --shadow-card-hover: 0 12px 32px -10px rgb(0 119 182 / 0.18);
+  --shadow-cta: 0 8px 28px -8px rgb(0 119 182 / 0.35);
 
   /* Decoración landing */
   --landing-mesh-primary: color-mix(in srgb, var(--primary) 10%, transparent);
@@ -49,7 +49,7 @@
   --landing-glass-border: rgb(229 231 235 / 0.95);
   --landing-hero-glow: 0 0 100px -24px
     color-mix(in srgb, var(--primary) 36%, transparent);
-  --landing-card-glow: 0 24px 64px -16px rgb(109 40 217 / 0.14);
+  --landing-card-glow: 0 24px 64px -16px rgb(0 119 182 / 0.14);
 
   /* Fondo ambiental — imagen de familia */
   --landing-backdrop-wash: rgb(250 250 250 / 0.78);
@@ -69,8 +69,8 @@
       105deg,
       rgb(250 250 250 / 0.97) 0%,
       rgb(250 250 250 / 0.88) 38%,
-      rgb(245 243 255 / 0.55) 58%,
-      rgb(17 24 39 / 0.08) 100%
+      rgb(232 246 251 / 0.55) 58%,
+      rgb(11 37 69 / 0.08) 100%
     ),
     linear-gradient(
       to bottom,
@@ -114,7 +114,7 @@
   box-shadow:
     0 0 0 1px rgb(255 255 255 / 0.55),
     0 32px 64px -24px rgb(17 24 39 / 0.28),
-    0 16px 40px -20px rgb(109 40 217 / 0.2);
+    0 16px 40px -20px rgb(0 119 182 / 0.2);
 }
 
 [data-landing] .landing-hero-family-glow {
@@ -134,8 +134,8 @@
 
 [data-landing] .landing-grid-pattern {
   background-image:
-    linear-gradient(rgb(17 24 39 / 0.022) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(17 24 39 / 0.022) 1px, transparent 1px);
+    linear-gradient(rgb(11 37 69 / 0.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(11 37 69 / 0.022) 1px, transparent 1px);
   background-size: 72px 72px;
   mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, black 20%, transparent 75%);
 }
@@ -178,8 +178,8 @@
 [data-landing] .landing-hero-showcase {
   box-shadow:
     0 0 0 1px var(--border),
-    0 32px 64px -28px rgb(109 40 217 / 0.22),
-    0 12px 28px -16px rgb(17 24 39 / 0.1);
+    0 32px 64px -28px rgb(0 119 182 / 0.2),
+    0 12px 28px -16px rgb(11 37 69 / 0.1);
 }
 
 [data-landing] .landing-hero-browser {
@@ -250,7 +250,7 @@
 
 [data-landing] .landing-partner-card:hover .landing-partner-logo-wrap {
   transform: scale(1.04);
-  box-shadow: 0 8px 24px -8px rgb(109 40 217 / 0.14);
+  box-shadow: 0 8px 24px -8px rgb(0 119 182 / 0.14);
 }
 
 [data-landing] .landing-widget-frame {

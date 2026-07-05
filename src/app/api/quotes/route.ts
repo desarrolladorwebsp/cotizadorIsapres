@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import { readQuotes, readQuotesForExecutive } from "@/lib/api/quote-store";
 import type { CreateQuoteInput } from "@/types/quote";
 import {
-  requireAdminSession,
-  requireExecutiveSession,
+  requireExecutiveOrAdminSession,
 } from "@/lib/auth/require-auth";
+import { AUTH_REALM } from "@/lib/auth/constants";
 import { apiErrorResponse } from "@/lib/api/api-error";
 import { createQuote } from "@/lib/api/quote-store";
 
@@ -25,15 +25,14 @@ function isValidCreateQuoteInput(payload: unknown): payload is CreateQuoteInput 
 
 export async function GET(request: Request) {
   try {
-    try {
-      await requireAdminSession(request);
-      const quotes = await readQuotes();
-      return NextResponse.json(quotes);
-    } catch {
-      const { user } = await requireExecutiveSession(request);
-      const quotes = await readQuotesForExecutive(user.id);
-      return NextResponse.json(quotes);
-    }
+    const { realm, user } = await requireExecutiveOrAdminSession(request);
+
+    const quotes =
+      realm === AUTH_REALM.admin
+        ? await readQuotes()
+        : await readQuotesForExecutive(user.id);
+
+    return NextResponse.json(quotes);
   } catch (error) {
     console.error("GET /api/quotes", error);
     const { body, status } = apiErrorResponse(error);

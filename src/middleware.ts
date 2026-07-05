@@ -1,13 +1,22 @@
 import { NextResponse, type NextRequest } from "next/server";
 import {
   ADMIN_ACTIVATE_ACCOUNT_PATH,
-  ADMIN_CHANGE_PASSWORD_PATH,
-  AUTH_REALM,
   EXECUTIVE_ACTIVATE_ACCOUNT_PATH,
   EXECUTIVE_CHANGE_PASSWORD_PATH,
+  EXECUTIVE_HOME_PATH,
+  EXECUTIVE_ONBOARDING_PATH,
   SESSION_COOKIE,
+  STAFF_LOGIN_PATH,
+  STAFF_SESSION_COOKIE,
+  getChangePasswordPath,
+  staffCanAccessExecutiveRoutes,
+  SESSION_MAX_AGE_SECONDS,
 } from "@/lib/auth/constants";
-import { verifySessionToken } from "@/lib/auth/jwt";
+import {
+  mapLegacyAdminPath,
+  staffSectionHref,
+} from "@/lib/staff/staff-sections";
+import { refreshSessionToken, verifySessionToken } from "@/lib/auth/jwt";
 import type { SessionPayload } from "@/lib/auth/types";
 import {
   AGENT_QUERY_PARAM,
@@ -27,22 +36,55 @@ const EXECUTIVE_LOGIN = `${EXECUTIVE_PREFIX}/login`;
 
 const PARTNER_SLUG_PATTERN = /^\/([a-z0-9]+(?:-[a-z0-9]+)*)\/?$/;
 
-async function readStaffSession(
+async function readStaffSessionFromRequest(
   request: NextRequest,
-  realm: typeof AUTH_REALM.admin | typeof AUTH_REALM.executive,
 ): Promise<SessionPayload | null> {
-  const cookieName =
-    realm === AUTH_REALM.admin
-      ? SESSION_COOKIE.admin
-      : SESSION_COOKIE.executive;
-  const token = request.cookies.get(cookieName)?.value;
+  const tokens = [
+    request.cookies.get(STAFF_SESSION_COOKIE)?.value,
+    request.cookies.get(SESSION_COOKIE.admin)?.value,
+    request.cookies.get(SESSION_COOKIE.executive)?.value,
+  ].filter(Boolean) as string[];
 
-  if (!token) return null;
+  const sessions = (
+    await Promise.all(tokens.map((token) => verifySessionToken(token)))
+  ).filter((session): session is SessionPayload => session !== null);
 
-  const session = await verifySessionToken(token);
-  if (!session || session.realm !== realm) return null;
+  if (sessions.length === 0) return null;
 
-  return session;
+  const adminSession = sessions.find((session) => session.realm === "admin");
+  return adminSession ?? sessions[0];
+}
+
+async function withSessionRefresh(
+  request: NextRequest,
+  session: SessionPayload,
+): Promise<NextResponse> {
+  const response = forwardRequest(request);
+  const refreshedToken = await refreshSessionToken(session);
+
+  response.cookies.set(STAFF_SESSION_COOKIE, refreshedToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: SESSION_MAX_AGE_SECONDS,
+  });
+  response.cookies.set(SESSION_COOKIE.admin, "", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 0,
+  });
+  response.cookies.set(SESSION_COOKIE.executive, "", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 0,
+  });
+
+  return response;
 }
 
 function setPartnerEntityCookie(
@@ -98,6 +140,12 @@ function redirectToCotizadorWithAgent(
   return setPartnerEntityCookie(NextResponse.redirect(redirectUrl), agent);
 }
 
+function redirectToLogin(request: NextRequest, nextPath: string): NextResponse {
+  const loginUrl = new URL(STAFF_LOGIN_PATH, request.url);
+  loginUrl.searchParams.set("next", nextPath);
+  return NextResponse.redirect(loginUrl);
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -127,92 +175,86 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  if (pathname.startsWith(ADMIN_PREFIX)) {
-    const session = await readStaffSession(request, AUTH_REALM.admin);
-    const isLoginPage = pathname === ADMIN_LOGIN;
-    const isActivatePage = pathname === ADMIN_ACTIVATE_ACCOUNT_PATH;
-    const isChangePasswordPage = pathname === ADMIN_CHANGE_PASSWORD_PATH;
+  if (pathname === STAFF_LOGIN_PATH) {
+    const session = await readStaffSessionFromRequest(request);
 
-    if (isActivatePage) {
-      return forwardRequest(request);
-    }
+    if (session) {
+      const target = session.mustChangePassword
+        ? getChangePasswordPath(session.realm)
+        : request.nextUrl.searchParams.get("next") ?? EXECUTIVE_PREFIX;
 
-    if (isLoginPage) {
-      if (session) {
-        const target = session.mustChangePassword
-          ? ADMIN_CHANGE_PASSWORD_PATH
-          : ADMIN_PREFIX;
-        return NextResponse.redirect(new URL(target, request.url));
-      }
-      return forwardRequest(request);
-    }
-
-    if (isChangePasswordPage) {
-      if (!session) {
-        const loginUrl = new URL(ADMIN_LOGIN, request.url);
-        loginUrl.searchParams.set("next", ADMIN_CHANGE_PASSWORD_PATH);
-        return NextResponse.redirect(loginUrl);
-      }
-      return forwardRequest(request);
-    }
-
-    if (!session) {
-      const loginUrl = new URL(ADMIN_LOGIN, request.url);
-      loginUrl.searchParams.set("next", pathname);
-      return NextResponse.redirect(loginUrl);
-    }
-
-    if (session.mustChangePassword) {
-      return NextResponse.redirect(
-        new URL(ADMIN_CHANGE_PASSWORD_PATH, request.url),
-      );
+      return NextResponse.redirect(new URL(target, request.url));
     }
 
     return forwardRequest(request);
   }
 
-  if (pathname.startsWith(EXECUTIVE_PREFIX)) {
-    const session = await readStaffSession(request, AUTH_REALM.executive);
-    const isLoginPage = pathname === EXECUTIVE_LOGIN;
-    const isActivatePage = pathname === EXECUTIVE_ACTIVATE_ACCOUNT_PATH;
-    const isChangePasswordPage = pathname === EXECUTIVE_CHANGE_PASSWORD_PATH;
+  if (pathname.startsWith(ADMIN_PREFIX)) {
+    const isLoginPage = pathname === ADMIN_LOGIN;
+    const isActivatePage = pathname === ADMIN_ACTIVATE_ACCOUNT_PATH;
 
     if (isActivatePage) {
       return forwardRequest(request);
     }
 
     if (isLoginPage) {
-      if (session) {
-        const target = session.mustChangePassword
-          ? EXECUTIVE_CHANGE_PASSWORD_PATH
-          : EXECUTIVE_PREFIX;
-        return NextResponse.redirect(new URL(target, request.url));
-      }
+      return NextResponse.redirect(
+        new URL(STAFF_LOGIN_PATH + request.nextUrl.search, request.url),
+      );
+    }
+
+    const legacySection = mapLegacyAdminPath(pathname);
+    const redirectUrl = new URL(
+      legacySection ? staffSectionHref(legacySection) : EXECUTIVE_HOME_PATH,
+      request.url,
+    );
+    redirectUrl.search = request.nextUrl.search;
+    return NextResponse.redirect(redirectUrl);
+  }
+
+  if (pathname.startsWith(EXECUTIVE_PREFIX)) {
+    const session = await readStaffSessionFromRequest(request);
+    const isLoginPage = pathname === EXECUTIVE_LOGIN;
+    const isActivatePage = pathname === EXECUTIVE_ACTIVATE_ACCOUNT_PATH;
+    const isChangePasswordPage = pathname === EXECUTIVE_CHANGE_PASSWORD_PATH;
+    const isOnboardingPage = pathname === EXECUTIVE_ONBOARDING_PATH;
+
+    if (isActivatePage) {
       return forwardRequest(request);
+    }
+
+    if (isLoginPage) {
+      return NextResponse.redirect(
+        new URL(STAFF_LOGIN_PATH + request.nextUrl.search, request.url),
+      );
+    }
+
+    if (isOnboardingPage) {
+      if (!session || !staffCanAccessExecutiveRoutes(session.realm)) {
+        return redirectToLogin(request, EXECUTIVE_ONBOARDING_PATH);
+      }
+      return withSessionRefresh(request, session);
     }
 
     if (isChangePasswordPage) {
-      if (!session) {
-        const loginUrl = new URL(EXECUTIVE_LOGIN, request.url);
-        loginUrl.searchParams.set("next", EXECUTIVE_CHANGE_PASSWORD_PATH);
-        return NextResponse.redirect(loginUrl);
+      if (!session || !staffCanAccessExecutiveRoutes(session.realm)) {
+        return redirectToLogin(request, EXECUTIVE_CHANGE_PASSWORD_PATH);
       }
-      return forwardRequest(request);
+
+      return withSessionRefresh(request, session);
     }
 
-    if (!session) {
-      const loginUrl = new URL(EXECUTIVE_LOGIN, request.url);
-      loginUrl.searchParams.set("next", pathname);
-      return NextResponse.redirect(loginUrl);
+    if (!session || !staffCanAccessExecutiveRoutes(session.realm)) {
+      return redirectToLogin(request, pathname);
     }
 
     if (session.mustChangePassword) {
       return NextResponse.redirect(
-        new URL(EXECUTIVE_CHANGE_PASSWORD_PATH, request.url),
+        new URL(getChangePasswordPath(session.realm), request.url),
       );
     }
 
-    return forwardRequest(request);
+    return withSessionRefresh(request, session);
   }
 
   const response = forwardRequest(request);
@@ -225,7 +267,10 @@ export const config = {
     "/cotizador",
     "/embed/:path*",
     "/:partnerSlug",
+    "/cotizador/acceso",
+    "/cotizador/admin",
     "/cotizador/admin/:path*",
+    "/cotizador/ejecutivos",
     "/cotizador/ejecutivos/:path*",
   ],
 };

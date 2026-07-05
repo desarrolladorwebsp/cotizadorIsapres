@@ -6,9 +6,13 @@ import {
 import {
   resetStaffTemporaryPassword,
   updateStaffAccount,
+  deleteStaffAccount,
+  readAdminById,
 } from "@/lib/auth/account-store";
 import { requireAdminSession } from "@/lib/auth/require-auth";
-import { sendStaffInviteEmail } from "@/lib/email/send-staff-invite";
+import { resendStaffInviteForEmail } from "@/lib/auth/staff-invite-store";
+import { sendStaffActivationEmail } from "@/lib/email/send-staff-invite";
+import { prisma } from "@/lib/prisma";
 import type { StaffRealm, UpdateStaffAccountInput } from "@/types/staff-account";
 import type { SubscriptionStatus } from "@prisma/client";
 
@@ -43,7 +47,9 @@ function isValidUpdateInput(payload: unknown): payload is UpdateStaffAccountInpu
     (data.rut === undefined || data.rut === null || typeof data.rut === "string") &&
     (data.subscriptionStatus === undefined ||
       (typeof data.subscriptionStatus === "string" &&
-        SUBSCRIPTION_STATUSES.has(data.subscriptionStatus as SubscriptionStatus)))
+        SUBSCRIPTION_STATUSES.has(data.subscriptionStatus as SubscriptionStatus))) &&
+    (data.assignmentsSuspended === undefined ||
+      typeof data.assignmentsSuspended === "boolean")
   );
 }
 
@@ -78,13 +84,11 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 }
 
-export async function POST(request: Request, context: RouteContext) {
+export async function DELETE(request: Request, context: RouteContext) {
   try {
     await requireAdminSession(request);
     const { id } = await context.params;
-    const url = new URL(request.url);
-    const realm = parseRealm(url.searchParams.get("realm"));
-    const action = url.searchParams.get("action");
+    const realm = parseRealm(new URL(request.url).searchParams.get("realm"));
 
     if (!realm) {
       return NextResponse.json(
@@ -93,26 +97,85 @@ export async function POST(request: Request, context: RouteContext) {
       );
     }
 
-    if (action !== "resend-invite") {
-      return NextResponse.json({ error: "Acción no soportada." }, { status: 400 });
+    await deleteStaffAccount(realm, id);
+    return NextResponse.json({ ok: true, message: "Usuario eliminado." });
+  } catch (error) {
+    console.error("DELETE /api/admin/accounts/[id]", error);
+    const { body, status } = apiErrorResponse(error);
+    return NextResponse.json(body, { status });
+  }
+}
+
+export async function POST(request: Request, context: RouteContext) {
+  try {
+    const { session } = await requireAdminSession(request);
+    const { id } = await context.params;
+    const url = new URL(request.url);
+    const realm = parseRealm(url.searchParams.get("realm"));
+    const action = url.searchParams.get("action");
+
+    if (action === "resend-invite" && realm) {
+      const { account, temporaryPassword } = await resetStaffTemporaryPassword(
+        realm,
+        id,
+      );
+
+      const { sendStaffInviteEmail } = await import("@/lib/email/send-staff-invite");
+      await sendStaffInviteEmail({
+        fullName: account.fullName,
+        email: account.email,
+        temporaryPassword,
+        realm,
+      });
+
+      return NextResponse.json({
+        account,
+        message: "Se envió una nueva clave temporal al correo del usuario.",
+      });
     }
 
-    const { account, temporaryPassword } = await resetStaffTemporaryPassword(
-      realm,
-      id,
-    );
+    if (action === "resend-pending-invite") {
+      const invite = await prisma.staffInvite.findUnique({ where: { id } });
 
-    await sendStaffInviteEmail({
-      fullName: account.fullName,
-      email: account.email,
-      temporaryPassword,
-      realm,
-    });
+      if (!invite || invite.acceptedAt || invite.expiresAt <= new Date()) {
+        return NextResponse.json(
+          { error: "Invitación no encontrada o expirada." },
+          { status: 404 },
+        );
+      }
 
-    return NextResponse.json({
-      account,
-      message: "Se envió una nueva clave temporal al correo del usuario.",
-    });
+      if (invite.realm !== "admin" && invite.realm !== "executive") {
+        return NextResponse.json({ error: "Invitación inválida." }, { status: 400 });
+      }
+
+      const admin = await readAdminById(session.sub);
+      const { token } = await resendStaffInviteForEmail({
+        email: invite.email,
+        realm: invite.realm,
+        rut: invite.rut ?? undefined,
+        invitedByAdminId: admin?.id,
+      });
+
+      await sendStaffActivationEmail({
+        email: invite.email,
+        realm: invite.realm,
+        activationToken: token,
+        rut: invite.rut,
+      });
+
+      return NextResponse.json({
+        message: "Invitación reenviada al correo del ejecutivo.",
+      });
+    }
+
+    if (!realm) {
+      return NextResponse.json(
+        { error: "Parámetro realm inválido (admin o executive)." },
+        { status: 400 },
+      );
+    }
+
+    return NextResponse.json({ error: "Acción no soportada." }, { status: 400 });
   } catch (error) {
     console.error("POST /api/admin/accounts/[id]", error);
     const { body, status } = apiErrorResponse(error);

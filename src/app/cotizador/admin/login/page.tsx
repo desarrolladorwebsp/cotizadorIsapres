@@ -1,16 +1,12 @@
-import { Suspense } from "react";
-import AdminLoginClient from "./login-client";
+import { redirect } from "next/navigation";
+import { STAFF_LOGIN_PATH } from "@/lib/auth/constants";
 
-export default function AdminLoginPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="flex min-h-screen items-center justify-center bg-bg-layout text-sm text-muted">
-          Cargando...
-        </div>
-      }
-    >
-      <AdminLoginClient />
-    </Suspense>
-  );
+export default async function AdminLoginRedirectPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>;
+}) {
+  const params = await searchParams;
+  const next = params.next ? `?next=${encodeURIComponent(params.next)}` : "";
+  redirect(`${STAFF_LOGIN_PATH}${next}`);
 }

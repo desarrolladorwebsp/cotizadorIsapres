@@ -123,6 +123,25 @@ export async function upsertUserByEmail(
   return mapDbUser(user);
 }
 
+export async function readClientsForExecutive(
+  executiveAccountId: string,
+): Promise<UserRecord[]> {
+  const users = await prisma.user.findMany({
+    where: {
+      role: "CLIENT",
+      assignedExecutiveId: executiveAccountId,
+    },
+    orderBy: [{ fullName: "asc" }, { email: "asc" }],
+    include: {
+      assignedExecutive: {
+        select: { id: true, fullName: true, email: true },
+      },
+    },
+  });
+
+  return users.map(mapDbUser);
+}
+
 export async function assignUserToExecutive(
   userId: string,
   executiveAccountId: string | null,

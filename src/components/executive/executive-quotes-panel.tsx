@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { AdminBadge } from "@/components/admin/admin-data-table";
 import { Input } from "@/components/ui/input";
 import {
   AdminPanel,
@@ -20,10 +21,12 @@ import {
   QuoteLeadActionsHint,
   QuoteStatusBadge,
 } from "@/components/lead/quote-lead-actions";
-import { useAuthSession } from "@/hooks/use-auth-session";
+import { useStaffSession } from "@/hooks/use-auth-session";
 import {
   assignQuoteToExecutive,
+  fetchExecutiveAccounts,
   fetchQuotes,
+  updateQuoteLead,
 } from "@/lib/api/admin-client";
 import { getPlanPdfDownloadUrl } from "@/lib/plan-pdf";
 import { formatPlanClp, formatQuotedUf } from "@/lib/plan-format";
@@ -34,6 +37,7 @@ import {
 import { ui, touchTarget } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type { QuoteRecord, QuoteStatus } from "@/types/quote";
+import type { StaffAccountRecord } from "@/types/staff-account";
 
 export interface ExecutiveQuotesPanelProps {
   onNotify: (message: string, tone?: "success" | "error") => void;
@@ -48,17 +52,29 @@ function formatDate(value: string): string {
 }
 
 export function ExecutiveQuotesPanel({ onNotify }: ExecutiveQuotesPanelProps) {
-  const { user } = useAuthSession("executive");
+  const { isAdmin, user } = useStaffSession();
   const [quotes, setQuotes] = useState<QuoteRecord[]>([]);
+  const [executives, setExecutives] = useState<StaffAccountRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<QuoteStatus | "all">("all");
+  const [executiveFilter, setExecutiveFilter] = useState<string>("all");
   const [savingId, setSavingId] = useState<string | null>(null);
+
+  const outreachName = isAdmin
+    ? null
+    : (user?.fullName ?? null);
 
   async function loadQuotes() {
     setLoading(true);
     try {
-      setQuotes(await fetchQuotes());
+      const nextQuotes = await fetchQuotes();
+      setQuotes(nextQuotes);
+
+      if (isAdmin) {
+        const nextExecutives = await fetchExecutiveAccounts();
+        setExecutives(nextExecutives);
+      }
     } catch (error) {
       onNotify(
         error instanceof Error ? error.message : "No se pudieron cargar cotizaciones.",
@@ -71,18 +87,43 @@ export function ExecutiveQuotesPanel({ onNotify }: ExecutiveQuotesPanelProps) {
 
   useEffect(() => {
     void loadQuotes();
-  }, []);
+  }, [isAdmin]);
 
   const filteredQuotes = useMemo(() => {
     const query = search.trim().toLowerCase();
+
     return quotes.filter((quote) => {
       if (statusFilter !== "all" && quote.status !== statusFilter) return false;
+
+      if (isAdmin) {
+        if (executiveFilter === "unassigned" && quote.executiveAccountId) {
+          return false;
+        }
+        if (
+          executiveFilter !== "all" &&
+          executiveFilter !== "unassigned" &&
+          quote.executiveAccountId !== executiveFilter
+        ) {
+          return false;
+        }
+      }
+
       if (!query) return true;
-      return [quote.fullName, quote.email, quote.phone, quote.planName, quote.rut]
+
+      const values = [
+        quote.fullName,
+        quote.email,
+        quote.phone,
+        quote.planName,
+        quote.rut,
+        quote.executiveName,
+      ];
+
+      return values
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(query));
     });
-  }, [quotes, search, statusFilter]);
+  }, [quotes, search, statusFilter, executiveFilter, isAdmin]);
 
   const stats = useMemo(() => {
     return {
@@ -91,13 +132,18 @@ export function ExecutiveQuotesPanel({ onNotify }: ExecutiveQuotesPanelProps) {
       contracting: quotes.filter((q) => q.status === "CONTACTED").length,
       purchased: quotes.filter((q) => q.status === "CONVERTED").length,
       rejected: quotes.filter((q) => q.status === "CANCELLED").length,
+      unassigned: quotes.filter((q) => !q.executiveAccountId).length,
     };
   }, [quotes]);
 
   async function handleStatusChange(quote: QuoteRecord, status: QuoteStatus) {
     setSavingId(quote.id);
     try {
-      await assignQuoteToExecutive(quote.id, { status });
+      if (isAdmin) {
+        await updateQuoteLead(quote.id, { status });
+      } else {
+        await assignQuoteToExecutive(quote.id, { status });
+      }
       onNotify(`Estado actualizado: ${QUOTE_STATUS_LABELS[status]}.`);
       await loadQuotes();
     } catch (error) {
@@ -110,17 +156,58 @@ export function ExecutiveQuotesPanel({ onNotify }: ExecutiveQuotesPanelProps) {
     }
   }
 
+  async function handleExecutiveChange(
+    quote: QuoteRecord,
+    executiveAccountId: string | null,
+  ) {
+    setSavingId(quote.id);
+    try {
+      await updateQuoteLead(quote.id, { executiveAccountId });
+      onNotify(
+        executiveAccountId
+          ? "Ejecutivo asignado correctamente."
+          : "Cotización sin ejecutivo asignado.",
+      );
+      await loadQuotes();
+    } catch (error) {
+      onNotify(
+        error instanceof Error ? error.message : "No se pudo reasignar el ejecutivo.",
+        "error",
+      );
+    } finally {
+      setSavingId(null);
+    }
+  }
+
   return (
     <AdminPanel>
       <AdminPanelHeader
-        title="Mis leads"
-        description="Leads asignados a tu cuenta. Contacta al cliente y actualiza el estado del pipeline."
+        title={isAdmin ? "Cotizaciones del sistema" : "Cotizaciones realizadas"}
+        description={
+          isAdmin
+            ? "Todas las solicitudes de planes registradas en el cotizador. Puedes ver y reasignar el ejecutivo responsable de cada una."
+            : "Cotizaciones asignadas a tu cuenta. Contacta al cliente y actualiza el estado del pipeline."
+        }
         actions={<AdminRefreshButton onClick={() => void loadQuotes()} />}
       />
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <div
+        className={joinClasses(
+          "grid gap-3",
+          isAdmin ? "sm:grid-cols-2 xl:grid-cols-6" : "sm:grid-cols-2 xl:grid-cols-5",
+        )}
+      >
         {[
           { label: "Total", value: stats.total, tone: "text-primary-dark" },
+          ...(isAdmin
+            ? [
+                {
+                  label: "Sin asignar",
+                  value: stats.unassigned,
+                  tone: "text-violet-700",
+                },
+              ]
+            : []),
           { label: "Prospectos", value: stats.prospect, tone: "text-amber-700" },
           { label: "Contratantes", value: stats.contracting, tone: "text-sky-700" },
           { label: "Compraron", value: stats.purchased, tone: "text-emerald-700" },
@@ -143,11 +230,21 @@ export function ExecutiveQuotesPanel({ onNotify }: ExecutiveQuotesPanelProps) {
         ))}
       </div>
 
-      <AdminToolbar className="lg:grid-cols-[minmax(0,1fr)_12rem]">
+      <AdminToolbar
+        className={
+          isAdmin
+            ? "lg:grid-cols-[minmax(0,1fr)_11rem_11rem]"
+            : "lg:grid-cols-[minmax(0,1fr)_12rem]"
+        }
+      >
         <Input
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          placeholder="Buscar por nombre, correo, RUT o plan…"
+          placeholder={
+            isAdmin
+              ? "Buscar por nombre, correo, RUT, plan o ejecutivo…"
+              : "Buscar por nombre, correo, RUT o plan…"
+          }
           className={joinClasses("h-11", ui.input)}
         />
         <select
@@ -164,6 +261,21 @@ export function ExecutiveQuotesPanel({ onNotify }: ExecutiveQuotesPanelProps) {
             </option>
           ))}
         </select>
+        {isAdmin ? (
+          <select
+            value={executiveFilter}
+            onChange={(event) => setExecutiveFilter(event.target.value)}
+            className={joinClasses("h-11 rounded-xl px-3 text-sm", ui.input)}
+          >
+            <option value="all">Todos los ejecutivos</option>
+            <option value="unassigned">Sin asignar</option>
+            {executives.map((executive) => (
+              <option key={executive.id} value={executive.id}>
+                {executive.fullName}
+              </option>
+            ))}
+          </select>
+        ) : null}
       </AdminToolbar>
 
       <QuoteLeadActionsHint />
@@ -171,17 +283,28 @@ export function ExecutiveQuotesPanel({ onNotify }: ExecutiveQuotesPanelProps) {
       <AdminTableCard
         loading={loading}
         empty={!loading && filteredQuotes.length === 0}
-        emptyTitle="No tienes leads asignados"
-        emptyDescription="Los nuevos leads se distribuyen automáticamente entre ejecutivos activos."
-        loadingMessage="Cargando leads…"
-        footer={`Mostrando ${filteredQuotes.length} de ${quotes.length} leads.`}
+        emptyTitle={
+          isAdmin
+            ? "No hay cotizaciones registradas"
+            : "No tienes cotizaciones asignadas"
+        }
+        emptyDescription={
+          isAdmin
+            ? "Las solicitudes aparecerán aquí cuando los clientes usen el cotizador público."
+            : "Las nuevas cotizaciones aparecerán aquí cuando te sean asignadas."
+        }
+        loadingMessage="Cargando cotizaciones…"
+        footer={`Mostrando ${filteredQuotes.length} de ${quotes.length} cotizaciones.`}
       >
-        <AdminTable minWidth="64rem">
+        <AdminTable minWidth={isAdmin ? "72rem" : "64rem"}>
           <AdminTableHead>
             <tr>
               <AdminTableHeaderCell>Cliente</AdminTableHeaderCell>
               <AdminTableHeaderCell>Plan</AdminTableHeaderCell>
               <AdminTableHeaderCell>Precio</AdminTableHeaderCell>
+              {isAdmin ? (
+                <AdminTableHeaderCell>Ejecutivo asignado</AdminTableHeaderCell>
+              ) : null}
               <AdminTableHeaderCell>Estado</AdminTableHeaderCell>
               <AdminTableHeaderCell>Acciones</AdminTableHeaderCell>
             </tr>
@@ -232,13 +355,45 @@ export function ExecutiveQuotesPanel({ onNotify }: ExecutiveQuotesPanelProps) {
                         : "—"}
                     </p>
                   </AdminTableCell>
+                  {isAdmin ? (
+                    <AdminTableCell>
+                      {quote.executiveName ? (
+                        <AdminBadge tone="info">{quote.executiveName}</AdminBadge>
+                      ) : (
+                        <AdminBadge tone="warning">Sin asignar</AdminBadge>
+                      )}
+                      <select
+                        value={quote.executiveAccountId ?? ""}
+                        disabled={savingId === quote.id}
+                        onChange={(event) => {
+                          const value = event.target.value;
+                          void handleExecutiveChange(
+                            quote,
+                            value ? value : null,
+                          );
+                        }}
+                        className={joinClasses(
+                          "mt-2 h-9 w-full min-w-[10rem] rounded-lg px-2 text-xs",
+                          ui.input,
+                        )}
+                        aria-label="Reasignar ejecutivo"
+                      >
+                        <option value="">Sin asignar</option>
+                        {executives.map((executive) => (
+                          <option key={executive.id} value={executive.id}>
+                            {executive.fullName}
+                          </option>
+                        ))}
+                      </select>
+                    </AdminTableCell>
+                  ) : null}
                   <AdminTableCell>
                     <QuoteStatusBadge status={quote.status} />
                   </AdminTableCell>
                   <AdminTableCell>
                     <QuoteLeadActions
                       quote={quote}
-                      executiveName={user?.fullName}
+                      executiveName={outreachName ?? quote.executiveName}
                       canEditStatus
                       saving={savingId === quote.id}
                       onStatusChange={(status) =>

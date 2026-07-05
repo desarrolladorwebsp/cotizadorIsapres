@@ -11,6 +11,7 @@ import type { IsapreRecord } from "@/types/isapre";
 
 export interface GesPanelProps {
   onNotify: (message: string, tone?: "success" | "error") => void;
+  canManage?: boolean;
 }
 
 function formatGesInput(value: number | null | undefined): string {
@@ -25,7 +26,7 @@ function parseGesInput(raw: string): number | null {
   return Number.isFinite(value) ? value : null;
 }
 
-export function GesPanel({ onNotify }: GesPanelProps) {
+export function GesPanel({ onNotify, canManage = true }: GesPanelProps) {
   const [isapres, setIsapres] = useState<IsapreRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -194,6 +195,8 @@ export function GesPanel({ onNotify }: GesPanelProps) {
                         }
                         placeholder="0,731"
                         className="max-w-[8rem] font-mono"
+                        disabled={!canManage}
+                        readOnly={!canManage}
                       />
                       <p className="mt-1 text-xs text-muted">Dic 2025</p>
                     </td>
@@ -210,17 +213,21 @@ export function GesPanel({ onNotify }: GesPanelProps) {
                         }
                         placeholder="0,602"
                         className="max-w-[8rem] font-mono"
+                        disabled={!canManage}
+                        readOnly={!canManage}
                       />
                       <p className="mt-1 text-xs text-muted">Solo referencia</p>
                     </td>
                     <td className="px-4 py-4 align-top">
-                      <Button
-                        size="sm"
-                        disabled={savingId === isapre.id}
-                        onClick={() => void handleSave(isapre)}
-                      >
-                        {savingId === isapre.id ? "Guardando…" : "Guardar"}
-                      </Button>
+                      {canManage ? (
+                        <Button
+                          size="sm"
+                          disabled={savingId === isapre.id}
+                          onClick={() => void handleSave(isapre)}
+                        >
+                          {savingId === isapre.id ? "Guardando…" : "Guardar"}
+                        </Button>
+                      ) : null}
                     </td>
                   </tr>
                 ))}
