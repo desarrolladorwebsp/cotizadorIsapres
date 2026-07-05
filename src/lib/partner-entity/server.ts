@@ -2,7 +2,10 @@ import {
   DEFAULT_PARTNER_ENTITY_ENV,
   DEFAULT_PARTNER_ENTITY_SLUG,
 } from "@/lib/partner-entity/constants";
-import { getDefaultPartnerEntity } from "@/lib/partner-entity/fallback-entities";
+import {
+  getDefaultPartnerEntity,
+  getPlatformPartnerEntity,
+} from "@/lib/partner-entity/fallback-entities";
 import {
   readPartnerEntityByAgentKey,
   readPartnerEntityBySlug,
@@ -44,6 +47,14 @@ export async function resolvePartnerEntityForCotizador(
   if (entity) return toPublicPartnerEntity(entity);
 
   return getDefaultPartnerEntity();
+}
+
+/** Agente de la plataforma principal (cotizadorpremium.cl) — landing + cotizador por defecto. */
+export async function readPlatformPartnerEntity(): Promise<PartnerEntityPublic> {
+  const entity = await readPartnerEntityBySlug(getPlatformPartnerEntity().slug);
+  if (entity) return toPublicPartnerEntity(entity);
+
+  return getPlatformPartnerEntity();
 }
 
 export async function resolvePartnerEntityForHome(

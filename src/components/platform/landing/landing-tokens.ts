@@ -1,6 +1,8 @@
 /** Clases Tailwind reutilizables exclusivas de la Landing. */
 export const landing = {
-  pageRoot: "min-h-full bg-bg-layout",
+  pageRoot: "relative min-h-full scroll-smooth bg-bg-layout/80",
+  sectionSurface:
+    "landing-section-surface relative border-y border-border/50",
   container: "mx-auto max-w-7xl px-4 sm:px-6 lg:px-8",
   header:
     "sticky top-0 z-50 border-b border-border/60 landing-glass-panel-strong",
@@ -17,9 +19,11 @@ export const landing = {
   headline:
     "landing-text-gradient text-balance text-4xl font-bold leading-[1.08] tracking-tight sm:text-5xl lg:text-[3.25rem] lg:leading-[1.06]",
   subheadline:
-    "mt-6 max-w-xl text-pretty text-lg leading-relaxed text-muted sm:text-xl",
+    "mt-6 max-w-xl text-pretty text-lg leading-relaxed premium-text-secondary sm:text-xl",
   ctaPrimary:
     "group inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-3.5 text-sm font-semibold text-primary-foreground landing-cta-primary transition-all hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 sm:text-base",
+  ctaPrimaryHero:
+    "group inline-flex w-full items-center justify-center gap-2.5 rounded-2xl bg-primary px-8 py-4 text-base font-semibold text-primary-foreground landing-cta-primary transition-all hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 sm:w-auto sm:px-10 sm:py-4 sm:text-lg",
   ctaSecondary:
     "inline-flex items-center justify-center gap-2 rounded-2xl border border-border bg-background/80 px-6 py-3.5 text-sm font-semibold text-foreground backdrop-blur-sm transition-all hover:border-primary/30 hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 sm:text-base",
   trustPill:

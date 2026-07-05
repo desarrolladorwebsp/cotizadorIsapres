@@ -106,7 +106,11 @@ export async function middleware(request: NextRequest) {
     if (agent) {
       return redirectToCotizadorWithAgent(request, agent);
     }
-    return forwardRequest(request);
+    const response = forwardRequest(request);
+    if (!request.cookies.get(PARTNER_ENTITY_COOKIE)?.value) {
+      setPartnerEntityCookie(response, DEFAULT_PARTNER_ENTITY_SLUG);
+    }
+    return response;
   }
 
   if (pathname === "/cotizador") {

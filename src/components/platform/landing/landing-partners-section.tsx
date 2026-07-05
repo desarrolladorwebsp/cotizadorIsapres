@@ -150,7 +150,8 @@ export function LandingPartnersSection({
 
   return (
     <section
-      className="relative overflow-hidden border-y border-border/60 bg-background"
+      id="socios"
+      className={`${landing.sectionSurface} relative overflow-hidden`}
       aria-labelledby="landing-partners-title"
     >
       <div className="landing-partners-mesh pointer-events-none absolute inset-0" aria-hidden />
@@ -176,7 +177,7 @@ export function LandingPartnersSection({
           </motion.h2>
           <motion.p
             variants={itemVariants}
-            className="mx-auto mt-5 max-w-2xl text-pretty text-base leading-relaxed text-muted sm:text-lg"
+            className="mx-auto mt-5 max-w-2xl text-pretty text-base leading-relaxed premium-text-secondary sm:text-lg"
           >
             Trabajamos junto a plataformas especializadas en salud prepaga para
             entregarte una mejor experiencia, comparaciones precisas y una

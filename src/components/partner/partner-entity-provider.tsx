@@ -3,6 +3,7 @@
 import { createContext, useContext, useMemo } from "react";
 import { partnerThemeToCssProperties } from "@/lib/partner-entity/theme";
 import type { PartnerEntityPublic } from "@/types/partner-entity";
+import { PartnerBrandThemeEffect } from "./partner-brand-theme-effect";
 
 interface PartnerEntityContextValue {
   entity: PartnerEntityPublic | null;
@@ -36,6 +37,7 @@ export function PartnerEntityProvider({
 
   return (
     <PartnerEntityContext.Provider value={value}>
+      <PartnerBrandThemeEffect entity={entity} />
       {children}
     </PartnerEntityContext.Provider>
   );

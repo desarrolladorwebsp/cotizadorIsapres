@@ -1,0 +1,22 @@
+@import "../../styles/premium-surface-palette.css";
+
+[data-premium-surface] {
+  --premium-auth-mesh: color-mix(in srgb, var(--primary) 10%, transparent);
+  --premium-auth-mesh-cyan: color-mix(in srgb, var(--accent-cyan) 8%, transparent);
+}
+
+[data-premium-surface][data-premium-variant="auth"] {
+  background-color: var(--bg-layout);
+  background-image:
+    radial-gradient(ellipse 60% 50% at 10% 0%, var(--premium-auth-mesh), transparent 55%),
+    radial-gradient(ellipse 50% 40% at 95% 10%, var(--premium-auth-mesh-cyan), transparent 50%);
+}
+
+[data-premium-surface] .premium-executive-tabs {
+  background: color-mix(in srgb, var(--background) 92%, var(--secondary-muted));
+  border-color: var(--border);
+}
+
+[data-premium-surface] .premium-executive-tab-active {
+  box-shadow: 0 4px 16px -6px rgb(47 128 237 / 0.28);
+}

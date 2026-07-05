@@ -1,4 +1,3 @@
-import Link from "next/link";
 import type { Metadata } from "next";
 import { PlatformLandingView } from "@/components/platform/platform-landing-view";
 import {
@@ -6,6 +5,7 @@ import {
   readPartnerEntityBySlug,
   toPublicPartnerEntity,
 } from "@/lib/partner-entity/store";
+import { readPlatformPartnerEntity } from "@/lib/partner-entity/server";
 import type { PartnerEntityPublic } from "@/types/partner-entity";
 
 export const metadata: Metadata = {
@@ -29,7 +29,12 @@ async function loadFeaturedPartners(): Promise<PartnerEntityPublic[]> {
 }
 
 export default async function HomePage() {
-  const partners = await loadFeaturedPartners();
+  const [platformEntity, partners] = await Promise.all([
+    readPlatformPartnerEntity(),
+    loadFeaturedPartners(),
+  ]);
 
-  return <PlatformLandingView partners={partners} />;
+  return (
+    <PlatformLandingView platformEntity={platformEntity} partners={partners} />
+  );
 }

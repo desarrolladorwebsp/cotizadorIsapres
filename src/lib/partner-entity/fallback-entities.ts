@@ -1,10 +1,14 @@
-import type {
-  PartnerEntityPublic,
-  PartnerEntityTheme,
-} from "@/types/partner-entity";
+import type { PartnerEntityPublic, PartnerEntityTheme } from "@/types/partner-entity";
+import {
+  buildCotizadorPremiumPartnerRecord,
+  COTIZADOR_PREMIUM_THEME,
+  PLATFORM_AGENT_KEY,
+} from "@/lib/partner-entity/platform-agent";
 
 /** Slug de la entidad por defecto cuando no hay cookie ni parámetro. */
-export const DEFAULT_PARTNER_ENTITY_SLUG = "cotizaloantes";
+export const DEFAULT_PARTNER_ENTITY_SLUG = PLATFORM_AGENT_KEY;
+
+export { COTIZADOR_PREMIUM_THEME };
 
 export const COTIZALO_ANTES_THEME: PartnerEntityTheme = {
   primary: "#ed7d11",
@@ -63,6 +67,7 @@ export const FALLBACK_PARTNER_ENTITIES: Record<string, PartnerEntityPublic> = {
     brandKey: "desdetu7",
     theme: DESDETU7_THEME,
   },
+  [PLATFORM_AGENT_KEY]: buildCotizadorPremiumPartnerRecord(),
 };
 
 export function getFallbackPartnerEntity(
@@ -74,6 +79,10 @@ export function getFallbackPartnerEntity(
 export function getDefaultPartnerEntity(): PartnerEntityPublic {
   return (
     getFallbackPartnerEntity(DEFAULT_PARTNER_ENTITY_SLUG) ??
-    FALLBACK_PARTNER_ENTITIES.cotizaloantes
+    buildCotizadorPremiumPartnerRecord()
   );
+}
+
+export function getPlatformPartnerEntity(): PartnerEntityPublic {
+  return buildCotizadorPremiumPartnerRecord();
 }
