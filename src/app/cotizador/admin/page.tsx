@@ -96,6 +96,7 @@ export default function CotizadorAdminPage() {
             quotes={quotes}
             loading={loadingQuotes}
             onRefresh={loadData}
+            onNotify={notify}
           />
         )}
       </AdminShell>

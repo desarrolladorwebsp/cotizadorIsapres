@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Parsea Excel Consalud (RM / Regiones) alineado con PDFs locales."""
+"""Parsea Excel Cruz Blanca (RM / Regiones) alineado con PDFs locales."""
 
 from __future__ import annotations
 
@@ -12,9 +12,11 @@ from pathlib import Path
 
 import openpyxl
 
-ISAPRE_NAME = "Consalud"
-DEFAULT_FOLDER = Path(__file__).resolve().parent.parent / "storage" / "planes-pdf" / "consalud"
-OUTPUT_PATH = Path(__file__).resolve().parent / ".consalud-plans-parsed.json"
+ISAPRE_NAME = "Cruz Blanca"
+DEFAULT_FOLDER = (
+    Path(__file__).resolve().parent.parent / "storage" / "planes-pdf" / "cruz blanca"
+)
+OUTPUT_PATH = Path(__file__).resolve().parent / ".cruzblanca-plans-parsed.json"
 
 RM_ZONES = [
     "rm-metropolitana",
@@ -26,23 +28,13 @@ RM_ZONES = [
 ]
 REGION_ZONES = ["norte", "octava"]
 
-CODE_ALIASES = {
-    "3-FCL1157-26": "13-FCL1157-26",
-}
-
-PRICE_OVERRIDES: dict[str, float] = {
-    "13-EFCQ87-26": 1.86,
-}
-
 SKIP_CLINIC_LABELS = {"hospitalario", "ambulatorio"}
 PERCENT_LINE = re.compile(r"^(\d+)%$")
+CODE_PATTERN = re.compile(r"^[A-Z0-9-]+$")
 
 CLINIC_NAME_TO_ID: dict[str, str] = {
-    "Centros Médicos RedSalud": "cm-redsalud",
-    "Centros Médicos RedSalud(A.3)": "cm-redsalud",
-    "Centros Médicos RedSalud (A.1)": "cm-redsalud",
-    "Centros Médicos RedSalud (A.3)": "cm-redsalud",
-    "Centros Médicos RedSalud (A.4)": "cm-redsalud",
+    "Centros Médicos Red UC Christus": "red-uc-christus",
+    "Clínica Alemana": "cl-alemana-santiago",
     "Clínica Alemana de Osorno": "cl-alemana-osorno",
     "Clínica Alemana de Temuco": "cl-alemana-temuco",
     "Clínica Alemana de Valdivia": "cl-alemana-valdivia",
@@ -50,8 +42,6 @@ CLINIC_NAME_TO_ID: dict[str, str] = {
     "Clínica Andes Salud Concepción": "cl-andes-salud-concepcion",
     "Clínica Andes Salud El Loa": "cl-andes-salud-el-loa",
     "Clínica Andes Salud Puerto Montt": "cl-andes-salud-puerto-montt",
-    "Clínica Andes Salud Talca": "cl-andes-salud-talca",
-    "Clínica Atacama Achs Salud": "cl-atacama-achs",
     "Clínica Biobío": "cl-biobio",
     "Clínica Bupa Antofagasta": "cl-bupa-antofagasta",
     "Clínica Bupa Reñaca": "cl-bupa-renaca",
@@ -59,40 +49,31 @@ CLINIC_NAME_TO_ID: dict[str, str] = {
     "Clínica Ciudad del Mar": "cl-ciudad-del-mar",
     "Clínica Cordillera": "cl-cordillera",
     "Clínica Dávila": "cl-davila",
-    "Clínica Dávila Vespucio": "cl-davila-vespucio",
     "Clínica Hospital del Profesor": "cl-hospital-del-profesor",
     "Clínica Indisa": "cl-indisa-providencia-anexo",
     "Clínica Indisa Maipú": "cl-indisa-maipu",
-    "Clínica Indisa Providencia": "cl-indisa-providencia-anexo",
+    "Clínica Isamédica": "integramedica",
+    "Clínica Juan Pablo II": "cl-juan-pablo-ii",
     "Clínica Las Condes": "cl-las-condes",
-    "Clínica Los Andes Los Ángeles": "cl-los-andes-la",
-    "Clínica Los Carrera": "cl-los-carrera",
+    "Clínica Los Carrera InterClínica": "cl-los-carrera",
+    "Clínica Los Leones": "cl-los-leones",
     "Clínica Meds": "cl-meds",
-    "Clínica Portada Achs Salud": "cl-portada-achs",
-    "Clínica Puerto Montt": "cl-puerto-montt",
     "Clínica Puerto Varas": "cl-puerto-varas",
     "Clínica RedSalud Elqui": "cl-redsalud-elqui",
     "Clínica RedSalud Iquique": "cl-redsalud-iquique",
     "Clínica RedSalud Magallanes": "cl-redsalud-magallanes",
-    "Clínica RedSalud Mayor": "cl-redsalud-mayor",
-    "Clínica RedSalud Providencia": "cl-redsalud-providencia",
+    "Clínica RedSalud Mayor Temuco": "cl-redsalud-mayor",
     "Clínica RedSalud Rancagua": "cl-redsalud-rancagua",
-    "Clínica RedSalud Santiago": "cl-redsalud-santiago",
-    "Clínica RedSalud Valparaíso": "cl-redsalud-valparaiso",
-    "Clínica RedSalud Valparaiso": "cl-redsalud-valparaiso",
     "Clínica RedSalud Vitacura": "cl-redsalud-vitacura",
     "Clínica San Carlos de Apoquindo": "cl-san-carlos",
     "Clínica San José InterClínica": "cl-san-jose-interclinica",
     "Clínica Santa María": "cl-santa-maria",
     "Clínica Tarapacá InterClínica": "cl-tarapaca-interclinica",
-    "Clínica Universidad de los Andes": "cl-univ-andes",
-    "Hospital Clínico Universidad Católica": "hosp-clinico-uc",
+    "Clínica Universidad de Los Andes": "cl-univ-andes",
+    "Hospital Clínico UC": "hosp-clinico-uc",
     "Hospital Clínico Universidad de Chile": "hosp-clinico-uch",
     "Hospital Clínico Viña del Mar": "hosp-vina-del-mar",
-    "Hospital Parroquial de San Bernardo": "hosp-parroquial-san-bernardo",
     "Integramédica": "integramedica",
-    "Red de Salud UC Christus": "red-uc-christus",
-    "Sanatorio Alemán": "sanatorio-aleman",
 }
 
 
@@ -119,9 +100,7 @@ def resolve_clinic_id(clinic_name: str) -> str | None:
     return slug
 
 
-def parse_price(value, code: str | None = None) -> float | None:
-    if code and code in PRICE_OVERRIDES:
-        return PRICE_OVERRIDES[code]
+def parse_price(value) -> float | None:
     if value is None:
         return None
     if isinstance(value, (datetime, date)):
@@ -135,9 +114,15 @@ def parse_price(value, code: str | None = None) -> float | None:
     return None
 
 
-def normalize_code(value) -> str:
+def normalize_code(value) -> str | None:
+    if value is None:
+        return None
     code = str(value).strip().replace("\n", "").upper()
-    return CODE_ALIASES.get(code, code)
+    if not code or code == "CODIGO":
+        return None
+    if not CODE_PATTERN.match(code):
+        return None
+    return code
 
 
 def parse_coverage(text: str, coverage_type: str) -> list[dict]:
@@ -185,13 +170,13 @@ def parse_simple_workbook(xlsx_path: Path, zones: list[str]) -> dict[str, dict]:
     worksheet = workbook.active
     plans: dict[str, dict] = {}
 
-    for row in worksheet.iter_rows(min_row=2, values_only=True):
+    for row in worksheet.iter_rows(min_row=1, values_only=True):
         code_raw, price_raw, hospitalario_raw, ambulatorio_raw = (row + (None,) * 4)[:4]
-        if not code_raw:
+        code = normalize_code(code_raw)
+        if not code:
             continue
 
-        code = normalize_code(code_raw)
-        base_price_uf = parse_price(price_raw, code)
+        base_price_uf = parse_price(price_raw)
         if base_price_uf is None:
             print(f"Plan omitido por precio inválido: {code} ({price_raw!r})", file=sys.stderr)
             continue
@@ -202,9 +187,13 @@ def parse_simple_workbook(xlsx_path: Path, zones: list[str]) -> dict[str, dict]:
         if ambulatorio_raw:
             coverage.extend(parse_coverage(ambulatorio_raw, "ambulatoria"))
 
+        if code in plans:
+            print(f"Plan duplicado en Excel omitido: {code}", file=sys.stderr)
+            continue
+
         plans[code] = {
             "isapre": ISAPRE_NAME,
-            "plan_name": f"Consalud {code}",
+            "plan_name": f"Cruz Blanca {code}",
             "unique_code": code,
             "base_price_uf": base_price_uf,
             "has_top": False,
@@ -242,20 +231,22 @@ def collect_pdf_codes(*pdf_dirs: Path) -> set[str]:
 
 
 def main() -> None:
-    consalud_dir = Path(sys.argv[1]).expanduser().resolve() if len(sys.argv) > 1 else DEFAULT_FOLDER
+    cruzblanca_dir = (
+        Path(sys.argv[1]).expanduser().resolve() if len(sys.argv) > 1 else DEFAULT_FOLDER
+    )
     output_path = (
         Path(sys.argv[2]).expanduser().resolve()
         if len(sys.argv) > 2
         else OUTPUT_PATH
     )
 
-    rm_xlsx = find_file(consalud_dir, ["PLANES RM*.xlsx", "PLANES RM .xlsx"])
-    regiones_xlsx = find_file(consalud_dir, ["PLANES REGIONES*.xlsx", "PLANES REGIONES .xlsx"])
-    rm_pdf_dir = find_file(consalud_dir, ["PDF PLANES RM*", "PDF PLANES RM"])
-    region_pdf_dir = find_file(consalud_dir, ["PDF PLANES REGION*", "PDF PLANES REGION"])
+    rm_xlsx = find_file(cruzblanca_dir, ["Planes RM*.xlsx", "PLANES RM*.xlsx"])
+    regiones_xlsx = find_file(cruzblanca_dir, ["PLANES REGIONES*.xlsx"])
+    rm_pdf_dir = find_file(cruzblanca_dir, ["PDF PLANES RM*"])
+    region_pdf_dir = find_file(cruzblanca_dir, ["PDF REGIONES*", "PDF PLANES REGION*"])
 
     if not rm_xlsx or not rm_pdf_dir:
-        print("No se encontró Excel/PDF RM en consalud.", file=sys.stderr)
+        print("No se encontró Excel/PDF RM en cruz blanca.", file=sys.stderr)
         sys.exit(1)
 
     all_plans: dict[str, dict] = {}
@@ -267,7 +258,11 @@ def main() -> None:
     if regiones_xlsx:
         region_plans = parse_simple_workbook(regiones_xlsx, REGION_ZONES)
         print(f"{regiones_xlsx.name}: {len(region_plans)} filas", file=sys.stderr)
-        all_plans.update(region_plans)
+        for code, plan in region_plans.items():
+            if code in all_plans:
+                print(f"Plan duplicado entre RM/Regiones omitido: {code}", file=sys.stderr)
+                continue
+            all_plans[code] = plan
 
     pdf_codes = collect_pdf_codes(
         rm_pdf_dir,

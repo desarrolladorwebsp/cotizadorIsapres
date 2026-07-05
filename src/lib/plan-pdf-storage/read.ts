@@ -10,7 +10,14 @@ import { useVercelBlobStorage } from "@/lib/plan-pdf-storage/provider";
 
 export async function readPlanPdfFile(storageKey: string): Promise<Buffer> {
   if (useVercelBlobStorage()) {
-    return readBlobPlanPdf(storageKey);
+    try {
+      if (await blobPlanPdfExists(storageKey)) {
+        return readBlobPlanPdf(storageKey);
+      }
+    } catch {
+      // Fallback a disco cuando el blob no tiene el archivo (p. ej. cuota llena).
+    }
+    return readLocalPlanPdf(storageKey);
   }
 
   return readLocalPlanPdf(storageKey);
@@ -27,7 +34,8 @@ export function planPdfFileExists(storageKey: string): boolean {
 
 export async function planPdfFileExistsAsync(storageKey: string): Promise<boolean> {
   if (useVercelBlobStorage()) {
-    return blobPlanPdfExists(storageKey);
+    if (await blobPlanPdfExists(storageKey)) return true;
+    return localPlanPdfExists(storageKey);
   }
 
   return localPlanPdfExists(storageKey);

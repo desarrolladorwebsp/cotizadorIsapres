@@ -125,6 +125,7 @@ async function main() {
   const missingJson = path.join(reportDir, ".missing-plan-pdfs.json");
   const statusXlsx = path.join(reportDir, "planes-estado-por-isapre.xlsx");
   const missingXlsx = path.join(reportDir, "planes-sin-pdf-por-isapre.xlsx");
+  const reportXlsx = path.join(reportDir, "reporte-planes-completo.xlsx");
 
   await writeFile(statusJson, JSON.stringify(summaryAllIsapres, null, 2), "utf-8");
   await writeFile(missingJson, JSON.stringify(missingPlans, null, 2), "utf-8");
@@ -137,6 +138,10 @@ async function main() {
     `python3 scripts/build-missing-pdfs-xlsx.py "${missingJson}" "${missingXlsx}" "${statusJson}"`,
     { cwd: process.cwd(), stdio: "inherit" },
   );
+  execSync(
+    `python3 scripts/build-plan-report-xlsx.py "${statusJson}" "${missingJson}" "${reportXlsx}"`,
+    { cwd: process.cwd(), stdio: "inherit" },
+  );
 
   const totals = {
     isapres: summaryAllIsapres.length,
@@ -146,8 +151,9 @@ async function main() {
   };
 
   console.log("\nReportes generados:");
-  console.log("  1.", statusXlsx);
-  console.log("  2.", missingXlsx);
+  console.log("  1.", reportXlsx);
+  console.log("  2.", statusXlsx);
+  console.log("  3.", missingXlsx);
   console.log("\nTotales:", totals);
   console.log("\nPor isapre:");
   for (const row of summaryAllIsapres) {

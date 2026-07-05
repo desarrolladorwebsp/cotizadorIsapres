@@ -121,7 +121,7 @@ export async function createStaffAccount(
 
 export async function assignQuoteToExecutive(
   quoteId: string,
-  input: { assignToMe?: boolean; executiveAccountId?: string | null },
+  input: { assignToMe?: boolean; executiveAccountId?: string | null; status?: QuoteRecord["status"] },
 ): Promise<QuoteRecord> {
   const response = await fetch(`/api/quotes/${encodeURIComponent(quoteId)}`, {
     method: "PATCH",
@@ -129,6 +129,53 @@ export async function assignQuoteToExecutive(
     body: JSON.stringify(input),
   });
   return parseJsonResponse<QuoteRecord>(response);
+}
+
+export async function updateQuoteLead(
+  quoteId: string,
+  input: { executiveAccountId?: string | null; status?: QuoteRecord["status"] },
+): Promise<QuoteRecord> {
+  const response = await fetch(`/api/quotes/${encodeURIComponent(quoteId)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  return parseJsonResponse<QuoteRecord>(response);
+}
+
+export async function distributeUnassignedQuotes(): Promise<{
+  assigned: number;
+  remaining: number;
+  message: string;
+}> {
+  const response = await fetch("/api/quotes/distribute", { method: "POST" });
+  return parseJsonResponse<{
+    assigned: number;
+    remaining: number;
+    message: string;
+  }>(response);
+}
+
+export interface ExecutiveAssignmentStat {
+  executiveId: string;
+  fullName: string;
+  email: string;
+  active: boolean;
+  assignedCount: number;
+}
+
+export async function fetchExecutiveAssignmentStats(): Promise<
+  ExecutiveAssignmentStat[]
+> {
+  const response = await fetch("/api/quotes/assignment-stats");
+  return parseJsonResponse<ExecutiveAssignmentStat[]>(response);
+}
+
+export async function fetchExecutiveAccounts(): Promise<StaffAccountRecord[]> {
+  const { accounts } = await fetchStaffAccounts();
+  return accounts.filter(
+    (account) => account.realm === "executive" && account.active,
+  );
 }
 
 export async function assignClientToExecutive(

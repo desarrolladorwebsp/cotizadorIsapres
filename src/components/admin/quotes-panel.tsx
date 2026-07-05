@@ -1,10 +1,9 @@
 "use client";
 
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  AdminBadge,
   AdminPanel,
   AdminPanelHeader,
   AdminRefreshButton,
@@ -17,31 +16,30 @@ import {
   AdminTableRow,
   AdminToolbar,
 } from "@/components/admin/admin-data-table";
+import {
+  distributeUnassignedQuotes,
+  fetchExecutiveAccounts,
+  fetchExecutiveAssignmentStats,
+  updateQuoteLead,
+  type ExecutiveAssignmentStat,
+} from "@/lib/api/admin-client";
 import { formatPlanClp, formatQuotedUf } from "@/lib/plan-format";
 import { REGION_OPTIONS, SEX_OPTIONS } from "@/lib/quote-criteria-options";
+import {
+  QUOTE_STATUS_LABELS,
+  QUOTE_STATUS_OPTIONS,
+} from "@/lib/quote-status";
 import { ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
-import type { QuoteRecord } from "@/types/quote";
+import type { QuoteRecord, QuoteStatus } from "@/types/quote";
+import type { StaffAccountRecord } from "@/types/staff-account";
 
 export interface QuotesPanelProps {
   quotes: QuoteRecord[];
   loading: boolean;
   onRefresh: () => Promise<void>;
+  onNotify?: (message: string, tone?: "success" | "error") => void;
 }
-
-const STATUS_LABELS: Record<QuoteRecord["status"], string> = {
-  PENDING: "Pendiente",
-  CONTACTED: "Contactado",
-  CONVERTED: "Convertido",
-  CANCELLED: "Cancelada",
-};
-
-const STATUS_TONES: Record<QuoteRecord["status"], "warning" | "info" | "success" | "neutral"> = {
-  PENDING: "warning",
-  CONTACTED: "info",
-  CONVERTED: "success",
-  CANCELLED: "neutral",
-};
 
 function formatDate(value: string): string {
   return new Intl.DateTimeFormat("es-CL", {
@@ -110,13 +108,90 @@ function normalizePhoneHref(phone: string): string {
   return digits.startsWith("56") ? `+${digits}` : `+56${digits}`;
 }
 
-export function QuotesPanel({ quotes, loading, onRefresh }: QuotesPanelProps) {
+export function QuotesPanel({
+  quotes,
+  loading,
+  onRefresh,
+  onNotify,
+}: QuotesPanelProps) {
   const [search, setSearch] = useState("");
   const [partnerFilter, setPartnerFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState<QuoteRecord["status"] | "all">(
     "all",
   );
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [executives, setExecutives] = useState<StaffAccountRecord[]>([]);
+  const [assignmentStats, setAssignmentStats] = useState<ExecutiveAssignmentStat[]>(
+    [],
+  );
+  const [savingQuoteId, setSavingQuoteId] = useState<string | null>(null);
+  const [distributing, setDistributing] = useState(false);
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const [nextExecutives, nextStats] = await Promise.all([
+          fetchExecutiveAccounts(),
+          fetchExecutiveAssignmentStats(),
+        ]);
+        setExecutives(nextExecutives);
+        setAssignmentStats(nextStats);
+      } catch {
+        // El panel sigue funcionando sin stats de asignación.
+      }
+    })();
+  }, [quotes.length]);
+
+  async function refreshAssignmentStats() {
+    try {
+      const [nextExecutives, nextStats] = await Promise.all([
+        fetchExecutiveAccounts(),
+        fetchExecutiveAssignmentStats(),
+      ]);
+      setExecutives(nextExecutives);
+      setAssignmentStats(nextStats);
+    } catch {
+      // noop
+    }
+  }
+
+  async function handleDistribute() {
+    setDistributing(true);
+    try {
+      const result = await distributeUnassignedQuotes();
+      onNotify?.(result.message);
+      await onRefresh();
+      await refreshAssignmentStats();
+    } catch (error) {
+      onNotify?.(
+        error instanceof Error
+          ? error.message
+          : "No se pudieron distribuir los leads.",
+        "error",
+      );
+    } finally {
+      setDistributing(false);
+    }
+  }
+
+  async function handleLeadUpdate(
+    quote: QuoteRecord,
+    input: { executiveAccountId?: string | null; status?: QuoteStatus },
+  ) {
+    setSavingQuoteId(quote.id);
+    try {
+      await updateQuoteLead(quote.id, input);
+      await onRefresh();
+      await refreshAssignmentStats();
+    } catch (error) {
+      onNotify?.(
+        error instanceof Error ? error.message : "No se pudo actualizar el lead.",
+        "error",
+      );
+    } finally {
+      setSavingQuoteId(null);
+    }
+  }
 
   const partnerOptions = useMemo(() => {
     const map = new Map<string, string>();
@@ -135,9 +210,11 @@ export function QuotesPanel({ quotes, loading, onRefresh }: QuotesPanelProps) {
   const stats = useMemo(() => {
     return {
       total: quotes.length,
-      pending: quotes.filter((quote) => quote.status === "PENDING").length,
-      contacted: quotes.filter((quote) => quote.status === "CONTACTED").length,
-      converted: quotes.filter((quote) => quote.status === "CONVERTED").length,
+      unassigned: quotes.filter((quote) => !quote.executiveAccountId).length,
+      prospect: quotes.filter((quote) => quote.status === "PENDING").length,
+      contracting: quotes.filter((quote) => quote.status === "CONTACTED").length,
+      purchased: quotes.filter((quote) => quote.status === "CONVERTED").length,
+      rejected: quotes.filter((quote) => quote.status === "CANCELLED").length,
     };
   }, [quotes]);
 
@@ -178,20 +255,33 @@ export function QuotesPanel({ quotes, loading, onRefresh }: QuotesPanelProps) {
     <AdminPanel>
       <AdminPanelHeader
         title="Cotizaciones"
-        description="Solicitudes enviadas desde el cotizador. Revisa datos de contacto, plan solicitado y origen de cada solicitud."
-        actions={<AdminRefreshButton onClick={() => void onRefresh()} />}
+        description="Leads del cotizador. Se asignan automáticamente al ejecutivo con menos carga; puedes redistribuir o reasignar manualmente."
+        actions={
+          <>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              disabled={distributing || stats.unassigned === 0}
+              onClick={() => void handleDistribute()}
+            >
+              {distributing
+                ? "Distribuyendo…"
+                : `Distribuir sin asignar (${stats.unassigned})`}
+            </Button>
+            <AdminRefreshButton onClick={() => void onRefresh()} />
+          </>
+        }
       />
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
         {[
           { label: "Total", value: stats.total, tone: "text-primary-dark" },
-          { label: "Pendientes", value: stats.pending, tone: "text-amber-700" },
-          { label: "Contactados", value: stats.contacted, tone: "text-sky-700" },
-          {
-            label: "Convertidos",
-            value: stats.converted,
-            tone: "text-emerald-700",
-          },
+          { label: "Sin asignar", value: stats.unassigned, tone: "text-rose-700" },
+          { label: "Prospectos", value: stats.prospect, tone: "text-amber-700" },
+          { label: "Contratantes", value: stats.contracting, tone: "text-sky-700" },
+          { label: "Compraron", value: stats.purchased, tone: "text-emerald-700" },
+          { label: "Rechazaron", value: stats.rejected, tone: "text-gray-600" },
         ].map((item) => (
           <div
             key={item.label}
@@ -210,6 +300,32 @@ export function QuotesPanel({ quotes, loading, onRefresh }: QuotesPanelProps) {
         ))}
       </div>
 
+      {assignmentStats.length > 0 ? (
+        <div
+          className={joinClasses(
+            "rounded-xl border bg-white px-4 py-3 text-sm shadow-sm",
+            ui.border,
+          )}
+        >
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+            Carga por ejecutivo
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {assignmentStats
+              .filter((row) => row.active)
+              .map((row) => (
+                <span
+                  key={row.executiveId}
+                  className="rounded-full border border-border bg-bg-layout px-3 py-1 text-xs font-medium text-foreground"
+                >
+                  {row.fullName}: {row.assignedCount} lead
+                  {row.assignedCount === 1 ? "" : "s"}
+                </span>
+              ))}
+          </div>
+        </div>
+      ) : null}
+
       <AdminToolbar className="lg:grid-cols-[minmax(0,1fr)_12rem_12rem]">
         <Input
           value={search}
@@ -226,10 +342,10 @@ export function QuotesPanel({ quotes, loading, onRefresh }: QuotesPanelProps) {
           className={joinClasses("h-11 rounded-xl px-3 text-sm", ui.input)}
         >
           <option value="all">Todos los estados</option>
-          {(Object.keys(STATUS_LABELS) as QuoteRecord["status"][]).map(
+          {(QUOTE_STATUS_OPTIONS as QuoteRecord["status"][]).map(
             (status) => (
               <option key={status} value={status}>
-                {STATUS_LABELS[status]}
+                {QUOTE_STATUS_LABELS[status]}
               </option>
             ),
           )}
@@ -257,17 +373,17 @@ export function QuotesPanel({ quotes, loading, onRefresh }: QuotesPanelProps) {
         loadingMessage="Cargando cotizaciones…"
         footer={`Mostrando ${filteredQuotes.length} de ${quotes.length} cotizaciones.`}
       >
-        <AdminTable minWidth="72rem">
+        <AdminTable minWidth="80rem">
           <AdminTableHead>
             <tr>
               <AdminTableHeaderCell>Fecha</AdminTableHeaderCell>
               <AdminTableHeaderCell>Solicitante</AdminTableHeaderCell>
               <AdminTableHeaderCell>Contacto</AdminTableHeaderCell>
-              <AdminTableHeaderCell>Perfil</AdminTableHeaderCell>
               <AdminTableHeaderCell>Plan solicitado</AdminTableHeaderCell>
               <AdminTableHeaderCell align="right">Precio est.</AdminTableHeaderCell>
               <AdminTableHeaderCell>Origen</AdminTableHeaderCell>
-              <AdminTableHeaderCell>Estado</AdminTableHeaderCell>
+              <AdminTableHeaderCell>Ejecutivo</AdminTableHeaderCell>
+              <AdminTableHeaderCell>Pipeline</AdminTableHeaderCell>
               <AdminTableHeaderCell align="right">Detalle</AdminTableHeaderCell>
             </tr>
           </AdminTableHead>
@@ -304,18 +420,6 @@ export function QuotesPanel({ quotes, loading, onRefresh }: QuotesPanelProps) {
                       >
                         {quote.phone}
                       </a>
-                    </AdminTableCell>
-
-                    <AdminTableCell className="text-xs leading-relaxed text-muted">
-                      <p>{resolveRegionLabel(quote.region)}</p>
-                      <p className="mt-1">
-                        {resolveSexLabel(quote.sex)}
-                        {quote.contributorAge != null
-                          ? ` · ${quote.contributorAge} años`
-                          : ""}
-                      </p>
-                      <p className="mt-1">{formatIncome(quote.monthlyIncome)}</p>
-                      <p className="mt-1">{formatBeneficiaries(quote)}</p>
                     </AdminTableCell>
 
                     <AdminTableCell>
@@ -369,9 +473,54 @@ export function QuotesPanel({ quotes, loading, onRefresh }: QuotesPanelProps) {
                     </AdminTableCell>
 
                     <AdminTableCell>
-                      <AdminBadge tone={STATUS_TONES[quote.status]}>
-                        {STATUS_LABELS[quote.status]}
-                      </AdminBadge>
+                      <select
+                        value={quote.executiveAccountId ?? ""}
+                        disabled={savingQuoteId === quote.id}
+                        onChange={(event) => {
+                          const value = event.target.value;
+                          void handleLeadUpdate(quote, {
+                            executiveAccountId: value || null,
+                          });
+                        }}
+                        className={joinClasses(
+                          "h-9 w-full min-w-[10rem] rounded-lg px-2 text-xs",
+                          ui.input,
+                        )}
+                        aria-label="Ejecutivo asignado"
+                      >
+                        <option value="">Sin asignar</option>
+                        {executives.map((executive) => (
+                          <option key={executive.id} value={executive.id}>
+                            {executive.fullName}
+                          </option>
+                        ))}
+                      </select>
+                      {quote.executiveName && !executives.length ? (
+                        <p className="mt-1 text-xs text-muted">{quote.executiveName}</p>
+                      ) : null}
+                    </AdminTableCell>
+
+                    <AdminTableCell>
+                      <select
+                        value={quote.status}
+                        disabled={savingQuoteId === quote.id}
+                        onChange={(event) => {
+                          void handleLeadUpdate(quote, {
+                            status: event.target.value as QuoteStatus,
+                          });
+                        }}
+                        className={joinClasses(
+                          "h-9 w-full min-w-[9.5rem] rounded-lg px-2 text-xs font-medium",
+                          ui.input,
+                        )}
+                        aria-label="Estado del pipeline"
+                      >
+                        {QUOTE_STATUS_OPTIONS.map((status) => (
+                          <option key={status} value={status}>
+                            {QUOTE_STATUS_LABELS[status]}
+                          </option>
+                        ))}
+                      </select>
                     </AdminTableCell>
 
                     <AdminTableCell align="right">
@@ -393,6 +542,23 @@ export function QuotesPanel({ quotes, loading, onRefresh }: QuotesPanelProps) {
                     <tr className="border-b bg-bg-layout/30">
                       <td colSpan={9} className="px-4 py-4">
                         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                          <DetailBlock
+                            label="Región"
+                            value={resolveRegionLabel(quote.region)}
+                          />
+                          <DetailBlock
+                            label="Perfil"
+                            value={[
+                              resolveSexLabel(quote.sex),
+                              quote.contributorAge != null
+                                ? `${quote.contributorAge} años`
+                                : null,
+                              formatIncome(quote.monthlyIncome),
+                              formatBeneficiaries(quote),
+                            ]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          />
                           <DetailBlock
                             label="Motivo"
                             value={quote.quoteReason ?? "—"}

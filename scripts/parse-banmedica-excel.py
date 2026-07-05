@@ -147,6 +147,14 @@ def parse_banmedica_coverage(text: str, coverage_type: str) -> list[dict]:
     return entries
 
 
+def normalize_plan_code(value) -> str | None:
+    text = normalize_cell_text(value).upper()
+    if not text:
+        return None
+    match = re.match(r"^([A-Z0-9]+)", text)
+    return match.group(1) if match else text
+
+
 def parse_workbook(xlsx_path: Path, default_zones: list[str] | None = None) -> list[dict]:
     workbook = openpyxl.load_workbook(xlsx_path, data_only=True)
     worksheet = workbook.active
@@ -157,7 +165,9 @@ def parse_workbook(xlsx_path: Path, default_zones: list[str] | None = None) -> l
         if not code_raw:
             continue
 
-        code = normalize_cell_text(code_raw).upper()
+        code = normalize_plan_code(code_raw)
+        if not code:
+            continue
         base_price_uf = PRICE_OVERRIDES.get(code)
         if base_price_uf is None:
             base_price_uf = parse_price(price_raw)

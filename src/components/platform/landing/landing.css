@@ -1,0 +1,102 @@
+/*
+ * Estilos exclusivos de la Landing — scoped bajo [data-landing].
+ * No afectan cotizador, widget ni otras vistas.
+ */
+
+[data-landing] {
+  --landing-mesh-primary: color-mix(in srgb, var(--primary) 10%, transparent);
+  --landing-mesh-secondary: color-mix(in srgb, var(--secondary) 8%, transparent);
+  --landing-glass: rgb(255 255 255 / 0.72);
+  --landing-glass-strong: rgb(255 255 255 / 0.88);
+  --landing-glass-border: rgb(255 255 255 / 0.6);
+  --landing-hero-glow: 0 0 100px -24px
+    color-mix(in srgb, var(--primary) 40%, transparent);
+  --landing-card-glow: 0 24px 64px -16px rgb(0 77 38 / 0.14);
+}
+
+[data-landing] .landing-hero-mesh {
+  background-image:
+    radial-gradient(ellipse 70% 55% at 8% 18%, var(--landing-mesh-primary), transparent 55%),
+    radial-gradient(ellipse 55% 45% at 92% 8%, var(--landing-mesh-secondary), transparent 50%),
+    radial-gradient(ellipse 45% 35% at 75% 85%, var(--landing-mesh-primary), transparent 45%);
+}
+
+[data-landing] .landing-grid-pattern {
+  background-image:
+    linear-gradient(rgb(0 77 38 / 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(0 77 38 / 0.025) 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, black 20%, transparent 75%);
+}
+
+[data-landing] .landing-glass-panel {
+  background: var(--landing-glass);
+  border: 1px solid var(--landing-glass-border);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+[data-landing] .landing-glass-panel-strong {
+  background: var(--landing-glass-strong);
+  border: 1px solid var(--landing-glass-border);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+[data-landing] .landing-text-gradient {
+  background: linear-gradient(
+    135deg,
+    var(--foreground) 0%,
+    color-mix(in srgb, var(--primary-dark) 70%, var(--foreground) 30%) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+[data-landing] .landing-cta-primary {
+  box-shadow: var(--shadow-cta);
+}
+
+[data-landing] .landing-cta-primary:hover {
+  box-shadow:
+    var(--shadow-cta),
+    0 0 32px -8px color-mix(in srgb, var(--primary) 50%, transparent);
+}
+
+[data-landing] .landing-hero-visual {
+  box-shadow: var(--landing-card-glow);
+}
+
+[data-landing] .landing-partners-mesh {
+  background-image:
+    radial-gradient(ellipse 50% 40% at 15% 50%, var(--landing-mesh-primary), transparent 55%),
+    radial-gradient(ellipse 45% 35% at 85% 30%, var(--landing-mesh-secondary), transparent 50%);
+}
+
+[data-landing] .landing-partner-card {
+  box-shadow: var(--shadow-card);
+  transition:
+    box-shadow 0.35s ease,
+    border-color 0.35s ease;
+}
+
+[data-landing] .landing-partner-card:hover {
+  box-shadow: var(--shadow-card-hover);
+  border-color: color-mix(in srgb, var(--primary) 18%, var(--landing-glass-border));
+}
+
+[data-landing] .landing-partner-logo-wrap {
+  transition: transform 0.35s ease, box-shadow 0.35s ease;
+}
+
+[data-landing] .landing-partner-card:hover .landing-partner-logo-wrap {
+  transform: scale(1.04);
+  box-shadow: 0 8px 24px -8px rgb(0 77 38 / 0.12);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-landing] .landing-grid-pattern {
+    mask-image: none;
+  }
+}

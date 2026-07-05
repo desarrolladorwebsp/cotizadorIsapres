@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { pickExecutiveRoundRobin } from "@/lib/api/lead-assignment";
 import type { CreateQuoteInput, QuoteRecord, QuoteStatus } from "@/types/quote";
 import type { Quote as DbQuote, Plan, Isapre, ExecutiveAccount } from "@prisma/client";
 import { upsertUserByEmail } from "./user-store";
@@ -72,9 +73,7 @@ export async function readQuotesForExecutive(
   executiveAccountId: string,
 ): Promise<QuoteRecord[]> {
   const quotes = await prisma.quote.findMany({
-    where: {
-      OR: [{ executiveAccountId }, { executiveAccountId: null }],
-    },
+    where: { executiveAccountId },
     orderBy: { createdAt: "desc" },
     include: quoteInclude,
   });
@@ -101,9 +100,12 @@ export async function createQuote(
     role: "CLIENT",
   });
 
+  const executiveAccountId = await pickExecutiveRoundRobin();
+
   const quote = await prisma.quote.create({
     data: {
       userId: client.id,
+      executiveAccountId,
       planCode: input.planCode ?? null,
       fullName: input.fullName.trim(),
       email: input.email.trim().toLowerCase(),
@@ -128,6 +130,13 @@ export async function createQuote(
     },
     include: quoteInclude,
   });
+
+  if (executiveAccountId && client.id) {
+    await prisma.user.update({
+      where: { id: client.id },
+      data: { assignedExecutiveId: executiveAccountId },
+    });
+  }
 
   return mapDbQuote(quote);
 }
@@ -161,4 +170,83 @@ export async function assignQuoteToExecutive(
   executiveAccountId: string,
 ): Promise<QuoteRecord> {
   return updateQuoteAssignment({ quoteId, executiveAccountId });
+}
+
+export async function updateQuoteStatus(
+  quoteId: string,
+  status: QuoteStatus,
+): Promise<QuoteRecord> {
+  const quote = await prisma.quote.update({
+    where: { id: quoteId },
+    data: { status },
+    include: quoteInclude,
+  });
+
+  return mapDbQuote(quote);
+}
+
+/** Asigna todos los leads sin ejecutivo usando round-robin equitativo. */
+export async function distributeUnassignedQuotes(): Promise<{
+  assigned: number;
+  remaining: number;
+}> {
+  const unassigned = await prisma.quote.findMany({
+    where: { executiveAccountId: null },
+    orderBy: { createdAt: "asc" },
+    select: { id: true },
+  });
+
+  let assigned = 0;
+
+  for (const quote of unassigned) {
+    const executiveAccountId = await pickExecutiveRoundRobin();
+    if (!executiveAccountId) break;
+
+    await updateQuoteAssignment({ quoteId: quote.id, executiveAccountId });
+    assigned += 1;
+  }
+
+  const remaining = await prisma.quote.count({
+    where: { executiveAccountId: null },
+  });
+
+  return { assigned, remaining };
+}
+
+export interface ExecutiveAssignmentStat {
+  executiveId: string;
+  fullName: string;
+  email: string;
+  active: boolean;
+  assignedCount: number;
+}
+
+/** Conteo de leads por ejecutivo (para balance en panel admin). */
+export async function readExecutiveAssignmentStats(): Promise<
+  ExecutiveAssignmentStat[]
+> {
+  const executives = await prisma.executiveAccount.findMany({
+    orderBy: { fullName: "asc" },
+    select: { id: true, fullName: true, email: true, active: true },
+  });
+
+  const counts = await prisma.quote.groupBy({
+    by: ["executiveAccountId"],
+    where: { executiveAccountId: { not: null } },
+    _count: { id: true },
+  });
+
+  const countByExecutive = new Map(
+    counts
+      .filter((row) => row.executiveAccountId)
+      .map((row) => [row.executiveAccountId as string, row._count.id]),
+  );
+
+  return executives.map((executive) => ({
+    executiveId: executive.id,
+    fullName: executive.fullName,
+    email: executive.email,
+    active: executive.active,
+    assignedCount: countByExecutive.get(executive.id) ?? 0,
+  }));
 }

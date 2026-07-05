@@ -15,7 +15,7 @@ from openpyxl.utils import get_column_letter
 
 HEADERS = [
     "Isapre",
-    "Código único",
+    "ID plan",
     "Nombre del plan",
     "Precio base (UF)",
     "Coberturas",

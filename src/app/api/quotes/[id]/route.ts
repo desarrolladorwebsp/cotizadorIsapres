@@ -3,6 +3,7 @@ import {
   assignQuoteToExecutive,
   readQuoteById,
   updateQuoteAssignment,
+  updateQuoteStatus,
 } from "@/lib/api/quote-store";
 import { apiErrorResponse, parseJsonBody } from "@/lib/api/api-error";
 import {
@@ -10,17 +11,13 @@ import {
   requireExecutiveSession,
 } from "@/lib/auth/require-auth";
 import type { QuoteStatus } from "@/types/quote";
+import { QUOTE_STATUS_OPTIONS } from "@/lib/quote-status";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
 }
 
-const VALID_STATUSES = new Set<QuoteStatus>([
-  "PENDING",
-  "CONTACTED",
-  "CONVERTED",
-  "CANCELLED",
-]);
+const VALID_STATUSES = new Set<QuoteStatus>(QUOTE_STATUS_OPTIONS);
 
 export async function PATCH(request: Request, context: RouteContext) {
   try {
@@ -78,12 +75,24 @@ export async function PATCH(request: Request, context: RouteContext) {
       return NextResponse.json(updated);
     }
 
-    if (status && isAdmin) {
-      const updated = await updateQuoteAssignment({
-        quoteId: id,
-        executiveAccountId: quote.executiveAccountId ?? null,
-        status,
-      });
+    if (status) {
+      if (isAdmin) {
+        const updated = await updateQuoteAssignment({
+          quoteId: id,
+          executiveAccountId: quote.executiveAccountId ?? null,
+          status,
+        });
+        return NextResponse.json(updated);
+      }
+
+      if (!executiveId || quote.executiveAccountId !== executiveId) {
+        return NextResponse.json(
+          { error: "Solo puedes actualizar leads asignados a ti." },
+          { status: 403 },
+        );
+      }
+
+      const updated = await updateQuoteStatus(id, status);
       return NextResponse.json(updated);
     }
 

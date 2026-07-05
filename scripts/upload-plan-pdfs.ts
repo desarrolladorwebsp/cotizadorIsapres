@@ -10,7 +10,7 @@ import {
   useVercelBlobStorage,
 } from "../src/lib/plan-pdf-storage/provider";
 import { isVercelBlobUrl } from "../src/lib/plan-pdf-storage/blob";
-import { resolveIsapreNameFromId } from "../src/lib/isapre-catalog";
+import { resolveIsapreIdFromName, resolveIsapreNameFromId } from "../src/lib/isapre-catalog";
 
 config({ path: path.join(process.cwd(), ".env.local") });
 
@@ -25,7 +25,10 @@ interface PdfCandidate {
   zona: string | null;
 }
 
-async function collectPdfFiles(rootDir: string): Promise<PdfCandidate[]> {
+async function collectPdfFiles(
+  rootDir: string,
+  isDirectIsapreRoot: boolean,
+): Promise<PdfCandidate[]> {
   const results: PdfCandidate[] = [];
 
   async function walk(currentDir: string) {
@@ -48,10 +51,18 @@ async function collectPdfFiles(rootDir: string): Promise<PdfCandidate[]> {
         .replace(/\s*\(\d+\)$/, "")
         .trim();
 
-      // segments: [isapre, (zona...), archivo.pdf]
-      const isapreFolder = segments.length >= 2 ? segments[0] : null;
-      const zonaSegments = segments.slice(1, -1);
-      const zona = zonaSegments.length > 0 ? zonaSegments.join(" ") : null;
+      let isapreFolder: string | null;
+      let zona: string | null;
+
+      if (isDirectIsapreRoot) {
+        isapreFolder = path.basename(rootDir);
+        const zonaSegments = segments.slice(0, -1);
+        zona = zonaSegments.length > 0 ? zonaSegments.join(" ") : null;
+      } else {
+        isapreFolder = segments.length >= 2 ? segments[0] : null;
+        const zonaSegments = segments.slice(1, -1);
+        zona = zonaSegments.length > 0 ? zonaSegments.join(" ") : null;
+      }
 
       results.push({
         absolutePath,
@@ -100,12 +111,23 @@ async function main() {
     process.exit(1);
   }
 
+  const planesPdfRoot = path.join(process.cwd(), "storage", "planes-pdf");
+  const isDirectIsapreRoot =
+    path.resolve(path.dirname(sourceDir)) === path.resolve(planesPdfRoot);
+
   console.log(`Backend: ${backend}`);
   console.log(`Origen: ${sourceDir}`);
   if (dryRun) console.log("Modo dry-run (sin subir ni escribir BD)");
 
-  const files = await collectPdfFiles(sourceDir);
+  const files = await collectPdfFiles(sourceDir, isDirectIsapreRoot);
+  const isapreIdFilter = isDirectIsapreRoot
+    ? resolveIsapreIdFromName(path.basename(sourceDir))
+    : null;
+
   console.log(`PDFs encontrados: ${files.length}`);
+  if (isapreIdFilter) {
+    console.log(`Filtro isapre: ${resolveIsapreNameFromId(isapreIdFilter)} (${isapreIdFilter})`);
+  }
 
   let uploaded = 0;
   let skipped = 0;
@@ -119,6 +141,7 @@ async function main() {
           equals: file.uniqueCode,
           mode: "insensitive",
         },
+        ...(isapreIdFilter ? { isapreId: isapreIdFilter } : {}),
       },
     });
 
@@ -178,6 +201,10 @@ async function main() {
   console.log(`  - Ya sincronizados: ${skipped}`);
   console.log(`  - Sin plan en BD: ${missingPlan}`);
   console.log(`  - Errores: ${errors}`);
+
+  if (errors > 0 && uploaded === 0) {
+    process.exit(1);
+  }
 }
 
 main()

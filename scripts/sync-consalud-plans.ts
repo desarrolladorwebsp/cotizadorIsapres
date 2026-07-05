@@ -90,7 +90,7 @@ async function syncPlans(plans: HealthPlan[]) {
     if (plan.coverage.length === 0) {
       await prisma.plan.update({
         where: { uniqueCode: plan.unique_code },
-        data: { zones: resolvedZones },
+        data: { zones: resolvedZones, basePriceUf: plan.base_price_uf },
       });
       skipped += 1;
       continue;
@@ -103,7 +103,7 @@ async function syncPlans(plans: HealthPlan[]) {
       if (unchanged === plan.coverage.length) {
         await prisma.plan.update({
           where: { uniqueCode: plan.unique_code },
-          data: { zones: resolvedZones },
+          data: { zones: resolvedZones, basePriceUf: plan.base_price_uf },
         });
         skipped += 1;
         continue;
@@ -112,7 +112,7 @@ async function syncPlans(plans: HealthPlan[]) {
 
     await prisma.plan.update({
       where: { uniqueCode: plan.unique_code },
-      data: { zones: resolvedZones },
+      data: { zones: resolvedZones, basePriceUf: plan.base_price_uf },
     });
 
     await prisma.coverageEntry.deleteMany({
