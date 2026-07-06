@@ -165,16 +165,19 @@ export function AdminTableHeaderCell({
 export function AdminTableCell({
   children,
   align = "left",
+  valign = "middle",
   className,
 }: {
   children: ReactNode;
   align?: "left" | "right" | "center";
+  valign?: "top" | "middle";
   className?: string;
 }) {
   return (
     <td
       className={joinClasses(
-        "px-4 py-3.5 align-top",
+        "px-4 py-3.5",
+        valign === "top" ? "align-top" : "align-middle",
         align === "right" ? "text-right" : align === "center" ? "text-center" : "text-left",
         className,
       )}
@@ -184,26 +187,52 @@ export function AdminTableCell({
   );
 }
 
+export function TableCellStack({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={joinClasses(
+        "flex min-h-[3rem] flex-col justify-center gap-1",
+        className,
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
 export function AdminBadge({
   children,
   tone = "neutral",
+  className,
+  title,
 }: {
   children: ReactNode;
-  tone?: "neutral" | "success" | "warning" | "info" | "primary";
+  tone?: "neutral" | "success" | "warning" | "info" | "primary" | "danger";
+  className?: string;
+  title?: string;
 }) {
   const toneClass = {
     neutral: "bg-zinc-100 text-zinc-700",
-    success: "bg-emerald-100 text-emerald-900",
-    warning: "bg-amber-100 text-amber-900",
-    info: "bg-sky-100 text-sky-900",
-    primary: "bg-primary/10 text-primary-dark",
+    success: "bg-emerald-100 text-emerald-900 ring-1 ring-inset ring-emerald-200",
+    warning: "bg-amber-100 text-amber-900 ring-1 ring-inset ring-amber-200",
+    info: "bg-sky-100 text-sky-900 ring-1 ring-inset ring-sky-200",
+    primary: "bg-primary/10 text-primary-dark ring-1 ring-inset ring-primary/20",
+    danger: "bg-red-100 text-red-900 ring-1 ring-inset ring-red-200",
   }[tone];
 
   return (
     <span
+      title={title}
       className={joinClasses(
-        "inline-flex rounded-full px-2.5 py-1 text-xs font-semibold",
+        "inline-flex max-w-full items-center rounded-full px-2.5 py-1 text-xs font-semibold leading-none",
         toneClass,
+        className,
       )}
     >
       {children}
@@ -211,8 +240,18 @@ export function AdminBadge({
   );
 }
 
-export function AdminRowActions({ children }: { children: ReactNode }) {
-  return <div className="flex flex-wrap gap-2">{children}</div>;
+export function AdminRowActions({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={joinClasses("flex flex-wrap items-center gap-2", className)}>
+      {children}
+    </div>
+  );
 }
 
 export function AdminRefreshButton({

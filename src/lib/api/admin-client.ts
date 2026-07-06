@@ -85,6 +85,17 @@ export async function fetchExecutiveClients(): Promise<UserRecord[]> {
   return parseJsonResponse<UserRecord[]>(response);
 }
 
+export async function createExecutiveClient(
+  input: import("@/types/user").CreateManualClientInput,
+): Promise<UserRecord> {
+  const response = await fetch("/api/executive/clients", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  return parseJsonResponse<UserRecord>(response);
+}
+
 export async function fetchQuoteById(quoteId: string): Promise<QuoteRecord> {
   const response = await fetch(`/api/quotes/${encodeURIComponent(quoteId)}`);
   return parseJsonResponse<QuoteRecord>(response);
@@ -287,6 +298,30 @@ export async function updateClientPipeline(
     },
   );
   return parseJsonResponse<UserRecord>(response);
+}
+
+export async function updateClientAdvisedPlan(
+  clientId: string,
+  input: import("@/types/client-plan").UpdateClientAdvisedPlanInput,
+): Promise<UserRecord> {
+  const response = await fetch(
+    `/api/executive/clients/${encodeURIComponent(clientId)}/advised-plan`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+  );
+  return parseJsonResponse<UserRecord>(response);
+}
+
+export async function fetchClientActivities(
+  clientId: string,
+): Promise<import("@/types/client-activity").ClientActivityRecord[]> {
+  const response = await fetch(
+    `/api/executive/clients/${encodeURIComponent(clientId)}/activities`,
+  );
+  return parseJsonResponse(response);
 }
 
 export async function updateStaffAccount(

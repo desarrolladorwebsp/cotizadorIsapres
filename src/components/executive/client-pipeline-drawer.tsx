@@ -6,6 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AdminFormModal } from "@/components/admin/admin-data-table";
 import { ClientPipelineStatusBadge } from "@/components/executive/client-pipeline-status-badge";
+import { ClientAdvisedPlanSection } from "@/components/executive/client-advised-plan-section";
+import {
+  ClientProfileForm,
+  userRecordToProfileFormValue,
+  type ClientProfileFormValue,
+} from "@/components/executive/client-profile-form";
 import { updateClientPipeline } from "@/lib/api/admin-client";
 import {
   buildEmptyClosedRecord,
@@ -53,14 +59,25 @@ export function ClientPipelineDrawer({
     buildEmptyClosedRecord(),
   );
   const [pipelineNotes, setPipelineNotes] = useState("");
+  const [profileForm, setProfileForm] = useState<ClientProfileFormValue>(
+    userRecordToProfileFormValue(null),
+  );
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!open || !client) return;
     setPipelineStatus(client.pipelineStatus ?? "NUEVO");
     setChecklist(client.checklist ?? buildDefaultClientChecklist());
-    setClosedRecord(client.closedRecord ?? buildEmptyClosedRecord());
+    const nextClosedRecord = client.closedRecord ?? buildEmptyClosedRecord();
+    const advisedPlan = client.advisedPlan ?? client.requestedPlan;
+    if (advisedPlan && !nextClosedRecord.isapre.trim()) {
+      nextClosedRecord.isapre = advisedPlan.isapre;
+      nextClosedRecord.planCode = advisedPlan.planCode;
+      nextClosedRecord.planName = advisedPlan.planName;
+    }
+    setClosedRecord(nextClosedRecord);
     setPipelineNotes(client.pipelineNotes ?? "");
+    setProfileForm(userRecordToProfileFormValue(client));
   }, [open, client]);
 
   const checklistProgress = useMemo(() => {
@@ -101,8 +118,22 @@ export function ClientPipelineDrawer({
       const updated = await updateClientPipeline(client.id, {
         pipelineStatus,
         checklist,
-        closedRecord:
-          pipelineStatus === "CERRADO" ? closedRecord : client.closedRecord,
+        clientProfile: {
+          email: profileForm.email.trim(),
+          phone: profileForm.phone.trim() || null,
+          rut: profileForm.rut.trim() || null,
+          firstNames: profileForm.firstNames.trim(),
+          lastNames: profileForm.lastNames.trim(),
+          birthDate: profileForm.birthDate || null,
+          currentIsapre: profileForm.currentIsapre || null,
+          heightCm: profileForm.heightCm || null,
+          weightKg: profileForm.weightKg || null,
+          maritalStatus: profileForm.maritalStatus || null,
+          address: profileForm.address || null,
+          commune: profileForm.commune || null,
+          dependents: profileForm.dependents,
+        },
+        ...(pipelineStatus === "CERRADO" ? { closedRecord } : {}),
         pipelineNotes: pipelineNotes.trim() || null,
       });
       onUpdated(updated);
@@ -123,10 +154,18 @@ export function ClientPipelineDrawer({
       open={open}
       onClose={onClose}
       title={client.fullName}
-      description="Gestiona el estado, checklist de documentos Isapre y registro de cierre."
-      size="lg"
+      description="Datos del titular, cargas, documentos solicitados y seguimiento comercial."
+      size="xl"
     >
       <div className="space-y-6">
+        <ClientAdvisedPlanSection
+          client={client}
+          onUpdated={onUpdated}
+          onNotify={onNotify}
+        />
+
+        <ClientProfileForm value={profileForm} onChange={setProfileForm} />
+
         <div className="flex flex-wrap items-center gap-2">
           <ClientPipelineStatusBadge status={pipelineStatus} />
           <span className="text-xs text-muted">
@@ -167,10 +206,10 @@ export function ClientPipelineDrawer({
 
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-3">
-            <h3 className="text-sm font-semibold text-foreground">
-              Checklist Isapre
-            </h3>
-            <span className="text-xs text-muted">Puedes ir marcando durante todo el proceso</span>
+            <h3 className="text-sm font-semibold text-foreground">Documentos</h3>
+            <span className="text-xs text-muted">
+              Marca cada documento cuando lo recibas del cliente
+            </span>
           </div>
           <ul className="space-y-2 rounded-xl border border-border bg-bg-layout/40 p-3">
             {checklist.items.map((item) => (

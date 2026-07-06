@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { updateClientPipeline } from "@/lib/api/client-pipeline-store";
+import { parseClientProfilePayload } from "@/lib/api/parse-client-profile";
 import { apiErrorResponse, parseJsonBody } from "@/lib/api/api-error";
 import { requireExecutiveOrAdminSession } from "@/lib/auth/require-auth";
 import { AUTH_REALM } from "@/lib/auth/constants";
@@ -38,6 +39,10 @@ function parsePipelinePayload(payload: unknown): UpdateClientPipelineInput {
   if (data.pipelineNotes !== undefined) {
     input.pipelineNotes =
       typeof data.pipelineNotes === "string" ? data.pipelineNotes : null;
+  }
+
+  if (data.clientProfile !== undefined) {
+    input.clientProfile = parseClientProfilePayload(data.clientProfile);
   }
 
   return input;

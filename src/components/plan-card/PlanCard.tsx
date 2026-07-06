@@ -25,6 +25,8 @@ export interface PlanCardProps {
   onChat?: () => void;
   onDownloadPdf?: () => void;
   onAddInsurance?: () => void;
+  selectLabel?: string;
+  selectVariant?: "primary" | "success";
 }
 
 export function PlanCard({
@@ -39,6 +41,8 @@ export function PlanCard({
   onChat,
   onDownloadPdf,
   onAddInsurance,
+  selectLabel,
+  selectVariant,
 }: PlanCardProps) {
   const [expanded, setExpanded] = useState(defaultExpanded); // reservado para acciones futuras
   const [isSelected, setIsSelected] = useState(selected);
@@ -65,6 +69,11 @@ export function PlanCard({
   );
 
   function handleSelect() {
+    if (onSelect && !onSelectedChange) {
+      onSelect();
+      return;
+    }
+
     const next = !isSelected;
     setIsSelected(next);
     onSelectedChange?.(next);
@@ -129,6 +138,8 @@ export function PlanCard({
         onChat={onChat}
         onDownloadPdf={handleDownloadPdf}
         onAddInsurance={onAddInsurance}
+        selectLabel={selectLabel}
+        selectVariant={selectVariant}
       />
     </motion.article>
   );

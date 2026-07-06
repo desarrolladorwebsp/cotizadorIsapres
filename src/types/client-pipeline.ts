@@ -13,7 +13,7 @@ export interface ClientChecklistItem {
   label: string;
   checked: boolean;
   checkedAt: string | null;
-  category: "titular" | "cargas" | "isapre" | "general";
+  category: "titular" | "cargas" | "isapre" | "general" | "documentos";
 }
 
 export interface ClientChecklist {
@@ -37,4 +37,5 @@ export interface UpdateClientPipelineInput {
   checklist?: ClientChecklist;
   closedRecord?: ClientClosedRecord | null;
   pipelineNotes?: string | null;
+  clientProfile?: import("@/types/client-profile").ClientProfileInput;
 }

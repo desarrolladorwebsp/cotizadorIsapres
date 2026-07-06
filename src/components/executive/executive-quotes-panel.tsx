@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { AdminBadge } from "@/components/admin/admin-data-table";
 import { Input } from "@/components/ui/input";
 import {
   AdminPanel,
@@ -15,12 +14,14 @@ import {
   AdminTableHeaderCell,
   AdminTableRow,
   AdminToolbar,
+  TableCellStack,
 } from "@/components/admin/admin-data-table";
 import {
   QuoteLeadActions,
   QuoteLeadActionsHint,
   QuoteStatusBadge,
 } from "@/components/lead/quote-lead-actions";
+import { CotizadorSourceBadge } from "@/components/executive/cotizador-source-badge";
 import { useStaffSession } from "@/hooks/use-auth-session";
 import {
   assignQuoteToExecutive,
@@ -29,12 +30,14 @@ import {
   updateQuoteLead,
 } from "@/lib/api/admin-client";
 import { getPlanPdfDownloadUrl } from "@/lib/plan-pdf";
+import { resolveCotizadorSourceFromQuote } from "@/lib/partner-entity/source-label";
 import { formatPlanClp, formatQuotedUf } from "@/lib/plan-format";
 import {
   QUOTE_STATUS_LABELS,
   QUOTE_STATUS_OPTIONS,
 } from "@/lib/quote-status";
-import { ui, touchTarget } from "@/lib/ui-tokens";
+import { executiveStatToneClass } from "@/lib/executive/action-styles";
+import { ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type { QuoteRecord, QuoteStatus } from "@/types/quote";
 import type { StaffAccountRecord } from "@/types/staff-account";
@@ -117,6 +120,9 @@ export function ExecutiveQuotesPanel({ onNotify }: ExecutiveQuotesPanelProps) {
         quote.planName,
         quote.rut,
         quote.executiveName,
+        quote.partnerEntityName,
+        quote.partnerEntitySlug,
+        resolveCotizadorSourceFromQuote(quote)?.description,
       ];
 
       return values
@@ -198,32 +204,42 @@ export function ExecutiveQuotesPanel({ onNotify }: ExecutiveQuotesPanelProps) {
         )}
       >
         {[
-          { label: "Total", value: stats.total, tone: "text-primary-dark" },
+          { label: "Total", value: stats.total, tone: "primary" as const },
           ...(isAdmin
             ? [
                 {
                   label: "Sin asignar",
                   value: stats.unassigned,
-                  tone: "text-violet-700",
+                  tone: "warning" as const,
                 },
               ]
             : []),
-          { label: "Prospectos", value: stats.prospect, tone: "text-amber-700" },
-          { label: "Contratantes", value: stats.contracting, tone: "text-sky-700" },
-          { label: "Compraron", value: stats.purchased, tone: "text-emerald-700" },
-          { label: "Rechazaron", value: stats.rejected, tone: "text-gray-600" },
+          { label: "Prospectos", value: stats.prospect, tone: "warning" as const },
+          { label: "Contratantes", value: stats.contracting, tone: "info" as const },
+          { label: "Compraron", value: stats.purchased, tone: "success" as const },
+          { label: "Rechazaron", value: stats.rejected, tone: "neutral" as const },
         ].map((item) => (
           <div
             key={item.label}
             className={joinClasses(
               "rounded-xl border bg-white px-4 py-3 shadow-sm",
               ui.border,
+              item.tone !== "neutral"
+                ? `border-l-4 ${executiveStatToneClass[item.tone as "primary" | "info" | "warning" | "success"].border}`
+                : "border-l-4 border-l-zinc-300",
             )}
           >
             <p className="text-xs font-semibold uppercase tracking-wide text-muted">
               {item.label}
             </p>
-            <p className={joinClasses("mt-1 text-2xl font-bold tabular-nums", item.tone)}>
+            <p
+              className={joinClasses(
+                "mt-1 text-2xl font-bold tabular-nums",
+                item.tone === "neutral"
+                  ? "text-gray-600"
+                  : executiveStatToneClass[item.tone as "primary" | "info" | "warning" | "success"].value,
+              )}
+            >
               {item.value}
             </p>
           </div>
@@ -296,10 +312,13 @@ export function ExecutiveQuotesPanel({ onNotify }: ExecutiveQuotesPanelProps) {
         loadingMessage="Cargando cotizaciones…"
         footer={`Mostrando ${filteredQuotes.length} de ${quotes.length} cotizaciones.`}
       >
-        <AdminTable minWidth={isAdmin ? "72rem" : "64rem"}>
+        <AdminTable minWidth={isAdmin ? "80rem" : "64rem"}>
           <AdminTableHead>
             <tr>
               <AdminTableHeaderCell>Cliente</AdminTableHeaderCell>
+              {isAdmin ? (
+                <AdminTableHeaderCell>Cotizador</AdminTableHeaderCell>
+              ) : null}
               <AdminTableHeaderCell>Plan</AdminTableHeaderCell>
               <AdminTableHeaderCell>Precio</AdminTableHeaderCell>
               {isAdmin ? (
@@ -317,78 +336,102 @@ export function ExecutiveQuotesPanel({ onNotify }: ExecutiveQuotesPanelProps) {
 
               return (
                 <AdminTableRow key={quote.id}>
-                  <AdminTableCell>
-                    <p className="font-semibold text-foreground">{quote.fullName}</p>
-                    <p className="mt-1 text-xs text-muted">{quote.email}</p>
-                    <p className="mt-1 text-xs text-muted">{quote.phone}</p>
-                    {quote.rut ? (
-                      <p className="mt-1 text-xs text-muted">RUT {quote.rut}</p>
-                    ) : null}
-                    <p className="mt-1 text-xs text-muted">{formatDate(quote.createdAt)}</p>
-                  </AdminTableCell>
-                  <AdminTableCell>
-                    <p>{quote.planName ?? "—"}</p>
-                    <p className="mt-1 text-xs text-muted">{quote.planIsapre ?? ""}</p>
-                    {pdfUrl ? (
-                      <a
-                        href={pdfUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={joinClasses(
-                          "mt-2 inline-flex text-xs font-semibold text-primary underline-offset-2 hover:underline",
-                          touchTarget,
-                        )}
-                      >
-                        Ver PDF del plan
-                      </a>
-                    ) : null}
-                  </AdminTableCell>
-                  <AdminTableCell>
-                    <p>
-                      {quote.finalPriceUf != null
-                        ? formatQuotedUf(quote.finalPriceUf)
-                        : "—"}
-                    </p>
-                    <p className="mt-1 text-xs text-muted">
-                      {quote.finalPriceClp != null
-                        ? formatPlanClp(quote.finalPriceClp)
-                        : "—"}
-                    </p>
+                  <AdminTableCell className="min-w-[11rem]">
+                    <TableCellStack className="gap-1.5">
+                      <p className="font-semibold leading-tight text-foreground">
+                        {quote.fullName}
+                      </p>
+                      <p className="truncate text-xs leading-tight text-muted">
+                        {quote.email}
+                      </p>
+                      <p className="text-xs leading-tight text-muted">
+                        {quote.phone}
+                      </p>
+                      {quote.rut ? (
+                        <p className="font-mono text-[11px] leading-tight text-muted">
+                          RUT {quote.rut}
+                        </p>
+                      ) : null}
+                      <p className="text-[11px] leading-tight text-muted">
+                        {formatDate(quote.createdAt)}
+                      </p>
+                    </TableCellStack>
                   </AdminTableCell>
                   {isAdmin ? (
-                    <AdminTableCell>
-                      {quote.executiveName ? (
-                        <AdminBadge tone="info">{quote.executiveName}</AdminBadge>
-                      ) : (
-                        <AdminBadge tone="warning">Sin asignar</AdminBadge>
-                      )}
-                      <select
-                        value={quote.executiveAccountId ?? ""}
-                        disabled={savingId === quote.id}
-                        onChange={(event) => {
-                          const value = event.target.value;
-                          void handleExecutiveChange(
-                            quote,
-                            value ? value : null,
-                          );
-                        }}
-                        className={joinClasses(
-                          "mt-2 h-9 w-full min-w-[10rem] rounded-lg px-2 text-xs",
-                          ui.input,
-                        )}
-                        aria-label="Reasignar ejecutivo"
-                      >
-                        <option value="">Sin asignar</option>
-                        {executives.map((executive) => (
-                          <option key={executive.id} value={executive.id}>
-                            {executive.fullName}
-                          </option>
-                        ))}
-                      </select>
+                    <AdminTableCell className="min-w-[8rem]">
+                      <CotizadorSourceBadge
+                        source={resolveCotizadorSourceFromQuote(quote)}
+                        compact
+                      />
+                    </AdminTableCell>
+                  ) : null}
+                  <AdminTableCell className="min-w-[10rem]">
+                    <TableCellStack>
+                      <p className="text-sm font-medium leading-tight">
+                        {quote.planName ?? "—"}
+                      </p>
+                      <p className="text-xs leading-tight text-muted">
+                        {quote.planIsapre ?? ""}
+                      </p>
+                      {pdfUrl ? (
+                        <a
+                          href={pdfUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex text-xs font-semibold text-primary underline-offset-2 hover:underline"
+                        >
+                          Ver PDF del plan
+                        </a>
+                      ) : null}
+                    </TableCellStack>
+                  </AdminTableCell>
+                  <AdminTableCell className="whitespace-nowrap">
+                    <TableCellStack>
+                      <p className="text-sm font-medium tabular-nums">
+                        {quote.finalPriceUf != null
+                          ? formatQuotedUf(quote.finalPriceUf)
+                          : "—"}
+                      </p>
+                      <p className="text-xs text-muted tabular-nums">
+                        {quote.finalPriceClp != null
+                          ? formatPlanClp(quote.finalPriceClp)
+                          : "—"}
+                      </p>
+                    </TableCellStack>
+                  </AdminTableCell>
+                  {isAdmin ? (
+                    <AdminTableCell className="min-w-[11rem]">
+                      <TableCellStack>
+                        <select
+                          value={quote.executiveAccountId ?? ""}
+                          disabled={savingId === quote.id}
+                          onChange={(event) => {
+                            const value = event.target.value;
+                            void handleExecutiveChange(
+                              quote,
+                              value ? value : null,
+                            );
+                          }}
+                          className={joinClasses(
+                            "h-9 w-full min-w-[10rem] rounded-lg px-2 text-sm",
+                            ui.input,
+                          )}
+                          aria-label="Reasignar ejecutivo"
+                        >
+                          <option value="">Sin asignar</option>
+                          {executives.map((executive) => (
+                            <option key={executive.id} value={executive.id}>
+                              {executive.fullName}
+                            </option>
+                          ))}
+                        </select>
+                      </TableCellStack>
                     </AdminTableCell>
                   ) : null}
                   <AdminTableCell>
-                    <QuoteStatusBadge status={quote.status} />
+                    <TableCellStack>
+                      <QuoteStatusBadge status={quote.status} />
+                    </TableCellStack>
                   </AdminTableCell>
                   <AdminTableCell>
                     <QuoteLeadActions

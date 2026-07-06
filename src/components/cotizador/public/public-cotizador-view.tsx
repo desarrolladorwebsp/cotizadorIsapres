@@ -618,13 +618,17 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
     dashboard.dashboardFilters,
   ]);
 
-  const pendingFullPageAutoSearch =
-    !isEmbedded &&
-    !hasSearched &&
-    !error &&
-    (deepLink.shouldAutoSearch || bootstrappedExitSearch);
+  const willAutoSearch =
+    deepLink.shouldAutoSearch || bootstrappedExitSearch;
 
-  const showFullLoading = pendingFullPageAutoSearch;
+  const showResultsLoading =
+    !error &&
+    sortedPlans.length === 0 &&
+    (loading ||
+      (!hasSearched &&
+        willAutoSearch &&
+        (boundsLoading || loading || !isEmbedded)));
+
   const hasMoreResults = total > plans.length;
   const showInlineLoading = loading && hasSearched && plans.length > 0;
 
@@ -893,9 +897,19 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
               ) : null}
 
               <div className="min-w-0 flex-1">
-                {showFullLoading ? (
-                  <PublicPlanResultsLoading message={EMBED_EXIT_LOADING_TITLE} />
-                ) : !hasSearched && !deepLink.shouldAutoSearch ? (
+                {showResultsLoading ? (
+                  <PublicPlanResultsLoading
+                    message={
+                      isEmbedded
+                        ? "Cargando planes para tu perfil…"
+                        : EMBED_EXIT_LOADING_TITLE
+                    }
+                    compact={isEmbedded}
+                    count={
+                      isEmbedded ? EMBED_WIDGET_PLANS_LIMIT : undefined
+                    }
+                  />
+                ) : !hasSearched && !willAutoSearch ? (
                   <div
                     className={joinClasses(
                       "rounded-2xl border border-dashed bg-white px-6 py-16 text-center",

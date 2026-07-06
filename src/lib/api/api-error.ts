@@ -51,8 +51,21 @@ export function toApiError(error: unknown): ApiError {
   }
 
   if (error instanceof Prisma.PrismaClientValidationError) {
+    const detail = error.message;
+    if (
+      detail.includes("pipelineStatus") ||
+      detail.includes("pipelineChecklist") ||
+      detail.includes("pipelineClosedRecord") ||
+      detail.includes("pipelineNotes")
+    ) {
+      return new ApiError(
+        "El servidor está usando una versión desactualizada de la base de datos. Reinicia con `npm run dev`.",
+        503,
+        "STALE_PRISMA_CLIENT",
+      );
+    }
     return new ApiError(
-      "Los datos del plan no son válidos para la base de datos.",
+      "Los datos enviados no son válidos para la base de datos.",
       400,
     );
   }

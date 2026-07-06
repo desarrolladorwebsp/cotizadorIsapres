@@ -33,7 +33,7 @@ export const CLIENT_PIPELINE_STATUS_DESCRIPTIONS: Record<
 
 export const CLIENT_PIPELINE_STATUS_TONES: Record<
   ClientPipelineStatus,
-  "warning" | "info" | "success" | "neutral"
+  "warning" | "info" | "success" | "neutral" | "danger"
 > = {
   NUEVO: "warning",
   CONTACTADO: "info",
@@ -42,7 +42,7 @@ export const CLIENT_PIPELINE_STATUS_TONES: Record<
   DOCUMENTACION: "warning",
   ENVIADO_ISAPRE: "info",
   CERRADO: "success",
-  PERDIDO: "neutral",
+  PERDIDO: "danger",
 };
 
 export const CLIENT_PIPELINE_STATUS_OPTIONS: ClientPipelineStatus[] = [
@@ -60,49 +60,14 @@ const DEFAULT_CHECKLIST_DEFINITIONS: Array<
   Pick<ClientChecklistItem, "id" | "label" | "category">
 > = [
   {
-    id: "cedula-titular",
-    label: "Cédula de identidad del titular (vigente)",
-    category: "titular",
+    id: "certificado-remuneraciones",
+    label: "Certificado de Remuneraciones Imponibles de los últimos 12 meses",
+    category: "documentos",
   },
   {
-    id: "cotizaciones-previsionales",
-    label: "Certificado de cotizaciones previsionales (últimos 3 meses)",
-    category: "titular",
-  },
-  {
-    id: "liquidaciones-sueldo",
-    label: "Liquidaciones de sueldo (últimos 3 meses)",
-    category: "titular",
-  },
-  {
-    id: "certificado-afiliacion",
-    label: "Certificado de afiliación o renuncia de Isapre actual",
-    category: "isapre",
-  },
-  {
-    id: "certificado-nacimiento-cargas",
-    label: "Certificado de nacimiento o matrimonio (cargas)",
-    category: "cargas",
-  },
-  {
-    id: "declaracion-salud",
-    label: "Declaración personal de salud (DPS) firmada",
-    category: "isapre",
-  },
-  {
-    id: "formulario-ingreso",
-    label: "Formulario de ingreso / contratación firmado",
-    category: "isapre",
-  },
-  {
-    id: "comprobante-domicilio",
-    label: "Comprobante de domicilio",
-    category: "general",
-  },
-  {
-    id: "autorizacion-descuento",
-    label: "Autorización de descuento por planilla (si aplica)",
-    category: "general",
+    id: "liquidaciones-ultimas",
+    label: "3 últimas liquidaciones",
+    category: "documentos",
   },
 ];
 

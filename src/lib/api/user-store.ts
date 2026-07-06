@@ -4,13 +4,90 @@ import {
   parseClientClosedRecord,
   resolveClientChecklist,
 } from "@/lib/client-pipeline/constants";
+import { resolveClientProfile, normalizeClientProfileInput } from "@/lib/client-profile/constants";
+import { resolveCotizadorSourceFromQuote } from "@/lib/partner-entity/source-label";
 import type { ClientPipelineStatus } from "@/types/client-pipeline";
-import type { UserRecord, UserRole } from "@/types/user";
-import type { User as DbUser, StaffAccount } from "@prisma/client";
+import type { ClientPlanSnapshot } from "@/types/client-plan";
+import type {
+  CreateManualClientInput,
+  UserRecord,
+  UserRole,
+  ClientOrigin,
+} from "@/types/user";
+import type {
+  Isapre,
+  Plan,
+  Quote,
+  User as DbUser,
+  StaffAccount,
+  Prisma,
+} from "@prisma/client";
 
 export type UserWithExecutive = DbUser & {
   assignedExecutive?: Pick<StaffAccount, "id" | "fullName" | "email"> | null;
 };
+
+type PlanSummary = Pick<Plan, "uniqueCode" | "planName"> & {
+  isapreRef: Pick<Isapre, "name">;
+};
+
+type QuoteWithPlan = Quote & {
+  plan: PlanSummary | null;
+};
+
+export type ClientRecordWithPlans = DbUser & {
+  assignedExecutive?: Pick<StaffAccount, "id" | "fullName" | "email"> | null;
+  quotes?: QuoteWithPlan[];
+  advisedPlan?: PlanSummary | null;
+};
+
+export const clientRecordInclude = {
+  assignedExecutive: {
+    select: { id: true, fullName: true, email: true },
+  },
+  quotes: {
+    orderBy: { createdAt: "desc" as const },
+    take: 1,
+    include: {
+      plan: {
+        select: {
+          uniqueCode: true,
+          planName: true,
+          isapreRef: { select: { name: true } },
+        },
+      },
+    },
+  },
+  advisedPlan: {
+    select: {
+      uniqueCode: true,
+      planName: true,
+      isapreRef: { select: { name: true } },
+    },
+  },
+} as const;
+
+function mapPlanSummary(plan: PlanSummary | null | undefined): ClientPlanSnapshot | null {
+  if (!plan) return null;
+  return {
+    planCode: plan.uniqueCode,
+    planName: plan.planName,
+    isapre: plan.isapreRef.name,
+  };
+}
+
+function mapRequestedPlan(quote: QuoteWithPlan | undefined): ClientPlanSnapshot | null {
+  if (!quote?.planCode && !quote?.plan) return null;
+
+  return {
+    planCode: quote.planCode ?? quote.plan?.uniqueCode ?? "",
+    planName: quote.plan?.planName ?? "",
+    isapre: quote.plan?.isapreRef?.name ?? "",
+    finalPriceUf: quote.finalPriceUf,
+    finalPriceClp: quote.finalPriceClp,
+    quotedAt: quote.createdAt.toISOString(),
+  };
+}
 
 export function mapDbUser(user: UserWithExecutive): UserRecord {
   return {
@@ -27,12 +104,49 @@ export function mapDbUser(user: UserWithExecutive): UserRecord {
     checklist: resolveClientChecklist(user.pipelineChecklist),
     closedRecord: parseClientClosedRecord(user.pipelineClosedRecord),
     pipelineNotes: user.pipelineNotes,
+    clientProfile: resolveClientProfile(user.clientProfile, {
+      fullName: user.fullName,
+    }),
+    clientOrigin: user.clientOrigin as ClientOrigin,
     createdAt: user.createdAt.toISOString(),
     updatedAt: user.updatedAt.toISOString(),
   };
 }
 
+export function mapDbClientRecord(user: ClientRecordWithPlans): UserRecord {
+  const latestQuote = user.quotes?.[0];
+  const cotizadorSource = latestQuote
+    ? resolveCotizadorSourceFromQuote(latestQuote)
+    : null;
+
+  return {
+    ...mapDbUser(user),
+    requestedPlan: mapRequestedPlan(latestQuote),
+    advisedPlan: mapPlanSummary(user.advisedPlan),
+    cotizadorSource,
+  };
+}
+
+export async function readClientOrThrow(
+  userId: string,
+): Promise<ClientRecordWithPlans> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: clientRecordInclude,
+  });
+
+  if (!user || user.role !== "CLIENT") {
+    throw new ApiError("Cliente no encontrado.", 404, "NOT_FOUND");
+  }
+
+  return user;
+}
+
 export async function readUsers(role?: UserRole): Promise<UserRecord[]> {
+  if (role === "CLIENT") {
+    return readClientRecords();
+  }
+
   const users = await prisma.user.findMany({
     where: role ? { role } : undefined,
     orderBy: [{ role: "asc" }, { fullName: "asc" }],
@@ -49,13 +163,9 @@ export async function readUsers(role?: UserRole): Promise<UserRecord[]> {
 export async function readUserById(id: string): Promise<UserRecord | null> {
   const user = await prisma.user.findUnique({
     where: { id },
-    include: {
-      assignedExecutive: {
-        select: { id: true, fullName: true, email: true },
-      },
-    },
+    include: clientRecordInclude,
   });
-  return user ? mapDbUser(user) : null;
+  return user ? mapDbClientRecord(user) : null;
 }
 
 export async function readUserByEmail(
@@ -115,6 +225,7 @@ export async function upsertUserByEmail(
       rut: input.rut?.trim() ?? null,
       role: input.role ?? "CLIENT",
       active: input.active ?? true,
+      clientOrigin: "COTIZADOR",
     },
     update: {
       fullName: input.fullName.trim(),
@@ -122,6 +233,7 @@ export async function upsertUserByEmail(
       rut: input.rut?.trim() ?? null,
       role: input.role ?? undefined,
       active: input.active ?? undefined,
+      clientOrigin: "COTIZADOR",
     },
     include: {
       assignedExecutive: {
@@ -133,6 +245,20 @@ export async function upsertUserByEmail(
   return mapDbUser(user);
 }
 
+export async function readClientRecords(): Promise<UserRecord[]> {
+  const users = await prisma.user.findMany({
+    where: { role: "CLIENT" },
+    orderBy: [
+      { clientOrigin: "asc" },
+      { createdAt: "desc" },
+      { fullName: "asc" },
+    ],
+    include: clientRecordInclude,
+  });
+
+  return users.map(mapDbClientRecord);
+}
+
 export async function readClientsForExecutive(
   executiveAccountId: string,
 ): Promise<UserRecord[]> {
@@ -141,15 +267,70 @@ export async function readClientsForExecutive(
       role: "CLIENT",
       assignedExecutiveId: executiveAccountId,
     },
-    orderBy: [{ fullName: "asc" }, { email: "asc" }],
-    include: {
-      assignedExecutive: {
-        select: { id: true, fullName: true, email: true },
-      },
-    },
+    orderBy: [
+      { clientOrigin: "asc" },
+      { createdAt: "desc" },
+      { fullName: "asc" },
+    ],
+    include: clientRecordInclude,
   });
 
-  return users.map(mapDbUser);
+  return users.map(mapDbClientRecord);
+}
+
+export async function createManualClient(
+  input: CreateManualClientInput,
+  actor: { executiveAccountId: string; isAdmin: boolean },
+): Promise<UserRecord> {
+  let normalized;
+  try {
+    normalized = normalizeClientProfileInput(input);
+  } catch (error) {
+    throw new ApiError(
+      error instanceof Error ? error.message : "Datos inválidos.",
+      400,
+      "INVALID_INPUT",
+    );
+  }
+
+  const existing = await prisma.user.findUnique({
+    where: { email: normalized.email },
+    select: { id: true, role: true },
+  });
+
+  if (existing) {
+    throw new ApiError(
+      "Ya existe un cliente con ese correo electrónico.",
+      409,
+      "EMAIL_EXISTS",
+    );
+  }
+
+  let assignedExecutiveId: string | null = actor.executiveAccountId;
+  if (actor.isAdmin && input.assignedExecutiveId !== undefined) {
+    assignedExecutiveId = input.assignedExecutiveId;
+    if (assignedExecutiveId) {
+      await assertAssignableExecutive(assignedExecutiveId);
+    }
+  }
+
+  const user = await prisma.user.create({
+    data: {
+      email: normalized.email,
+      fullName: normalized.fullName,
+      phone: normalized.phone,
+      rut: normalized.rut,
+      role: "CLIENT",
+      active: true,
+      clientOrigin: "MANUAL",
+      assignedExecutiveId,
+      pipelineNotes: input.pipelineNotes?.trim() || null,
+      clientProfile: normalized.profile as unknown as Prisma.InputJsonValue,
+    },
+    include: clientRecordInclude,
+  });
+
+  return mapDbClientRecord(user);
 }
 
 async function syncClientQuotesExecutive(
@@ -203,16 +384,12 @@ export async function assignUserToExecutive(
   const user = await prisma.user.update({
     where: { id: userId },
     data: { assignedExecutiveId: executiveAccountId },
-    include: {
-      assignedExecutive: {
-        select: { id: true, fullName: true, email: true },
-      },
-    },
+    include: clientRecordInclude,
   });
 
   if (executiveAccountId) {
     await syncClientQuotesExecutive(userId, executiveAccountId);
   }
 
-  return mapDbUser(user);
+  return mapDbClientRecord(user);
 }

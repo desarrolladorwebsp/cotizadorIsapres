@@ -2,7 +2,15 @@ import type { ButtonHTMLAttributes } from "react";
 import { ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 
-type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+type ButtonVariant =
+  | "primary"
+  | "secondary"
+  | "ghost"
+  | "danger"
+  | "success"
+  | "whatsapp"
+  | "info"
+  | "warning";
 type ButtonSize = "md" | "sm" | "lg";
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -20,6 +28,13 @@ const variantStyles: Record<ButtonVariant, string> = {
   danger: ui.dangerGhost,
   ghost:
     "bg-transparent text-foreground hover:bg-surface-hover active:bg-surface-hover/80",
+  success:
+    "border border-emerald-200 bg-emerald-600 text-white shadow-sm hover:bg-emerald-700 active:scale-[0.98]",
+  whatsapp:
+    "border border-[#1da851]/30 bg-[#25D366] text-white shadow-sm hover:brightness-105 active:scale-[0.98]",
+  info: "border border-sky-200 bg-sky-600 text-white shadow-sm hover:bg-sky-700 active:scale-[0.98]",
+  warning:
+    "border border-amber-200 bg-amber-500 text-amber-950 shadow-sm hover:bg-amber-400 active:scale-[0.98]",
 };
 
 const sizeStyles: Record<ButtonSize, string> = {

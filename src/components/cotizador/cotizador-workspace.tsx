@@ -1,12 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import { FiltersFab, FiltersSidebar } from "@/components/filters";
 import { PlanResultsList } from "@/components/plan-card";
 import { CotizadorHeader, type CotizadorHeaderVariant } from "@/components/cotizador/cotizador-header";
 import { CotizadorNav } from "@/components/cotizador/cotizador-nav";
+import { AssignPlanToClientModal } from "@/components/executive/assign-plan-to-client-modal";
 import { useCotizadorDashboard } from "@/hooks/use-cotizador-dashboard";
 import { usePlansCatalog } from "@/hooks/use-plans-catalog";
 import { formatPlanClp, formatPlanUf } from "@/domain";
+import type { HealthPlan } from "@/domain";
 import {
   appShell,
   appShellRoot,
@@ -21,14 +24,22 @@ export interface CotizadorWorkspaceProps {
   variant: CotizadorHeaderVariant;
   /** Oculta header y nav globales cuando el panel ejecutivo ya provee la navegación. */
   embeddedInExecutiveShell?: boolean;
+  onNotify?: (message: string, tone?: "success" | "error") => void;
 }
 
 export function CotizadorWorkspace({
   variant,
   embeddedInExecutiveShell = false,
+  onNotify,
 }: CotizadorWorkspaceProps) {
   const { plans, loading, error } = usePlansCatalog();
   const dashboard = useCotizadorDashboard(plans);
+  const [assignPlan, setAssignPlan] = useState<HealthPlan | null>(null);
+  const isExecutive = variant === "executive";
+
+  function notify(message: string, tone: "success" | "error" = "success") {
+    onNotify?.(message, tone);
+  }
 
   return (
     <div
@@ -253,6 +264,9 @@ export function CotizadorWorkspace({
                 plans={dashboard.filteredPlans}
                 beneficiarySummary={dashboard.beneficiarySummary}
                 ufToClp={dashboard.ufToClp}
+                onAssignPlan={
+                  isExecutive ? (plan) => setAssignPlan(plan) : undefined
+                }
               />
             ) : (
               <div
@@ -278,6 +292,18 @@ export function CotizadorWorkspace({
         visible={!dashboard.sidebarOpen && !dashboard.isLargeScreen}
         onClick={() => dashboard.setSidebarOpen(true)}
       />
+
+      {isExecutive ? (
+        <AssignPlanToClientModal
+          plan={assignPlan}
+          beneficiarySummary={dashboard.beneficiarySummary}
+          ufToClp={dashboard.ufToClp}
+          open={Boolean(assignPlan)}
+          onClose={() => setAssignPlan(null)}
+          onAssigned={() => undefined}
+          onNotify={notify}
+        />
+      ) : null}
     </div>
   );
 }

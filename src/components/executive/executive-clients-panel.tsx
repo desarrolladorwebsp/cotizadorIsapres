@@ -4,7 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  AdminBadge,
+  IconSettings,
+  IconUserPlus,
+  IconWhatsApp,
+} from "@/components/executive/executive-icons";
+import { executiveLeadBannerClass } from "@/lib/executive/action-styles";
+import {
   AdminPanel,
   AdminPanelHeader,
   AdminRefreshButton,
@@ -15,7 +20,9 @@ import {
   AdminTableHead,
   AdminTableHeaderCell,
   AdminTableRow,
+  AdminRowActions,
   AdminToolbar,
+  TableCellStack,
 } from "@/components/admin/admin-data-table";
 import {
   assignClientToExecutive,
@@ -26,6 +33,10 @@ import {
 import { useStaffSession } from "@/hooks/use-auth-session";
 import { ClientPipelineDrawer } from "@/components/executive/client-pipeline-drawer";
 import { ClientPipelineStatusBadge } from "@/components/executive/client-pipeline-status-badge";
+import { ClientPlanSummary } from "@/components/executive/client-plan-summary";
+import { ClientOriginBadge } from "@/components/executive/client-origin-badge";
+import { CotizadorSourceBadge } from "@/components/executive/cotizador-source-badge";
+import { CreateClientModal } from "@/components/executive/create-client-modal";
 import { buildClientWhatsAppMessage } from "@/lib/client-pipeline/constants";
 import { buildWhatsAppUrl } from "@/lib/partner-entity/theme";
 import { ui } from "@/lib/ui-tokens";
@@ -55,6 +66,7 @@ export function ExecutiveClientsPanel({
   const [savingId, setSavingId] = useState<string | null>(null);
   const [distributing, setDistributing] = useState(false);
   const [pipelineClient, setPipelineClient] = useState<UserRecord | null>(null);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
 
   async function loadClients() {
     setLoading(true);
@@ -67,9 +79,7 @@ export function ExecutiveClientsPanel({
       setExecutives(nextExecutives);
     } catch (error) {
       onNotify(
-        error instanceof Error
-          ? error.message
-          : "No se pudieron cargar los clientes asignados.",
+        error instanceof Error ? error.message : "No se pudieron cargar los clientes.",
         "error",
       );
     } finally {
@@ -86,7 +96,15 @@ export function ExecutiveClientsPanel({
     if (!query) return clients;
 
     return clients.filter((client) =>
-      [client.fullName, client.email, client.phone, client.rut]
+      [
+        client.fullName,
+        client.email,
+        client.phone,
+        client.rut,
+        client.cotizadorSource?.label,
+        client.cotizadorSource?.slug,
+        client.cotizadorSource?.description,
+      ]
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(query)),
     );
@@ -94,6 +112,11 @@ export function ExecutiveClientsPanel({
 
   const unassignedCount = useMemo(
     () => clients.filter((client) => !client.assignedExecutiveId).length,
+    [clients],
+  );
+
+  const assignedLeadCount = useMemo(
+    () => clients.filter((client) => client.clientOrigin === "COTIZADOR").length,
     [clients],
   );
 
@@ -145,19 +168,23 @@ export function ExecutiveClientsPanel({
   return (
     <AdminPanel>
       <AdminPanelHeader
-        title={isAdmin ? "Clientes del cotizador" : "Clientes asignados"}
+        title="Clientes"
         description={
           isAdmin
-            ? "Clientes del cotizador público y widget. La asignación a ejecutivos es automática (round-robin 1×1) o manual si falla."
-            : "Personas vinculadas a tu cuenta. Contacta directamente desde los datos registrados."
+            ? "Cartera completa del cotizador: leads asignados automáticamente y registros manuales de ejecutivos."
+            : "Tu cartera de clientes: agrega personas que captaste por tu cuenta y gestiona los leads que el sistema te asigne."
         }
         actions={
           <>
             <AdminRefreshButton onClick={() => void loadClients()} />
+            <Button size="sm" variant="success" onClick={() => setCreateModalOpen(true)}>
+              <IconUserPlus className="mr-1.5 size-4" />
+              Agregar cliente
+            </Button>
             {isAdmin && unassignedCount > 0 ? (
               <Button
                 size="sm"
-                variant="secondary"
+                variant="warning"
                 disabled={distributing}
                 onClick={() => void handleDistributeUnassigned()}
               >
@@ -169,6 +196,16 @@ export function ExecutiveClientsPanel({
           </>
         }
       />
+
+      {!isAdmin && assignedLeadCount > 0 ? (
+        <p className={executiveLeadBannerClass()}>
+          Tienes{" "}
+          <span className="font-semibold">{assignedLeadCount}</span>{" "}
+          {assignedLeadCount === 1 ? "lead del cotizador" : "leads del cotizador"}{" "}
+          asignados automáticamente. El color de la etiqueta indica desde qué
+          cotizador provienen.
+        </p>
+      ) : null}
 
       <AdminToolbar>
         <Input
@@ -182,25 +219,28 @@ export function ExecutiveClientsPanel({
       <AdminTableCard
         loading={loading}
         empty={!loading && filteredClients.length === 0}
-        emptyTitle={
-          isAdmin ? "No hay clientes registrados" : "No tienes clientes asignados"
-        }
+        emptyTitle="Aún no tienes clientes"
         emptyDescription={
           isAdmin
-            ? "Los clientes aparecerán aquí cuando soliciten cotizaciones."
-            : "Cuando el administrador te asigne clientes, aparecerán en esta lista."
+            ? "Los clientes aparecerán cuando soliciten cotizaciones o cuando un ejecutivo los registre manualmente."
+            : "Agrega clientes que captaste por tu cuenta o espera leads asignados desde el cotizador."
         }
         loadingMessage="Cargando clientes…"
         footer={`Mostrando ${filteredClients.length} de ${clients.length} clientes.`}
       >
-        <AdminTable minWidth="52rem">
+        <AdminTable minWidth={isAdmin ? "72rem" : "64rem"}>
           <AdminTableHead>
             <tr>
               <AdminTableHeaderCell>Cliente</AdminTableHeaderCell>
+              <AdminTableHeaderCell>Origen</AdminTableHeaderCell>
+              {isAdmin ? (
+                <AdminTableHeaderCell>Cotizador</AdminTableHeaderCell>
+              ) : null}
+              <AdminTableHeaderCell>Plan</AdminTableHeaderCell>
               <AdminTableHeaderCell>Contacto</AdminTableHeaderCell>
               <AdminTableHeaderCell>RUT</AdminTableHeaderCell>
               {isAdmin ? (
-                <AdminTableHeaderCell>Ejecutivo asignado</AdminTableHeaderCell>
+                <AdminTableHeaderCell>Ejecutivo</AdminTableHeaderCell>
               ) : null}
               <AdminTableHeaderCell>Registro</AdminTableHeaderCell>
               <AdminTableHeaderCell>Acciones</AdminTableHeaderCell>
@@ -209,53 +249,87 @@ export function ExecutiveClientsPanel({
           <AdminTableBody>
             {filteredClients.map((client) => (
               <AdminTableRow key={client.id}>
-                <AdminTableCell>
-                  <p className="font-semibold text-foreground">{client.fullName}</p>
-                  <div className="mt-1">
+                <AdminTableCell className="min-w-[11rem]">
+                  <TableCellStack>
+                    <p className="font-semibold leading-tight text-foreground">
+                      {client.fullName}
+                    </p>
                     <ClientPipelineStatusBadge status={client.pipelineStatus} />
-                  </div>
+                  </TableCellStack>
                 </AdminTableCell>
-                <AdminTableCell>
-                  <p>{client.email}</p>
-                  {client.phone ? (
-                    <p className="mt-1 text-xs text-muted">{client.phone}</p>
-                  ) : null}
+                <AdminTableCell className="whitespace-nowrap">
+                  <TableCellStack>
+                    <ClientOriginBadge
+                      origin={client.clientOrigin}
+                      cotizadorSource={client.cotizadorSource}
+                    />
+                  </TableCellStack>
                 </AdminTableCell>
-                <AdminTableCell>{client.rut ?? "—"}</AdminTableCell>
                 {isAdmin ? (
-                  <AdminTableCell>
-                    {client.assignedExecutiveName ? (
-                      <AdminBadge tone="info">
-                        {client.assignedExecutiveName}
-                      </AdminBadge>
-                    ) : (
-                      <AdminBadge tone="warning">Sin asignar</AdminBadge>
-                    )}
-                    <select
-                      value={client.assignedExecutiveId ?? ""}
-                      disabled={savingId === client.id}
-                      onChange={(event) => {
-                        const value = event.target.value;
-                        void handleAssignExecutive(client, value || null);
-                      }}
-                      className={joinClasses(
-                        "mt-2 h-9 w-full min-w-[10rem] rounded-lg px-2 text-xs",
-                        ui.input,
-                      )}
-                      aria-label={`Asignar ejecutivo a ${client.fullName}`}
-                    >
-                      <option value="">Sin asignar</option>
-                      {executives.map((executive) => (
-                        <option key={executive.id} value={executive.id}>
-                          {executive.fullName}
-                        </option>
-                      ))}
-                    </select>
+                  <AdminTableCell className="min-w-[8rem]">
+                    <CotizadorSourceBadge
+                      source={client.cotizadorSource}
+                      compact
+                    />
                   </AdminTableCell>
                 ) : null}
-                <AdminTableCell>{formatDate(client.createdAt)}</AdminTableCell>
+                <AdminTableCell className="min-w-[12rem]">
+                  <ClientPlanSummary
+                    requestedPlan={client.requestedPlan}
+                    advisedPlan={client.advisedPlan}
+                    compact
+                  />
+                </AdminTableCell>
+                <AdminTableCell className="min-w-[10rem]">
+                  <TableCellStack>
+                    <p className="truncate text-sm leading-tight">{client.email}</p>
+                    <p className="text-xs leading-tight text-muted">
+                      {client.phone ?? "Sin teléfono"}
+                    </p>
+                  </TableCellStack>
+                </AdminTableCell>
+                <AdminTableCell className="whitespace-nowrap">
+                  <TableCellStack>
+                    <span className="font-mono text-sm tabular-nums">
+                      {client.rut ?? "—"}
+                    </span>
+                  </TableCellStack>
+                </AdminTableCell>
+                {isAdmin ? (
+                  <AdminTableCell className="min-w-[11rem]">
+                    <TableCellStack>
+                      <select
+                        value={client.assignedExecutiveId ?? ""}
+                        disabled={savingId === client.id}
+                        onChange={(event) => {
+                          const value = event.target.value;
+                          void handleAssignExecutive(client, value || null);
+                        }}
+                        className={joinClasses(
+                          "h-9 w-full min-w-[10rem] rounded-lg px-2 text-sm",
+                          ui.input,
+                        )}
+                        aria-label={`Asignar ejecutivo a ${client.fullName}`}
+                      >
+                        <option value="">Sin asignar</option>
+                        {executives.map((executive) => (
+                          <option key={executive.id} value={executive.id}>
+                            {executive.fullName}
+                          </option>
+                        ))}
+                      </select>
+                    </TableCellStack>
+                  </AdminTableCell>
+                ) : null}
+                <AdminTableCell className="whitespace-nowrap">
+                  <TableCellStack>
+                    <span className="text-sm tabular-nums">
+                      {formatDate(client.createdAt)}
+                    </span>
+                  </TableCellStack>
+                </AdminTableCell>
                 <AdminTableCell>
-                  <div className="flex flex-wrap gap-2">
+                  <AdminRowActions className="flex-nowrap">
                     {client.phone ? (
                       <a
                         href={buildWhatsAppUrl(
@@ -265,28 +339,41 @@ export function ExecutiveClientsPanel({
                         target="_blank"
                         rel="noopener noreferrer"
                       >
-                        <Button size="sm" variant="secondary">
+                        <Button size="sm" variant="whatsapp">
+                          <IconWhatsApp className="mr-1.5 size-3.5" />
                           WhatsApp
                         </Button>
                       </a>
                     ) : (
-                      <Button size="sm" variant="secondary" disabled>
+                      <Button size="sm" variant="ghost" disabled className="opacity-50">
+                        <IconWhatsApp className="mr-1.5 size-3.5" />
                         WhatsApp
                       </Button>
                     )}
                     <Button
                       size="sm"
+                      variant="primary"
                       onClick={() => setPipelineClient(client)}
                     >
+                      <IconSettings className="mr-1.5 size-3.5" />
                       Gestionar
                     </Button>
-                  </div>
+                  </AdminRowActions>
                 </AdminTableCell>
               </AdminTableRow>
             ))}
           </AdminTableBody>
         </AdminTable>
       </AdminTableCard>
+
+      <CreateClientModal
+        open={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        onCreated={(created) => {
+          setClients((current) => [created, ...current]);
+        }}
+        onNotify={onNotify}
+      />
 
       <ClientPipelineDrawer
         client={pipelineClient}
@@ -296,6 +383,7 @@ export function ExecutiveClientsPanel({
           setClients((current) =>
             current.map((row) => (row.id === updated.id ? updated : row)),
           );
+          setPipelineClient(updated);
         }}
         onNotify={onNotify}
       />

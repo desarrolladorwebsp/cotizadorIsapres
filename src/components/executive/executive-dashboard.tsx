@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CotizadorWorkspace } from "@/components/cotizador/cotizador-workspace";
-import { AdminToast } from "@/components/admin/admin-toast";
+import { ExecutiveToastStack } from "@/components/executive/executive-toast";
+import { useExecutiveToast } from "@/hooks/use-executive-toast";
 import { ClinicsPanel } from "@/components/admin/clinics-panel";
 import { GesPanel } from "@/components/admin/ges-panel";
 import { UsersPanel } from "@/components/admin/users-panel";
@@ -38,17 +39,7 @@ export function ExecutiveDashboard() {
   const [plans, setPlans] = useState<HealthPlan[]>([]);
   const [clinics, setClinics] = useState<Clinic[]>([]);
   const [loadingCatalog, setLoadingCatalog] = useState(false);
-  const [toast, setToast] = useState<{
-    message: string;
-    tone?: "success" | "error";
-  } | null>(null);
-
-  const notify = useCallback(
-    (message: string, tone: "success" | "error" = "success") => {
-      setToast({ message, tone });
-    },
-    [],
-  );
+  const { toasts, notify, dismiss } = useExecutiveToast();
 
   useEffect(() => {
     const querySection = searchParams.get(STAFF_SECTION_QUERY);
@@ -102,15 +93,14 @@ export function ExecutiveDashboard() {
         onSectionChange={handleSectionChange}
         hasAdminAccess={isAdmin}
       >
-        {section === "inicio" ? (
-          <ExecutiveDashboardHome
-            hasAdminAccess={isAdmin}
-            onNavigate={handleSectionChange}
-          />
-        ) : null}
+        {section === "inicio" ? <ExecutiveDashboardHome /> : null}
 
         {section === "cotizador" ? (
-          <CotizadorWorkspace variant="executive" embeddedInExecutiveShell />
+          <CotizadorWorkspace
+            variant="executive"
+            embeddedInExecutiveShell
+            onNotify={notify}
+          />
         ) : null}
 
         {section === "clientes" ? (
@@ -145,11 +135,7 @@ export function ExecutiveDashboard() {
         ) : null}
       </ExecutiveShell>
 
-      <AdminToast
-        message={toast?.message ?? null}
-        tone={toast?.tone}
-        onDismiss={() => setToast(null)}
-      />
+      <ExecutiveToastStack toasts={toasts} onDismiss={dismiss} />
     </>
   );
 }

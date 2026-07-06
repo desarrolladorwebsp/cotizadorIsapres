@@ -1,4 +1,5 @@
 import { REGION_OPTIONS, SEX_OPTIONS } from "@/lib/quote-criteria-options";
+import { resolveCotizadorSourceLabel } from "@/lib/partner-entity/source-label";
 import type { QuoteRecord } from "@/types/quote";
 
 export function formatQuoteDate(value: string): string {
@@ -10,9 +11,12 @@ export function formatQuoteDate(value: string): string {
 }
 
 export function resolvePartnerLabel(quote: QuoteRecord): string {
-  if (quote.partnerEntityName) return quote.partnerEntityName;
-  if (quote.partnerEntitySlug) return quote.partnerEntitySlug;
-  return "Sin origen";
+  return (
+    resolveCotizadorSourceLabel(
+      quote.partnerEntitySlug,
+      quote.partnerEntityName,
+    ) ?? "Sin origen"
+  );
 }
 
 export function resolveRegionLabel(region: string | null | undefined): string {

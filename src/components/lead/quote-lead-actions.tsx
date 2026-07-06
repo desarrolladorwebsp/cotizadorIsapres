@@ -4,6 +4,8 @@ import {
   buildClientWhatsAppUrl,
   buildProposalEmailUrl,
 } from "@/lib/lead/quote-outreach";
+import { Button } from "@/components/ui/button";
+import { IconMail, IconWhatsApp } from "@/components/executive/executive-icons";
 import {
   QUOTE_STATUS_LABELS,
   QUOTE_STATUS_OPTIONS,
@@ -61,27 +63,19 @@ export function QuoteLeadActions({
       ) : null}
 
       {whatsAppUrl ? (
-        <a
-          href={whatsAppUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={joinClasses(
-            "inline-flex h-9 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-xs font-semibold text-emerald-800 transition hover:bg-emerald-100",
-            compact ? "w-full" : "",
-          )}
-        >
-          WhatsApp
+        <a href={whatsAppUrl} target="_blank" rel="noopener noreferrer">
+          <Button size="sm" variant="whatsapp" className={compact ? "w-full" : ""}>
+            <IconWhatsApp className="mr-1.5 size-3.5" />
+            WhatsApp
+          </Button>
         </a>
       ) : null}
 
-      <a
-        href={emailUrl}
-        className={joinClasses(
-          "inline-flex h-9 items-center justify-center rounded-lg border border-sky-200 bg-sky-50 px-3 text-xs font-semibold text-sky-800 transition hover:bg-sky-100",
-          compact ? "w-full" : "",
-        )}
-      >
-        Enviar propuesta
+      <a href={emailUrl}>
+        <Button size="sm" variant="info" className={compact ? "w-full" : ""}>
+          <IconMail className="mr-1.5 size-3.5" />
+          Enviar propuesta
+        </Button>
       </a>
     </div>
   );

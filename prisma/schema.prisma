@@ -28,6 +28,11 @@ enum QuoteActivityType {
   DISTRIBUTED
 }
 
+enum ClientActivityType {
+  PLAN_CHANGED
+  ADVISED_PLAN_CLEARED
+}
+
 enum StaffRole {
   ADMIN
   EXECUTIVE
@@ -50,6 +55,11 @@ enum ClientPipelineStatus {
   ENVIADO_ISAPRE
   CERRADO
   PERDIDO
+}
+
+enum ClientOrigin {
+  COTIZADOR
+  MANUAL
 }
 
 model Isapre {
@@ -91,6 +101,7 @@ model Plan {
   isapreRef       Isapre          @relation(fields: [isapreId], references: [id])
   coverages       CoverageEntry[]
   quotes          Quote[]
+  advisedClients  User[]          @relation("AdvisedPlans")
 
   @@index([isapreId])
   @@map("plans")
@@ -125,13 +136,19 @@ model User {
   pipelineChecklist    Json?                 @map("pipeline_checklist")
   pipelineClosedRecord Json?                 @map("pipeline_closed_record")
   pipelineNotes        String?               @map("pipeline_notes")
+  advisedPlanCode      String?               @map("advised_plan_code")
+  clientOrigin         ClientOrigin          @default(COTIZADOR) @map("client_origin")
+  clientProfile        Json?                 @map("client_profile")
   createdAt            DateTime              @default(now()) @map("created_at")
   updatedAt            DateTime          @updatedAt @map("updated_at")
   quotes               Quote[]
+  activities           ClientActivity[]
   assignedExecutive    StaffAccount? @relation("AssignedClients", fields: [assignedExecutiveId], references: [id], onDelete: SetNull)
+  advisedPlan          Plan?         @relation("AdvisedPlans", fields: [advisedPlanCode], references: [uniqueCode], onDelete: SetNull)
 
   @@index([role])
   @@index([assignedExecutiveId])
+  @@index([advisedPlanCode])
   @@map("users")
 }
 
@@ -243,6 +260,24 @@ model QuoteActivity {
   @@index([quoteId])
   @@index([createdAt])
   @@map("quote_activities")
+}
+
+model ClientActivity {
+  id            String             @id @default(cuid())
+  userId        String             @map("user_id")
+  activityType  ClientActivityType @map("activity_type")
+  previousValue String?            @map("previous_value")
+  newValue      String?            @map("new_value")
+  actorRealm    String?            @map("actor_realm")
+  actorId       String?            @map("actor_id")
+  actorName     String?            @map("actor_name")
+  description   String?
+  createdAt     DateTime           @default(now()) @map("created_at")
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("client_activities")
 }
 
 /// Entidades aliadas (ej. Cotízalo Antes) con branding white-label del cotizador.

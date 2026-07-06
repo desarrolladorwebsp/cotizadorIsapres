@@ -11,6 +11,7 @@ export interface PlanResultsListProps {
   plans: HealthPlan[];
   beneficiarySummary: BeneficiaryGroupSummary;
   ufToClp: number;
+  onAssignPlan?: (plan: HealthPlan) => void;
 }
 
 const listVariants = {
@@ -44,6 +45,7 @@ export function PlanResultsList({
   plans,
   beneficiarySummary,
   ufToClp,
+  onAssignPlan,
 }: PlanResultsListProps) {
   return (
     <motion.div
@@ -65,6 +67,11 @@ export function PlanResultsList({
             plan={plan}
             beneficiarySummary={beneficiarySummary}
             ufToClp={ufToClp}
+            onSelect={
+              onAssignPlan ? () => onAssignPlan(plan) : undefined
+            }
+            selectLabel={onAssignPlan ? "Asignar a cliente" : undefined}
+            selectVariant={onAssignPlan ? "success" : undefined}
           />
         </motion.div>
       ))}

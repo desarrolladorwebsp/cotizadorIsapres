@@ -13,6 +13,8 @@ export interface PlanCardActionsProps {
   onChat?: () => void;
   onDownloadPdf?: () => void;
   onAddInsurance?: () => void;
+  selectLabel?: string;
+  selectVariant?: "primary" | "success";
 }
 
 function QuickActionButton({
@@ -47,6 +49,8 @@ export function PlanCardActions({
   onChat,
   onDownloadPdf,
   onAddInsurance,
+  selectLabel,
+  selectVariant = "primary",
 }: PlanCardActionsProps) {
   return (
     <footer
@@ -96,14 +100,20 @@ export function PlanCardActions({
             touchTarget,
             "w-full rounded-full px-6 text-sm font-bold tracking-tight shadow-md md:min-w-[11.5rem] md:w-auto",
             selected
-              ? "border-2 border-primary bg-white text-primary-dark"
-              : joinClasses(
-                  ui.cta,
-                  "shadow-[0_6px_20px_-6px_var(--primary)] hover:shadow-[0_8px_24px_-4px_var(--primary)]",
-                ),
+              ? selectVariant === "success"
+                ? "border-2 border-emerald-500 bg-white text-emerald-800"
+                : "border-2 border-primary bg-white text-primary-dark"
+              : selectVariant === "success"
+                ? "border border-emerald-200 bg-emerald-600 text-white shadow-[0_6px_20px_-6px_rgb(5,150,105)] hover:bg-emerald-700"
+                : joinClasses(
+                    ui.cta,
+                    "shadow-[0_6px_20px_-6px_var(--primary)] hover:shadow-[0_8px_24px_-4px_var(--primary)]",
+                  ),
           )}
         >
-          {selected ? "Plan seleccionado" : "Seleccionar plan"}
+          {selected
+            ? "Plan seleccionado"
+            : (selectLabel ?? "Seleccionar plan")}
         </motion.button>
       </div>
     </footer>

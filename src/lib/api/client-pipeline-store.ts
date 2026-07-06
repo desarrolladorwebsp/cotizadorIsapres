@@ -1,10 +1,16 @@
 import { prisma } from "@/lib/prisma";
 import { ApiError } from "@/lib/api/api-error";
-import { mapDbUser, type UserWithExecutive } from "@/lib/api/user-store";
+import {
+  clientRecordInclude,
+  mapDbClientRecord,
+  readClientOrThrow,
+  type ClientRecordWithPlans,
+} from "@/lib/api/user-store";
 import {
   CLIENT_PIPELINE_STATUS_OPTIONS,
   parseClientClosedRecord,
 } from "@/lib/client-pipeline/constants";
+import { normalizeClientProfileInput } from "@/lib/client-profile/constants";
 import type {
   ClientClosedRecord,
   UpdateClientPipelineInput,
@@ -12,25 +18,8 @@ import type {
 import type { UserRecord } from "@/types/user";
 import type { Prisma } from "@prisma/client";
 
-async function readClientOrThrow(userId: string): Promise<UserWithExecutive> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    include: {
-      assignedExecutive: {
-        select: { id: true, fullName: true, email: true },
-      },
-    },
-  });
-
-  if (!user || user.role !== "CLIENT") {
-    throw new ApiError("Cliente no encontrado.", 404, "NOT_FOUND");
-  }
-
-  return user;
-}
-
 function assertExecutiveAccess(
-  user: UserWithExecutive,
+  user: ClientRecordWithPlans,
   executiveAccountId: string,
   isAdmin: boolean,
 ): void {
@@ -102,6 +91,37 @@ export async function updateClientPipeline(
     data.pipelineNotes = input.pipelineNotes?.trim() || null;
   }
 
+  if (input.clientProfile !== undefined) {
+    try {
+      const normalized = normalizeClientProfileInput(input.clientProfile);
+      if (normalized.email !== existing.email) {
+        const emailTaken = await prisma.user.findUnique({
+          where: { email: normalized.email },
+          select: { id: true },
+        });
+        if (emailTaken && emailTaken.id !== userId) {
+          throw new ApiError(
+            "Ya existe otro cliente con ese correo electrónico.",
+            409,
+            "EMAIL_EXISTS",
+          );
+        }
+        data.email = normalized.email;
+      }
+      data.fullName = normalized.fullName;
+      data.phone = normalized.phone;
+      data.rut = normalized.rut;
+      data.clientProfile = normalized.profile as unknown as Prisma.InputJsonValue;
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      throw new ApiError(
+        error instanceof Error ? error.message : "Perfil inválido.",
+        400,
+        "INVALID_PROFILE",
+      );
+    }
+  }
+
   if (input.closedRecord !== undefined) {
     data.pipelineClosedRecord = validateClosedRecord(
       input.closedRecord,
@@ -127,12 +147,8 @@ export async function updateClientPipeline(
   const user = await prisma.user.update({
     where: { id: userId },
     data,
-    include: {
-      assignedExecutive: {
-        select: { id: true, fullName: true, email: true },
-      },
-    },
+    include: clientRecordInclude,
   });
 
-  return mapDbUser(user);
+  return mapDbClientRecord(user);
 }

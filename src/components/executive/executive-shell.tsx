@@ -27,7 +27,7 @@ const SECTION_LABELS: Record<
 > = {
   inicio: { label: "Inicio", shortLabel: "Inicio" },
   cotizador: { label: "Cotizador", shortLabel: "Cotiz." },
-  clientes: { label: "Clientes asignados", shortLabel: "Clientes" },
+  clientes: { label: "Clientes", shortLabel: "Clientes" },
   cotizaciones: { label: "Cotizaciones", shortLabel: "Leads" },
   prospectos: {
     label: "Prospectos",
@@ -135,9 +135,9 @@ export function ExecutiveShell({
                     touchTarget,
                     isActive
                       ? joinClasses(
-                          "premium-executive-tab-active bg-primary text-primary-foreground",
+                          "premium-executive-tab-active bg-primary text-primary-foreground shadow-[0_4px_14px_-6px_var(--primary)]",
                         )
-                      : joinClasses("text-muted", ui.hoverSurface),
+                      : "text-muted hover:bg-primary/5 hover:text-primary-dark",
                     item.adminOnly ? "border border-transparent" : "",
                   )}
                   aria-current={isActive ? "page" : undefined}
