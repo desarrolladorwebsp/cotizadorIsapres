@@ -7,6 +7,7 @@ import {
 import { AUTH_REALM } from "@/lib/auth/constants";
 import { apiErrorResponse } from "@/lib/api/api-error";
 import { createQuote } from "@/lib/api/quote-store";
+import { enforcePublicPostGuard } from "@/lib/security/public-post-guard";
 
 function isValidCreateQuoteInput(payload: unknown): payload is CreateQuoteInput {
   if (!payload || typeof payload !== "object") return false;
@@ -42,6 +43,9 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const blocked = enforcePublicPostGuard(request, "quote");
+    if (blocked) return blocked;
+
     const payload = (await request.json()) as unknown;
 
     if (!isValidCreateQuoteInput(payload)) {
