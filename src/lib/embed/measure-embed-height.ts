@@ -99,12 +99,26 @@ function measureDocumentHeight(): number {
 
 /** Altura total del contenido embebido (flujo + modales/alertas visibles). */
 export function measureEmbedContentHeight(root: HTMLElement): number {
-  const flowHeight = measureFlowContent(root);
-  const overlayHeight = measureOverlayContent(root);
-  const contentHeight = safeMax(flowHeight, overlayHeight);
+  const rootTop = root.getBoundingClientRect().top;
+  let contentBottom = 0;
 
-  if (contentHeight > 0) {
-    return contentHeight + EMBED_HEIGHT_BUFFER_PX;
+  const sentinel = root.querySelector("[data-embed-height-sentinel]");
+  if (sentinel instanceof HTMLElement) {
+    contentBottom = safeMax(
+      contentBottom,
+      measureElementBottom(sentinel, rootTop),
+    );
+  }
+
+  contentBottom = safeMax(contentBottom, measureOverlayContent(root));
+
+  if (contentBottom > 0) {
+    return Math.ceil(contentBottom) + EMBED_HEIGHT_BUFFER_PX;
+  }
+
+  const flowHeight = measureFlowContent(root);
+  if (flowHeight > 0) {
+    return flowHeight + EMBED_HEIGHT_BUFFER_PX;
   }
 
   return measureDocumentHeight() + EMBED_HEIGHT_BUFFER_PX;
