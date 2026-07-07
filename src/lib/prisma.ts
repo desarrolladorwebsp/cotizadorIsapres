@@ -9,6 +9,7 @@ const REQUIRED_DELEGATES = [
   "staffInvite",
   "quoteActivity",
   "clientActivity",
+  "planReview",
 ] as const;
 
 const globalForPrisma = globalThis as unknown as {

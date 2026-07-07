@@ -19,6 +19,7 @@ export const LANDING_FOOTER_NAV = [
   { label: "Isapres", href: "#isapres" },
   { label: "Cotizador", href: "#cotizar" },
   { label: "Nuestros Socios", href: "#socios" },
+  { label: "Reseñas", href: "#reseñas" },
   { label: "Contacto", href: "#contacto" },
 ] as const;
 

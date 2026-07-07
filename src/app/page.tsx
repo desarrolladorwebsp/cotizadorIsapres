@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { PlatformLandingView } from "@/components/platform/platform-landing-view";
+import { readPublishedPlanReviews } from "@/lib/api/plan-review-store";
 import {
   readActivePartnerSlugs,
   readPartnerEntityBySlug,
@@ -29,12 +30,17 @@ async function loadFeaturedPartners(): Promise<PartnerEntityPublic[]> {
 }
 
 export default async function HomePage() {
-  const [platformEntity, partners] = await Promise.all([
+  const [platformEntity, partners, reviews] = await Promise.all([
     readPlatformPartnerEntity(),
     loadFeaturedPartners(),
+    readPublishedPlanReviews(),
   ]);
 
   return (
-    <PlatformLandingView platformEntity={platformEntity} partners={partners} />
+    <PlatformLandingView
+      platformEntity={platformEntity}
+      partners={partners}
+      reviews={reviews}
+    />
   );
 }

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { PartnerEntityPublic } from "@/types/partner-entity";
+import type { PublicPlanReview } from "@/types/plan-review";
 import { buildCotizadorPremiumCotizadorUrl } from "@/lib/partner-entity/platform-agent";
 import { LandingBrandThemeEffect } from "./landing/landing-brand-theme-effect";
 import { LandingCotizadorWidgetSection } from "./landing/landing-cotizador-widget-section";
@@ -9,6 +10,7 @@ import { LandingIsapresSection } from "./landing/landing-isapres-section";
 import { LandingLogo } from "./landing/landing-logo";
 import { LandingPageBackdrop } from "./landing/landing-page-backdrop";
 import { LandingPartnersSection } from "./landing/landing-partners-section";
+import { LandingReviewsSection } from "./landing/landing-reviews-section";
 import { landing } from "./landing/landing-tokens";
 import "./landing/landing.css";
 
@@ -16,11 +18,13 @@ interface PlatformLandingViewProps {
   /** Agente de cotizadorpremium.cl (nombre en header; colores solo desde landing.css). */
   platformEntity: PartnerEntityPublic;
   partners: PartnerEntityPublic[];
+  reviews: PublicPlanReview[];
 }
 
 export function PlatformLandingView({
   platformEntity,
   partners,
+  reviews,
 }: PlatformLandingViewProps) {
   const cotizadorHref = buildCotizadorPremiumCotizadorUrl();
 
@@ -57,6 +61,7 @@ export function PlatformLandingView({
         <LandingPartnersSection partners={partners} />
         <LandingCotizadorWidgetSection />
         <LandingIsapresSection />
+        <LandingReviewsSection reviews={reviews} />
       </main>
 
       <LandingFooter />

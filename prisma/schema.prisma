@@ -102,6 +102,7 @@ model Plan {
   coverages       CoverageEntry[]
   quotes          Quote[]
   advisedClients  User[]          @relation("AdvisedPlans")
+  reviews         PlanReview[]
 
   @@index([isapreId])
   @@map("plans")
@@ -143,6 +144,7 @@ model User {
   updatedAt            DateTime          @updatedAt @map("updated_at")
   quotes               Quote[]
   activities           ClientActivity[]
+  reviews              PlanReview[]
   assignedExecutive    StaffAccount? @relation("AssignedClients", fields: [assignedExecutiveId], references: [id], onDelete: SetNull)
   advisedPlan          Plan?         @relation("AdvisedPlans", fields: [advisedPlanCode], references: [uniqueCode], onDelete: SetNull)
 
@@ -299,4 +301,26 @@ model PartnerEntity {
   updatedAt       DateTime @updatedAt @map("updated_at")
 
   @@map("partner_entities")
+}
+
+/// Reseñas publicadas de clientes sobre la atención del ejecutivo y el plan cotizado.
+model PlanReview {
+  id              String   @id @default(cuid())
+  authorName      String   @map("author_name")
+  authorAvatarUrl String?  @map("author_avatar_url")
+  userId          String?  @map("user_id")
+  planCode        String   @map("plan_code")
+  executiveRating Int      @map("executive_rating")
+  comment         String   @db.Text
+  published       Boolean  @default(true)
+  featured        Boolean  @default(false)
+  displayOrder    Int      @default(0) @map("display_order")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  user            User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  plan            Plan     @relation(fields: [planCode], references: [uniqueCode], onDelete: Cascade)
+
+  @@index([published, displayOrder])
+  @@index([planCode])
+  @@map("plan_reviews")
 }

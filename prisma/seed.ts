@@ -463,12 +463,104 @@ async function seedPartnerEntities() {
   return PARTNER_ENTITIES.length;
 }
 
+const PLAN_REVIEWS_SEED = [
+  {
+    authorName: "María González",
+    planCode: "13-SF1001-26",
+    executiveRating: 5,
+    comment:
+      "El ejecutivo me explicó cada cobertura con paciencia y me ayudó a elegir el plan ideal para mi familia. Respuesta rápida por WhatsApp en todo momento.",
+    featured: true,
+    displayOrder: 0,
+  },
+  {
+    authorName: "Carlos Muñoz",
+    planCode: "13-SF2001-26",
+    executiveRating: 5,
+    comment:
+      "Proceso muy claro de principio a fin. Comparé opciones en minutos y el ejecutivo resolvió todas mis dudas sobre prestadores y copagos.",
+    featured: true,
+    displayOrder: 1,
+  },
+  {
+    authorName: "Ana Torres",
+    planCode: "13-SF3001-26",
+    executiveRating: 4,
+    comment:
+      "Excelente acompañamiento al cotizar. Me orientaron sobre el plan más conveniente según mi edad y cargas, sin presión comercial.",
+    featured: false,
+    displayOrder: 2,
+  },
+  {
+    authorName: "Felipe Rojas",
+    planCode: "13-SF4001-26",
+    executiveRating: 5,
+    comment:
+      "La atención fue personalizada y profesional. Recibí el PDF del plan y un resumen comparativo que me facilitó tomar la decisión.",
+    featured: false,
+    displayOrder: 3,
+  },
+  {
+    authorName: "Camila Soto",
+    planCode: "13-SF5001-26",
+    executiveRating: 5,
+    comment:
+      "Muy buena experiencia digital. El cotizador es rápido y el ejecutivo hizo seguimiento hasta cerrar mi contrato con la isapre.",
+    featured: false,
+    displayOrder: 4,
+  },
+  {
+    authorName: "Jorge Pérez",
+    planCode: "13-SF1001-26",
+    executiveRating: 4,
+    comment:
+      "Me gustó la transparencia en precios y coberturas. El ejecutivo fue amable y siempre disponible para resolver consultas puntuales.",
+    featured: false,
+    displayOrder: 5,
+  },
+] as const;
+
+async function seedPlanReviews(plans: HealthPlan[]) {
+  if (plans.length === 0) return 0;
+
+  const planCodes = new Set(plans.map((plan) => plan.unique_code));
+  const clients = await prisma.user.findMany({
+    where: { role: "CLIENT" },
+    orderBy: { email: "asc" },
+    take: PLAN_REVIEWS_SEED.length,
+  });
+
+  await prisma.planReview.deleteMany({});
+
+  let count = 0;
+  for (const [index, review] of PLAN_REVIEWS_SEED.entries()) {
+    if (!planCodes.has(review.planCode)) continue;
+
+    await prisma.planReview.create({
+      data: {
+        authorName: review.authorName,
+        planCode: review.planCode,
+        executiveRating: review.executiveRating,
+        comment: review.comment,
+        featured: review.featured,
+        displayOrder: review.displayOrder,
+        published: true,
+        userId: clients[index]?.id ?? null,
+      },
+    });
+    count += 1;
+  }
+
+  return count;
+}
+
 async function main() {
   await seedIsapres();
   const { plans, clinicCount } = await seedClinicsAndPlans();
   const { adminCount, executiveCount } = await seedAuthAccounts();
   const clientCount = await seedClientUsers();
   const quoteCount = await seedQuotes(plans);
+  const reviewCount = await seedPlanReviews(plans);
   const partnerCount = await seedPartnerEntities();
 
   console.log("Seed completado:");
@@ -479,6 +571,7 @@ async function main() {
     `  - ${adminCount} admins, ${executiveCount} ejecutivos, ${clientCount} clientes`,
   );
   console.log(`  - ${quoteCount} cotizaciones`);
+  console.log(`  - ${reviewCount} reseñas publicadas`);
   console.log(`  - ${partnerCount} entidades aliadas`);
   console.log(
     "  - Cuentas demo: usa SEED_ACCOUNT_PASSWORD (por defecto ChangeMe123!)",
