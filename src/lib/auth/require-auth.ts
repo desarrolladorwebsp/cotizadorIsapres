@@ -22,6 +22,26 @@ import type {
 } from "@/lib/auth/types";
 import { ApiError } from "@/lib/api/api-error";
 
+export interface StaffSessionOptions {
+  /** Permite sesión de ejecutivo con perfil pendiente (onboarding o cambio de clave). */
+  allowIncompleteOnboarding?: boolean;
+}
+
+function assertExecutiveOnboardingComplete(
+  user: ExecutiveSessionUser,
+  options?: StaffSessionOptions,
+): void {
+  if (options?.allowIncompleteOnboarding) return;
+
+  if (!user.onboardingCompleted) {
+    throw new ApiError(
+      "Debes completar tu perfil antes de continuar.",
+      403,
+      "ONBOARDING_REQUIRED",
+    );
+  }
+}
+
 interface ResolvedStaffSession {
   session: SessionPayload;
   user: AdminSessionUser | ExecutiveSessionUser;
@@ -137,6 +157,7 @@ export async function requireAdminSession(
 
 export async function requireExecutiveSession(
   request?: Request,
+  options?: StaffSessionOptions,
 ): Promise<{ session: SessionPayload; user: ExecutiveSessionUser }> {
   const staff = await requireStaffSession(request);
 
@@ -152,14 +173,18 @@ export async function requireExecutiveSession(
     );
   }
 
+  const executive = staff.user as ExecutiveSessionUser;
+  assertExecutiveOnboardingComplete(executive, options);
+
   return {
     session: staff.session,
-    user: staff.user as ExecutiveSessionUser,
+    user: executive,
   };
 }
 
 export async function requireExecutiveOrAdminSession(
   request?: Request,
+  options?: StaffSessionOptions,
 ): Promise<{
   session: SessionPayload;
   user: AdminSessionUser | ExecutiveSessionUser;
@@ -169,6 +194,13 @@ export async function requireExecutiveOrAdminSession(
 
   if (!staffCanAccessExecutiveRoutes(staff.realm)) {
     throw new ApiError("No autorizado.", 401, "UNAUTHORIZED");
+  }
+
+  if (staff.realm === AUTH_REALM.executive) {
+    assertExecutiveOnboardingComplete(
+      staff.user as ExecutiveSessionUser,
+      options,
+    );
   }
 
   return staff;

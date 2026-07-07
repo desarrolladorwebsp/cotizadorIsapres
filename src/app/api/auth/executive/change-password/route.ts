@@ -24,7 +24,9 @@ function isValidPayload(payload: unknown): payload is {
 
 export async function POST(request: Request) {
   try {
-    const { session } = await requireExecutiveSession(request);
+    const { session } = await requireExecutiveSession(request, {
+      allowIncompleteOnboarding: true,
+    });
     const payload = await parseJsonBody(request);
 
     if (!isValidPayload(payload)) {

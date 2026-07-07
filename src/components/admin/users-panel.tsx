@@ -24,6 +24,7 @@ import {
   cancelPendingStaffInvite,
   createStaffAccount,
   deleteStaffAccount,
+  fetchExecutiveAssignmentStats,
   fetchStaffAccounts,
   resendPendingStaffInvite,
   updateStaffAccount,
@@ -113,6 +114,7 @@ export function UsersPanel({
 }: UsersPanelProps) {
   const [accounts, setAccounts] = useState<StaffAccountRecord[]>([]);
   const [pendingInvites, setPendingInvites] = useState<PendingStaffInviteRecord[]>([]);
+  const [assignmentCounts, setAssignmentCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -129,7 +131,10 @@ export function UsersPanel({
     setLoading(true);
     setLoadError(null);
     try {
-      const data = await fetchStaffAccounts();
+      const [data, stats] = await Promise.all([
+        fetchStaffAccounts(),
+        fetchExecutiveAssignmentStats().catch(() => []),
+      ]);
       const filteredAccounts = executivesOnly
         ? data.accounts.filter((account) => account.realm === "executive")
         : data.accounts;
@@ -139,6 +144,9 @@ export function UsersPanel({
 
       setAccounts(filteredAccounts);
       setPendingInvites(filteredInvites);
+      setAssignmentCounts(
+        Object.fromEntries(stats.map((stat) => [stat.executiveId, stat.assignedCount])),
+      );
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "No se pudieron cargar los usuarios.";
@@ -204,6 +212,14 @@ export function UsersPanel({
     setDraft({ email: "", rut: "", realm: "executive" });
     setModalOpen(true);
   }
+
+  const inviteRoleOptions = executivesOnly
+    ? ROLE_OPTIONS.filter((option) => option.value === "executive")
+    : [...ROLE_OPTIONS];
+
+  const panelDescription = executivesOnly
+    ? "Ejecutivos que reciben solicitudes de clientes. La invitación por correo es el único medio para crear un usuario en el sistema."
+    : "Administradores y ejecutivos del panel. La invitación por correo es el único medio para crear un usuario en el sistema.";
 
   async function handleInvite(event: React.FormEvent) {
     event.preventDefault();
@@ -324,13 +340,13 @@ export function UsersPanel({
     <AdminPanel>
       <AdminPanelHeader
         title="Usuarios"
-        description="Administradores y ejecutivos del panel. La invitación por correo es el único medio para crear un usuario en el sistema."
+        description={panelDescription}
         actions={
           <>
             <AdminRefreshButton onClick={() => void loadAccounts()} />
             {canManage ? (
               <Button size="sm" onClick={openModal}>
-                Invitar usuario
+                {executivesOnly ? "Invitar ejecutivo" : "Invitar usuario"}
               </Button>
             ) : null}
           </>
@@ -359,8 +375,12 @@ export function UsersPanel({
       <AdminTableCard
         loading={loading}
         empty={!loading && filteredRows.length === 0}
-        emptyTitle="No hay usuarios registrados"
-        emptyDescription="Invita a un administrador o ejecutivo. Aparecerán como pendientes hasta que activen su cuenta."
+        emptyTitle={executivesOnly ? "No hay ejecutivos registrados" : "No hay usuarios registrados"}
+        emptyDescription={
+          executivesOnly
+            ? "Invita a un ejecutivo. Aparecerá como pendiente hasta que active su cuenta y complete su perfil."
+            : "Invita a un administrador o ejecutivo. Aparecerán como pendientes hasta que activen su cuenta."
+        }
         loadingMessage="Cargando usuarios…"
         footer={`Mostrando ${filteredRows.length} de ${directoryRows.length} registros.`}
       >
@@ -370,6 +390,9 @@ export function UsersPanel({
               <AdminTableHeaderCell>Usuario</AdminTableHeaderCell>
               <AdminTableHeaderCell>Rol</AdminTableHeaderCell>
               <AdminTableHeaderCell>Contacto</AdminTableHeaderCell>
+              {executivesOnly ? (
+                <AdminTableHeaderCell>Clientes</AdminTableHeaderCell>
+              ) : null}
               <AdminTableHeaderCell>Estado</AdminTableHeaderCell>
               <AdminTableHeaderCell>Último acceso</AdminTableHeaderCell>
               <AdminTableHeaderCell align="right">Acciones</AdminTableHeaderCell>
@@ -397,6 +420,9 @@ export function UsersPanel({
                         <p className="mt-1 text-xs text-muted">RUT {invite.rut}</p>
                       ) : null}
                     </AdminTableCell>
+                    {executivesOnly ? (
+                      <AdminTableCell className="text-muted">—</AdminTableCell>
+                    ) : null}
                     <AdminTableCell>
                       <AdminBadge tone="warning">Pendiente por activar</AdminBadge>
                       <p className="mt-2 text-xs text-muted">
@@ -457,6 +483,17 @@ export function UsersPanel({
                       <p className="mt-1 text-xs text-muted">RUT {account.rut}</p>
                     ) : null}
                   </AdminTableCell>
+                  {executivesOnly ? (
+                    <AdminTableCell>
+                      {account.onboardingCompleted && account.active ? (
+                        <span className="font-semibold text-foreground">
+                          {assignmentCounts[account.id] ?? 0}
+                        </span>
+                      ) : (
+                        <span className="text-muted">—</span>
+                      )}
+                    </AdminTableCell>
+                  ) : null}
                   <AdminTableCell>
                     <AdminBadge tone={status.tone}>{status.label}</AdminBadge>
                   </AdminTableCell>
@@ -511,7 +548,7 @@ export function UsersPanel({
       {canManage ? (
         <AdminFormModal
           open={modalOpen}
-          title="Invitar usuario"
+          title={executivesOnly ? "Invitar ejecutivo" : "Invitar usuario"}
         description="Se enviará un correo con un enlace único para activar la cuenta y crear la contraseña."
         onClose={() => setModalOpen(false)}
         size="md"
@@ -522,7 +559,7 @@ export function UsersPanel({
             <Select
               required
               value={draft.realm}
-              options={[...ROLE_OPTIONS]}
+              options={inviteRoleOptions}
               onChange={(event) =>
                 setDraft((current) => ({
                   ...current,
@@ -530,11 +567,17 @@ export function UsersPanel({
                 }))
               }
             />
-            <p className="text-xs text-muted">
-              {draft.realm === "admin"
-                ? "Acceso completo al panel, incluyendo configuración y usuarios."
-                : "Recibe y gestiona solicitudes de clientes y cotizaciones."}
-            </p>
+            {!executivesOnly ? (
+              <p className="text-xs text-muted">
+                {draft.realm === "admin"
+                  ? "Acceso completo al panel, incluyendo configuración y usuarios."
+                  : "Recibe y gestiona solicitudes de clientes y cotizaciones."}
+              </p>
+            ) : (
+              <p className="text-xs text-muted">
+                Recibe y gestiona solicitudes de clientes y cotizaciones.
+              </p>
+            )}
           </label>
 
           <label className="block space-y-2">

@@ -4,7 +4,6 @@ import {
   parseJsonBody,
 } from "@/lib/api/api-error";
 import {
-  resetStaffTemporaryPassword,
   updateStaffAccount,
   deleteStaffAccount,
   readAdminById,
@@ -114,27 +113,6 @@ export async function POST(request: Request, context: RouteContext) {
     const realm = parseRealm(url.searchParams.get("realm"));
     const action = url.searchParams.get("action");
 
-    if (action === "resend-invite" && realm) {
-      const { account, temporaryPassword } = await resetStaffTemporaryPassword(
-        realm,
-        id,
-      );
-
-      const { sendStaffInviteEmail } = await import("@/lib/email/send-staff-invite");
-      await sendStaffInviteEmail({
-        fullName: account.fullName,
-        email: account.email,
-        temporaryPassword,
-        realm,
-        request,
-      });
-
-      return NextResponse.json({
-        account,
-        message: "Se envió una nueva clave temporal al correo del usuario.",
-      });
-    }
-
     if (action === "cancel-pending-invite") {
       const { cancelPendingStaffInvite } = await import(
         "@/lib/auth/staff-invite-store"
@@ -176,7 +154,7 @@ export async function POST(request: Request, context: RouteContext) {
       });
 
       return NextResponse.json({
-        message: "Invitación reenviada al correo del ejecutivo.",
+        message: "Invitación reenviada al correo del usuario.",
       });
     }
 

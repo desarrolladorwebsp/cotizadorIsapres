@@ -20,14 +20,12 @@ import {
   getSubscriptionBlockReason,
   isSubscriptionActive,
 } from "@/lib/auth/subscription";
-import { generateTemporaryPassword } from "@/lib/auth/temp-password";
 import type {
   AdminSessionUser,
   ExecutiveSessionUser,
   LoginCredentials,
 } from "@/lib/auth/types";
 import type {
-  CreateStaffAccountInput,
   StaffAccountRecord,
   StaffRealm,
   UpdateStaffAccountInput,
@@ -300,65 +298,6 @@ export async function listExecutiveStaffAccounts(): Promise<StaffAccountRecord[]
   return accounts.map(mapStaffRecord);
 }
 
-export async function createStaffAccount(
-  input: CreateStaffAccountInput,
-): Promise<{ account: StaffAccountRecord; temporaryPassword: string }> {
-  const email = normalizeEmail(input.email);
-  const fullName = input.fullName?.trim() || email.split("@")[0];
-  const temporaryPassword = generateTemporaryPassword();
-  const passwordHash = await hashPassword(temporaryPassword);
-  const role = staffRealmToRole(input.realm);
-
-  if (!fullName) {
-    throw new ApiError("El nombre es obligatorio.", 400, "INVALID_INPUT");
-  }
-
-  const existing = await prisma.staffAccount.findUnique({ where: { email } });
-
-  if (existing) {
-    throw new ApiError("Ya existe una cuenta con ese correo.", 409, "EMAIL_EXISTS");
-  }
-
-  if (isAdminRole(role)) {
-    const account = await prisma.staffAccount.create({
-      data: {
-        email,
-        fullName,
-        role,
-        passwordHash,
-        active: true,
-        mustChangePassword: true,
-        onboardingCompleted: true,
-      },
-    });
-
-    return { temporaryPassword, account: mapStaffRecord(account) };
-  }
-
-  const trialExpiresAt = new Date();
-  trialExpiresAt.setDate(trialExpiresAt.getDate() + 30);
-  const subscriptionStatus: SubscriptionStatus =
-    input.subscriptionStatus ?? "TRIAL";
-
-  const account = await prisma.staffAccount.create({
-    data: {
-      email,
-      fullName,
-      role,
-      phone: input.phone?.trim() || null,
-      rut: input.rut?.trim() || null,
-      passwordHash,
-      active: true,
-      mustChangePassword: true,
-      subscriptionStatus,
-      subscriptionExpiresAt:
-        subscriptionStatus === "TRIAL" ? trialExpiresAt : null,
-    },
-  });
-
-  return { temporaryPassword, account: mapStaffRecord(account) };
-}
-
 export async function updateStaffAccount(
   realm: StaffRealm,
   id: string,
@@ -391,29 +330,6 @@ export async function updateStaffAccount(
   });
 
   return mapStaffRecord(account);
-}
-
-export async function resetStaffTemporaryPassword(
-  realm: StaffRealm,
-  id: string,
-): Promise<{ account: StaffAccountRecord; temporaryPassword: string }> {
-  await assertStaffRealm(id, realm);
-
-  const temporaryPassword = generateTemporaryPassword();
-  const passwordHash = await hashPassword(temporaryPassword);
-
-  const account = await prisma.staffAccount.update({
-    where: { id },
-    data: {
-      passwordHash,
-      mustChangePassword: true,
-      failedLoginAttempts: 0,
-      lockedUntil: null,
-      passwordChangedAt: new Date(),
-    },
-  });
-
-  return { temporaryPassword, account: mapStaffRecord(account) };
 }
 
 export async function deleteStaffAccount(

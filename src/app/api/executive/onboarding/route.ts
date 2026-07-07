@@ -6,7 +6,9 @@ import { AUTH_REALM } from "@/lib/auth/constants";
 
 export async function POST(request: Request) {
   try {
-    const { realm, user } = await requireExecutiveOrAdminSession(request);
+    const { realm, user } = await requireExecutiveOrAdminSession(request, {
+      allowIncompleteOnboarding: true,
+    });
 
     if (realm !== AUTH_REALM.executive) {
       return NextResponse.json(

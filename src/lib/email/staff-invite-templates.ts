@@ -85,6 +85,11 @@ export function buildStaffActivationEmailHtml(input: {
       </tr>`
     : "";
 
+  const activationSteps =
+    input.realm === "executive"
+      ? `En el formulario deberás validar tu RUT${input.rut ? " (debe coincidir con el registrado)" : ""} y crear una contraseña personalizada. Después completarás tu perfil con nombre y teléfono de contacto.`
+      : `En el formulario deberás ingresar nombre, apellido, RUT${input.rut ? " (debe coincidir con el registrado)" : ""} y una contraseña que solo tú conozcas.`;
+
   const body = `
     <h1 style="margin:0 0 12px;font-size:22px;color:#222;">Activa tu cuenta</h1>
     <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#444;">
@@ -104,7 +109,7 @@ export function buildStaffActivationEmailHtml(input: {
       </a>
     </p>
     <p style="margin:0 0 12px;font-size:13px;line-height:1.6;color:#666;">
-      En el formulario deberás ingresar nombre, apellido, RUT${input.rut ? " (debe coincidir con el registrado)" : ""} y una contraseña que solo tú conozcas.
+      ${activationSteps}
     </p>
     <p style="margin:0;font-size:13px;line-height:1.6;color:#666;">
       El enlace expira en 7 días. Si no esperabas este correo, ignóralo.

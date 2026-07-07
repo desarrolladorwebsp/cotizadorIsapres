@@ -340,19 +340,6 @@ export async function updateStaffAccount(
   return parseJsonResponse<{ account: StaffAccountRecord }>(response);
 }
 
-export async function resendStaffInvite(
-  realm: StaffRealm,
-  id: string,
-): Promise<{ account: StaffAccountRecord; message: string }> {
-  const response = await fetch(
-    `/api/admin/accounts/${encodeURIComponent(id)}?realm=${realm}&action=resend-invite`,
-    { method: "POST" },
-  );
-  return parseJsonResponse<{ account: StaffAccountRecord; message: string }>(
-    response,
-  );
-}
-
 export async function createClinic(clinic: Clinic): Promise<Clinic> {
   const response = await fetch("/api/clinics", {
     method: "POST",
