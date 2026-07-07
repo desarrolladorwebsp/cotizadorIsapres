@@ -96,7 +96,8 @@ export function PublicFiltersSidebar({
 
       <motion.aside
         role="dialog"
-        aria-modal="true"
+        aria-modal={open ? "true" : undefined}
+        aria-hidden={open ? undefined : true}
         aria-label="Filtros de búsqueda"
         initial={false}
         animate={{ x: isLargeScreen ? 0 : open ? 0 : "-100%" }}

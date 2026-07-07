@@ -52,11 +52,21 @@ function isVisibleOverlay(el: HTMLElement): boolean {
   if (rect.height <= 0 || rect.width <= 0) return false;
 
   const style = window.getComputedStyle(el);
-  return (
-    style.display !== "none" &&
-    style.visibility !== "hidden" &&
-    Number.parseFloat(style.opacity) > 0
-  );
+  if (
+    style.display === "none" ||
+    style.visibility === "hidden" ||
+    Number.parseFloat(style.opacity) <= 0 ||
+    el.getAttribute("aria-hidden") === "true"
+  ) {
+    return false;
+  }
+
+  // Drawer móvil cerrado (translateX(-100%)) sigue en el DOM pero fuera del viewport.
+  if (rect.right <= 0 || rect.bottom <= 0 || rect.left >= window.innerWidth) {
+    return false;
+  }
+
+  return true;
 }
 
 function measureOverlayContent(root: HTMLElement): number {
