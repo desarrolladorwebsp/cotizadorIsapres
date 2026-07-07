@@ -2,6 +2,7 @@
 
 import {
   createClearedDashboardFilters,
+  getActiveClinicIds,
   ISAPRE_FILTER_OPTIONS,
   PLAN_TYPE_FILTER_OPTIONS,
   toggleCheckboxFilter,
@@ -163,7 +164,7 @@ export function DashboardFiltersPanel({
         {hideCoverageFilter ? null : (
         <FilterSection
           title="Filtrado por Cobertura"
-          description="Clínica opcional y umbral mínimo de cobertura hospitalaria y ambulatoria."
+          description="Clínicas opcionales y umbral mínimo de cobertura hospitalaria y ambulatoria."
           infoLabel="Información sobre porcentajes de cobertura"
           info={
             <FilterHelpBlock
@@ -183,11 +184,11 @@ export function DashboardFiltersPanel({
                     compactEmbed && "max-md:text-[11px]",
                   )}
                 >
-                  Prestador / clínica (opcional)
+                  Prestador / clínica (opcional, una o más)
                 </p>
                 <ClinicFilterSelect
-                  value={value.clinicId}
-                  onChange={(clinicId) => update({ clinicId })}
+                  value={value.clinicIds}
+                  onChange={(clinicIds) => update({ clinicIds })}
                   options={clinicOptions}
                   loading={clinicOptionsLoading}
                   error={clinicOptionsError}
@@ -218,16 +219,16 @@ export function DashboardFiltersPanel({
               }
             />
 
-            {showClinicFilter && value.clinicId ? (
+            {showClinicFilter && getActiveClinicIds(value).length > 0 ? (
               <p
                 className={joinClasses(
                   "text-[11px] leading-snug text-muted",
                   compactEmbed && "max-md:text-[10px]",
                 )}
               >
-                Si eliges un porcentaje junto con la clínica, el plan debe
-                cumplir ese mínimo en esa clínica (hospitalaria y/o ambulatoria
-                según corresponda).
+                Si eliges un porcentaje junto con clínicas, el plan debe
+                cumplir ese mínimo en al menos una de las clínicas seleccionadas
+                (hospitalaria y/o ambulatoria según corresponda).
               </p>
             ) : null}
           </div>

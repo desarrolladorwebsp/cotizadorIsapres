@@ -6,6 +6,7 @@ import { inferPlanTypes } from "@/lib/plan-metadata";
 import { planMatchesZoneFilter } from "@/lib/plan-zones";
 import {
   getActiveCheckboxIds,
+  getActiveClinicIds,
   isCheckboxGroupActive,
   resolveIsapreDisplayName,
 } from "@/lib/filter-options";
@@ -59,18 +60,38 @@ function matchesPlanTypeFilter(
   return activeTypes.some((type) => planTypes.includes(type));
 }
 
+function planIncludesAnyClinic(
+  plan: HealthPlan,
+  clinicIds: string[],
+): boolean {
+  const selected = new Set(clinicIds);
+  return plan.coverage.some((entry) => selected.has(entry.clinic_id));
+}
+
+function coverageTypeMeetsThresholdForClinics(
+  entries: CoverageEntry[],
+  clinicIds: string[],
+  threshold: number,
+): boolean {
+  const selected = new Set(clinicIds);
+  return entries.some(
+    (entry) =>
+      selected.has(entry.clinic_id) && entry.percentage >= threshold,
+  );
+}
+
 /**
  * Cobertura por tipo (hospitalaria / ambulatoria).
- * - Clínica + %: esa clínica debe tener cobertura >= umbral en ese tipo.
+ * - Clínica(s) + %: al menos una clínica seleccionada debe cumplir >= umbral en ese tipo.
  * - Solo %: algún prestador del tipo debe cumplir >= umbral.
- * - Solo clínica (sin % en ningún tipo): el plan debe incluir la clínica.
+ * - Solo clínica(s) (sin % en ningún tipo): el plan debe incluir al menos una clínica seleccionada.
  */
 function matchesCoverageTypeFilter(
   plan: HealthPlan,
   type: "hospitalaria" | "ambulatoria",
   filters: DashboardFiltersState,
 ): boolean {
-  const clinicId = filters.clinicId?.trim() || null;
+  const clinicIds = getActiveClinicIds(filters);
   const threshold =
     type === "hospitalaria"
       ? filters.hospitalCoveragePercent
@@ -79,9 +100,12 @@ function matchesCoverageTypeFilter(
   const entries = getCoverageEntriesByType(plan, type);
 
   if (threshold !== null) {
-    if (clinicId) {
-      const clinicEntry = entries.find((entry) => entry.clinic_id === clinicId);
-      return clinicEntry != null && clinicEntry.percentage >= threshold;
+    if (clinicIds.length > 0) {
+      return coverageTypeMeetsThresholdForClinics(
+        entries,
+        clinicIds,
+        threshold,
+      );
     }
 
     if (entries.length === 0) return false;
@@ -96,8 +120,8 @@ function matchesClinicOnlyFilter(
   plan: HealthPlan,
   filters: DashboardFiltersState,
 ): boolean {
-  const clinicId = filters.clinicId?.trim();
-  if (!clinicId) return true;
+  const clinicIds = getActiveClinicIds(filters);
+  if (clinicIds.length === 0) return true;
 
   if (
     filters.hospitalCoveragePercent !== null ||
@@ -106,7 +130,7 @@ function matchesClinicOnlyFilter(
     return true;
   }
 
-  return plan.coverage.some((entry) => entry.clinic_id === clinicId);
+  return planIncludesAnyClinic(plan, clinicIds);
 }
 
 export function applyDashboardFilters(
@@ -142,8 +166,7 @@ export function summaryMatchesCoverageThresholds(
   ambulatoryAvg: number,
   filters: DashboardFiltersState,
 ): boolean {
-  const clinicId = filters.clinicId?.trim();
-  if (clinicId) return true;
+  if (getActiveClinicIds(filters).length > 0) return true;
 
   if (
     filters.hospitalCoveragePercent !== null &&

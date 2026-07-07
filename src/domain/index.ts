@@ -80,6 +80,8 @@ export {
   withoutPlanTypeFilters,
   PLAN_TYPE_FILTER_DEFAULT_IDS,
   getActiveCheckboxIds,
+  getActiveClinicIds,
+  hasClinicFilter,
   isCheckboxGroupActive,
   resolveIsapreDisplayName,
   toggleCheckboxFilter,

@@ -21,6 +21,7 @@ import { useClientPlanSearch, FILTER_DEBOUNCE_MS } from "@/hooks/use-client-plan
 import {
   buildBeneficiaryGroupSummary,
   createDefaultDashboardFilters,
+  getActiveClinicIds,
   withoutEmbedWidgetFilters,
 } from "@/domain";
 import {
@@ -935,7 +936,7 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
                       beneficiarySummary={dashboard.beneficiarySummary}
                       ufToClp={dashboard.ufToClp}
                       currency={currency}
-                      highlightClinicId={dashboard.dashboardFilters.clinicId}
+                      highlightClinicIds={getActiveClinicIds(dashboard.dashboardFilters)}
                       onRequestPlan={(plan) => {
                         if (isEmbedded) {
                           handleEmbedSolicitar(plan);

@@ -84,7 +84,7 @@ export function createDefaultDashboardFilters(): DashboardFiltersState {
       PLAN_TYPE_FILTER_OPTIONS.map((o) => ({ id: o.id, label: o.label })),
       PLAN_TYPE_FILTER_DEFAULT_IDS,
     ),
-    clinicId: null,
+    clinicIds: [],
     hospitalCoveragePercent: null,
     ambulatoryCoveragePercent: null,
   };
@@ -124,8 +124,16 @@ export function withoutClinicFilter(
 ): DashboardFiltersState {
   return {
     ...filters,
-    clinicId: null,
+    clinicIds: [],
   };
+}
+
+export function getActiveClinicIds(filters: DashboardFiltersState): string[] {
+  return filters.clinicIds.filter((id) => id.trim().length > 0);
+}
+
+export function hasClinicFilter(filters: DashboardFiltersState): boolean {
+  return getActiveClinicIds(filters).length > 0;
 }
 
 /** Widget embebido: quita filtros no disponibles en el iframe. */

@@ -7,8 +7,8 @@ import type { PlanCatalogClinicOption } from "@/lib/api/plan-clinics";
 import { ClinicPickerModal } from "./clinic-picker-modal";
 
 export interface ClinicFilterSelectProps {
-  value: string | null;
-  onChange: (clinicId: string | null) => void;
+  value: string[];
+  onChange: (clinicIds: string[]) => void;
   options: PlanCatalogClinicOption[];
   loading?: boolean;
   error?: string | null;
@@ -45,6 +45,17 @@ function BuildingIcon() {
   );
 }
 
+function formatSelectionLabel(
+  selected: PlanCatalogClinicOption[],
+): string {
+  if (selected.length === 0) return "Seleccionar prestador…";
+  if (selected.length === 1) return selected[0].name;
+  if (selected.length === 2) {
+    return `${selected[0].name}, ${selected[1].name}`;
+  }
+  return `${selected.length} prestadores seleccionados`;
+}
+
 export function ClinicFilterSelect({
   value,
   onChange,
@@ -57,20 +68,21 @@ export function ClinicFilterSelect({
 }: ClinicFilterSelectProps) {
   const [modalOpen, setModalOpen] = useState(false);
 
-  const selected = useMemo(
-    () => options.find((option) => option.id === value) ?? null,
-    [options, value],
-  );
+  const selected = useMemo(() => {
+    const selectedSet = new Set(value);
+    return options.filter((option) => selectedSet.has(option.id));
+  }, [options, value]);
 
-  function handleSelect(clinicId: string) {
-    onChange(clinicId);
-    setModalOpen(false);
+  function handleApply(clinicIds: string[]) {
+    onChange(clinicIds);
   }
 
   function handleClear(event: MouseEvent) {
     event.stopPropagation();
-    onChange(null);
+    onChange([]);
   }
+
+  const hasSelection = value.length > 0;
 
   return (
     <div className="space-y-2">
@@ -95,16 +107,14 @@ export function ClinicFilterSelect({
         <span
           className={joinClasses(
             "min-w-0 flex-1 truncate",
-            selected ? "font-medium text-foreground" : "text-muted",
+            hasSelection ? "font-medium text-foreground" : "text-muted",
           )}
         >
           {loading
             ? "Cargando prestadores…"
-            : selected
-              ? selected.name
-              : "Seleccionar prestador…"}
+            : formatSelectionLabel(selected)}
         </span>
-        {selected ? (
+        {hasSelection ? (
           <span
             role="button"
             tabIndex={0}
@@ -112,14 +122,14 @@ export function ClinicFilterSelect({
             onKeyDown={(event) => {
               if (event.key === "Enter" || event.key === " ") {
                 event.preventDefault();
-                onChange(null);
+                onChange([]);
               }
             }}
             className={joinClasses(
               "shrink-0 rounded-md px-2 text-[11px] font-semibold text-muted hover:bg-surface-hover hover:text-foreground",
               touchTarget,
             )}
-            aria-label="Quitar filtro de clínica"
+            aria-label="Quitar filtro de clínicas"
           >
             Quitar
           </span>
@@ -136,10 +146,13 @@ export function ClinicFilterSelect({
         </p>
       ) : null}
 
-      {showSelectedHint && selected ? (
+      {showSelectedHint && hasSelection ? (
         <p className="text-[11px] text-muted">
           Mostrando planes con cobertura en{" "}
-          <span className="font-medium text-foreground">{selected.name}</span>.
+          <span className="font-medium text-foreground">
+            {selected.map((clinic) => clinic.name).join(", ")}
+          </span>
+          .
         </p>
       ) : null}
 
@@ -149,7 +162,7 @@ export function ClinicFilterSelect({
         title={modalTitle}
         options={options}
         value={value}
-        onSelect={handleSelect}
+        onApply={handleApply}
         loading={loading}
       />
     </div>

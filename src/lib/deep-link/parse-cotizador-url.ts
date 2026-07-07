@@ -223,7 +223,7 @@ export function parseCotizadorUrl(
       defaults.planTypes,
       planTypeIds,
     ),
-    clinicId: params.get(DEEP_LINK_PARAMS.clinica)?.trim() || null,
+    clinicIds: parseCommaList(params.get(DEEP_LINK_PARAMS.clinica)),
     hospitalCoveragePercent: parseCoveragePercent(
       params.get(DEEP_LINK_PARAMS.coberturaH),
     ),

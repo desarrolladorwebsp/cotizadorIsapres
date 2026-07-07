@@ -3,6 +3,7 @@ import { mapHealthPlanToSummary } from "@/lib/api/plan-summary";
 import { filterPlanCatalog } from "@/lib/filter-plan-catalog";
 import {
   getActiveCheckboxIds,
+  getActiveClinicIds,
   isCheckboxGroupActive,
 } from "@/lib/filter-options";
 import { sortPlansByBasePriceAsc } from "@/lib/plan-sort";
@@ -115,8 +116,9 @@ export function describeActiveFilters(filters: DashboardFiltersState): string {
   if (isCheckboxGroupActive(filters.zones)) {
     parts.push(`zonas:${getActiveCheckboxIds(filters.zones).join(",")}`);
   }
-  if (filters.clinicId?.trim()) {
-    parts.push(`clinica:${filters.clinicId.trim()}`);
+  const clinicIds = getActiveClinicIds(filters);
+  if (clinicIds.length > 0) {
+    parts.push(`clinica:${clinicIds.join(",")}`);
   }
   return parts.join(" ");
 }

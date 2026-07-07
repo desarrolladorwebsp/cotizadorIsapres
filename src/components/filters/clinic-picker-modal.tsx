@@ -12,8 +12,8 @@ export interface ClinicPickerModalProps {
   onClose: () => void;
   title: string;
   options: PlanCatalogClinicOption[];
-  value: string | null;
-  onSelect: (clinicId: string) => void;
+  value: string[];
+  onApply: (clinicIds: string[]) => void;
   loading?: boolean;
 }
 
@@ -44,16 +44,31 @@ function SearchIcon() {
   );
 }
 
+function CheckIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="size-3.5" aria-hidden>
+      <path
+        d="M5 12.5l4.5 4.5L19 7.5"
+        stroke="currentColor"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export function ClinicPickerModal({
   open,
   onClose,
   title,
   options,
   value,
-  onSelect,
+  onApply,
   loading = false,
 }: ClinicPickerModalProps) {
   const [query, setQuery] = useState("");
+  const [draftSelection, setDraftSelection] = useState<string[]>(value);
   const [mounted, setMounted] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -64,9 +79,10 @@ export function ClinicPickerModal({
   useEffect(() => {
     if (!open) return;
     setQuery("");
+    setDraftSelection(value);
     const timer = window.setTimeout(() => searchRef.current?.focus(), 80);
     return () => window.clearTimeout(timer);
-  }, [open]);
+  }, [open, value]);
 
   useEffect(() => {
     if (!open) return;
@@ -96,6 +112,28 @@ export function ClinicPickerModal({
     );
   }, [options, query]);
 
+  const selectedSet = useMemo(
+    () => new Set(draftSelection),
+    [draftSelection],
+  );
+
+  function toggleClinic(clinicId: string) {
+    setDraftSelection((current) =>
+      current.includes(clinicId)
+        ? current.filter((id) => id !== clinicId)
+        : [...current, clinicId],
+    );
+  }
+
+  function handleClearDraft() {
+    setDraftSelection([]);
+  }
+
+  function handleApply() {
+    onApply(draftSelection);
+    onClose();
+  }
+
   if (!mounted || !open) return null;
 
   return createPortal(
@@ -118,12 +156,18 @@ export function ClinicPickerModal({
       >
         <div className="shrink-0 bg-primary-dark px-4 py-4 sm:px-6 sm:py-5">
           <div className="flex items-start justify-between gap-3">
-            <h2
-              id="clinic-picker-modal-title"
-              className="text-base font-bold leading-snug text-white sm:text-lg"
-            >
-              {title}
-            </h2>
+            <div className="min-w-0">
+              <h2
+                id="clinic-picker-modal-title"
+                className="text-base font-bold leading-snug text-white sm:text-lg"
+              >
+                {title}
+              </h2>
+              <p className="mt-1 text-xs text-white/70">
+                Puedes elegir una o más clínicas. Los planes deben incluir al
+                menos una de las seleccionadas.
+              </p>
+            </div>
             <button
               type="button"
               onClick={onClose}
@@ -166,13 +210,14 @@ export function ClinicPickerModal({
           ) : (
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
               {filteredOptions.map((option, index) => {
-                const isSelected = option.id === value;
+                const isSelected = selectedSet.has(option.id);
 
                 return (
                   <button
                     key={option.id}
                     type="button"
-                    onClick={() => onSelect(option.id)}
+                    aria-pressed={isSelected}
+                    onClick={() => toggleClinic(option.id)}
                     className={joinClasses(
                       "group relative flex min-h-[4.75rem] flex-col items-center justify-center rounded-lg border bg-white px-2 py-3 text-center text-xs font-medium leading-snug text-foreground transition sm:min-h-[5rem] sm:text-[13px]",
                       ui.borderHairline,
@@ -184,12 +229,54 @@ export function ClinicPickerModal({
                     <span className="absolute right-1.5 top-1 text-[10px] tabular-nums text-muted/45">
                       {index + 1}
                     </span>
+                    {isSelected ? (
+                      <span className="absolute left-1.5 top-1 flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                        <CheckIcon />
+                      </span>
+                    ) : null}
                     <span className="line-clamp-3 px-1">{option.name}</span>
                   </button>
                 );
               })}
             </div>
           )}
+        </div>
+
+        <div
+          className={joinClasses(
+            "flex shrink-0 flex-wrap items-center justify-between gap-3 border-t bg-white px-4 py-3 sm:px-6",
+            ui.borderHairline,
+          )}
+        >
+          <p className="text-xs text-muted">
+            {draftSelection.length === 0
+              ? "Ningún prestador seleccionado"
+              : `${draftSelection.length} prestador${draftSelection.length === 1 ? "" : "es"} seleccionado${draftSelection.length === 1 ? "" : "s"}`}
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={handleClearDraft}
+              disabled={draftSelection.length === 0}
+              className={joinClasses(
+                "rounded-lg px-3 text-xs font-semibold text-muted transition hover:bg-surface-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50",
+                touchTarget,
+              )}
+            >
+              Limpiar
+            </button>
+            <button
+              type="button"
+              onClick={handleApply}
+              className={joinClasses(
+                "rounded-lg bg-primary px-4 text-xs font-bold text-primary-foreground transition hover:bg-primary-hover",
+                touchTarget,
+              )}
+            >
+              Aplicar
+              {draftSelection.length > 0 ? ` (${draftSelection.length})` : ""}
+            </button>
+          </div>
         </div>
       </div>
     </div>,

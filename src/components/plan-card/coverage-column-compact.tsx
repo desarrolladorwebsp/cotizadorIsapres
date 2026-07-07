@@ -16,8 +16,8 @@ export interface CoverageColumnCompactProps {
   badgeClassName?: string;
   sectionClassName?: string;
   showDivider?: boolean;
-  /** Resalta la clínica activa en el filtro (si aplica). */
-  highlightClinicId?: string | null;
+  /** Resalta las clínicas activas en el filtro (si aplica). */
+  highlightClinicIds?: string[];
 }
 
 function resolveMaxPercentage(
@@ -61,22 +61,27 @@ export function CoverageColumnCompact({
   badgeClassName = "bg-surface-hover text-foreground/80",
   sectionClassName,
   showDivider = false,
-  highlightClinicId = null,
+  highlightClinicIds = [],
 }: CoverageColumnCompactProps) {
   const maxPercentage = useMemo(
     () => resolveMaxPercentage(entries, fallbackPercentages),
     [entries, fallbackPercentages],
   );
 
-  const visibleEntries = useMemo(() => {
-    if (!highlightClinicId) return entries;
+  const highlightSet = useMemo(
+    () => new Set(highlightClinicIds),
+    [highlightClinicIds],
+  );
 
-    const highlighted = entries.filter(
-      (entry) => entry.clinic_id === highlightClinicId,
+  const visibleEntries = useMemo(() => {
+    if (highlightSet.size === 0) return entries;
+
+    const highlighted = entries.filter((entry) =>
+      highlightSet.has(entry.clinic_id),
     );
-    const rest = entries.filter((entry) => entry.clinic_id !== highlightClinicId);
+    const rest = entries.filter((entry) => !highlightSet.has(entry.clinic_id));
     return [...highlighted, ...rest];
-  }, [entries, highlightClinicId]);
+  }, [entries, highlightSet]);
 
   return (
     <section
@@ -115,8 +120,7 @@ export function CoverageColumnCompact({
       <ul className="mt-2 space-y-0.5">
         {visibleEntries.length > 0 ? (
           visibleEntries.map((entry, index) => {
-            const isHighlighted =
-              Boolean(highlightClinicId) && entry.clinic_id === highlightClinicId;
+            const isHighlighted = highlightSet.has(entry.clinic_id);
 
             return (
               <li

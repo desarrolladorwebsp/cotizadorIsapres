@@ -8,7 +8,7 @@ import { CotizadorNav } from "@/components/cotizador/cotizador-nav";
 import { AssignPlanToClientModal } from "@/components/executive/assign-plan-to-client-modal";
 import { useCotizadorDashboard } from "@/hooks/use-cotizador-dashboard";
 import { usePlansCatalog } from "@/hooks/use-plans-catalog";
-import { formatPlanClp, formatPlanUf } from "@/domain";
+import { formatPlanClp, formatPlanUf, getActiveClinicIds } from "@/domain";
 import type { HealthPlan } from "@/domain";
 import {
   appShell,
@@ -236,7 +236,7 @@ export function CotizadorWorkspace({
                 plans={dashboard.filteredPlans}
                 beneficiarySummary={dashboard.beneficiarySummary}
                 ufToClp={dashboard.ufToClp}
-                highlightClinicId={dashboard.dashboardFilters.clinicId}
+                highlightClinicIds={getActiveClinicIds(dashboard.dashboardFilters)}
                 onAssignPlan={
                   isExecutive ? (plan) => setAssignPlan(plan) : undefined
                 }

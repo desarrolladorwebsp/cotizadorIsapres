@@ -42,7 +42,7 @@ export interface PublicPlanCardProps {
   ufToClp: number;
   currency: CurrencyDisplay;
   onRequest: () => void;
-  highlightClinicId?: string | null;
+  highlightClinicIds?: string[];
 }
 
 const metaChip =
@@ -181,7 +181,7 @@ export function PublicPlanCard({
   ufToClp,
   currency,
   onRequest,
-  highlightClinicId = null,
+  highlightClinicIds = [],
 }: PublicPlanCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const { ref, inView } = useInView<HTMLElement>();
@@ -330,7 +330,7 @@ export function PublicPlanCard({
           headerClassName="text-primary-dark/80"
           badgeClassName="border border-primary/25 bg-primary/10 text-primary-dark"
           showDivider
-          highlightClinicId={highlightClinicId}
+          highlightClinicIds={highlightClinicIds}
         />
         <CoverageColumnCompact
           title="Cobertura ambulatoria"
@@ -341,7 +341,7 @@ export function PublicPlanCard({
           percentClassName="text-secondary"
           headerClassName="text-secondary"
           badgeClassName="border border-secondary/35 bg-secondary-muted text-secondary"
-          highlightClinicId={highlightClinicId}
+          highlightClinicIds={highlightClinicIds}
         />
       </div>
 

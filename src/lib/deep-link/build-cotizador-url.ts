@@ -1,5 +1,6 @@
 import {
   getActiveCheckboxIds,
+  getActiveClinicIds,
 } from "@/lib/filter-options";
 import {
   ISAPRE_FILTER_OPTIONS,
@@ -33,7 +34,7 @@ export interface BuildCotizadorUrlInput {
   precioMax?: number;
   isapres?: string[];
   zonas?: string[];
-  clinica?: string;
+  clinica?: string | string[];
   tipoPlan?: string[];
   coberturaH?: number;
   coberturaA?: number;
@@ -99,8 +100,16 @@ function appendCotizadorQueryParams(
   if (input.zonas?.length) {
     params.set(DEEP_LINK_PARAMS.zonas, input.zonas.join(","));
   }
-  if (input.clinica?.trim()) {
-    params.set(DEEP_LINK_PARAMS.clinica, input.clinica.trim());
+  if (input.clinica) {
+    const clinicIds = Array.isArray(input.clinica)
+      ? input.clinica.map((id) => id.trim()).filter(Boolean)
+      : input.clinica
+          .split(",")
+          .map((id) => id.trim())
+          .filter(Boolean);
+    if (clinicIds.length > 0) {
+      params.set(DEEP_LINK_PARAMS.clinica, clinicIds.join(","));
+    }
   }
   if (input.tipoPlan?.length) {
     params.set(DEEP_LINK_PARAMS.tipoPlan, input.tipoPlan.join(","));
@@ -169,7 +178,7 @@ export function buildCotizadorUrlFromParsed(
     precioMax: parsed.priceMax,
     isapres: getActiveCheckboxIds(parsed.filters.isapres),
     zonas: getActiveCheckboxIds(parsed.filters.zones),
-    clinica: parsed.filters.clinicId ?? undefined,
+    clinica: getActiveClinicIds(parsed.filters),
     tipoPlan: getActiveCheckboxIds(parsed.filters.planTypes),
     coberturaH: parsed.filters.hospitalCoveragePercent ?? undefined,
     coberturaA: parsed.filters.ambulatoryCoveragePercent ?? undefined,
