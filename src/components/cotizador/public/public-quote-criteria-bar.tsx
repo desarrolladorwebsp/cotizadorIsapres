@@ -27,6 +27,8 @@ export interface PublicQuoteCriteriaBarProps {
   ) => void;
   onCalculate: () => void;
   onResetAll?: () => void;
+  /** Vista compacta para widget embebido en móvil. */
+  compactEmbed?: boolean;
   /** Abre el panel de cargas cuando vienen prellenadas desde la URL. */
   showPreloadedDependents?: boolean;
 }
@@ -35,6 +37,9 @@ const fieldClass = joinClasses(
   "h-11 w-full rounded-xl border-0 bg-white px-3 text-sm shadow-sm ring-1 ring-border/80 focus:ring-2 focus:ring-primary/40",
 );
 
+const compactFieldClass =
+  "max-md:h-9 max-md:rounded-lg max-md:px-2.5 max-md:text-xs";
+
 export function PublicQuoteCriteriaBar({
   criteria,
   onCriteriaChange,
@@ -42,6 +47,7 @@ export function PublicQuoteCriteriaBar({
   onBeneficiariesChange,
   onCalculate,
   onResetAll,
+  compactEmbed = false,
   showPreloadedDependents = false,
 }: PublicQuoteCriteriaBarProps) {
   const [ageInput, setAgeInput] = useState(
@@ -119,17 +125,33 @@ export function PublicQuoteCriteriaBar({
   const insuredCount = 1 + beneficiaries.dependents.length;
 
   return (
-    <section className={criteriaBar}>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1.4fr_1.2fr_5rem_auto_auto_auto] lg:items-end lg:gap-4">
-        <div className="space-y-1.5">
-          <label htmlFor="qc-region" className="text-xs font-semibold text-muted">
+    <section
+      className={joinClasses(
+        criteriaBar,
+        compactEmbed && "max-md:rounded-xl max-md:p-3 max-md:shadow-none",
+      )}
+    >
+      <div
+        className={joinClasses(
+          "grid gap-3 sm:grid-cols-2 lg:grid-cols-[1.4fr_1.2fr_5rem_auto_auto_auto] lg:items-end lg:gap-4",
+          compactEmbed && "max-md:grid-cols-2 max-md:gap-2",
+        )}
+      >
+        <div className={joinClasses("space-y-1.5", compactEmbed && "max-md:space-y-1")}>
+          <label
+            htmlFor="qc-region"
+            className={joinClasses(
+              "text-xs font-semibold text-muted",
+              compactEmbed && "max-md:text-[11px]",
+            )}
+          >
             Región
           </label>
           <select
             id="qc-region"
             value={criteria.region}
             onChange={(e) => onCriteriaChange({ region: e.target.value })}
-            className={fieldClass}
+            className={joinClasses(fieldClass, compactEmbed && compactFieldClass)}
           >
             <option value="">Selecciona...</option>
             {REGION_OPTIONS.map((o) => (
@@ -140,25 +162,37 @@ export function PublicQuoteCriteriaBar({
           </select>
         </div>
 
-        <div className="space-y-1.5">
-          <label htmlFor="qc-income" className="text-xs font-semibold text-muted">
+        <div className={joinClasses("space-y-1.5", compactEmbed && "max-md:space-y-1")}>
+          <label
+            htmlFor="qc-income"
+            className={joinClasses(
+              "text-xs font-semibold text-muted",
+              compactEmbed && "max-md:text-[11px]",
+            )}
+          >
             Ingreso mensual líquido
           </label>
           <input
             id="qc-income"
             type="text"
             inputMode="numeric"
-            placeholder="Ej: $1.200.000"
+            placeholder={compactEmbed ? "$1.200.000" : "Ej: $1.200.000"}
             value={criteria.monthlyIncome}
             onChange={(e) =>
               onCriteriaChange({ monthlyIncome: e.target.value })
             }
-            className={fieldClass}
+            className={joinClasses(fieldClass, compactEmbed && compactFieldClass)}
           />
         </div>
 
-        <div className="space-y-1.5">
-          <label htmlFor="qc-age" className="text-xs font-semibold text-muted">
+        <div className={joinClasses("space-y-1.5", compactEmbed && "max-md:space-y-1")}>
+          <label
+            htmlFor="qc-age"
+            className={joinClasses(
+              "text-xs font-semibold text-muted",
+              compactEmbed && "max-md:text-[11px]",
+            )}
+          >
             Edad
           </label>
           <input
@@ -168,17 +202,19 @@ export function PublicQuoteCriteriaBar({
             max={120}
             value={ageInput}
             onChange={(e) => updateAge(e.target.value)}
-            className={fieldClass}
+            className={joinClasses(fieldClass, compactEmbed && compactFieldClass)}
           />
         </div>
 
-        <div className="relative" ref={popoverRef}>
+        <div className={joinClasses("relative", compactEmbed && "max-md:col-span-2")} ref={popoverRef}>
           <button
             type="button"
             onClick={() => setInsuredOpen((v) => !v)}
             className={joinClasses(
               touchTarget,
               "h-11 w-full gap-2 rounded-xl border border-dashed border-primary/40 bg-white px-4 text-sm font-semibold text-primary-dark transition hover:bg-primary/5 lg:w-auto",
+              compactEmbed &&
+                "max-md:h-9 max-md:rounded-lg max-md:px-3 max-md:text-xs",
             )}
           >
             <svg viewBox="0 0 24 24" fill="none" className="size-4" aria-hidden>
@@ -191,7 +227,7 @@ export function PublicQuoteCriteriaBar({
             </svg>
             Agregar asegurados
             {insuredCount > 1 ? (
-              <span className="rounded-full bg-primary px-2 py-0.5 text-xs text-white">
+              <span className="rounded-full bg-primary px-2 py-0.5 text-xs text-white max-md:text-[10px]">
                 {insuredCount}
               </span>
             ) : null}
@@ -248,10 +284,19 @@ export function PublicQuoteCriteriaBar({
           className={joinClasses(
             touchTarget,
             "h-11 rounded-full px-8 text-sm font-bold text-white shadow-[var(--shadow-cta)] transition hover:brightness-105 sm:col-span-2 lg:col-span-1",
+            compactEmbed &&
+              "max-md:col-span-2 max-md:h-9 max-md:px-4 max-md:text-xs",
             ui.cta,
           )}
         >
-          Buscar mejor plan
+          {compactEmbed ? (
+            <>
+              <span className="md:hidden">Buscar plan</span>
+              <span className="hidden md:inline">Buscar mejor plan</span>
+            </>
+          ) : (
+            "Buscar mejor plan"
+          )}
         </button>
 
         {onResetAll ? (
@@ -261,6 +306,7 @@ export function PublicQuoteCriteriaBar({
             className={joinClasses(
               touchTarget,
               "h-11 rounded-full border px-5 text-sm font-semibold sm:col-span-2 lg:col-span-1",
+              compactEmbed && "max-md:hidden",
               ui.border,
               "bg-white text-muted transition hover:border-primary/35 hover:bg-surface-hover hover:text-primary-dark",
             )}

@@ -31,6 +31,8 @@ export interface DashboardFiltersPanelProps {
   clinicOptions?: PlanCatalogClinicOption[];
   clinicOptionsLoading?: boolean;
   clinicOptionsError?: string | null;
+  /** Vista compacta para widget embebido en móvil. */
+  compactEmbed?: boolean;
 }
 
 export function DashboardFiltersPanel({
@@ -43,6 +45,7 @@ export function DashboardFiltersPanel({
   clinicOptions = [],
   clinicOptionsLoading = false,
   clinicOptionsError = null,
+  compactEmbed = false,
 }: DashboardFiltersPanelProps) {
   function update(partial: Partial<DashboardFiltersState>) {
     onChange({ ...value, ...partial });
@@ -54,12 +57,13 @@ export function DashboardFiltersPanel({
 
   return (
     <div className={className}>
-      <div className="mb-4 flex justify-end">
+      <div className={joinClasses("mb-4 flex justify-end", compactEmbed && "max-md:mb-2")}>
         <button
           type="button"
           onClick={clearFilters}
           className={joinClasses(
             "inline-flex items-center gap-1.5 rounded-lg px-4 text-xs font-semibold",
+            compactEmbed && "max-md:px-2.5 max-md:text-[11px]",
             touchTarget,
             ui.dangerGhost,
           )}
@@ -68,10 +72,11 @@ export function DashboardFiltersPanel({
         </button>
       </div>
 
-      <div className="space-y-6">
+      <div className={joinClasses("space-y-6", compactEmbed && "max-md:space-y-3")}>
         <FilterSection
           title="Filtrado por Isapre"
           description="Selecciona una o más Isapres para acotar los resultados."
+          compactEmbed={compactEmbed}
           infoLabel="Información sobre Isapres"
           info={
             <FilterHelpBlock
@@ -85,6 +90,7 @@ export function DashboardFiltersPanel({
             options={ISAPRE_FILTER_OPTIONS}
             state={value.isapres}
             idPrefix="filter-isapre"
+            compactEmbed={compactEmbed}
             onToggle={(optionId, checked) =>
               update({
                 isapres: toggleCheckboxFilter(value.isapres, optionId, checked),
@@ -96,6 +102,7 @@ export function DashboardFiltersPanel({
         <FilterSection
           title="Filtrado por Zona"
           description="Muestra planes con prestadores en las zonas seleccionadas (sector RM, norte, Valparaíso, etc.)."
+          compactEmbed={compactEmbed}
           infoLabel="Información sobre zonas y sectores geográficos"
           info={
             <FilterHelpBlock
@@ -112,6 +119,7 @@ export function DashboardFiltersPanel({
             state={value.zones}
             idPrefix="filter-zone"
             scrollable
+            compactEmbed={compactEmbed}
             onToggle={(optionId, checked) =>
               update({
                 zones: toggleCheckboxFilter(value.zones, optionId, checked),

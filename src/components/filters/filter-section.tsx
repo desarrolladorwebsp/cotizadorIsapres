@@ -11,6 +11,8 @@ export interface FilterSectionProps {
   info?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
+  /** Oculta descripciones y reduce padding en widget móvil. */
+  compactEmbed?: boolean;
 }
 
 export function FilterSection({
@@ -20,14 +22,23 @@ export function FilterSection({
   info,
   children,
   className,
+  compactEmbed = false,
 }: FilterSectionProps) {
   return (
-    <section className={joinClasses(ui.surfaceCard, "p-5 sm:p-6", className)}>
-      <header className="mb-5 space-y-1">
+    <section
+      className={joinClasses(
+        ui.surfaceCard,
+        "p-5 sm:p-6",
+        compactEmbed && "max-md:p-3",
+        className,
+      )}
+    >
+      <header className={joinClasses("mb-5 space-y-1", compactEmbed && "max-md:mb-3")}>
         <div className="flex items-center gap-1.5">
           <h2
             className={joinClasses(
               "text-sm font-bold tracking-tight",
+              compactEmbed && "max-md:text-xs",
               ui.sectionTitle,
             )}
           >
@@ -40,7 +51,14 @@ export function FilterSection({
           ) : null}
         </div>
         {description ? (
-          <p className="text-xs leading-relaxed text-muted">{description}</p>
+          <p
+            className={joinClasses(
+              "text-xs leading-relaxed text-muted",
+              compactEmbed && "max-md:hidden",
+            )}
+          >
+            {description}
+          </p>
         ) : null}
       </header>
       {children}

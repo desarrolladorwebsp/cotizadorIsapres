@@ -783,7 +783,7 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
     ? "w-full max-w-none overflow-visible"
     : appShellScroll;
   const contentShell = isEmbedded
-    ? "w-full max-w-none space-y-3"
+    ? "w-full max-w-none space-y-3 max-md:space-y-2"
     : joinClasses(publicCotizadorShell, safeWidth, "space-y-5");
 
   return (
@@ -802,7 +802,7 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
           shellScroll,
           isEmbedded ? "w-full max-w-none" : safeWidth,
           isEmbedded
-            ? "px-2 py-2 sm:px-3 sm:py-2"
+            ? "px-2 py-2 sm:px-3 sm:py-2 max-md:px-1.5 max-md:py-1"
             : "px-3 py-5 sm:px-4 sm:py-6 lg:px-6",
         )}
       >
@@ -833,6 +833,7 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
               onBeneficiariesChange={dashboard.handleBeneficiariesChange}
               onCalculate={handleCalculate}
               onResetAll={handleResetAll}
+              compactEmbed={isEmbedded}
               showPreloadedDependents={
                 deepLink.hasDeepLinkParams &&
                 dashboard.beneficiaries.dependents.length > 0
@@ -845,7 +846,7 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
             ref={resultsRef}
             className={joinClasses(
               isEmbedded ? "scroll-mt-4" : "scroll-mt-24",
-              "space-y-4",
+              isEmbedded ? "space-y-4 max-md:space-y-2" : "space-y-4",
             )}
           >
             {hasSearched ? (
@@ -856,6 +857,7 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
                 onSortChange={setSortKey}
                 currency={currency}
                 onCurrencyChange={setCurrency}
+                compactEmbed={isEmbedded}
               />
             ) : null}
 
@@ -868,6 +870,7 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
                   placeholder="Buscar por nombre, código o Isapre..."
                   className={joinClasses(
                     "mb-4 h-11 w-full max-w-full rounded-xl px-4 text-sm",
+                    isEmbedded && "max-md:mb-2 max-md:h-9 max-md:rounded-lg max-md:px-3 max-md:text-xs",
                     ui.input,
                   )}
                 />
@@ -877,7 +880,7 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
             <div
               className={joinClasses(
                 safeWidth,
-                isEmbedded ? "flex gap-0 lg:gap-5" : "flex min-h-0 gap-0 lg:gap-5",
+                isEmbedded ? "flex gap-0 lg:gap-5 max-md:gap-0" : "flex min-h-0 gap-0 lg:gap-5",
               )}
             >
               {hasSearched ? (
@@ -894,6 +897,7 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
                   hideCoverageFilter={isEmbedded}
                   hidePlanTypeFilter={isEmbedded}
                   showClinicFilter={!isEmbedded}
+                  compactEmbed={isEmbedded}
                 />
               ) : null}
 
@@ -1036,6 +1040,7 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
           hasSearched && !dashboard.sidebarOpen && !dashboard.isLargeScreen
         }
         onClick={() => dashboard.setSidebarOpen(true)}
+        compactEmbed={isEmbedded}
       />
 
       <PublicWhatsAppFab hidden={isEmbedded} />

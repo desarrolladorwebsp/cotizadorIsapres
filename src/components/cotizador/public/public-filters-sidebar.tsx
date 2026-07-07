@@ -23,6 +23,8 @@ export interface PublicFiltersSidebarProps {
   hideCoverageFilter?: boolean;
   hidePlanTypeFilter?: boolean;
   showClinicFilter?: boolean;
+  /** Vista compacta para widget embebido en móvil. */
+  compactEmbed?: boolean;
 }
 
 function CloseIcon() {
@@ -51,6 +53,7 @@ export function PublicFiltersSidebar({
   hideCoverageFilter = false,
   hidePlanTypeFilter = false,
   showClinicFilter = false,
+  compactEmbed = false,
 }: PublicFiltersSidebarProps) {
   const isLargeScreen = useIsLargeScreen();
   const {
@@ -100,7 +103,9 @@ export function PublicFiltersSidebar({
         transition={{ type: "spring", stiffness: 320, damping: 32 }}
         className={joinClasses(
           "fixed inset-y-0 left-0 z-50 flex w-full max-w-full flex-col border-r bg-white shadow-xl",
-          "lg:static lg:z-20 lg:w-72 lg:max-w-[18rem] lg:shrink-0 lg:translate-x-0 lg:shadow-none",
+          compactEmbed
+            ? "max-md:max-w-[17rem] lg:static lg:z-20 lg:w-60 lg:max-w-[15rem] lg:shrink-0 lg:translate-x-0 lg:shadow-none"
+            : "lg:static lg:z-20 lg:w-72 lg:max-w-[18rem] lg:shrink-0 lg:translate-x-0 lg:shadow-none",
           ui.border,
           !open && "pointer-events-none lg:pointer-events-auto",
           open ? "lg:flex" : "lg:hidden",
@@ -110,10 +115,18 @@ export function PublicFiltersSidebar({
           <div
             className={joinClasses(
               "flex shrink-0 items-center justify-between border-b px-4 py-4",
+              compactEmbed && "max-md:px-3 max-md:py-2.5",
               ui.border,
             )}
           >
-            <p className="text-sm font-bold text-primary-dark">Filtros</p>
+            <p
+              className={joinClasses(
+                "text-sm font-bold text-primary-dark",
+                compactEmbed && "max-md:text-xs",
+              )}
+            >
+              Filtros
+            </p>
             <button
               type="button"
               onClick={onClose}
@@ -124,11 +137,28 @@ export function PublicFiltersSidebar({
             </button>
           </div>
 
-          <div className="flex-1 space-y-6 overflow-y-auto overscroll-y-contain p-4">
-            <section className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-foreground">Precio</h3>
-                <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-bold tabular-nums text-primary-dark">
+          <div
+            className={joinClasses(
+              "flex-1 space-y-6 overflow-y-auto overscroll-y-contain p-4",
+              compactEmbed && "max-md:space-y-3 max-md:p-3",
+            )}
+          >
+            <section className={joinClasses("space-y-3", compactEmbed && "max-md:space-y-2")}>
+              <div className="flex items-center justify-between gap-2">
+                <h3
+                  className={joinClasses(
+                    "text-sm font-bold text-foreground",
+                    compactEmbed && "max-md:text-xs",
+                  )}
+                >
+                  Precio
+                </h3>
+                <span
+                  className={joinClasses(
+                    "rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-bold tabular-nums text-primary-dark",
+                    compactEmbed && "max-md:px-2 max-md:py-0.5 max-md:text-[10px]",
+                  )}
+                >
                   {formatPlanClp(priceMin * ufToClp)} –{" "}
                   {formatPlanClp(priceMax * ufToClp)}
                 </span>
@@ -159,7 +189,12 @@ export function PublicFiltersSidebar({
                 }
                 className="h-2 w-full cursor-pointer appearance-none rounded-full bg-border accent-primary"
               />
-              <p className="text-[11px] text-muted">
+              <p
+                className={joinClasses(
+                  "text-[11px] text-muted",
+                  compactEmbed && "max-md:text-[10px]",
+                )}
+              >
                 {formatPlanUf(priceMin)} – {formatPlanUf(priceMax)} UF
               </p>
             </section>
@@ -170,6 +205,7 @@ export function PublicFiltersSidebar({
               hideCoverageFilter={hideCoverageFilter}
               hidePlanTypeFilter={hidePlanTypeFilter}
               showClinicFilter={showClinicFilter}
+              compactEmbed={compactEmbed}
               clinicOptions={clinicOptions}
               clinicOptionsLoading={clinicOptionsLoading}
               clinicOptionsError={clinicOptionsError}

@@ -9,6 +9,7 @@ export interface FilterCheckboxListProps {
   onToggle: (optionId: string, checked: boolean) => void;
   scrollable?: boolean;
   className?: string;
+  compactEmbed?: boolean;
 }
 
 export function FilterCheckboxList({
@@ -18,12 +19,14 @@ export function FilterCheckboxList({
   onToggle,
   scrollable = false,
   className,
+  compactEmbed = false,
 }: FilterCheckboxListProps) {
   return (
     <div
       className={joinClasses(
         "space-y-1",
         scrollable && "max-h-52 overflow-y-auto overscroll-contain pr-1",
+        compactEmbed && scrollable && "max-md:max-h-36",
         className,
       )}
     >
@@ -37,6 +40,7 @@ export function FilterCheckboxList({
             className={joinClasses(
               "flex w-full cursor-pointer items-center gap-3 rounded-lg text-sm text-foreground transition",
               touchRow,
+              compactEmbed && "max-md:gap-2 max-md:text-xs",
               ui.hoverSurface,
             )}
           >
@@ -45,9 +49,17 @@ export function FilterCheckboxList({
               type="checkbox"
               checked={Boolean(state[option.id])}
               onChange={(event) => onToggle(option.id, event.target.checked)}
-              className="size-5 shrink-0 rounded border-border accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 md:size-4"
+              className={joinClasses(
+                "size-5 shrink-0 rounded border-border accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 md:size-4",
+                compactEmbed && "max-md:size-4",
+              )}
             />
-            <span className="min-h-12 flex flex-1 items-center leading-snug md:min-h-0">
+            <span
+              className={joinClasses(
+                "min-h-12 flex flex-1 items-center leading-snug md:min-h-0",
+                compactEmbed && "max-md:min-h-9",
+              )}
+            >
               {option.label}
             </span>
           </label>
