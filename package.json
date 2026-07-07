@@ -31,7 +31,8 @@
     "test-plan-query": "tsx scripts/test-plan-query.ts",
     "test-uf-service": "tsx scripts/test-uf-service.ts",
     "reset-admin-password": "tsx scripts/reset-admin-password.ts",
-    "upsert-admin-account": "tsx scripts/upsert-admin-account.ts"
+    "upsert-admin-account": "tsx scripts/upsert-admin-account.ts",
+    "seed-plan-reviews": "tsx scripts/seed-plan-reviews.ts"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"

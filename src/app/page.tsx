@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { PlatformLandingView } from "@/components/platform/platform-landing-view";
+import { LANDING_FALLBACK_REVIEWS } from "@/components/platform/landing/landing-reviews-data";
 import { readPublishedPlanReviews } from "@/lib/api/plan-review-store";
 import {
   readActivePartnerSlugs,
@@ -29,11 +30,16 @@ async function loadFeaturedPartners(): Promise<PartnerEntityPublic[]> {
   return partners;
 }
 
+async function loadLandingReviews() {
+  const fromDb = await readPublishedPlanReviews();
+  return fromDb.length > 0 ? fromDb : LANDING_FALLBACK_REVIEWS;
+}
+
 export default async function HomePage() {
   const [platformEntity, partners, reviews] = await Promise.all([
     readPlatformPartnerEntity(),
     loadFeaturedPartners(),
-    readPublishedPlanReviews(),
+    loadLandingReviews(),
   ]);
 
   return (
