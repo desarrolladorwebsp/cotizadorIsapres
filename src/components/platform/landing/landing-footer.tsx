@@ -62,18 +62,6 @@ function SocialIcon({ id, className }: { id: string; className?: string }) {
           <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
         </svg>
       );
-    case "linkedin":
-      return (
-        <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
-          <path d="M6.5 8.5A1.75 1.75 0 114.75 6.75 1.75 1.75 0 016.5 8.5zM4.75 10h3.5v10H4.75V10zM13 10c-1.93 0-3.5 1.35-3.5 4.2V20h3.5v-5.2c0-1.55.55-2.6 1.95-2.6 1.33 0 1.9.92 1.9 2.6V20H20v-5.55C20 11.05 18.05 10 16.15 10 14.65 10 13.65 10.7 13.1 11.55h-.05V10H13z" />
-        </svg>
-      );
-    case "tiktok":
-      return (
-        <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
-          <path d="M16.5 5.5c.6 1.2 1.6 2.1 2.8 2.5V11a6.8 6.8 0 01-4.3-1.5v6.3a5.2 5.2 0 11-2.4-4.4 5 5 0 001 .1v-3a2.2 2.2 0 00-1-.2 2.3 2.3 0 102.3 2.3V5.5h2.6z" />
-        </svg>
-      );
     case "whatsapp":
       return (
         <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
@@ -123,6 +111,8 @@ function SocialLink({
       href={href}
       aria-label={label}
       title={label}
+      target="_blank"
+      rel="noopener noreferrer"
       whileHover={
         reducedMotion
           ? undefined

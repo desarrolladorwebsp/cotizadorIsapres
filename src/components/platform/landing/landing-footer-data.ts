@@ -1,17 +1,27 @@
 /** Datos de contacto y redes — configurables sin tocar el componente. */
 export const LANDING_FOOTER_CONTACT = {
   email: "contacto@cotizadorpremium.cl",
-  phone: "+56 9 6413 3848",
-  phoneHref: "tel:+56964133848",
+  phone: "+56 9 6582 2864",
+  phoneHref: "tel:+56965822864",
   location: "Chile",
 } as const;
 
 export const LANDING_FOOTER_SOCIAL = [
-  { id: "facebook", label: "Facebook", href: "#" },
-  { id: "instagram", label: "Instagram", href: "#" },
-  { id: "linkedin", label: "LinkedIn", href: "#" },
-  { id: "tiktok", label: "TikTok", href: "#" },
-  { id: "whatsapp", label: "WhatsApp", href: "#" },
+  {
+    id: "facebook",
+    label: "Facebook",
+    href: "https://www.facebook.com/profile.php?id=61591687383169",
+  },
+  {
+    id: "instagram",
+    label: "Instagram",
+    href: "https://www.instagram.com/cotizadorpremium",
+  },
+  {
+    id: "whatsapp",
+    label: "WhatsApp",
+    href: "https://wa.me/56965822864",
+  },
 ] as const;
 
 export const LANDING_FOOTER_NAV = [

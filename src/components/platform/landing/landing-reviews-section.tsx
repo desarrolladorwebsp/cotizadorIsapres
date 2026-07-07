@@ -15,27 +15,18 @@ const sectionVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.1, delayChildren: 0.06 },
+    transition: { staggerChildren: 0.08, delayChildren: 0.05 },
   },
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 24 },
+  hidden: { opacity: 0, y: 20 },
   visible: {
     opacity: 1,
     y: 0,
     transition: { type: "spring" as const, stiffness: 280, damping: 28 },
   },
 };
-
-const BENTO_LAYOUTS = [
-  "lg:col-span-2 lg:row-span-2",
-  "lg:col-span-1",
-  "lg:col-span-1",
-  "lg:col-span-1 lg:row-span-2",
-  "lg:col-span-2",
-  "lg:col-span-1",
-] as const;
 
 function getInitials(name: string): string {
   return name
@@ -53,12 +44,18 @@ function formatReviewDate(isoDate: string): string {
   }).format(new Date(isoDate));
 }
 
-function ExecutiveStarRating({ rating }: { rating: number }) {
+function ExecutiveStarRating({
+  rating,
+  compact = false,
+}: {
+  rating: number;
+  compact?: boolean;
+}) {
   const safeRating = Math.min(Math.max(Math.round(rating), 1), 5);
 
   return (
     <div
-      className="flex items-center gap-0.5"
+      className="flex shrink-0 items-center gap-0.5"
       role="img"
       aria-label={`Calificación de atención del ejecutivo: ${safeRating} de 5 estrellas`}
     >
@@ -69,7 +66,8 @@ function ExecutiveStarRating({ rating }: { rating: number }) {
             key={index}
             viewBox="0 0 20 20"
             className={joinClasses(
-              "size-4 shrink-0 sm:size-[18px]",
+              "shrink-0",
+              compact ? "size-3.5" : "size-4",
               filled ? "text-amber-400" : "text-slate-200",
             )}
             aria-hidden
@@ -88,28 +86,19 @@ function ExecutiveStarRating({ rating }: { rating: number }) {
 function ReviewAvatar({
   name,
   avatarUrl,
-  size = "md",
 }: {
   name: string;
   avatarUrl: string | null;
-  size?: "md" | "lg";
 }) {
-  const sizeClass = size === "lg" ? "size-14 text-lg" : "size-11 text-sm";
-
   if (avatarUrl) {
     return (
-      <div
-        className={joinClasses(
-          "relative shrink-0 overflow-hidden rounded-full ring-2 ring-white/80",
-          sizeClass,
-        )}
-      >
+      <div className="relative size-10 shrink-0 overflow-hidden rounded-full ring-2 ring-white/80">
         <Image
           src={avatarUrl}
           alt=""
           fill
           className="object-cover"
-          sizes={size === "lg" ? "56px" : "44px"}
+          sizes="40px"
         />
       </div>
     );
@@ -117,10 +106,7 @@ function ReviewAvatar({
 
   return (
     <div
-      className={joinClasses(
-        "flex shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary/15 to-secondary/25 font-bold text-primary-dark ring-2 ring-white/80",
-        sizeClass,
-      )}
+      className="flex size-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary/15 to-secondary/25 text-sm font-bold text-primary-dark ring-2 ring-white/80"
       aria-hidden
     >
       {getInitials(name) || "?"}
@@ -130,17 +116,13 @@ function ReviewAvatar({
 
 function ReviewCard({
   review,
-  layoutClassName,
-  size = "md",
   reducedMotion,
+  clampComment = true,
 }: {
   review: PublicPlanReview;
-  layoutClassName?: string;
-  size?: "md" | "lg";
   reducedMotion: boolean;
+  clampComment?: boolean;
 }) {
-  const isLarge = size === "lg";
-
   return (
     <motion.article
       variants={itemVariants}
@@ -148,72 +130,47 @@ function ReviewCard({
         reducedMotion
           ? undefined
           : {
-              y: -8,
-              scale: 1.015,
-              transition: { type: "spring", stiffness: 420, damping: 26 },
+              y: -4,
+              transition: { type: "spring", stiffness: 420, damping: 28 },
             }
       }
-      className={joinClasses(
-        "landing-review-card landing-glass-panel-strong group relative flex h-full min-h-[220px] flex-col overflow-hidden rounded-3xl p-5 sm:p-6",
-        layoutClassName,
-      )}
+      className="landing-review-card landing-glass-panel-strong group relative flex h-full flex-col overflow-hidden rounded-2xl p-4 sm:p-5"
     >
-      <div
-        className="pointer-events-none absolute -right-8 -top-8 size-32 rounded-full bg-primary/5 blur-2xl transition-opacity duration-500 group-hover:opacity-100"
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute -bottom-10 -left-6 size-28 rounded-full bg-secondary/10 blur-2xl opacity-70 transition-opacity duration-500 group-hover:opacity-100"
-        aria-hidden
-      />
-
-      <header className="relative flex items-start gap-3">
-        <ReviewAvatar
-          name={review.authorName}
-          avatarUrl={review.authorAvatarUrl}
-          size={isLarge ? "lg" : "md"}
-        />
+      <header className="flex items-start gap-3">
+        <ReviewAvatar name={review.authorName} avatarUrl={review.authorAvatarUrl} />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-bold text-foreground sm:text-base">
+          <p className="truncate text-sm font-bold text-foreground">
             {review.authorName}
           </p>
-          <p className="mt-0.5 truncate text-xs text-muted">
+          <p className="mt-0.5 truncate text-[11px] text-muted">
             {formatReviewDate(review.createdAt)}
           </p>
         </div>
+        <ExecutiveStarRating rating={review.executiveRating} compact />
       </header>
 
-      <div className="relative mt-4 rounded-2xl border border-primary/10 bg-primary/[0.04] px-3 py-2.5">
-        <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-primary-dark/70">
+      <div className="mt-3 rounded-xl border border-primary/10 bg-primary/[0.04] px-3 py-2">
+        <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-primary-dark/70">
           Plan seleccionado
         </p>
-        <p className="mt-1 text-sm font-semibold leading-snug text-foreground">
+        <p className="mt-0.5 truncate text-sm font-semibold text-foreground">
           {review.planName}
         </p>
-        <p className="mt-0.5 text-xs text-muted">{review.isapreName}</p>
-      </div>
-
-      <div className="relative mt-4 space-y-1.5">
-        <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted">
-          Atención del ejecutivo
-        </p>
-        <ExecutiveStarRating rating={review.executiveRating} />
+        <p className="truncate text-[11px] text-muted">{review.isapreName}</p>
       </div>
 
       <blockquote
         className={joinClasses(
-          "relative mt-4 flex-1 text-pretty leading-relaxed text-foreground/90",
-          isLarge ? "text-base sm:text-[1.05rem]" : "text-sm sm:text-[0.95rem]",
+          "mt-3 text-sm leading-relaxed text-foreground/90",
+          clampComment ? "line-clamp-4" : "line-clamp-5",
         )}
       >
-        <span className="text-primary/35" aria-hidden>
-          "
-        </span>
         {review.comment}
-        <span className="text-primary/35" aria-hidden>
-          "
-        </span>
       </blockquote>
+
+      <p className="mt-auto pt-3 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted">
+        Atención del ejecutivo · {review.executiveRating}/5
+      </p>
     </motion.article>
   );
 }
@@ -239,7 +196,7 @@ function ReviewsMobileCarousel({
 
     let frameId = 0;
     let lastTimestamp = performance.now();
-    const pixelsPerSecond = 36;
+    const pixelsPerSecond = 32;
 
     function tick(timestamp: number) {
       const delta = timestamp - lastTimestamp;
@@ -273,7 +230,7 @@ function ReviewsMobileCarousel({
 
       <div
         ref={trackRef}
-        className="landing-reviews-mobile-track flex gap-4 overflow-x-auto px-4 pb-3 pt-1 snap-x snap-mandatory scroll-smooth sm:px-6"
+        className="landing-reviews-mobile-track flex gap-3 overflow-x-auto px-4 pb-3 pt-1 snap-x snap-mandatory scroll-smooth sm:px-6"
         onPointerDown={() => setIsPaused(true)}
         onPointerUp={resumeAutoScroll}
         onTouchStart={() => setIsPaused(true)}
@@ -285,9 +242,9 @@ function ReviewsMobileCarousel({
         {loopReviews.map((review, index) => (
           <div
             key={`${review.id}-${index}`}
-            className="w-[min(86vw,320px)] shrink-0 snap-center"
+            className="w-[min(82vw,280px)] shrink-0 snap-center"
           >
-            <ReviewCard review={review} reducedMotion={true} />
+            <ReviewCard review={review} reducedMotion={true} clampComment={false} />
           </div>
         ))}
       </div>
@@ -359,14 +316,12 @@ export function LandingReviewsSection({ reviews }: LandingReviewsSectionProps) {
           whileInView="visible"
           viewport={{ once: true, margin: "-60px" }}
           variants={sectionVariants}
-          className="mt-14 hidden auto-rows-fr grid-cols-1 gap-4 md:grid md:grid-cols-2 lg:grid-cols-3 lg:gap-5"
+          className="mt-12 hidden gap-4 md:grid md:grid-cols-2 lg:mt-14 lg:grid-cols-3 lg:gap-5"
         >
-          {reviews.map((review, index) => (
+          {reviews.map((review) => (
             <ReviewCard
               key={review.id}
               review={review}
-              size={index === 0 ? "lg" : "md"}
-              layoutClassName={BENTO_LAYOUTS[index % BENTO_LAYOUTS.length]}
               reducedMotion={Boolean(reducedMotion)}
             />
           ))}
@@ -377,7 +332,7 @@ export function LandingReviewsSection({ reviews }: LandingReviewsSectionProps) {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-40px" }}
           transition={{ type: "spring", stiffness: 260, damping: 28, delay: 0.08 }}
-          className="mt-12 md:hidden"
+          className="mt-10 md:hidden"
         >
           <ReviewsMobileCarousel
             reviews={reviews}
