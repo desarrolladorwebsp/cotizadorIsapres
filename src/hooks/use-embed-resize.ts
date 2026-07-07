@@ -99,7 +99,14 @@ export function useEmbedResize(
           if (!measuredRoot) return;
 
           const nextHeight = measureEmbedContentHeight(measuredRoot);
-          if (!force && nextHeight === lastHeightRef.current) return;
+          if (!Number.isFinite(nextHeight) || nextHeight <= 0) return;
+          if (
+            !force &&
+            Number.isFinite(lastHeightRef.current) &&
+            nextHeight === lastHeightRef.current
+          ) {
+            return;
+          }
           lastHeightRef.current = nextHeight;
 
           postEmbedMessage({

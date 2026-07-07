@@ -208,7 +208,7 @@ Asegúrate de tener CORS/CSP local configurado y el cotizador corriendo con `npm
 | Problema | Causa probable | Solución |
 |----------|----------------|----------|
 | Iframe vacío o bloqueado | Dominio no autorizado en CSP | Solicitar alta de tu dominio en `EMBED_FRAME_ANCESTORS` |
-| Branding incorrecto | Script del widget desactualizado o sin `data-agent-key` | Usar `https://cotizadorpremium.cl/cotizador-widget.js` y `data-agent-key="isaprespremium"` |
+| Contenido cortado / altura fija en WordPress | Script desactualizado, `overflow:hidden` en Elementor, o **`data-agent-key` mal escrito** (`isaprepremium` → usar `isaprespremium`) | Usar snippet de abajo, CSS de overflow, y **siempre** `https://cotizadorpremium.cl/cotizador-widget.js` (no el dominio antiguo `cotizador-widget.vercel.app`) |
 | Solo 4 planes visibles | Comportamiento esperado en embed | Usar "Ver todos" para ir al cotizador completo |
 | 404 en iframe | URL base incorrecta | Usar `https://cotizadorpremium.cl` como `data-base-url` |
 

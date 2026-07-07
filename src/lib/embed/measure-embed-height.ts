@@ -1,16 +1,32 @@
 import { EMBED_HEIGHT_BUFFER_PX } from "@/lib/embed/constants";
 
-function measureElementBottom(el: HTMLElement, rootTop: number): number {
+function safeMax(...values: number[]): number {
+  let max = 0;
+  for (const value of values) {
+    if (Number.isFinite(value) && value > max) {
+      max = value;
+    }
+  }
+  return max;
+}
+
+function measureElementBottom(el: Element, rootTop: number): number {
   const rect = el.getBoundingClientRect();
-  if (rect.height <= 0 && el.offsetHeight <= 0 && el.scrollHeight <= 0) {
+  if (rect.height <= 0 && rect.width <= 0) {
     return 0;
   }
-  return Math.max(
-    0,
-    rect.bottom - rootTop,
-    el.offsetTop + el.offsetHeight,
-    el.scrollHeight,
-  );
+
+  const fromRect = rect.bottom - rootTop;
+  const candidates = [fromRect];
+
+  if (el instanceof HTMLElement) {
+    candidates.push(el.scrollHeight);
+    if (Number.isFinite(el.offsetTop) && Number.isFinite(el.offsetHeight)) {
+      candidates.push(el.offsetTop + el.offsetHeight);
+    }
+  }
+
+  return safeMax(0, ...candidates);
 }
 
 function measureFlowContent(root: HTMLElement): number {
@@ -19,7 +35,7 @@ function measureFlowContent(root: HTMLElement): number {
 
   const sentinel = root.querySelector("[data-embed-height-sentinel]");
   if (sentinel instanceof HTMLElement) {
-    maxBottom = Math.max(
+    maxBottom = safeMax(
       maxBottom,
       measureElementBottom(sentinel, rootTop),
       sentinel.offsetTop + sentinel.offsetHeight,
@@ -27,21 +43,19 @@ function measureFlowContent(root: HTMLElement): number {
   }
 
   root.querySelectorAll<HTMLElement>(":scope > *").forEach((child) => {
-    maxBottom = Math.max(maxBottom, measureElementBottom(child, rootTop));
+    maxBottom = safeMax(maxBottom, measureElementBottom(child, rootTop));
   });
 
   root.querySelectorAll<HTMLElement>("[data-embed-measure]").forEach((node) => {
-    maxBottom = Math.max(maxBottom, measureElementBottom(node, rootTop));
+    maxBottom = safeMax(maxBottom, measureElementBottom(node, rootTop));
   });
 
   const results = root.querySelector("#resultados");
   if (results instanceof HTMLElement) {
-    maxBottom = Math.max(maxBottom, measureElementBottom(results, rootTop));
+    maxBottom = safeMax(maxBottom, measureElementBottom(results, rootTop));
   }
 
-  return Math.ceil(
-    Math.max(maxBottom, root.scrollHeight, root.offsetHeight),
-  );
+  return Math.ceil(safeMax(maxBottom, root.scrollHeight, root.offsetHeight));
 }
 
 function measureOverlayContent(root: HTMLElement): number {
@@ -51,11 +65,9 @@ function measureOverlayContent(root: HTMLElement): number {
   root.querySelectorAll<HTMLElement>(
     '[role="dialog"], [role="alertdialog"]',
   ).forEach((overlay) => {
-    maxBottom = Math.max(maxBottom, measureElementBottom(overlay, rootTop));
-
-    overlay.querySelectorAll<HTMLElement>("*").forEach((child) => {
-      maxBottom = Math.max(maxBottom, measureElementBottom(child, rootTop));
-    });
+    const rect = overlay.getBoundingClientRect();
+    if (rect.height <= 0 || rect.width <= 0) return;
+    maxBottom = safeMax(maxBottom, measureElementBottom(overlay, rootTop));
   });
 
   return Math.ceil(maxBottom);
@@ -66,7 +78,7 @@ function measureDocumentHeight(): number {
   const body = document.body;
 
   return Math.ceil(
-    Math.max(
+    safeMax(
       html.scrollHeight,
       html.offsetHeight,
       body.scrollHeight,
@@ -80,10 +92,13 @@ export function measureEmbedContentHeight(root: HTMLElement): number {
   const flowHeight = measureFlowContent(root);
   const overlayHeight = measureOverlayContent(root);
   const docHeight = measureDocumentHeight();
+  const total = safeMax(flowHeight, overlayHeight, docHeight) + EMBED_HEIGHT_BUFFER_PX;
 
-  return (
-    Math.max(flowHeight, overlayHeight, docHeight) + EMBED_HEIGHT_BUFFER_PX
-  );
+  if (Number.isFinite(total) && total > 0) {
+    return total;
+  }
+
+  return docHeight + EMBED_HEIGHT_BUFFER_PX;
 }
 
 /**
