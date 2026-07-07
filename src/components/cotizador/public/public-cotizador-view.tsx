@@ -777,7 +777,7 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
   const brandKey = isBranded ? entity!.brandKey : undefined;
 
   const shellRoot = isEmbedded
-    ? "relative flex w-full max-w-none flex-col overflow-visible"
+    ? "relative flex h-auto max-h-fit w-full max-w-none flex-col overflow-visible"
     : appShellRoot;
   const shellScroll = isEmbedded
     ? "w-full max-w-none overflow-visible"

@@ -23,7 +23,7 @@ function measureElementBottom(el: Element, rootTop: number): number {
 
 function measureFlowContent(root: HTMLElement): number {
   const rootTop = root.getBoundingClientRect().top;
-  let maxBottom = measureElementBottom(root, rootTop);
+  let maxBottom = 0;
 
   const sentinel = root.querySelector("[data-embed-height-sentinel]");
   if (sentinel instanceof HTMLElement) {
@@ -31,6 +31,7 @@ function measureFlowContent(root: HTMLElement): number {
   }
 
   root.querySelectorAll<HTMLElement>(":scope > *").forEach((child) => {
+    if (child.hasAttribute("data-embed-height-sentinel")) return;
     maxBottom = safeMax(maxBottom, measureElementBottom(child, rootTop));
   });
 
