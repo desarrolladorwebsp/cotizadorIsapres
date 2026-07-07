@@ -2,11 +2,16 @@
 
 import { useEffect, useRef, useState } from "react";
 import { buildBeneficiaryGroupSummary, parseBeneficiaryAge } from "@/domain";
+import { DependentLoadsEditor } from "@/components/beneficiaries/dependent-loads-editor";
 import {
   createDefaultQuoteCriteria,
   REGION_OPTIONS,
   type QuoteCriteria,
 } from "@/lib/quote-criteria-options";
+import {
+  formatBeneficiariesBarSummary,
+  getConfirmedDependents,
+} from "@/lib/beneficiary-display";
 import { criteriaBar, touchTarget, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type {
@@ -67,10 +72,10 @@ export function PublicQuoteCriteriaBar({
   }, [beneficiaries.contributorAge]);
 
   useEffect(() => {
-    if (showPreloadedDependents && beneficiaries.dependents.length > 0) {
+    if (showPreloadedDependents && getConfirmedDependents(beneficiaries).length > 0) {
       setInsuredOpen(true);
     }
-  }, [showPreloadedDependents, beneficiaries.dependents.length]);
+  }, [showPreloadedDependents, beneficiaries]);
 
   useEffect(() => {
     if (!insuredOpen) return;
@@ -95,34 +100,13 @@ export function PublicQuoteCriteriaBar({
     emit({
       ...beneficiaries,
       contributorAge: parseBeneficiaryAge(raw),
+      dependents: getConfirmedDependents(beneficiaries),
     });
   }
 
-  function addDependent() {
-    const id = crypto.randomUUID();
-    emit({
-      ...beneficiaries,
-      dependents: [...beneficiaries.dependents, { id, age: null }],
-    });
-  }
-
-  function updateDependentAge(id: string, raw: string) {
-    emit({
-      ...beneficiaries,
-      dependents: beneficiaries.dependents.map((d) =>
-        d.id === id ? { ...d, age: parseBeneficiaryAge(raw) } : d,
-      ),
-    });
-  }
-
-  function removeDependent(id: string) {
-    emit({
-      ...beneficiaries,
-      dependents: beneficiaries.dependents.filter((d) => d.id !== id),
-    });
-  }
-
-  const insuredCount = 1 + beneficiaries.dependents.length;
+  const confirmedDependents = getConfirmedDependents(beneficiaries);
+  const insuredSummary = formatBeneficiariesBarSummary(beneficiaries);
+  const insuredCount = 1 + confirmedDependents.length;
 
   return (
     <section
@@ -212,25 +196,36 @@ export function PublicQuoteCriteriaBar({
             onClick={() => setInsuredOpen((v) => !v)}
             className={joinClasses(
               touchTarget,
-              "h-11 w-full gap-2 rounded-xl border border-dashed border-primary/40 bg-white px-4 text-sm font-semibold text-primary-dark transition hover:bg-primary/5 lg:w-auto",
+              "h-11 w-full flex-col gap-0.5 rounded-xl border border-dashed border-primary/40 bg-white px-4 py-2 text-sm font-semibold text-primary-dark transition hover:bg-primary/5 lg:w-auto lg:min-w-[12rem]",
               compactEmbed &&
-                "max-md:h-9 max-md:rounded-lg max-md:px-3 max-md:text-xs",
+                "max-md:h-auto max-md:min-h-9 max-md:rounded-lg max-md:px-3 max-md:py-1.5 max-md:text-xs",
             )}
           >
-            <svg viewBox="0 0 24 24" fill="none" className="size-4" aria-hidden>
-              <path
-                d="M12 5v14M5 12h14"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-            </svg>
-            Agregar asegurados
-            {insuredCount > 1 ? (
-              <span className="rounded-full bg-primary px-2 py-0.5 text-xs text-white max-md:text-[10px]">
-                {insuredCount}
+            <span className="inline-flex items-center gap-2">
+              <svg viewBox="0 0 24 24" fill="none" className="size-4" aria-hidden>
+                <path
+                  d="M12 5v14M5 12h14"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              </svg>
+              Agregar asegurados
+              {insuredCount > 1 ? (
+                <span className="rounded-full bg-primary px-2 py-0.5 text-xs text-white max-md:text-[10px]">
+                  {insuredCount}
+                </span>
+              ) : null}
+            </span>
+            {insuredSummary ? (
+              <span className="max-w-full truncate text-[10px] font-medium text-muted max-md:text-[9px]">
+                {insuredSummary}
               </span>
-            ) : null}
+            ) : (
+              <span className="text-[10px] font-normal text-muted max-md:text-[9px]">
+                Sin cargas agregadas
+              </span>
+            )}
           </button>
 
           {insuredOpen ? (
@@ -243,37 +238,13 @@ export function PublicQuoteCriteriaBar({
               <p className="mb-3 text-xs font-bold uppercase tracking-wide text-muted">
                 Cargas familiares
               </p>
-              <ul className="space-y-2">
-                {beneficiaries.dependents.map((dep, index) => (
-                  <li key={dep.id} className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      min={0}
-                      max={120}
-                      placeholder={`Edad carga ${index + 1}`}
-                      value={dep.age !== null ? String(dep.age) : ""}
-                      onChange={(e) =>
-                        updateDependentAge(dep.id, e.target.value)
-                      }
-                      className={joinClasses("h-10 flex-1 rounded-lg px-3 text-sm", ui.input)}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeDependent(dep.id)}
-                      className="text-xs font-semibold text-accent-danger"
-                    >
-                      Quitar
-                    </button>
-                  </li>
-                ))}
-              </ul>
-              <button
-                type="button"
-                onClick={addDependent}
-                className="mt-3 text-sm font-semibold text-primary"
-              >
-                + Añadir carga
-              </button>
+              <DependentLoadsEditor
+                dependents={confirmedDependents}
+                onDependentsChange={(dependents) =>
+                  emit({ ...beneficiaries, dependents })
+                }
+                variant="popover"
+              />
             </div>
           ) : null}
         </div>

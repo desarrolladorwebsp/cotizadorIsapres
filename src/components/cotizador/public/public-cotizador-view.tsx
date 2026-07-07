@@ -19,7 +19,6 @@ import { usePlanCatalogBounds } from "@/hooks/use-plan-catalog-bounds";
 import { useEmbedResize, postEmbedExitNavigate } from "@/hooks/use-embed-resize";
 import { usePlanSearch } from "@/hooks/use-plan-search";
 import {
-  buildPlanFinalPriceQuote,
   buildBeneficiaryGroupSummary,
   createDefaultDashboardFilters,
   withoutEmbedWidgetFilters,
@@ -51,6 +50,7 @@ import {
   INITIAL_PLANS_PAGE_SIZE,
   PLANS_PAGE_SIZE_STEP,
 } from "@/lib/plan-search-config";
+import { sortHealthPlanSummariesByFinalPriceAsc } from "@/lib/plan-sort";
 import type { QuoteSortKey } from "@/lib/quote-criteria-options";
 import { createDefaultQuoteCriteria } from "@/lib/quote-criteria-options";
 import {
@@ -175,9 +175,7 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
   );
 
   const [criteria, setCriteria] = useState<QuoteCriteria>(deepLink.criteria);
-  const [sortKey, setSortKey] = useState<QuoteSortKey>(
-    deepLink.sortKey ?? "price_asc",
-  );
+  const [sortKey] = useState<QuoteSortKey>("price_asc");
   const [currency, setCurrency] = useState<CurrencyDisplay>(
     deepLink.currency ?? "clp",
   );
@@ -225,7 +223,6 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
     if (deepLink.hasDeepLinkParams || deepLink.hasSolicitarDeepLink) {
       setCriteria(deepLink.criteria);
       setSearchText(deepLink.q ?? deepLink.planCode ?? "");
-      if (deepLink.sortKey) setSortKey(deepLink.sortKey);
       if (deepLink.currency) setCurrency(deepLink.currency);
       if (deepLink.email) setNotifyEmail(deepLink.email);
       if (deepLink.modalTab) setContractModalTab(deepLink.modalTab);
@@ -460,35 +457,12 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
   ]);
 
   const sortedPlans = useMemo(() => {
-    return [...plans].sort((a, b) => {
-      if (sortKey === "coverage") {
-        const scoreA =
-          (a.coverage_summary.hospital_avg +
-            a.coverage_summary.ambulatory_avg) /
-          2;
-        const scoreB =
-          (b.coverage_summary.hospital_avg +
-            b.coverage_summary.ambulatory_avg) /
-          2;
-        return scoreB - scoreA;
-      }
-
-      const priceA = buildPlanFinalPriceQuote(
-        a.base_price_uf,
-        dashboard.beneficiarySummary,
-        dashboard.ufToClp,
-        a.ges_premium_uf,
-      ).finalPriceUf;
-      const priceB = buildPlanFinalPriceQuote(
-        b.base_price_uf,
-        dashboard.beneficiarySummary,
-        dashboard.ufToClp,
-        b.ges_premium_uf,
-      ).finalPriceUf;
-
-      return sortKey === "price_asc" ? priceA - priceB : priceB - priceA;
-    });
-  }, [plans, sortKey, dashboard.beneficiarySummary, dashboard.ufToClp]);
+    return sortHealthPlanSummariesByFinalPriceAsc(
+      plans,
+      dashboard.beneficiarySummary,
+      dashboard.ufToClp,
+    );
+  }, [plans, dashboard.beneficiarySummary, dashboard.ufToClp]);
 
   useEffect(() => {
     if (!solicitarFlowActive || !deepLink.planCode) return;
@@ -650,7 +624,6 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
     dashboard.setPriceMin(defaultPriceMin);
     dashboard.setPriceMax(defaultPriceMax);
     setSearchText("");
-    setSortKey("price_asc");
     setCurrency("clp");
     setResultsLimit(activePlansLimit);
     setContractPlan(null);
@@ -853,8 +826,6 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
               <PublicResultsToolbar
                 displayedCount={sortedPlans.length}
                 totalCount={total}
-                sortKey={sortKey}
-                onSortChange={setSortKey}
                 currency={currency}
                 onCurrencyChange={setCurrency}
                 compactEmbed={isEmbedded}

@@ -15,7 +15,6 @@ import {
   appShellRoot,
   appShellScroll,
   safeWidth,
-  touchTarget,
   ui,
 } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
@@ -105,7 +104,6 @@ export function CotizadorWorkspace({
               className={joinClasses(
                 "grid gap-5 rounded-xl border bg-white p-4 shadow-card sm:gap-6 sm:p-6",
                 "md:grid-cols-2 md:items-end",
-                "lg:grid-cols-[1fr_minmax(14rem,20rem)_auto] lg:gap-8 lg:p-8",
                 ui.border,
               )}
             >
@@ -142,7 +140,7 @@ export function CotizadorWorkspace({
                 </div>
               </div>
 
-              <div className="w-full space-y-3">
+              <div className="w-full space-y-3 md:col-span-2">
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-medium text-muted">Rango de precio</span>
                   <span className="tabular-nums text-muted/80">
@@ -182,32 +180,6 @@ export function CotizadorWorkspace({
                   pesos
                 </p>
               </div>
-
-              <button
-                type="button"
-                onClick={() => dashboard.setSortAsc((value) => !value)}
-                className={joinClasses(
-                  touchTarget,
-                  "w-full justify-center gap-2 rounded-lg px-5 text-sm font-medium md:w-auto",
-                  ui.ctaOutline,
-                )}
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  className="size-4 shrink-0 text-muted"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  aria-hidden
-                >
-                  <path
-                    d="M7 4v16M7 20l-3-3M7 20l3-3M17 20V4M17 4l3 3M17 4l-3 3"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                {dashboard.sortAsc ? "Menor a Mayor" : "Mayor a Menor"}
-              </button>
             </section>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">

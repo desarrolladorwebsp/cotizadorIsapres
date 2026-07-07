@@ -1,9 +1,5 @@
 "use client";
 
-import {
-  SORT_OPTIONS,
-  type QuoteSortKey,
-} from "@/lib/quote-criteria-options";
 import { touchTarget, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 
@@ -12,8 +8,6 @@ export type CurrencyDisplay = "clp" | "uf";
 export interface PublicResultsToolbarProps {
   displayedCount: number;
   totalCount: number;
-  sortKey: QuoteSortKey;
-  onSortChange: (key: QuoteSortKey) => void;
   currency: CurrencyDisplay;
   onCurrencyChange: (currency: CurrencyDisplay) => void;
   compactEmbed?: boolean;
@@ -22,8 +16,6 @@ export interface PublicResultsToolbarProps {
 export function PublicResultsToolbar({
   displayedCount,
   totalCount,
-  sortKey,
-  onSortChange,
   currency,
   onCurrencyChange,
   compactEmbed = false,
@@ -55,35 +47,11 @@ export function PublicResultsToolbar({
             compactEmbed && "max-md:hidden",
           )}
         >
-          Precios directos · Sin costo adicional
+          Orden: menor a mayor precio · Sin costo adicional
         </span>
       </div>
 
       <div className="flex flex-wrap items-center gap-3 max-md:gap-2">
-        <label
-          className={joinClasses(
-            "flex items-center gap-2 text-xs font-semibold text-muted",
-            compactEmbed && "max-md:gap-1.5 max-md:text-[11px]",
-          )}
-        >
-          Ordenar por
-          <select
-            value={sortKey}
-            onChange={(e) => onSortChange(e.target.value as QuoteSortKey)}
-            className={joinClasses(
-              "h-9 rounded-lg px-3 text-sm font-medium text-foreground",
-              compactEmbed && "max-md:h-8 max-md:px-2 max-md:text-xs",
-              ui.input,
-            )}
-          >
-            {SORT_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
-        </label>
-
         <div
           className={joinClasses(
             "inline-flex rounded-lg p-0.5",

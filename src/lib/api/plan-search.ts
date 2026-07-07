@@ -5,6 +5,7 @@ import {
   getActiveCheckboxIds,
   isCheckboxGroupActive,
 } from "@/lib/filter-options";
+import { sortPlansByBasePriceAsc } from "@/lib/plan-sort";
 import { MAX_PLAN_SEARCH_LIMIT } from "@/lib/plan-search-config";
 import type { DashboardFiltersState } from "@/types/filters";
 import type { HealthPlan, HealthPlanSummary, PlanSearchResult } from "@/types/plan";
@@ -136,6 +137,8 @@ export async function searchPlanSummaries(
     matchesPriceRange(plan, query.priceMin, query.priceMax),
   );
 
+  summaries = sortPlansByBasePriceAsc(summaries);
+
   const total = summaries.length;
   const offset =
     query.offset !== undefined && Number.isFinite(query.offset) && query.offset > 0
@@ -159,9 +162,9 @@ export async function readLimitedPlanSummaries(
     Number.isFinite(limit) && limit > 0 ? Math.floor(limit) : 1;
 
   const allPlans = await getCachedHealthPlans();
-  const summaries = allPlans
-    .slice(0, safeLimit)
-    .map(mapHealthPlanToSummary);
+  const summaries = sortPlansByBasePriceAsc(
+    allPlans.map(mapHealthPlanToSummary),
+  ).slice(0, safeLimit);
 
   return {
     plans: summaries,

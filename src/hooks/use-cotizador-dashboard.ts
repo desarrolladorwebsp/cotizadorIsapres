@@ -4,11 +4,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   applyDashboardFilters,
   buildBeneficiaryGroupSummary,
-  buildPlanFinalPriceQuote,
   createDefaultDashboardFilters,
 } from "@/domain";
 import { useIsLargeScreen } from "@/hooks/use-media-query";
 import { useUfValue } from "@/hooks/use-uf-value";
+import { sortHealthPlansByFinalPriceAsc } from "@/lib/plan-sort";
 import type {
   BeneficiaryGroupSummary,
   FamilyBeneficiariesState,
@@ -47,7 +47,6 @@ export function useCotizadorDashboard(
   const [search, setSearch] = useState("");
   const [priceMin, setPriceMin] = useState(options?.initialPriceMin ?? 3);
   const [priceMax, setPriceMax] = useState(options?.initialPriceMax ?? 5);
-  const [sortAsc, setSortAsc] = useState(true);
   const [beneficiaries, setBeneficiaries] =
     useState<FamilyBeneficiariesState>(seedBeneficiaries);
   const [beneficiarySummary, setBeneficiarySummary] =
@@ -80,27 +79,15 @@ export function useCotizadorDashboard(
       return matchesSearch && matchesPrice;
     });
 
-    return plans.sort((a, b) => {
-      const priceA = buildPlanFinalPriceQuote(
-        a.base_price_uf,
-        beneficiarySummary,
-        ufToClp,
-        a.ges_premium_uf,
-      ).finalPriceUf;
-      const priceB = buildPlanFinalPriceQuote(
-        b.base_price_uf,
-        beneficiarySummary,
-        ufToClp,
-        b.ges_premium_uf,
-      ).finalPriceUf;
-
-      return sortAsc ? priceA - priceB : priceB - priceA;
-    });
+    return sortHealthPlansByFinalPriceAsc(
+      plans,
+      beneficiarySummary,
+      ufToClp,
+    );
   }, [
     search,
     priceMin,
     priceMax,
-    sortAsc,
     dashboardFilters,
     beneficiarySummary,
     plansCatalog,
@@ -126,8 +113,6 @@ export function useCotizadorDashboard(
     setPriceMin,
     priceMax,
     setPriceMax,
-    sortAsc,
-    setSortAsc,
     beneficiaries,
     beneficiarySummary,
     dashboardFilters,
