@@ -12,7 +12,6 @@ import { joinClasses } from "@/lib/utils";
 import type { PlanCatalogClinicOption } from "@/lib/api/plan-clinics";
 import type { DashboardFiltersState } from "@/domain";
 import { FILTER_HELP } from "@/lib/filter-help-content";
-import { ClinicFilterSelect } from "./clinic-filter-select";
 import { CoveragePercentageFilter } from "./coverage-percentage-filter";
 import { FilterCheckboxList } from "./filter-checkbox-list";
 import { FilterHelpBlock } from "./filter-info-tip";
@@ -128,21 +127,6 @@ export function DashboardFiltersPanel({
           />
         </FilterSection>
 
-        {showClinicFilter ? (
-          <FilterSection
-            title="Filtrado por Clínica"
-            description="Muestra planes que incluyen cobertura en la clínica seleccionada."
-          >
-            <ClinicFilterSelect
-              value={value.clinicId}
-              onChange={(clinicId) => update({ clinicId })}
-              options={clinicOptions}
-              loading={clinicOptionsLoading}
-              error={clinicOptionsError}
-            />
-          </FilterSection>
-        ) : null}
-
         {hidePlanTypeFilter ? null : (
         <FilterSection
           title="Filtrado por Tipo de Plan"
@@ -178,7 +162,7 @@ export function DashboardFiltersPanel({
         {hideCoverageFilter ? null : (
         <FilterSection
           title="Filtrado por Cobertura"
-          description="Umbral mínimo de cobertura hospitalaria y ambulatoria."
+          description="Clínica opcional y umbral mínimo de cobertura hospitalaria y ambulatoria."
           infoLabel="Información sobre porcentajes de cobertura"
           info={
             <FilterHelpBlock
@@ -189,26 +173,38 @@ export function DashboardFiltersPanel({
             />
           }
         >
-          <div className="space-y-6">
+          <div className="space-y-4">
             <CoveragePercentageFilter
               title="Cobertura hospitalaria"
               value={value.hospitalCoveragePercent}
               tone="hospital"
+              showClinicFilter={showClinicFilter}
+              clinicId={value.clinicId}
+              onClinicChange={(clinicId) => update({ clinicId })}
+              clinicOptions={clinicOptions}
+              clinicOptionsLoading={clinicOptionsLoading}
+              clinicOptionsError={clinicOptionsError}
+              compactEmbed={compactEmbed}
               onChange={(hospitalCoveragePercent) =>
                 update({ hospitalCoveragePercent })
               }
             />
 
-            <div className="border-t border-border pt-6">
-              <CoveragePercentageFilter
-                title="Cobertura ambulatoria"
-                value={value.ambulatoryCoveragePercent}
-                tone="ambulatory"
-                onChange={(ambulatoryCoveragePercent) =>
-                  update({ ambulatoryCoveragePercent })
-                }
-              />
-            </div>
+            <CoveragePercentageFilter
+              title="Cobertura ambulatoria"
+              value={value.ambulatoryCoveragePercent}
+              tone="ambulatory"
+              showClinicFilter={showClinicFilter}
+              clinicId={value.clinicId}
+              onClinicChange={(clinicId) => update({ clinicId })}
+              clinicOptions={clinicOptions}
+              clinicOptionsLoading={clinicOptionsLoading}
+              clinicOptionsError={clinicOptionsError}
+              compactEmbed={compactEmbed}
+              onChange={(ambulatoryCoveragePercent) =>
+                update({ ambulatoryCoveragePercent })
+              }
+            />
           </div>
         </FilterSection>
         )}

@@ -44,7 +44,8 @@ export const FILTER_HELP = {
     title: "¿Qué significa el porcentaje?",
     body: [
       "Es la parte del costo de una prestación que bonifica tu Isapre. El resto lo pagas tú como copago.",
-      "El monto final también depende de los topes del plan (límites en UF), no solo del porcentaje.",
+      "Puedes combinar clínica (opcional) y porcentaje mínimo: si eliges ambos, el plan debe cumplir ese % en esa clínica o superior.",
+      "Si solo eliges porcentaje, basta con que algún prestador del plan alcance ese mínimo.",
     ],
     items: [
       {

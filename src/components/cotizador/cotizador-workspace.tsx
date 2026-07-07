@@ -66,7 +66,7 @@ export function CotizadorWorkspace({
             beneficiaries={dashboard.beneficiaries}
             onBeneficiariesChange={dashboard.handleBeneficiariesChange}
             filters={dashboard.dashboardFilters}
-            onFiltersChange={dashboard.setDashboardFilters}
+            onFiltersChange={dashboard.handleDashboardFiltersChange}
           />
         ) : null}
 
@@ -130,7 +130,9 @@ export function CotizadorWorkspace({
                     id="plan-search"
                     type="search"
                     value={dashboard.search}
-                    onChange={(event) => dashboard.setSearch(event.target.value)}
+                    onChange={(event) =>
+                      dashboard.handleSearchChange(event.target.value)
+                    }
                     placeholder="Nombre, código o Isapre..."
                     className={joinClasses(
                       "h-12 w-full rounded-lg py-2 pl-10 pr-4 text-base md:h-11 md:text-sm",
@@ -155,10 +157,9 @@ export function CotizadorWorkspace({
                     max={8}
                     step={0.1}
                     value={dashboard.priceMin}
-                    onChange={(event) => {
-                      const value = Number(event.target.value);
-                      dashboard.setPriceMin(Math.min(value, dashboard.priceMax));
-                    }}
+                    onChange={(event) =>
+                      dashboard.handlePriceMinChange(Number(event.target.value))
+                    }
                     className="h-2 w-full cursor-pointer appearance-none rounded-full bg-border accent-primary [&::-webkit-slider-thumb]:size-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-primary [&::-webkit-slider-thumb]:bg-white md:[&::-webkit-slider-thumb]:size-4"
                   />
                   <input
@@ -167,10 +168,9 @@ export function CotizadorWorkspace({
                     max={8}
                     step={0.1}
                     value={dashboard.priceMax}
-                    onChange={(event) => {
-                      const value = Number(event.target.value);
-                      dashboard.setPriceMax(Math.max(value, dashboard.priceMin));
-                    }}
+                    onChange={(event) =>
+                      dashboard.handlePriceMaxChange(Number(event.target.value))
+                    }
                     className="h-2 w-full cursor-pointer appearance-none rounded-full bg-border accent-primary [&::-webkit-slider-thumb]:size-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-primary [&::-webkit-slider-thumb]:bg-white md:[&::-webkit-slider-thumb]:size-4"
                   />
                 </div>

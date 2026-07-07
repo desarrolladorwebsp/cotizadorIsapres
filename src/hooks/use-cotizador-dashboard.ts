@@ -102,6 +102,25 @@ export function useCotizadorDashboard(
     [],
   );
 
+  const handleDashboardFiltersChange = useCallback(
+    (next: DashboardFiltersState) => {
+      setDashboardFilters(next);
+    },
+    [],
+  );
+
+  const handlePriceMinChange = useCallback((value: number) => {
+    setPriceMin((currentMin) => Math.min(value, priceMax));
+  }, [priceMax]);
+
+  const handlePriceMaxChange = useCallback((value: number) => {
+    setPriceMax((currentMax) => Math.max(value, priceMin));
+  }, [priceMin]);
+
+  const handleSearchChange = useCallback((value: string) => {
+    setSearch(value);
+  }, []);
+
   return {
     isLargeScreen,
     sidebarOpen,
@@ -109,14 +128,18 @@ export function useCotizadorDashboard(
     sidebarReady,
     search,
     setSearch,
+    handleSearchChange,
     priceMin,
     setPriceMin,
+    handlePriceMinChange,
     priceMax,
     setPriceMax,
+    handlePriceMaxChange,
     beneficiaries,
     beneficiarySummary,
     dashboardFilters,
     setDashboardFilters,
+    handleDashboardFiltersChange,
     filteredPlans,
     handleBeneficiariesChange: applyBeneficiaries,
     ufToClp,

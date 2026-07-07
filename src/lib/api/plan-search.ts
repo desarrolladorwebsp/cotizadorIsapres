@@ -8,7 +8,7 @@ import {
 import { sortPlansByBasePriceAsc } from "@/lib/plan-sort";
 import { MAX_PLAN_SEARCH_LIMIT } from "@/lib/plan-search-config";
 import type { DashboardFiltersState } from "@/types/filters";
-import type { HealthPlan, HealthPlanSummary, PlanSearchResult } from "@/types/plan";
+import type { HealthPlanSummary, PlanSearchResult } from "@/types/plan";
 
 export interface PlanSearchQuery {
   q?: string;
@@ -74,34 +74,6 @@ function matchesPriceRange(
   return true;
 }
 
-function matchesCoverageThresholds(
-  plan: HealthPlanSummary,
-  filters: DashboardFiltersState,
-): boolean {
-  if (filters.hospitalCoveragePercent !== null) {
-    if (plan.coverage_summary.hospital_avg < filters.hospitalCoveragePercent) {
-      return false;
-    }
-  }
-  if (filters.ambulatoryCoveragePercent !== null) {
-    if (plan.coverage_summary.ambulatory_avg < filters.ambulatoryCoveragePercent) {
-      return false;
-    }
-  }
-  return true;
-}
-
-function matchesFiltersWithoutCoverageAvg(
-  plans: HealthPlan[],
-  filters: DashboardFiltersState,
-): HealthPlan[] {
-  return applyDashboardFilters(plans, {
-    ...filters,
-    hospitalCoveragePercent: null,
-    ambulatoryCoveragePercent: null,
-  });
-}
-
 function clampSearchLimit(limit: number | undefined, total: number): number {
   if (limit === undefined || !Number.isFinite(limit) || limit <= 0) {
     return total;
@@ -118,16 +90,10 @@ export async function searchPlanSummaries(
   let plans = dbPlans;
 
   if (query.filters) {
-    plans = matchesFiltersWithoutCoverageAvg(plans, query.filters);
+    plans = applyDashboardFilters(plans, query.filters);
   }
 
   let summaries = plans.map(mapHealthPlanToSummary);
-
-  if (query.filters) {
-    summaries = summaries.filter((plan) =>
-      matchesCoverageThresholds(plan, query.filters!),
-    );
-  }
 
   if (query.q) {
     summaries = summaries.filter((plan) => matchesTextQuery(plan, query.q!));

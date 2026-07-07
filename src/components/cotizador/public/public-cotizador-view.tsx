@@ -296,37 +296,30 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
 
   const handleFiltersChange = useCallback(
     (next: DashboardFiltersState) => {
-      const effective = isEmbedded ? withoutEmbedWidgetFilters(next) : next;
-      dashboard.setDashboardFilters(effective);
-      if (!hasSearched) return;
-
-      resetSearchCache();
-      skipDebouncedSearchRef.current = true;
-      setResultsLimit(activePlansLimit);
-
-      void search(
-        {
-          q: searchText,
-          priceMin: dashboard.priceMin,
-          priceMax: dashboard.priceMax,
-          filters: effective,
-          limit: activePlansLimit,
-        },
-        { force: true },
+      dashboard.handleDashboardFiltersChange(
+        isEmbedded ? withoutEmbedWidgetFilters(next) : next,
       );
     },
-    [
-      isEmbedded,
-      dashboard.setDashboardFilters,
-      dashboard.priceMin,
-      dashboard.priceMax,
-      hasSearched,
-      resetSearchCache,
-      search,
-      searchText,
-      activePlansLimit,
-    ],
+    [isEmbedded, dashboard.handleDashboardFiltersChange],
   );
+
+  const handlePriceMinChange = useCallback(
+    (value: number) => {
+      dashboard.handlePriceMinChange(value);
+    },
+    [dashboard.handlePriceMinChange],
+  );
+
+  const handlePriceMaxChange = useCallback(
+    (value: number) => {
+      dashboard.handlePriceMaxChange(value);
+    },
+    [dashboard.handlePriceMaxChange],
+  );
+
+  const handleSearchTextChange = useCallback((value: string) => {
+    setSearchText(value);
+  }, []);
 
   const sendSearchCotizacionNotify = useCallback(async () => {
     if (!notifyEmail.trim() || searchNotifySentRef.current) return;
@@ -437,23 +430,29 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
 
     setResultsLimit(activePlansLimit);
     const timer = window.setTimeout(() => {
-      void search({
-        q: searchText,
-        priceMin: dashboard.priceMin,
-        priceMax: dashboard.priceMax,
-        filters: dashboard.dashboardFilters,
-        limit: activePlansLimit,
-      });
+      resetSearchCache();
+      void search(
+        {
+          q: searchText,
+          priceMin: dashboard.priceMin,
+          priceMax: dashboard.priceMax,
+          filters: dashboard.dashboardFilters,
+          limit: activePlansLimit,
+        },
+        { force: true },
+      );
     }, 350);
 
     return () => window.clearTimeout(timer);
   }, [
     hasSearched,
     search,
+    resetSearchCache,
     dashboard.dashboardFilters,
     dashboard.priceMin,
     dashboard.priceMax,
     searchText,
+    activePlansLimit,
   ]);
 
   const sortedPlans = useMemo(() => {
@@ -837,7 +836,7 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
                 <input
                   type="search"
                   value={searchText}
-                  onChange={(e) => setSearchText(e.target.value)}
+                  onChange={(e) => handleSearchTextChange(e.target.value)}
                   placeholder="Buscar por nombre, código o Isapre..."
                   className={joinClasses(
                     "mb-4 h-11 w-full max-w-full rounded-xl px-4 text-sm",
@@ -864,8 +863,8 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
                   priceMin={dashboard.priceMin}
                   priceMax={dashboard.priceMax}
                   ufToClp={dashboard.ufToClp}
-                  onPriceMinChange={dashboard.setPriceMin}
-                  onPriceMaxChange={dashboard.setPriceMax}
+                  onPriceMinChange={handlePriceMinChange}
+                  onPriceMaxChange={handlePriceMaxChange}
                   filters={dashboard.dashboardFilters}
                   onFiltersChange={handleFiltersChange}
                   hideCoverageFilter={isEmbedded}

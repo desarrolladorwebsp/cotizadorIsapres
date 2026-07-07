@@ -41,6 +41,10 @@ export const PLAN_TYPE_FILTER_DEFAULT_IDS = PLAN_TYPE_FILTER_OPTIONS.map(
   (option) => option.id,
 );
 
+export const ISAPRE_FILTER_DEFAULT_IDS = ISAPRE_FILTER_OPTIONS.map(
+  (option) => option.id,
+);
+
 export const COVERAGE_PERCENTAGE_OPTIONS: CoveragePercentageOption[] = [
   40, 50, 60, 70, 80, 100,
 ];
@@ -71,12 +75,11 @@ function buildCheckboxDefaults(
 
 export function createDefaultDashboardFilters(): DashboardFiltersState {
   return {
-    isapres: buildCheckboxDefaults(ISAPRE_FILTER_OPTIONS, ["consalud"]),
-    zones: buildCheckboxDefaults(ZONE_FILTER_OPTIONS, [
-      "rm-metropolitana",
-      "rm-oriente",
-      "rm-centro",
-    ]),
+    isapres: buildCheckboxDefaults(
+      ISAPRE_FILTER_OPTIONS,
+      ISAPRE_FILTER_DEFAULT_IDS,
+    ),
+    zones: buildCheckboxDefaults(ZONE_FILTER_OPTIONS),
     planTypes: buildCheckboxDefaults(
       PLAN_TYPE_FILTER_OPTIONS.map((o) => ({ id: o.id, label: o.label })),
       PLAN_TYPE_FILTER_DEFAULT_IDS,
@@ -87,18 +90,9 @@ export function createDefaultDashboardFilters(): DashboardFiltersState {
   };
 }
 
-/** Sin restricciones: ningún checkbox activo → se muestran todos los planes por cada eje. */
+/** Sin restricciones: todas las Isapres marcadas; zonas/tipos sin marcar → catálogo completo. */
 export function createClearedDashboardFilters(): DashboardFiltersState {
-  return {
-    isapres: buildCheckboxDefaults(ISAPRE_FILTER_OPTIONS),
-    zones: buildCheckboxDefaults(ZONE_FILTER_OPTIONS),
-    planTypes: buildCheckboxDefaults(
-      PLAN_TYPE_FILTER_OPTIONS.map((o) => ({ id: o.id, label: o.label })),
-    ),
-    clinicId: null,
-    hospitalCoveragePercent: null,
-    ambulatoryCoveragePercent: null,
-  };
+  return createDefaultDashboardFilters();
 }
 
 /** Widget embebido: sin filtro por porcentaje de cobertura. */

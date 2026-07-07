@@ -16,6 +16,7 @@ export interface ClinicFilterSelectProps {
   options: PlanCatalogClinicOption[];
   loading?: boolean;
   error?: string | null;
+  showSelectedHint?: boolean;
 }
 
 const MAX_VISIBLE_OPTIONS = 8;
@@ -26,6 +27,7 @@ export function ClinicFilterSelect({
   options,
   loading = false,
   error = null,
+  showSelectedHint = false,
 }: ClinicFilterSelectProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [query, setQuery] = useState("");
@@ -155,7 +157,7 @@ export function ClinicFilterSelect({
         <p className="text-xs text-muted">No hay clínicas que coincidan.</p>
       ) : null}
 
-      {selected ? (
+      {showSelectedHint && selected ? (
         <p className="text-[11px] text-muted">
           Mostrando planes con cobertura en{" "}
           <span className="font-medium text-foreground">{selected.name}</span>.
