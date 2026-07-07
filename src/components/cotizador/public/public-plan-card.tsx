@@ -327,7 +327,6 @@ export function PublicPlanCard({
           headerClassName="text-primary-dark/80"
           badgeClassName="border border-primary/25 bg-primary/10 text-primary-dark"
           showDivider
-          initialVisible={4}
         />
         <CoverageColumnCompact
           title="Cobertura ambulatoria"
@@ -338,7 +337,6 @@ export function PublicPlanCard({
           percentClassName="text-secondary"
           headerClassName="text-secondary"
           badgeClassName="border border-secondary/35 bg-secondary-muted text-secondary"
-          initialVisible={4}
         />
       </div>
 

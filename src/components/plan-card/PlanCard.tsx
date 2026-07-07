@@ -17,7 +17,6 @@ export interface PlanCardProps {
   plan: HealthPlan;
   beneficiarySummary: BeneficiaryGroupSummary;
   selected?: boolean;
-  defaultExpanded?: boolean;
   ufToClp?: number;
   className?: string;
   onSelectedChange?: (selected: boolean) => void;
@@ -33,7 +32,6 @@ export function PlanCard({
   plan,
   beneficiarySummary,
   selected = false,
-  defaultExpanded = false,
   ufToClp,
   className,
   onSelectedChange,
@@ -44,7 +42,6 @@ export function PlanCard({
   selectLabel,
   selectVariant,
 }: PlanCardProps) {
-  const [expanded, setExpanded] = useState(defaultExpanded); // reservado para acciones futuras
   const [isSelected, setIsSelected] = useState(selected);
   const [isHovered, setIsHovered] = useState(false);
 
@@ -127,13 +124,10 @@ export function PlanCard({
       <PlanCardCoverage
         hospitalaria={hospitalaria}
         ambulatoria={ambulatoria}
-        showAllClinics={expanded}
       />
 
       <PlanCardActions
         selected={isSelected}
-        expanded={expanded}
-        onToggleExpand={() => setExpanded((value) => !value)}
         onSelect={handleSelect}
         onChat={onChat}
         onDownloadPdf={handleDownloadPdf}

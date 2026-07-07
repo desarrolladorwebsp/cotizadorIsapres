@@ -1,7 +1,5 @@
 import type { HealthPlan } from "@/domain";
 
-export const VISIBLE_CLINICS_LIMIT = 6;
-
 export function resolvePlanBadges(
   plan: HealthPlan,
   badges?: string[],

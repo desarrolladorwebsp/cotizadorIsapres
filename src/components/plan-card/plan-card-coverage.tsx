@@ -12,7 +12,6 @@ export type { PlanCardCoverageProps } from "./plan-card-coverage.types";
 export function PlanCardCoverage({
   hospitalaria,
   ambulatoria,
-  showAllClinics = false,
 }: PlanCardCoverageProps) {
   return (
     <div className="grid border-t border-border md:grid-cols-2">
@@ -23,7 +22,6 @@ export function PlanCardCoverage({
         barClassName="bg-primary"
         percentClassName="text-primary-dark"
         showDivider
-        showAll={showAllClinics}
       />
       <CoverageColumnCompact
         title="Cobertura ambulatoria"
@@ -31,7 +29,6 @@ export function PlanCardCoverage({
         entries={ambulatoria}
         barClassName="bg-secondary"
         percentClassName="text-secondary"
-        showAll={showAllClinics}
       />
     </div>
   );

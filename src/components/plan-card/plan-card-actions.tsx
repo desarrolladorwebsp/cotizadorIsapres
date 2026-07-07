@@ -3,12 +3,10 @@
 import { motion } from "framer-motion";
 import { touchTarget, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
-import { ChatIcon, ChevronDownIcon, DownloadIcon, ShieldIcon } from "./icons";
+import { ChatIcon, DownloadIcon, ShieldIcon } from "./icons";
 
 export interface PlanCardActionsProps {
   selected: boolean;
-  expanded: boolean;
-  onToggleExpand: () => void;
   onSelect: () => void;
   onChat?: () => void;
   onDownloadPdf?: () => void;
@@ -43,8 +41,6 @@ function QuickActionButton({
 
 export function PlanCardActions({
   selected,
-  expanded,
-  onToggleExpand,
   onSelect,
   onChat,
   onDownloadPdf,
@@ -55,30 +51,10 @@ export function PlanCardActions({
   return (
     <footer
       className={joinClasses(
-        "flex flex-col gap-4 border-t bg-white px-4 py-5 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8",
+        "flex flex-col gap-4 border-t bg-white px-4 py-5 sm:px-6 md:flex-row md:items-center md:justify-end lg:px-8",
         ui.border,
       )}
     >
-      <button
-        type="button"
-        onClick={onToggleExpand}
-        className={joinClasses(
-          touchTarget,
-          "w-full justify-start gap-2 rounded-lg px-2 text-sm font-semibold text-secondary transition hover:bg-surface-hover md:w-auto",
-        )}
-      >
-        <motion.span
-          animate={{ rotate: expanded ? 180 : 0 }}
-          transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-          className="inline-flex shrink-0"
-        >
-          <ChevronDownIcon />
-        </motion.span>
-        <span className="text-left">
-          {expanded ? "Ocultar desglose" : "Ver desglose por prestador"}
-        </span>
-      </button>
-
       <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center md:w-auto md:justify-end">
         <div className="flex items-center justify-center gap-2 sm:justify-start">
           <QuickActionButton label="Chat del plan" onClick={onChat}>

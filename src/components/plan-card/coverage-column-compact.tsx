@@ -1,9 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { joinClasses } from "@/lib/utils";
 import type { CoverageEntry } from "@/domain";
-import { VISIBLE_CLINICS_LIMIT } from "./plan-card.utils";
 
 export interface CoverageColumnCompactProps {
   title: string;
@@ -17,9 +16,6 @@ export interface CoverageColumnCompactProps {
   badgeClassName?: string;
   sectionClassName?: string;
   showDivider?: boolean;
-  initialVisible?: number;
-  /** Expande la lista desde el padre (ej. footer del card). */
-  showAll?: boolean;
 }
 
 function resolveMaxPercentage(
@@ -63,19 +59,11 @@ export function CoverageColumnCompact({
   badgeClassName = "bg-surface-hover text-foreground/80",
   sectionClassName,
   showDivider = false,
-  initialVisible = 4,
-  showAll = false,
 }: CoverageColumnCompactProps) {
-  const [expanded, setExpanded] = useState(false);
   const maxPercentage = useMemo(
     () => resolveMaxPercentage(entries, fallbackPercentages),
     [entries, fallbackPercentages],
   );
-
-  const isExpanded = showAll || expanded;
-  const visibleLimit = isExpanded ? VISIBLE_CLINICS_LIMIT : initialVisible;
-  const visibleEntries = entries.slice(0, visibleLimit);
-  const hiddenCount = Math.max(entries.length - visibleLimit, 0);
 
   return (
     <section
@@ -112,8 +100,8 @@ export function CoverageColumnCompact({
       <CoverageSummaryBar percentage={maxPercentage} barClassName={barClassName} />
 
       <ul className="mt-2 space-y-0.5">
-        {visibleEntries.length > 0 ? (
-          visibleEntries.map((entry, index) => (
+        {entries.length > 0 ? (
+          entries.map((entry, index) => (
             <li
               key={`${entry.type}-${entry.clinic_id}-${entry.percentage}-${index}`}
               className="truncate text-[11px] leading-relaxed text-foreground/85 sm:text-xs"
@@ -132,16 +120,6 @@ export function CoverageColumnCompact({
           </li>
         )}
       </ul>
-
-      {hiddenCount > 0 && !showAll ? (
-        <button
-          type="button"
-          onClick={() => setExpanded((value) => !value)}
-          className="mt-2 text-left text-[11px] font-semibold text-secondary hover:underline sm:text-xs"
-        >
-          {isExpanded ? "Ver menos" : `+${hiddenCount} prestadores más`}
-        </button>
-      ) : null}
     </section>
   );
 }
