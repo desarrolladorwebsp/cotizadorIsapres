@@ -7,6 +7,7 @@ import {
   EMBED_READY_MESSAGE,
   EMBED_RESIZE_MESSAGE,
   EMBED_WHEEL_MESSAGE,
+  EMBED_REQUEST_RESIZE_MESSAGE,
 } from "@/lib/embed/constants";
 import { shouldForwardEmbedWheelToParent } from "@/lib/embed/embed-wheel-forward";
 import {
@@ -168,6 +169,15 @@ export function useEmbedResize(
     };
     window.addEventListener("wheel", onWheel, { passive: false });
 
+    const onParentMessage = (event: MessageEvent) => {
+      if (event.source !== window.parent) return;
+      const data = event.data as { type?: string; source?: string };
+      if (data?.type !== EMBED_REQUEST_RESIZE_MESSAGE) return;
+      if (data.source && data.source !== EMBED_MESSAGE_SOURCE) return;
+      postHeight(true);
+    };
+    window.addEventListener("message", onParentMessage);
+
     if (document.fonts?.ready) {
       void document.fonts.ready.then(() => postHeight(true));
     }
@@ -184,6 +194,7 @@ export function useEmbedResize(
       window.removeEventListener("load", onWindowLoad);
       window.removeEventListener("resize", onWindowResize);
       window.removeEventListener("wheel", onWheel);
+      window.removeEventListener("message", onParentMessage);
       unlockScroll();
       lastHeightRef.current = 0;
     };

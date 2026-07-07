@@ -1073,7 +1073,11 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
       />
 
       {isEmbedded ? (
-        <div data-embed-height-sentinel aria-hidden className="block h-0 w-full shrink-0" />
+        <div
+          data-embed-height-sentinel
+          aria-hidden
+          className="pointer-events-none block h-px w-full shrink-0"
+        />
       ) : null}
     </div>
   );

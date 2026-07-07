@@ -1,5 +1,26 @@
 const SCROLL_EDGE_THRESHOLD_PX = 2;
 
+function isEmbedDocument(): boolean {
+  return document.documentElement.getAttribute("data-cotizador-embed") === "true";
+}
+
+function embedDocumentCanScroll(): boolean {
+  const html = document.documentElement;
+  const body = document.body;
+  const htmlOverflowY = window.getComputedStyle(html).overflowY;
+  const bodyOverflowY = window.getComputedStyle(body).overflowY;
+  const allowsScroll =
+    htmlOverflowY === "auto" ||
+    htmlOverflowY === "scroll" ||
+    bodyOverflowY === "auto" ||
+    bodyOverflowY === "scroll";
+
+  if (!allowsScroll) return false;
+
+  const scrollHeight = Math.max(html.scrollHeight, body.scrollHeight);
+  return scrollHeight > window.innerHeight + SCROLL_EDGE_THRESHOLD_PX;
+}
+
 function isVerticallyScrollable(element: HTMLElement): boolean {
   const { overflowY } = window.getComputedStyle(element);
   if (overflowY !== "auto" && overflowY !== "scroll") return false;
@@ -37,6 +58,11 @@ export function shouldForwardEmbedWheelToParent(event: WheelEvent): boolean {
     }
     if (node === document.body || node === document.documentElement) break;
     node = node.parentElement;
+  }
+
+  // En embed el scroll principal vive en la página anfitriona (WordPress, etc.).
+  if (isEmbedDocument() && !embedDocumentCanScroll()) {
+    return true;
   }
 
   const scrollHeight = Math.max(

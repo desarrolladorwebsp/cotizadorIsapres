@@ -1,26 +1,37 @@
-this.CotizadorWidget=(function(){"use strict";const _="https://cotizadorpremium.cl",A="cotizaloantes",$=["region","edad","sexo","ingreso","cargas","q","precioMin","precioMax","isapres","zonas","tipoPlan","coberturaH","coberturaA","orden","moneda","auto","email","plan","vista","nombre","rut","telefono"];function r(t,e,i){const o=t.dataset[i];if(o!=null&&o.trim())return o.trim();const n=e==null?void 0:e.dataset[i];if(n!=null&&n.trim())return n.trim()}function z(t){const e=((t==null?void 0:t.trim())||_).replace(/\/+$/,"");try{return new URL(e).origin+new URL(e).pathname.replace(/\/+$/,"")}catch{return _}}function H(t){if(!(t!=null&&t.trim()))return;const e=Number.parseInt(t,10);if(!(!Number.isFinite(e)||e<1))return e}function C(t,e){const i=r(t,e,"fullWidth")??r(t,e,"full-width");return i?i==="true"||i==="1":!0}function U(t,e,i){return i.agentKey??r(t,e,"agentKey")??r(t,e,"agent-key")??i.partner??r(t,e,"partner")??A}function I(t,e,i){const o=i.routing??r(t,e,"routing")??r(t,e,"cotizadorRouting");if(o==="premium"||o==="legacy")return o}function R(t,e){const i={};for(const n of $){const a=r(t,e,n);a&&(i[n]=a)}const o=r(t,e,"autoSearch");return(o==="true"||o==="1")&&(i.auto="1"),i}function k(t,e,i={}){const o=z(i.baseUrl??r(t,e,"baseUrl")??r(t,e,"cotizadorUrl")),n=U(t,e,i),a=i.partner??n,l=I(t,e,i),g=i.minHeight??H(r(t,e,"minHeight")),h=i.title??r(t,e,"title")??"Cotizador de planes de salud",w=i.fullWidth??C(t,e),E={...R(t,e),...i.query};return{baseUrl:o,agentKey:n,partner:a,routing:l,minHeight:g,title:h,fullWidth:w,query:E}}function D(t){const e=t.routing!=="legacy",i=e?new URL("/cotizador",`${t.baseUrl}/`):new URL(t.partner?`/${encodeURIComponent(t.partner)}`:"/",`${t.baseUrl}/`);e&&i.searchParams.set("agent",t.agentKey),i.searchParams.set("embed","1");for(const[o,n]of Object.entries(t.query))i.searchParams.set(o,n);return i.toString()}function x(){const t=document.currentScript;if(t instanceof HTMLScriptElement)return t;const e=document.querySelectorAll('script[src*="cotizador-widget"]');return e[e.length-1]??null}const T="[data-cotizador-widget]",B="cotizador-premium",O="cotizador-premium:resize",P="cotizador-premium:ready",W="cotizador-premium:exit-navigate",p="cv-widget",y="cv-widget__iframe",u="cv-widget__skeleton",d="cv-widget__exit-overlay",f="cv-widget--mobile-scroll",G=72,N=new Set([B,"cotizador-virtual"]);function K(){return window.matchMedia("(max-width: 768px)").matches}function q(){if(document.getElementById("cv-widget-styles"))return;const t=document.createElement("style");t.id="cv-widget-styles",t.textContent=`
-    .${p} {
+this.CotizadorWidget=(function(){"use strict";const L="https://cotizadorpremium.cl",T="cotizaloantes",U=["region","edad","sexo","ingreso","cargas","q","precioMin","precioMax","isapres","zonas","tipoPlan","coberturaH","coberturaA","orden","moneda","auto","email","plan","vista","nombre","rut","telefono"];function n(t,e,i){const o=t.dataset[i];if(o!=null&&o.trim())return o.trim();const a=e==null?void 0:e.dataset[i];if(a!=null&&a.trim())return a.trim()}function B(t){const e=((t==null?void 0:t.trim())||L).replace(/\/+$/,"");try{return new URL(e).origin+new URL(e).pathname.replace(/\/+$/,"")}catch{return L}}function k(t){if(!(t!=null&&t.trim()))return;const e=Number.parseInt(t,10);if(!(!Number.isFinite(e)||e<1))return e}function O(t,e){const i=n(t,e,"fullWidth")??n(t,e,"full-width");return i?i==="true"||i==="1":!0}function G(t,e,i){return i.agentKey??n(t,e,"agentKey")??n(t,e,"agent-key")??i.partner??n(t,e,"partner")??T}function W(t,e,i){if(i.mobileScroll!==void 0)return i.mobileScroll;const o=n(t,e,"mobileScroll")??n(t,e,"mobile-scroll");return!o||o==="auto"?"auto":o==="false"||o==="0"?!1:o==="true"||o==="1"}function N(t,e,i){const o=i.routing??n(t,e,"routing")??n(t,e,"cotizadorRouting");if(o==="premium"||o==="legacy")return o}function q(t,e){const i={};for(const a of U){const s=n(t,e,a);s&&(i[a]=s)}const o=n(t,e,"autoSearch");return(o==="true"||o==="1")&&(i.auto="1"),i}function K(t,e,i={}){const o=B(i.baseUrl??n(t,e,"baseUrl")??n(t,e,"cotizadorUrl")),a=G(t,e,i),s=i.partner??a,p=N(t,e,i),y=i.minHeight??k(n(t,e,"minHeight")),v=i.title??n(t,e,"title")??"Cotizador de planes de salud",S=i.fullWidth??O(t,e),x=W(t,e,i),w={...q(t,e),...i.query};return{baseUrl:o,agentKey:a,partner:s,routing:p,minHeight:y,title:v,fullWidth:S,mobileScroll:x,query:w}}function V(t){const e=t.routing!=="legacy",i=e?new URL("/cotizador",`${t.baseUrl}/`):new URL(t.partner?`/${encodeURIComponent(t.partner)}`:"/",`${t.baseUrl}/`);e&&i.searchParams.set("agent",t.agentKey),i.searchParams.set("embed","1");for(const[o,a]of Object.entries(t.query))i.searchParams.set(o,a);return i.toString()}function A(){const t=document.currentScript;if(t instanceof HTMLScriptElement)return t;const e=document.querySelectorAll('script[src*="cotizador-widget"]');return e[e.length-1]??null}const Y="[data-cotizador-widget]",$="cotizador-premium",F="cotizador-premium:resize",X="cotizador-premium:ready",Z="cotizador-premium:exit-navigate",j="cotizador-premium:wheel",Q="cotizador-premium:request-resize",c="cv-widget",h="cv-widget__iframe",m="cv-widget__skeleton",d="cv-widget__exit-overlay",f="cv-widget--mobile-scroll",J=72,tt=12,et=96,ot=800,it=12;function g(t){return t===!1||t==="auto"}function z(t){return t==="auto"?"auto":t===!1?"false":"true"}const rt=new Set([$,"cotizador-virtual"]);function nt(){return window.matchMedia("(max-width: 768px)").matches}function at(){if(document.getElementById("cv-widget-styles"))return;const t=document.createElement("style");t.id="cv-widget-styles",t.textContent=`
+    .${c} {
       position: relative;
       width: 100%;
       max-width: none;
       overflow: visible;
       background: transparent;
+      touch-action: pan-y;
     }
-    .${p}[data-full-width="true"] {
+    .${c}[data-full-width="true"] {
       width: 100vw;
       max-width: 100vw;
       margin-left: calc(50% - 50vw);
       margin-right: calc(50% - 50vw);
     }
-    .${p}.${f} {
-      max-height: ${G}vh;
+    .${c}[data-mobile-scroll="false"],
+    .${c}[data-mobile-scroll="auto"] {
+      overflow: visible !important;
+      max-height: none !important;
+    }
+    .${c}[data-mobile-scroll="false"] .${h},
+    .${c}[data-mobile-scroll="auto"] .${h} {
+      overflow: visible;
+      display: block;
+    }
+    .${c}.${f} {
+      max-height: ${J}vh;
       overflow-x: hidden;
       overflow-y: auto;
       overscroll-behavior-y: auto;
       -webkit-overflow-scrolling: touch;
       touch-action: pan-y;
     }
-    .${y} {
+    .${h} {
       display: block;
       width: 100%;
       max-width: none;
@@ -30,10 +41,10 @@ this.CotizadorWidget=(function(){"use strict";const _="https://cotizadorpremium.
       opacity: 0;
       transition: opacity 0.25s ease, height 0.12s ease;
     }
-    .${y}[data-ready="true"] {
+    .${h}[data-ready="true"] {
       opacity: 1;
     }
-    .${u} {
+    .${m} {
       position: absolute;
       inset: 0;
       display: grid;
@@ -45,10 +56,10 @@ this.CotizadorWidget=(function(){"use strict";const _="https://cotizadorpremium.
       pointer-events: none;
       transition: opacity 0.2s ease;
     }
-    .${u}[data-hidden="true"] {
+    .${m}[data-hidden="true"] {
       opacity: 0;
     }
-    .${u}__pulse {
+    .${m}__pulse {
       width: min(100%, 420px);
       height: 12px;
       border-radius: 999px;
@@ -96,17 +107,17 @@ this.CotizadorWidget=(function(){"use strict";const _="https://cotizadorpremium.
     @keyframes cv-widget-spin {
       to { transform: rotate(360deg); }
     }
-  `,document.head.appendChild(t)}function F(t,e){if(q(),t.dataset.cvMounted==="true")return{destroy:()=>{}};t.dataset.cvMounted="true",t.classList.add(p),e.fullWidth&&(t.dataset.fullWidth="true"),e.minHeight!==void 0&&t.style.setProperty("--cv-widget-min-height",`${e.minHeight}px`);const i=document.createElement("div");i.className=u,i.setAttribute("aria-hidden","true"),i.innerHTML=`
+  `,document.head.appendChild(t)}function st(t,e){if(at(),t.dataset.cvMounted==="true")return{destroy:()=>{}};t.dataset.cvMounted="true",t.classList.add(c),e.fullWidth&&(t.dataset.fullWidth="true"),e.minHeight!==void 0&&t.style.setProperty("--cv-widget-min-height",`${e.minHeight}px`),t.dataset.mobileScroll=z(e.mobileScroll);const i=document.createElement("div");i.className=m,i.setAttribute("aria-hidden","true"),i.innerHTML=`
     <div style="width:100%;max-width:420px;text-align:center">
-      <div class="${u}__pulse"></div>
-      <div class="${u}__pulse" style="width:70%;margin-inline:auto"></div>
+      <div class="${m}__pulse"></div>
+      <div class="${m}__pulse" style="width:70%;margin-inline:auto"></div>
       <p style="margin:16px 0 0">Cargando cotizador…</p>
     </div>
-  `;const o=document.createElement("iframe");o.className=y,o.title=e.title,o.loading="lazy",o.referrerPolicy="strict-origin-when-cross-origin",o.allow="clipboard-write",o.setAttribute("scrolling","no"),o.style.overflow="visible",o.src=D(e);const n=e.minHeight??120;o.style.height=`${n}px`,t.style.height=`${n}px`,t.replaceChildren(i,o);let a=null,l=null;const g=()=>{const c=K();t.classList.toggle(f,c),t.dataset.mobileScroll=c?"true":"false",c?(t.style.removeProperty("max-height"),t.style.overflowY=""):(t.style.maxHeight="none",t.style.overflow="visible")},h=()=>{g()},w=()=>{a||(a=document.createElement("div"),a.className=d,a.setAttribute("role","status"),a.setAttribute("aria-live","polite"),a.setAttribute("aria-busy","true"),a.innerHTML=`
+  `;const o=document.createElement("iframe");o.className=h,o.title=e.title,o.loading="lazy",o.referrerPolicy="strict-origin-when-cross-origin",o.allow="clipboard-write",o.setAttribute("scrolling",g(e.mobileScroll)?"auto":"no"),o.style.overflow="visible",o.src=V(e);const a=e.minHeight??120;o.style.height=`${a}px`,t.style.height=`${a}px`,t.replaceChildren(i,o);let s=null,p=null;const y=()=>{if(g(e.mobileScroll)){t.classList.remove(f),t.dataset.mobileScroll=z(e.mobileScroll),t.style.maxHeight="none",t.style.overflow="visible",t.style.removeProperty("overflow-y");return}const l=nt();t.classList.toggle(f,l),t.dataset.mobileScroll=l?"true":"false",l?(t.style.removeProperty("max-height"),t.style.overflowY=""):(t.style.maxHeight="none",t.style.overflow="visible")},v=()=>{y()},S=()=>{s||(s=document.createElement("div"),s.className=d,s.setAttribute("role","status"),s.setAttribute("aria-live","polite"),s.setAttribute("aria-busy","true"),s.innerHTML=`
       <div style="max-width:420px">
         <div class="${d}__spinner"></div>
         <p class="${d}__title">Buscando el mejor plan para ti…</p>
         <p class="${d}__subtitle">Cargando el cotizador completo</p>
       </div>
-    `,t.appendChild(a))},E=c=>{const s=e.minHeight??1,m=Math.max(s,Math.ceil(c));o.style.height=`${m}px`,o.style.minHeight=`${m}px`,o.style.maxHeight="none",t.style.height=`${m}px`,t.style.minHeight=`${m}px`,g()},b=()=>{o.dataset.ready="true",i.dataset.hidden="true",window.setTimeout(()=>i.remove(),220)},M=c=>{if(c.source!==o.contentWindow)return;const s=c.data;if(!(!(s!=null&&s.source)||!N.has(s.source))){if(s.type===W){w();return}if(s.type===P){b();return}s.type===O&&typeof s.height=="number"&&(E(s.height),o.dataset.ready!=="true"&&b())}};return window.addEventListener("message",M),g(),typeof window.matchMedia=="function"&&(l=window.matchMedia("(max-width: 768px)"),l.addEventListener("change",h)),o.addEventListener("load",()=>{o.dataset.ready!=="true"&&b()}),{destroy:()=>{window.removeEventListener("message",M),l==null||l.removeEventListener("change",h),t.replaceChildren(),t.classList.remove(p,f),delete t.dataset.cvMounted,delete t.dataset.fullWidth,delete t.dataset.mobileScroll,t.style.removeProperty("--cv-widget-min-height"),t.style.removeProperty("height"),t.style.removeProperty("max-height"),t.style.removeProperty("overflow")}}}function S(t,e,i){const o=k(t,e,i);return F(t,o)}function v(t=T){const e=x(),i=document.querySelectorAll(t);return Array.from(i).map(o=>S(o,e))}function V(){document.readyState==="loading"?document.addEventListener("DOMContentLoaded",()=>v(),{once:!0}):v()}const L={init:v,mount:(t,e)=>S(t,x(),e)};return window.CotizadorWidget=L,V(),L})();
+    `,t.appendChild(s))},x=l=>{const r=e.minHeight??1,E=g(e.mobileScroll)?et:tt,b=Math.max(r,Math.ceil(l)+E);o.style.height=`${b}px`,o.style.minHeight=`${b}px`,o.style.maxHeight="none",o.setAttribute("height",String(b)),t.style.height=`${b}px`,t.style.minHeight=`${b}px`,t.style.maxHeight="none",y()},w=()=>{const l=o.contentWindow;l&&l.postMessage({type:Q,source:$},"*")};let u=null,R=0;const C=()=>{u===null&&(u=window.setInterval(()=>{R+=1,w(),R>=it&&u!==null&&(window.clearInterval(u),u=null)},ot))},D=()=>{u!==null&&(window.clearInterval(u),u=null)},M=()=>{o.dataset.ready="true",i.dataset.hidden="true",window.setTimeout(()=>i.remove(),220)},ct=(l,r)=>{const E={top:l,left:r,behavior:"auto"};if(g(e.mobileScroll)){window.scrollBy(E);return}if(t.classList.contains(f)){t.scrollBy(E);return}window.scrollBy(E)},P=l=>{if(l.source!==o.contentWindow)return;const r=l.data;if(!(!(r!=null&&r.source)||!rt.has(r.source))){if(r.type===j){if(typeof r.deltaY!="number"||typeof r.deltaX!="number")return;ct(r.deltaY,r.deltaX);return}if(r.type===Z){S();return}if(r.type===X){M();return}r.type===F&&typeof r.height=="number"&&(x(r.height),D(),o.dataset.ready!=="true"&&M())}};return window.addEventListener("message",P),y(),C(),!g(e.mobileScroll)&&typeof window.matchMedia=="function"&&(p=window.matchMedia("(max-width: 768px)"),p.addEventListener("change",v)),o.addEventListener("load",()=>{C(),w(),o.dataset.ready!=="true"&&M()}),{destroy:()=>{D(),window.removeEventListener("message",P),p==null||p.removeEventListener("change",v),t.replaceChildren(),t.classList.remove(c,f),delete t.dataset.cvMounted,delete t.dataset.fullWidth,delete t.dataset.mobileScroll,t.style.removeProperty("--cv-widget-min-height"),t.style.removeProperty("height"),t.style.removeProperty("max-height"),t.style.removeProperty("overflow")}}}function I(t,e,i){const o=K(t,e,i);return st(t,o)}function _(t=Y){const e=A(),i=document.querySelectorAll(t);return Array.from(i).map(o=>I(o,e))}function lt(){document.readyState==="loading"?document.addEventListener("DOMContentLoaded",()=>_(),{once:!0}):_()}const H={init:_,mount:(t,e)=>I(t,A(),e)};return window.CotizadorWidget=H,lt(),H})();
 //# sourceMappingURL=cotizador-widget.js.map

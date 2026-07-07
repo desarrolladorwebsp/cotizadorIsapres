@@ -54,6 +54,7 @@ Coloca esto donde quieras mostrar el cotizador (recomendado: sección dedicada, 
 | `data-base-url` | No | URL del cotizador (default: `https://cotizadorpremium.cl`) |
 | `data-full-width` | No | `true` = ancho 100% del viewport (default: `true`) |
 | `data-min-height` | No | Altura mínima del iframe en px (default: `720`) |
+| `data-mobile-scroll` | No | `auto` (default): iframe crece y la página hace scroll. `true`: scroll interno 72vh en móvil |
 | `data-title` | No | Título accesible del iframe |
 
 **Compatibilidad:** `data-partner` sigue funcionando como alias de `data-agent-key`.
@@ -83,12 +84,22 @@ Parámetros soportados: `region`, `edad`, `sexo`, `ingreso`, `cargas`, `q`, `pre
   data-agent-key="isaprespremium"
   data-base-url="https://cotizadorpremium.cl"
   data-full-width="true"
+  data-mobile-scroll="auto"
   data-min-height="720"
 ></section>
 <script
   src="https://cotizadorpremium.cl/cotizador-widget.js"
   defer
 ></script>
+```
+
+**WordPress / Elementor:** en el contenedor de la sección, evita `overflow: hidden` y alturas fijas. Si el iframe se corta, agrega esta clase CSS personalizada:
+
+```css
+[data-cotizador-widget].cv-widget {
+  overflow: visible !important;
+  max-height: none !important;
+}
 ```
 
 ## Paso 3 — Inicialización manual (opcional)
