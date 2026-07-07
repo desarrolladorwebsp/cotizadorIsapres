@@ -5,8 +5,24 @@ import path from "node:path";
 const URL = "https://isaprespremium.cl";
 const OUT_DIR = path.join(process.cwd(), "storage", "debug-screenshots");
 
+async function installResizeListener(page) {
+  await page.addInitScript(() => {
+    window.__cvMsgs = [];
+    window.addEventListener("message", (event) => {
+      const data = event.data;
+      if (
+        data?.source === "cotizador-premium" &&
+        data?.type === "cotizador-premium:resize" &&
+        Number.isFinite(data.height)
+      ) {
+        window.__cvMsgs.push(data.height);
+      }
+    });
+  });
+}
+
 async function measurePage(page, label) {
-  await page.waitForTimeout(6000);
+  await page.waitForTimeout(12000);
 
   const metrics = await page.evaluate(() => {
     const widget = document.querySelector("[data-cotizador-widget]");
@@ -32,6 +48,7 @@ async function measurePage(page, label) {
       iframeReady: iframe?.dataset.ready ?? null,
       iframeRectHeight: iframeRect?.height ?? null,
       widgetRectHeight: rect?.height ?? null,
+      resizeMessages: window.__cvMsgs ?? [],
       viewport: { w: window.innerWidth, h: window.innerHeight },
       scrollY: window.scrollY,
       bodyScrollHeight: document.body.scrollHeight,
@@ -62,6 +79,7 @@ async function main() {
       viewport: { width: 1440, height: 900 },
     });
     const page = await context.newPage();
+    await installResizeListener(page);
     await page.goto(URL, { waitUntil: "networkidle", timeout: 90000 });
     await page.locator("#cotizador-isapre-premium").scrollIntoViewIfNeeded();
     results.push(await measurePage(page, "desktop-1440"));
@@ -74,6 +92,7 @@ async function main() {
       ...devices["iPhone 13"],
     });
     const page = await context.newPage();
+    await installResizeListener(page);
     await page.goto(URL, { waitUntil: "networkidle", timeout: 90000 });
     await page.locator("#cotizador-isapre-premium").scrollIntoViewIfNeeded();
     results.push(await measurePage(page, "mobile-iphone13"));

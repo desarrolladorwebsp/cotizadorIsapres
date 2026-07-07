@@ -10,6 +10,7 @@ function safeMax(...values: number[]): number {
   return max;
 }
 
+/** Distancia desde la raíz embed hasta el borde inferior visible del nodo. */
 function measureElementBottom(el: Element, rootTop: number): number {
   const rect = el.getBoundingClientRect();
   if (rect.height <= 0 && rect.width <= 0) {
@@ -17,16 +18,7 @@ function measureElementBottom(el: Element, rootTop: number): number {
   }
 
   const fromRect = rect.bottom - rootTop;
-  const candidates = [fromRect];
-
-  if (el instanceof HTMLElement) {
-    candidates.push(el.scrollHeight);
-    if (Number.isFinite(el.offsetTop) && Number.isFinite(el.offsetHeight)) {
-      candidates.push(el.offsetTop + el.offsetHeight);
-    }
-  }
-
-  return safeMax(0, ...candidates);
+  return Number.isFinite(fromRect) && fromRect > 0 ? fromRect : 0;
 }
 
 function measureFlowContent(root: HTMLElement): number {
@@ -35,11 +27,7 @@ function measureFlowContent(root: HTMLElement): number {
 
   const sentinel = root.querySelector("[data-embed-height-sentinel]");
   if (sentinel instanceof HTMLElement) {
-    maxBottom = safeMax(
-      maxBottom,
-      measureElementBottom(sentinel, rootTop),
-      sentinel.offsetTop + sentinel.offsetHeight,
-    );
+    maxBottom = safeMax(maxBottom, measureElementBottom(sentinel, rootTop));
   }
 
   root.querySelectorAll<HTMLElement>(":scope > *").forEach((child) => {
