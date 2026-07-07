@@ -928,6 +928,7 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
                       beneficiarySummary={dashboard.beneficiarySummary}
                       ufToClp={dashboard.ufToClp}
                       currency={currency}
+                      highlightClinicId={dashboard.dashboardFilters.clinicId}
                       onRequestPlan={(plan) => {
                         if (isEmbedded) {
                           handleEmbedSolicitar(plan);

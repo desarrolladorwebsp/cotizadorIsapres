@@ -236,6 +236,7 @@ export function CotizadorWorkspace({
                 plans={dashboard.filteredPlans}
                 beneficiarySummary={dashboard.beneficiarySummary}
                 ufToClp={dashboard.ufToClp}
+                highlightClinicId={dashboard.dashboardFilters.clinicId}
                 onAssignPlan={
                   isExecutive ? (plan) => setAssignPlan(plan) : undefined
                 }

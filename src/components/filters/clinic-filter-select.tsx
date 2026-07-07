@@ -5,6 +5,10 @@ import { Input } from "@/components/ui/input";
 import { touchTarget } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type { PlanCatalogClinicOption } from "@/lib/api/plan-clinics";
+import {
+  textEqualsSearch,
+  textIncludesSearch,
+} from "@/lib/normalize-search-text";
 
 export interface ClinicFilterSelectProps {
   value: string | null;
@@ -41,16 +45,19 @@ export function ClinicFilterSelect({
   }, [selected, open]);
 
   const filteredOptions = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
-    if (!normalized || (selected && normalized === selected.name.toLowerCase())) {
+    const normalizedQuery = query.trim();
+    if (
+      !normalizedQuery ||
+      (selected && textEqualsSearch(selected.name, normalizedQuery))
+    ) {
       return options.slice(0, MAX_VISIBLE_OPTIONS);
     }
 
     return options
       .filter(
         (option) =>
-          option.name.toLowerCase().includes(normalized) ||
-          option.id.toLowerCase().includes(normalized),
+          textIncludesSearch(option.name, normalizedQuery) ||
+          textIncludesSearch(option.id, normalizedQuery),
       )
       .slice(0, MAX_VISIBLE_OPTIONS);
   }, [options, query, selected]);

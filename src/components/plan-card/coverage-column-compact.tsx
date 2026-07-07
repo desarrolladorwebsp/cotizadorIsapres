@@ -16,6 +16,8 @@ export interface CoverageColumnCompactProps {
   badgeClassName?: string;
   sectionClassName?: string;
   showDivider?: boolean;
+  /** Resalta la clínica activa en el filtro (si aplica). */
+  highlightClinicId?: string | null;
 }
 
 function resolveMaxPercentage(
@@ -59,11 +61,22 @@ export function CoverageColumnCompact({
   badgeClassName = "bg-surface-hover text-foreground/80",
   sectionClassName,
   showDivider = false,
+  highlightClinicId = null,
 }: CoverageColumnCompactProps) {
   const maxPercentage = useMemo(
     () => resolveMaxPercentage(entries, fallbackPercentages),
     [entries, fallbackPercentages],
   );
+
+  const visibleEntries = useMemo(() => {
+    if (!highlightClinicId) return entries;
+
+    const highlighted = entries.filter(
+      (entry) => entry.clinic_id === highlightClinicId,
+    );
+    const rest = entries.filter((entry) => entry.clinic_id !== highlightClinicId);
+    return [...highlighted, ...rest];
+  }, [entries, highlightClinicId]);
 
   return (
     <section
@@ -100,18 +113,35 @@ export function CoverageColumnCompact({
       <CoverageSummaryBar percentage={maxPercentage} barClassName={barClassName} />
 
       <ul className="mt-2 space-y-0.5">
-        {entries.length > 0 ? (
-          entries.map((entry, index) => (
-            <li
-              key={`${entry.type}-${entry.clinic_id}-${entry.percentage}-${index}`}
-              className="truncate text-[11px] leading-relaxed text-foreground/85 sm:text-xs"
-            >
-              <span className={joinClasses("font-bold tabular-nums", percentClassName)}>
-                {entry.percentage}%
-              </span>{" "}
-              <span>{entry.clinic_name}</span>
-            </li>
-          ))
+        {visibleEntries.length > 0 ? (
+          visibleEntries.map((entry, index) => {
+            const isHighlighted =
+              Boolean(highlightClinicId) && entry.clinic_id === highlightClinicId;
+
+            return (
+              <li
+                key={`${entry.type}-${entry.clinic_id}-${entry.percentage}-${index}`}
+                className={joinClasses(
+                  "text-[11px] leading-relaxed sm:text-xs",
+                  isHighlighted
+                    ? "rounded-md border border-primary/35 bg-primary/10 px-2 py-1.5 font-medium text-primary-dark shadow-sm ring-1 ring-primary/15"
+                    : "truncate text-foreground/85",
+                )}
+              >
+                <span className={joinClasses("font-bold tabular-nums", percentClassName)}>
+                  {entry.percentage}%
+                </span>{" "}
+                <span className={joinClasses(isHighlighted && "font-semibold")}>
+                  {entry.clinic_name}
+                </span>
+                {isHighlighted ? (
+                  <span className="ml-1.5 inline-flex rounded-full bg-primary px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-primary-foreground">
+                    Filtrada
+                  </span>
+                ) : null}
+              </li>
+            );
+          })
         ) : (
           <li className="text-[11px] text-muted sm:text-xs">
             {entries.length === 0 && fallbackPercentages.length > 0

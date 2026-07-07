@@ -9,14 +9,12 @@ import {
   isCheckboxGroupActive,
   resolveIsapreDisplayName,
 } from "@/lib/filter-options";
+import { normalizeSearchText } from "@/lib/normalize-search-text";
 import type { DashboardFiltersState, PlanTypeFilterId } from "@/types/filters";
 import type { HealthPlan } from "@/types/plan";
 
 function normalizeText(value: string): string {
-  return value
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "");
+  return normalizeSearchText(value);
 }
 
 function matchesIsapreFilter(
