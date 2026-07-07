@@ -1,14 +1,13 @@
-import { applyDashboardFilters } from "@/lib/apply-plan-filters";
 import { getCachedHealthPlans } from "@/lib/api/plan-catalog-cache";
 import { mapHealthPlanToSummary } from "@/lib/api/plan-summary";
+import { filterPlanCatalog } from "@/lib/filter-plan-catalog";
 import {
   getActiveCheckboxIds,
   isCheckboxGroupActive,
 } from "@/lib/filter-options";
 import { sortPlansByBasePriceAsc } from "@/lib/plan-sort";
-import { MAX_PLAN_SEARCH_LIMIT } from "@/lib/plan-search-config";
 import type { DashboardFiltersState } from "@/types/filters";
-import type { HealthPlanSummary, PlanSearchResult } from "@/types/plan";
+import type { PlanSearchResult } from "@/types/plan";
 
 export interface PlanSearchQuery {
   q?: string;
@@ -51,73 +50,11 @@ export function parsePlanSearchQuery(
   };
 }
 
-function matchesTextQuery(plan: HealthPlanSummary, query: string): boolean {
-  const normalized = query.toLowerCase();
-  return (
-    plan.plan_name.toLowerCase().includes(normalized) ||
-    plan.unique_code.toLowerCase().includes(normalized) ||
-    plan.isapre.toLowerCase().includes(normalized)
-  );
-}
-
-function matchesPriceRange(
-  plan: HealthPlanSummary,
-  priceMin?: number,
-  priceMax?: number,
-): boolean {
-  if (priceMin !== undefined && Number.isFinite(priceMin)) {
-    if (plan.base_price_uf < priceMin) return false;
-  }
-  if (priceMax !== undefined && Number.isFinite(priceMax)) {
-    if (plan.base_price_uf > priceMax) return false;
-  }
-  return true;
-}
-
-function clampSearchLimit(limit: number | undefined, total: number): number {
-  if (limit === undefined || !Number.isFinite(limit) || limit <= 0) {
-    return total;
-  }
-
-  return Math.min(Math.floor(limit), MAX_PLAN_SEARCH_LIMIT, total);
-}
-
 export async function searchPlanSummaries(
   query: PlanSearchQuery,
 ): Promise<PlanSearchResult> {
   const dbPlans = await getCachedHealthPlans();
-
-  let plans = dbPlans;
-
-  if (query.filters) {
-    plans = applyDashboardFilters(plans, query.filters);
-  }
-
-  let summaries = plans.map(mapHealthPlanToSummary);
-
-  if (query.q) {
-    summaries = summaries.filter((plan) => matchesTextQuery(plan, query.q!));
-  }
-
-  summaries = summaries.filter((plan) =>
-    matchesPriceRange(plan, query.priceMin, query.priceMax),
-  );
-
-  summaries = sortPlansByBasePriceAsc(summaries);
-
-  const total = summaries.length;
-  const offset =
-    query.offset !== undefined && Number.isFinite(query.offset) && query.offset > 0
-      ? Math.floor(query.offset)
-      : 0;
-  const limit = clampSearchLimit(query.limit, total);
-
-  return {
-    plans: summaries.slice(offset, offset + limit),
-    total,
-    limit,
-    offset,
-  };
+  return filterPlanCatalog(dbPlans, query);
 }
 
 /** Primeros N planes del catálogo (desde caché en memoria). */

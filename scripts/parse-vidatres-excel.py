@@ -113,7 +113,18 @@ def normalize_plan_code(raw) -> str | None:
     return match.group(1).upper()
 
 
-SKIP_CLINIC_KEYS = {"no aplica", "n a", "na"}
+SKIP_CLINIC_KEYS = {"no aplica", "n a", "na", ")", "("}
+
+
+def is_invalid_clinic_name(name: str) -> bool:
+    cleaned = name.strip().strip(",").strip(".")
+    if not cleaned:
+        return True
+    if cleaned in {")", "(", "-", "–", "—"}:
+        return True
+    if len(cleaned) <= 2 and not cleaned.isalnum():
+        return True
+    return normalize_key(cleaned) in SKIP_CLINIC_KEYS
 
 
 def slugify_clinic_id(name: str) -> str:
@@ -132,7 +143,7 @@ def slugify_clinic_id(name: str) -> str:
 
 def resolve_clinic(name: str) -> tuple[str, str]:
     cleaned = name.strip().strip(",").strip(".")
-    if not cleaned:
+    if is_invalid_clinic_name(cleaned):
         return "", ""
 
     key = normalize_key(cleaned)

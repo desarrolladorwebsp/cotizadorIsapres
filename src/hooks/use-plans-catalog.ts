@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { loadPlanCatalogClient } from "@/lib/load-plan-catalog-client";
 import type { HealthPlan } from "@/types/plan";
 
 export function usePlansCatalog() {
@@ -11,16 +12,17 @@ export function usePlansCatalog() {
   useEffect(() => {
     let cancelled = false;
 
-    async function loadPlans() {
-      try {
-        const response = await fetch("/api/plans");
-        if (!response.ok) throw new Error("No se pudieron cargar los planes.");
-        const data = (await response.json()) as HealthPlan[];
+    void loadPlanCatalogClient({
+      endpoint: "/api/plans",
+      credentials: "include",
+    })
+      .then((data) => {
         if (!cancelled) {
           setPlans(data);
           setError(null);
         }
-      } catch (loadError) {
+      })
+      .catch((loadError) => {
         if (!cancelled) {
           setPlans([]);
           setError(
@@ -29,12 +31,11 @@ export function usePlansCatalog() {
               : "Error al cargar planes.",
           );
         }
-      } finally {
+      })
+      .finally(() => {
         if (!cancelled) setLoading(false);
-      }
-    }
+      });
 
-    void loadPlans();
     return () => {
       cancelled = true;
     };

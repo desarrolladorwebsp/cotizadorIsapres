@@ -8097,7 +8097,7 @@
     "isapre": "Vida Tres",
     "plan_name": "Vida Tres VPRU24111114",
     "unique_code": "VPRU24111114",
-    "base_price_uf": 7.0,
+    "base_price_uf": 7,
     "has_top": true,
     "additional_notes": null,
     "pdf_url": null,
@@ -14638,12 +14638,6 @@
         "type": "hospitalaria"
       },
       {
-        "clinic_id": "cl-desconocida",
-        "clinic_name": ")",
-        "percentage": 80,
-        "type": "hospitalaria"
-      },
-      {
         "clinic_id": "cl-ciudad-del-mar",
         "clinic_name": "Clínica Ciudad del Mar",
         "percentage": 70,
@@ -15186,12 +15180,6 @@
       {
         "clinic_id": "vt-libre-eleccion-h",
         "clinic_name": "Libre Elección",
-        "percentage": 80,
-        "type": "hospitalaria"
-      },
-      {
-        "clinic_id": "cl-desconocida",
-        "clinic_name": ")",
         "percentage": 80,
         "type": "hospitalaria"
       },
@@ -16131,7 +16119,7 @@
     "isapre": "Vida Tres",
     "plan_name": "Vida Tres VPG260466",
     "unique_code": "VPG260466",
-    "base_price_uf": 2.0,
+    "base_price_uf": 2,
     "has_top": false,
     "additional_notes": null,
     "pdf_url": null,
@@ -17593,12 +17581,6 @@
         "clinic_id": "vt-libre-eleccion-a",
         "clinic_name": "Libre Elección",
         "percentage": 40,
-        "type": "ambulatoria"
-      },
-      {
-        "clinic_id": "cl-desconocida",
-        "clinic_name": ")",
-        "percentage": 60,
         "type": "ambulatoria"
       }
     ]

@@ -17,7 +17,7 @@ import {
 import { useCotizadorDashboard } from "@/hooks/use-cotizador-dashboard";
 import { usePlanCatalogBounds } from "@/hooks/use-plan-catalog-bounds";
 import { useEmbedResize, postEmbedExitNavigate } from "@/hooks/use-embed-resize";
-import { usePlanSearch } from "@/hooks/use-plan-search";
+import { useClientPlanSearch, FILTER_DEBOUNCE_MS } from "@/hooks/use-client-plan-search";
 import {
   buildBeneficiaryGroupSummary,
   createDefaultDashboardFilters,
@@ -141,6 +141,9 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
   );
 
   const { entity, isBranded, themeStyle } = usePartnerEntity();
+  const [bootstrappedExitSearch, setBootstrappedExitSearch] = useState(
+    () => readEmbedExitSearchPending(),
+  );
   const dashboard = useCotizadorDashboard([], {
     initialBeneficiaries: deepLink.beneficiaries,
     initialBeneficiarySummary: deepLink.beneficiarySummary,
@@ -151,6 +154,9 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
     initialPriceMax: deepLink.priceMax,
   });
   const { bounds, loading: boundsLoading } = usePlanCatalogBounds();
+  const loadEmbedPreview =
+    isEmbedded && !deepLink.shouldAutoSearch && !bootstrappedExitSearch;
+
   const {
     plans,
     total,
@@ -160,7 +166,10 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
     search,
     resetSearchCache,
     resetSearch,
-  } = usePlanSearch();
+  } = useClientPlanSearch({
+    embedPreviewOnMount: loadEmbedPreview,
+    preloadCatalog: true,
+  });
   const resultsRef = useRef<HTMLElement>(null);
   const criteriaBarRef = useRef<HTMLDivElement>(null);
   const initialSearchDoneRef = useRef(false);
@@ -190,7 +199,6 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
   const [notifyEmail, setNotifyEmail] = useState(deepLink.email ?? "");
   const searchNotifySentRef = useRef(false);
   const [embedExitLoading, setEmbedExitLoading] = useState(false);
-  const [bootstrappedExitSearch, setBootstrappedExitSearch] = useState(false);
 
   useEffect(() => {
     setBootstrappedExitSearch(readEmbedExitSearchPending());
@@ -441,7 +449,7 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
         },
         { force: true },
       );
-    }, 350);
+    }, FILTER_DEBOUNCE_MS);
 
     return () => window.clearTimeout(timer);
   }, [
