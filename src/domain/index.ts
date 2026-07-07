@@ -75,6 +75,7 @@ export {
   createClearedDashboardFilters,
   createDefaultDashboardFilters,
   withoutCoverageFilters,
+  withoutClinicFilter,
   withoutEmbedWidgetFilters,
   withoutPlanTypeFilters,
   PLAN_TYPE_FILTER_DEFAULT_IDS,

@@ -41,6 +41,15 @@ function matchesZoneFilter(
   return planMatchesZoneFilter(plan, activeIds);
 }
 
+function matchesClinicFilter(
+  plan: HealthPlan,
+  filters: DashboardFiltersState,
+): boolean {
+  const clinicId = filters.clinicId?.trim();
+  if (!clinicId) return true;
+  return plan.coverage.some((entry) => entry.clinic_id === clinicId);
+}
+
 function matchesPlanTypeFilter(
   plan: HealthPlan,
   filters: DashboardFiltersState,
@@ -72,6 +81,7 @@ export function applyDashboardFilters(
     (plan) =>
       matchesIsapreFilter(plan, filters) &&
       matchesZoneFilter(plan, filters) &&
+      matchesClinicFilter(plan, filters) &&
       matchesPlanTypeFilter(plan, filters) &&
       matchesCoveragePercent(
         plan,

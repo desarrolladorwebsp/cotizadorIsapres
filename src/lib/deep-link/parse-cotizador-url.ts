@@ -157,6 +157,7 @@ function hasDeepLinkFilterParams(params: URLSearchParams): boolean {
     DEEP_LINK_PARAMS.precioMax,
     DEEP_LINK_PARAMS.isapres,
     DEEP_LINK_PARAMS.zonas,
+    DEEP_LINK_PARAMS.clinica,
     DEEP_LINK_PARAMS.tipoPlan,
     DEEP_LINK_PARAMS.coberturaH,
     DEEP_LINK_PARAMS.coberturaA,
@@ -222,6 +223,7 @@ export function parseCotizadorUrl(
       defaults.planTypes,
       planTypeIds,
     ),
+    clinicId: params.get(DEEP_LINK_PARAMS.clinica)?.trim() || null,
     hospitalCoveragePercent: parseCoveragePercent(
       params.get(DEEP_LINK_PARAMS.coberturaH),
     ),

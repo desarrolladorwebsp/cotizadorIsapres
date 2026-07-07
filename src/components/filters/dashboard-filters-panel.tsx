@@ -9,8 +9,10 @@ import {
 } from "@/domain";
 import { touchTarget, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
+import type { PlanCatalogClinicOption } from "@/lib/api/plan-clinics";
 import type { DashboardFiltersState } from "@/domain";
 import { FILTER_HELP } from "@/lib/filter-help-content";
+import { ClinicFilterSelect } from "./clinic-filter-select";
 import { CoveragePercentageFilter } from "./coverage-percentage-filter";
 import { FilterCheckboxList } from "./filter-checkbox-list";
 import { FilterHelpBlock } from "./filter-info-tip";
@@ -24,6 +26,11 @@ export interface DashboardFiltersPanelProps {
   hideCoverageFilter?: boolean;
   /** Oculta el bloque de tipo de plan (widget embebido). */
   hidePlanTypeFilter?: boolean;
+  /** Muestra buscador de clínica (cotizador principal y ejecutivos). */
+  showClinicFilter?: boolean;
+  clinicOptions?: PlanCatalogClinicOption[];
+  clinicOptionsLoading?: boolean;
+  clinicOptionsError?: string | null;
 }
 
 export function DashboardFiltersPanel({
@@ -32,6 +39,10 @@ export function DashboardFiltersPanel({
   className,
   hideCoverageFilter = false,
   hidePlanTypeFilter = false,
+  showClinicFilter = false,
+  clinicOptions = [],
+  clinicOptionsLoading = false,
+  clinicOptionsError = null,
 }: DashboardFiltersPanelProps) {
   function update(partial: Partial<DashboardFiltersState>) {
     onChange({ ...value, ...partial });
@@ -108,6 +119,21 @@ export function DashboardFiltersPanel({
             }
           />
         </FilterSection>
+
+        {showClinicFilter ? (
+          <FilterSection
+            title="Filtrado por Clínica"
+            description="Muestra planes que incluyen cobertura en la clínica seleccionada."
+          >
+            <ClinicFilterSelect
+              value={value.clinicId}
+              onChange={(clinicId) => update({ clinicId })}
+              options={clinicOptions}
+              loading={clinicOptionsLoading}
+              error={clinicOptionsError}
+            />
+          </FilterSection>
+        ) : null}
 
         {hidePlanTypeFilter ? null : (
         <FilterSection

@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { DashboardFiltersPanel } from "@/components/filters/dashboard-filters-panel";
+import { usePlanClinicOptions } from "@/hooks/use-plan-clinic-options";
 import { useIsLargeScreen } from "@/hooks/use-media-query";
 import { formatPlanClp, formatPlanUf } from "@/domain";
 import { touchTarget, ui } from "@/lib/ui-tokens";
@@ -21,6 +22,7 @@ export interface PublicFiltersSidebarProps {
   onFiltersChange: (next: DashboardFiltersState) => void;
   hideCoverageFilter?: boolean;
   hidePlanTypeFilter?: boolean;
+  showClinicFilter?: boolean;
 }
 
 function CloseIcon() {
@@ -48,8 +50,14 @@ export function PublicFiltersSidebar({
   onFiltersChange,
   hideCoverageFilter = false,
   hidePlanTypeFilter = false,
+  showClinicFilter = false,
 }: PublicFiltersSidebarProps) {
   const isLargeScreen = useIsLargeScreen();
+  const {
+    options: clinicOptions,
+    loading: clinicOptionsLoading,
+    error: clinicOptionsError,
+  } = usePlanClinicOptions(showClinicFilter);
 
   useEffect(() => {
     if (!open) return;
@@ -161,6 +169,10 @@ export function PublicFiltersSidebar({
               onChange={onFiltersChange}
               hideCoverageFilter={hideCoverageFilter}
               hidePlanTypeFilter={hidePlanTypeFilter}
+              showClinicFilter={showClinicFilter}
+              clinicOptions={clinicOptions}
+              clinicOptionsLoading={clinicOptionsLoading}
+              clinicOptionsError={clinicOptionsError}
             />
           </div>
         </div>

@@ -284,11 +284,10 @@ html[data-cotizador-embed="true"] body {
   html[data-cotizador-embed="true"],
   html[data-cotizador-embed="true"] body {
     height: auto !important;
-    min-height: 100% !important;
+    min-height: 0 !important;
     overflow-x: clip;
-    overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior-y: auto;
+    overflow-y: visible !important;
+    overscroll-behavior: none;
   }
 }
 

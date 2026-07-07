@@ -9,7 +9,7 @@ export const LANDING_WIDGET_AGENT_KEY =
 
 export const LANDING_WIDGET_SCRIPT_URL =
   process.env.NEXT_PUBLIC_COTIZADOR_WIDGET_URL?.trim() ||
-  "https://cotizador-widget.vercel.app/cotizador-widget.js";
+  "/cotizador-widget.js";
 
 export const LANDING_WIDGET_MIN_HEIGHT = 720;
 

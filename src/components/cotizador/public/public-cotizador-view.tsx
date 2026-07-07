@@ -893,6 +893,7 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
                   onFiltersChange={handleFiltersChange}
                   hideCoverageFilter={isEmbedded}
                   hidePlanTypeFilter={isEmbedded}
+                  showClinicFilter={!isEmbedded}
                 />
               ) : null}
 

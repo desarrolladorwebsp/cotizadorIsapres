@@ -34,6 +34,11 @@ function measureFlowContent(root: HTMLElement): number {
     maxBottom = Math.max(maxBottom, measureElementBottom(node, rootTop));
   });
 
+  const results = root.querySelector("#resultados");
+  if (results instanceof HTMLElement) {
+    maxBottom = Math.max(maxBottom, measureElementBottom(results, rootTop));
+  }
+
   return Math.ceil(
     Math.max(maxBottom, root.scrollHeight, root.offsetHeight),
   );

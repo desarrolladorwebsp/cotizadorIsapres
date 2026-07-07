@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { BeneficiariesForm } from "@/components/beneficiaries";
+import { usePlanClinicOptions } from "@/hooks/use-plan-clinic-options";
 import { useIsLargeScreen } from "@/hooks/use-media-query";
 import { touchTarget, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
@@ -47,6 +48,11 @@ export function FiltersSidebar({
   onFiltersChange,
 }: FiltersSidebarProps) {
   const isLargeScreen = useIsLargeScreen();
+  const {
+    options: clinicOptions,
+    loading: clinicOptionsLoading,
+    error: clinicOptionsError,
+  } = usePlanClinicOptions(true);
 
   useEffect(() => {
     if (!open) return;
@@ -144,6 +150,10 @@ export function FiltersSidebar({
             <DashboardFiltersPanel
               value={filters}
               onChange={onFiltersChange}
+              showClinicFilter
+              clinicOptions={clinicOptions}
+              clinicOptionsLoading={clinicOptionsLoading}
+              clinicOptionsError={clinicOptionsError}
             />
           </div>
         </div>

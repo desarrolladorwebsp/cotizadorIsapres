@@ -35,6 +35,7 @@ const ADMIN_LOGIN = `${ADMIN_PREFIX}/login`;
 const EXECUTIVE_LOGIN = `${EXECUTIVE_PREFIX}/login`;
 
 const PARTNER_SLUG_PATTERN = /^\/([a-z0-9]+(?:-[a-z0-9]+)*)\/?$/;
+const EMBED_PARTNER_PATTERN = /^\/embed\/([a-z0-9]+(?:-[a-z0-9]+)*)\/?$/;
 
 async function readStaffSessionFromRequest(
   request: NextRequest,
@@ -106,6 +107,19 @@ function applyPartnerCookieFromPath(
   response: NextResponse,
 ): NextResponse {
   const match = request.nextUrl.pathname.match(PARTNER_SLUG_PATTERN);
+  if (!match) return response;
+
+  const slug = match[1];
+  if (RESERVED_ROOT_SEGMENTS.has(slug)) return response;
+
+  return setPartnerEntityCookie(response, slug);
+}
+
+function applyPartnerCookieFromEmbedPath(
+  request: NextRequest,
+  response: NextResponse,
+): NextResponse {
+  const match = request.nextUrl.pathname.match(EMBED_PARTNER_PATTERN);
   if (!match) return response;
 
   const slug = match[1];
@@ -258,7 +272,8 @@ export async function middleware(request: NextRequest) {
   }
 
   const response = forwardRequest(request);
-  return applyPartnerCookieFromPath(request, response);
+  const withEmbedCookie = applyPartnerCookieFromEmbedPath(request, response);
+  return applyPartnerCookieFromPath(request, withEmbedCookie);
 }
 
 export const config = {

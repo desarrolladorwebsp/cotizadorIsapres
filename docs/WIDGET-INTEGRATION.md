@@ -11,7 +11,7 @@ Guía para socios y agentes que desean incrustar una **vista previa** del cotiza
 
 ## Requisitos
 
-- Tu sitio debe poder cargar scripts externos (`https://cotizador-widget.vercel.app`).
+- Tu sitio debe poder cargar scripts externos (`https://cotizadorpremium.cl/cotizador-widget.js`).
 - Tu dominio debe estar autorizado en la política CSP del cotizador (configuramos `EMBED_FRAME_ANCESTORS` por socio).
 
 ## Paso 1 — Obtener tu Agent Key
@@ -40,7 +40,7 @@ Coloca esto donde quieras mostrar el cotizador (recomendado: sección dedicada, 
 ></section>
 
 <script
-  src="https://cotizador-widget.vercel.app/cotizador-widget.js"
+  src="https://cotizadorpremium.cl/cotizador-widget.js"
   defer
 ></script>
 ```
@@ -75,13 +75,29 @@ Puedes pasar parámetros iniciales con atributos `data-*`:
 
 Parámetros soportados: `region`, `edad`, `sexo`, `ingreso`, `cargas`, `q`, `precioMin`, `precioMax`, `isapres`, `zonas`, `tipoPlan`, `coberturaH`, `coberturaA`, `orden`, `moneda`, `email`, `plan`, `vista`, `nombre`, `rut`, `telefono`.
 
+### Ejemplo — Isapres Premium (WordPress)
+
+```html
+<section
+  data-cotizador-widget
+  data-agent-key="isaprespremium"
+  data-base-url="https://cotizadorpremium.cl"
+  data-full-width="true"
+  data-min-height="720"
+></section>
+<script
+  src="https://cotizadorpremium.cl/cotizador-widget.js"
+  defer
+></script>
+```
+
 ## Paso 3 — Inicialización manual (opcional)
 
 Si prefieres controlar cuándo montar el widget:
 
 ```html
 <div id="mi-cotizador" data-agent-key="cotizaloantes"></div>
-<script src="https://cotizador-widget.vercel.app/cotizador-widget.js"></script>
+<script src="https://cotizadorpremium.cl/cotizador-widget.js"></script>
 <script>
   document.addEventListener("DOMContentLoaded", function () {
     window.CotizadorWidget.mount(document.getElementById("mi-cotizador"), {
@@ -147,7 +163,7 @@ export function CotizadorEmbedSection() {
         className="w-full"
       />
       <Script
-        src="https://cotizador-widget.vercel.app/cotizador-widget.js"
+        src="https://cotizadorpremium.cl/cotizador-widget.js"
         strategy="afterInteractive"
       />
     </>
@@ -181,7 +197,7 @@ Asegúrate de tener CORS/CSP local configurado y el cotizador corriendo con `npm
 | Problema | Causa probable | Solución |
 |----------|----------------|----------|
 | Iframe vacío o bloqueado | Dominio no autorizado en CSP | Solicitar alta de tu dominio en `EMBED_FRAME_ANCESTORS` |
-| Branding incorrecto | Agent Key erróneo | Verificar con `GET /api/agents/{key}` |
+| Branding incorrecto | Script del widget desactualizado o sin `data-agent-key` | Usar `https://cotizadorpremium.cl/cotizador-widget.js` y `data-agent-key="isaprespremium"` |
 | Solo 4 planes visibles | Comportamiento esperado en embed | Usar "Ver todos" para ir al cotizador completo |
 | 404 en iframe | URL base incorrecta | Usar `https://cotizadorpremium.cl` como `data-base-url` |
 

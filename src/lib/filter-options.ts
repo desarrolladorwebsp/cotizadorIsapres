@@ -81,6 +81,7 @@ export function createDefaultDashboardFilters(): DashboardFiltersState {
       PLAN_TYPE_FILTER_OPTIONS.map((o) => ({ id: o.id, label: o.label })),
       PLAN_TYPE_FILTER_DEFAULT_IDS,
     ),
+    clinicId: null,
     hospitalCoveragePercent: null,
     ambulatoryCoveragePercent: null,
   };
@@ -94,6 +95,7 @@ export function createClearedDashboardFilters(): DashboardFiltersState {
     planTypes: buildCheckboxDefaults(
       PLAN_TYPE_FILTER_OPTIONS.map((o) => ({ id: o.id, label: o.label })),
     ),
+    clinicId: null,
     hospitalCoveragePercent: null,
     ambulatoryCoveragePercent: null,
   };
@@ -122,11 +124,23 @@ export function withoutPlanTypeFilters(
   };
 }
 
+/** Quita filtro por clínica (widget embebido). */
+export function withoutClinicFilter(
+  filters: DashboardFiltersState,
+): DashboardFiltersState {
+  return {
+    ...filters,
+    clinicId: null,
+  };
+}
+
 /** Widget embebido: quita filtros no disponibles en el iframe. */
 export function withoutEmbedWidgetFilters(
   filters: DashboardFiltersState,
 ): DashboardFiltersState {
-  return withoutPlanTypeFilters(withoutCoverageFilters(filters));
+  return withoutClinicFilter(
+    withoutPlanTypeFilters(withoutCoverageFilters(filters)),
+  );
 }
 
 export function getActiveCheckboxIds(state: Record<string, boolean>): string[] {

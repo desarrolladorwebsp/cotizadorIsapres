@@ -12,6 +12,7 @@ export const DEEP_LINK_PARAMS = {
   precioMax: "precioMax",
   isapres: "isapres",
   zonas: "zonas",
+  clinica: "clinica",
   tipoPlan: "tipoPlan",
   coberturaH: "coberturaH",
   coberturaA: "coberturaA",

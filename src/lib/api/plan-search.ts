@@ -209,5 +209,8 @@ export function describeActiveFilters(filters: DashboardFiltersState): string {
   if (isCheckboxGroupActive(filters.zones)) {
     parts.push(`zonas:${getActiveCheckboxIds(filters.zones).join(",")}`);
   }
+  if (filters.clinicId?.trim()) {
+    parts.push(`clinica:${filters.clinicId.trim()}`);
+  }
   return parts.join(" ");
 }

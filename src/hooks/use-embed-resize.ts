@@ -6,7 +6,9 @@ import {
   EMBED_MESSAGE_SOURCE,
   EMBED_READY_MESSAGE,
   EMBED_RESIZE_MESSAGE,
+  EMBED_WHEEL_MESSAGE,
 } from "@/lib/embed/constants";
+import { shouldForwardEmbedWheelToParent } from "@/lib/embed/embed-wheel-forward";
 import {
   lockEmbedDocumentScroll,
   measureEmbedContentHeight,
@@ -35,8 +37,19 @@ export interface EmbedExitNavigateMessage {
   source: typeof EMBED_MESSAGE_SOURCE;
 }
 
+export interface EmbedWheelMessage {
+  type: typeof EMBED_WHEEL_MESSAGE;
+  source: typeof EMBED_MESSAGE_SOURCE;
+  deltaY: number;
+  deltaX: number;
+}
+
 function postEmbedMessage(
-  message: EmbedResizeMessage | EmbedReadyMessage | EmbedExitNavigateMessage,
+  message:
+    | EmbedResizeMessage
+    | EmbedReadyMessage
+    | EmbedExitNavigateMessage
+    | EmbedWheelMessage,
 ) {
   if (window.parent === window) return;
   window.parent.postMessage(message, "*");
@@ -142,6 +155,19 @@ export function useEmbedResize(
     window.addEventListener("load", onWindowLoad);
     window.addEventListener("resize", onWindowResize);
 
+    const onWheel = (event: WheelEvent) => {
+      if (!shouldForwardEmbedWheelToParent(event)) return;
+
+      postEmbedMessage({
+        type: EMBED_WHEEL_MESSAGE,
+        source: EMBED_MESSAGE_SOURCE,
+        deltaY: event.deltaY,
+        deltaX: event.deltaX,
+      });
+      event.preventDefault();
+    };
+    window.addEventListener("wheel", onWheel, { passive: false });
+
     if (document.fonts?.ready) {
       void document.fonts.ready.then(() => postHeight(true));
     }
@@ -157,6 +183,7 @@ export function useEmbedResize(
       root.removeEventListener("load", onImageLoad, true);
       window.removeEventListener("load", onWindowLoad);
       window.removeEventListener("resize", onWindowResize);
+      window.removeEventListener("wheel", onWheel);
       unlockScroll();
       lastHeightRef.current = 0;
     };
