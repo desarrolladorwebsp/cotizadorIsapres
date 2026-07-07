@@ -40,7 +40,8 @@ export const LANDING_PARTNERS: LandingPartner[] = [
     description:
       "Portal premium de comparación y asesoría en planes de salud privados en Chile.",
     badge: "Socio autorizado",
-    accentColor: "#00b159",
+    accentColor: "#6CC24A",
+    logoUrl: "/images/partners/logo-isapre-premium.png",
   },
 ];
 

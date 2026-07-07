@@ -10,6 +10,7 @@ import {
   ISAPRE_GES_DEFAULTS,
   DEFAULT_GES_PREMIUM_UF,
 } from "../src/lib/isapre-ges-defaults";
+import { buildIsaprePremiumPartnerRecord } from "../src/lib/partner-entity/isapre-premium-agent";
 import { buildCotizadorPremiumPartnerRecord } from "../src/lib/partner-entity/platform-agent";
 import { partnerThemeToPrismaJson } from "../src/lib/partner-entity/theme";
 import type { Clinic } from "../src/types/clinic";
@@ -423,6 +424,7 @@ const PARTNER_ENTITIES = [
       criteriaRing: "#e5e7eb",
     },
   },
+  buildIsaprePremiumPartnerRecord(),
   buildCotizadorPremiumPartnerRecord(),
 ];
 

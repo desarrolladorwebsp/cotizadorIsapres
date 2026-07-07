@@ -1,5 +1,10 @@
 import type { PartnerEntityPublic, PartnerEntityTheme } from "@/types/partner-entity";
 import {
+  buildIsaprePremiumPartnerRecord,
+  ISAPRE_PREMIUM_AGENT_ALIASES,
+  ISAPRE_PREMIUM_AGENT_KEY,
+} from "@/lib/partner-entity/isapre-premium-agent";
+import {
   buildCotizadorPremiumPartnerRecord,
   COTIZADOR_PREMIUM_THEME,
   PLATFORM_AGENT_KEY,
@@ -42,6 +47,8 @@ export const DESDETU7_THEME: PartnerEntityTheme = {
   criteriaRing: "#e5e7eb",
 };
 
+const ISAPRE_PREMIUM_RECORD = buildIsaprePremiumPartnerRecord();
+
 export const FALLBACK_PARTNER_ENTITIES: Record<string, PartnerEntityPublic> = {
   cotizaloantes: {
     slug: "cotizaloantes",
@@ -67,6 +74,10 @@ export const FALLBACK_PARTNER_ENTITIES: Record<string, PartnerEntityPublic> = {
     brandKey: "desdetu7",
     theme: DESDETU7_THEME,
   },
+  [ISAPRE_PREMIUM_AGENT_KEY]: ISAPRE_PREMIUM_RECORD,
+  ...Object.fromEntries(
+    ISAPRE_PREMIUM_AGENT_ALIASES.map((alias) => [alias, ISAPRE_PREMIUM_RECORD]),
+  ),
   [PLATFORM_AGENT_KEY]: buildCotizadorPremiumPartnerRecord(),
 };
 

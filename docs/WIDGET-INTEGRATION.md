@@ -1,6 +1,6 @@
 # Integración del Widget Cotizador Premium
 
-Guía para socios y agentes que desean incrustar una **vista previa** del cotizador en su sitio web (ej. `cotizaloantes.cl`, `desdetu7.cl`, `isaprepremium.cl`).
+Guía para socios y agentes que desean incrustar una **vista previa** del cotizador en su sitio web (ej. `cotizaloantes.cl`, `desdetu7.cl`, `isaprespremium.cl`).
 
 ## Resumen
 
@@ -22,7 +22,7 @@ Cada socio recibe un código único, por ejemplo:
 |-------|---------------------|
 | Cotízalo Antes | `cotizaloantes` |
 | Desde Tu 7 | `desdetu7` |
-| Isapre Premium | `isaprepremium` |
+| Isapres Premium | `isaprespremium` |
 
 Este valor corresponde al campo `embedKey` en la base de datos. **No es un secreto de servidor**, pero identifica tu marca en URLs públicas.
 

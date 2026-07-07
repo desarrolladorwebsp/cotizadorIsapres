@@ -11,6 +11,8 @@ const DEFAULT_PARTNER_WEBSITES = [
   "https://www.desdetu7.cl",
   "https://isaprepremium.cl",
   "https://www.isaprepremium.cl",
+  "https://isaprespremium.cl",
+  "https://www.isaprespremium.cl",
 ] as const;
 
 function normalizeFrameOrigin(value: string): string | null {

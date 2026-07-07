@@ -1,10 +1,13 @@
 import { getFallbackPartnerEntity } from "@/lib/partner-entity/fallback-entities";
+import { ISAPRE_PREMIUM_AGENT_KEY } from "@/lib/partner-entity/isapre-premium-agent";
 import { PLATFORM_AGENT_KEY } from "@/lib/partner-entity/platform-agent";
 
 const SLUG_ALIASES: Record<string, string> = {
   cotizaloantes: "Cotízalo Antes",
   desdetu7: "Desde Tu 7",
   [PLATFORM_AGENT_KEY]: "Cotizador Premium",
+  [ISAPRE_PREMIUM_AGENT_KEY]: "Isapres Premium",
+  isaprepremium: "Isapres Premium",
 };
 
 export interface CotizadorSourceInfo {
@@ -18,6 +21,7 @@ export type CotizadorSourceKey =
   | "cotizaloantes"
   | "desdetu7"
   | "cotizadorpremium"
+  | "isaprespremium"
   | "unknown";
 
 export const COTIZADOR_SOURCE_BADGE_CLASS: Record<CotizadorSourceKey, string> = {
@@ -27,6 +31,8 @@ export const COTIZADOR_SOURCE_BADGE_CLASS: Record<CotizadorSourceKey, string> = 
     "bg-violet-100 text-violet-950 ring-1 ring-inset ring-violet-200",
   cotizadorpremium:
     "bg-sky-100 text-sky-950 ring-1 ring-inset ring-sky-200",
+  isaprespremium:
+    "bg-emerald-100 text-emerald-950 ring-1 ring-inset ring-emerald-200",
   unknown: "bg-zinc-100 text-zinc-700 ring-1 ring-inset ring-zinc-200",
 };
 
@@ -39,6 +45,9 @@ export function resolveCotizadorSourceKey(
   if (normalized === "desdetu7") return "desdetu7";
   if (normalized === PLATFORM_AGENT_KEY || normalized === "cotizadorpremium") {
     return "cotizadorpremium";
+  }
+  if (normalized === ISAPRE_PREMIUM_AGENT_KEY || normalized === "isaprepremium") {
+    return "isaprespremium";
   }
   return "unknown";
 }
