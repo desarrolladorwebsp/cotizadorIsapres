@@ -27,9 +27,10 @@ function createPrismaClient(): PrismaClient {
 }
 
 function computeSchemaFingerprint(): string {
-  const user = Prisma.dmmf.datamodel.models.find((model) => model.name === "User");
-  const userFields = user?.fields.map((field) => field.name).join(",") ?? "";
-  return `${REQUIRED_DELEGATES.join(",")}|${userFields}`;
+  return Prisma.dmmf.datamodel.models
+    .map((model) => model.name)
+    .sort()
+    .join(",");
 }
 
 function hasRequiredDelegates(client: PrismaClient): boolean {
@@ -38,7 +39,7 @@ function hasRequiredDelegates(client: PrismaClient): boolean {
   );
 }
 
-function getPrismaClient(): PrismaClient {
+export function getPrismaClient(): PrismaClient {
   const fingerprint = computeSchemaFingerprint();
   const cached = globalForPrisma[PRISMA_CACHE_KEY];
   const cachedFingerprint = globalForPrisma[PRISMA_FINGERPRINT_KEY];
@@ -60,4 +61,11 @@ function getPrismaClient(): PrismaClient {
   return globalForPrisma[PRISMA_CACHE_KEY]!;
 }
 
-export const prisma = getPrismaClient();
+/** Revalida la caché en cada acceso (evita clientes Prisma obsoletos en dev/HMR). */
+export const prisma = new Proxy({} as PrismaClient, {
+  get(_target, property, receiver) {
+    const client = getPrismaClient();
+    const value = Reflect.get(client, property, receiver);
+    return typeof value === "function" ? value.bind(client) : value;
+  },
+});
