@@ -1,14 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Input } from "@/components/ui/input";
-import { touchTarget } from "@/lib/ui-tokens";
+import { useMemo, useState, type MouseEvent } from "react";
+import { touchTarget, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type { PlanCatalogClinicOption } from "@/lib/api/plan-clinics";
-import {
-  textEqualsSearch,
-  textIncludesSearch,
-} from "@/lib/normalize-search-text";
+import { ClinicPickerModal } from "./clinic-picker-modal";
 
 export interface ClinicFilterSelectProps {
   value: string | null;
@@ -17,9 +13,37 @@ export interface ClinicFilterSelectProps {
   loading?: boolean;
   error?: string | null;
   showSelectedHint?: boolean;
+  modalTitle?: string;
+  compactEmbed?: boolean;
 }
 
-const MAX_VISIBLE_OPTIONS = 8;
+function ChevronIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="size-4 shrink-0" aria-hidden>
+      <path
+        d="M8 10l4 4 4-4"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function BuildingIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="size-4 shrink-0" aria-hidden>
+      <path
+        d="M4 20V8l8-4 8 4v12M9 20v-5h6v5M9 12h.01M15 12h.01M9 16h.01M15 16h.01"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
 
 export function ClinicFilterSelect({
   value,
@@ -28,133 +52,88 @@ export function ClinicFilterSelect({
   loading = false,
   error = null,
   showSelectedHint = false,
+  modalTitle = "Seleccionar prestador",
+  compactEmbed = false,
 }: ClinicFilterSelectProps) {
-  const rootRef = useRef<HTMLDivElement>(null);
-  const [query, setQuery] = useState("");
-  const [open, setOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
 
   const selected = useMemo(
     () => options.find((option) => option.id === value) ?? null,
     [options, value],
   );
 
-  useEffect(() => {
-    if (selected) {
-      setQuery(selected.name);
-    } else if (!open) {
-      setQuery("");
-    }
-  }, [selected, open]);
-
-  const filteredOptions = useMemo(() => {
-    const normalizedQuery = query.trim();
-    if (
-      !normalizedQuery ||
-      (selected && textEqualsSearch(selected.name, normalizedQuery))
-    ) {
-      return options.slice(0, MAX_VISIBLE_OPTIONS);
-    }
-
-    return options
-      .filter(
-        (option) =>
-          textIncludesSearch(option.name, normalizedQuery) ||
-          textIncludesSearch(option.id, normalizedQuery),
-      )
-      .slice(0, MAX_VISIBLE_OPTIONS);
-  }, [options, query, selected]);
-
-  useEffect(() => {
-    function handlePointerDown(event: MouseEvent) {
-      if (!rootRef.current?.contains(event.target as Node)) {
-        setOpen(false);
-      }
-    }
-
-    document.addEventListener("mousedown", handlePointerDown);
-    return () => document.removeEventListener("mousedown", handlePointerDown);
-  }, []);
-
-  function handleClear() {
-    onChange(null);
-    setQuery("");
-    setOpen(false);
+  function handleSelect(clinicId: string) {
+    onChange(clinicId);
+    setModalOpen(false);
   }
 
-  function handleSelect(option: PlanCatalogClinicOption) {
-    onChange(option.id);
-    setQuery(option.name);
-    setOpen(false);
+  function handleClear(event: MouseEvent) {
+    event.stopPropagation();
+    onChange(null);
   }
 
   return (
-    <div ref={rootRef} className="relative space-y-2">
-      <div className="relative">
-        <Input
-          type="search"
-          value={query}
-          placeholder={loading ? "Cargando clínicas…" : "Buscar clínica…"}
-          disabled={loading}
-          autoComplete="off"
-          aria-expanded={open}
-          aria-controls="clinic-filter-listbox"
-          aria-autocomplete="list"
-          onFocus={() => setOpen(true)}
-          onChange={(event) => {
-            setQuery(event.target.value);
-            if (value) onChange(null);
-            setOpen(true);
-          }}
-        />
-        {value ? (
-          <button
-            type="button"
+    <div className="space-y-2">
+      <button
+        type="button"
+        onClick={() => setModalOpen(true)}
+        disabled={loading}
+        className={joinClasses(
+          "flex w-full items-center gap-2 rounded-lg border bg-white px-3 text-left transition",
+          compactEmbed ? "min-h-10 py-2 text-xs" : "min-h-11 py-2.5 text-sm",
+          ui.borderHairline,
+          ui.hoverSurface,
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
+          loading && "cursor-wait opacity-70",
+        )}
+        aria-haspopup="dialog"
+        aria-expanded={modalOpen}
+      >
+        <span className="text-primary-dark/70">
+          <BuildingIcon />
+        </span>
+        <span
+          className={joinClasses(
+            "min-w-0 flex-1 truncate",
+            selected ? "font-medium text-foreground" : "text-muted",
+          )}
+        >
+          {loading
+            ? "Cargando prestadores…"
+            : selected
+              ? selected.name
+              : "Seleccionar prestador…"}
+        </span>
+        {selected ? (
+          <span
+            role="button"
+            tabIndex={0}
             onClick={handleClear}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                onChange(null);
+              }
+            }}
             className={joinClasses(
-              "absolute right-1 top-1/2 -translate-y-1/2 rounded-md px-2 text-xs font-medium text-muted hover:bg-surface-hover hover:text-foreground",
+              "shrink-0 rounded-md px-2 text-[11px] font-semibold text-muted hover:bg-surface-hover hover:text-foreground",
               touchTarget,
             )}
             aria-label="Quitar filtro de clínica"
           >
             Quitar
-          </button>
-        ) : null}
-      </div>
+          </span>
+        ) : (
+          <span className="shrink-0 text-muted/70">
+            <ChevronIcon />
+          </span>
+        )}
+      </button>
 
       {error ? (
         <p className="text-xs text-red-600" role="alert">
           {error}
         </p>
-      ) : null}
-
-      {open && !loading && filteredOptions.length > 0 ? (
-        <ul
-          id="clinic-filter-listbox"
-          role="listbox"
-          className="absolute z-30 max-h-52 w-full overflow-y-auto rounded-lg border border-border bg-white py-1 shadow-lg"
-        >
-          {filteredOptions.map((option) => {
-            const isSelected = option.id === value;
-            return (
-              <li key={option.id} role="option" aria-selected={isSelected}>
-                <button
-                  type="button"
-                  onClick={() => handleSelect(option)}
-                  className={joinClasses(
-                    "flex w-full items-start px-3 py-2 text-left text-sm transition hover:bg-surface-hover",
-                    isSelected && "bg-primary/5 font-semibold text-primary-dark",
-                  )}
-                >
-                  {option.name}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      ) : null}
-
-      {open && !loading && query.trim() && filteredOptions.length === 0 ? (
-        <p className="text-xs text-muted">No hay clínicas que coincidan.</p>
       ) : null}
 
       {showSelectedHint && selected ? (
@@ -163,6 +142,16 @@ export function ClinicFilterSelect({
           <span className="font-medium text-foreground">{selected.name}</span>.
         </p>
       ) : null}
+
+      <ClinicPickerModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={modalTitle}
+        options={options}
+        value={value}
+        onSelect={handleSelect}
+        loading={loading}
+      />
     </div>
   );
 }

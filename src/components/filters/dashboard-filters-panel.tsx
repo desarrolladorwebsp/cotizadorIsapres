@@ -12,6 +12,7 @@ import { joinClasses } from "@/lib/utils";
 import type { PlanCatalogClinicOption } from "@/lib/api/plan-clinics";
 import type { DashboardFiltersState } from "@/domain";
 import { FILTER_HELP } from "@/lib/filter-help-content";
+import { ClinicFilterSelect } from "./clinic-filter-select";
 import { CoveragePercentageFilter } from "./coverage-percentage-filter";
 import { FilterCheckboxList } from "./filter-checkbox-list";
 import { FilterHelpBlock } from "./filter-info-tip";
@@ -174,16 +175,33 @@ export function DashboardFiltersPanel({
           }
         >
           <div className="space-y-4">
+            {showClinicFilter ? (
+              <div className="space-y-2">
+                <p
+                  className={joinClasses(
+                    "text-xs font-semibold text-primary-dark/80",
+                    compactEmbed && "max-md:text-[11px]",
+                  )}
+                >
+                  Prestador / clínica (opcional)
+                </p>
+                <ClinicFilterSelect
+                  value={value.clinicId}
+                  onChange={(clinicId) => update({ clinicId })}
+                  options={clinicOptions}
+                  loading={clinicOptionsLoading}
+                  error={clinicOptionsError}
+                  modalTitle="Seleccionar prestador"
+                  compactEmbed={compactEmbed}
+                  showSelectedHint
+                />
+              </div>
+            ) : null}
+
             <CoveragePercentageFilter
               title="Cobertura hospitalaria"
               value={value.hospitalCoveragePercent}
               tone="hospital"
-              showClinicFilter={showClinicFilter}
-              clinicId={value.clinicId}
-              onClinicChange={(clinicId) => update({ clinicId })}
-              clinicOptions={clinicOptions}
-              clinicOptionsLoading={clinicOptionsLoading}
-              clinicOptionsError={clinicOptionsError}
               compactEmbed={compactEmbed}
               onChange={(hospitalCoveragePercent) =>
                 update({ hospitalCoveragePercent })
@@ -194,17 +212,24 @@ export function DashboardFiltersPanel({
               title="Cobertura ambulatoria"
               value={value.ambulatoryCoveragePercent}
               tone="ambulatory"
-              showClinicFilter={showClinicFilter}
-              clinicId={value.clinicId}
-              onClinicChange={(clinicId) => update({ clinicId })}
-              clinicOptions={clinicOptions}
-              clinicOptionsLoading={clinicOptionsLoading}
-              clinicOptionsError={clinicOptionsError}
               compactEmbed={compactEmbed}
               onChange={(ambulatoryCoveragePercent) =>
                 update({ ambulatoryCoveragePercent })
               }
             />
+
+            {showClinicFilter && value.clinicId ? (
+              <p
+                className={joinClasses(
+                  "text-[11px] leading-snug text-muted",
+                  compactEmbed && "max-md:text-[10px]",
+                )}
+              >
+                Si eliges un porcentaje junto con la clínica, el plan debe
+                cumplir ese mínimo en esa clínica (hospitalaria y/o ambulatoria
+                según corresponda).
+              </p>
+            ) : null}
           </div>
         </FilterSection>
         )}
