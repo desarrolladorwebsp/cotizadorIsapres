@@ -4,7 +4,9 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useCallback, useEffect, useState } from "react";
 import { landing } from "./landing-tokens";
 import { LandingIsapreCard } from "./landing-isapre-card";
+import { LandingSectionBackdrop } from "./landing-section-backdrop";
 import { LANDING_ISAPRES } from "./landing-isapres-data";
+import { LANDING_SECTION_BACKGROUNDS } from "./landing-visual-config";
 
 const slideVariants = {
   enter: (direction: number) => ({
@@ -92,10 +94,14 @@ export function LandingIsapresSection() {
   return (
     <section
       id="isapres"
-      className={`${landing.sectionSurface} landing-isapres-section relative overflow-hidden`}
+      className={`${landing.sectionSurface} landing-isapres-section landing-section-with-photo relative overflow-hidden`}
       aria-labelledby="landing-isapres-title"
     >
-      <div className="landing-isapres-mesh pointer-events-none absolute inset-0" aria-hidden />
+      <LandingSectionBackdrop
+        imageSrc={LANDING_SECTION_BACKGROUNDS.isapres}
+        variant="isapres"
+      />
+      <div className="landing-isapres-mesh pointer-events-none absolute inset-0 opacity-60" aria-hidden />
       <div className="landing-grid-pattern pointer-events-none absolute inset-0 opacity-35" aria-hidden />
 
       <div className={`${landing.container} relative py-20 sm:py-24 lg:py-28`}>

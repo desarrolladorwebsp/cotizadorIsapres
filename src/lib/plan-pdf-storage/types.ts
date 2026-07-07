@@ -6,7 +6,7 @@ export interface PlanPdfUploadResult {
   storagePath: string;
   bytes: number;
   uploadedAt: string;
-  backend: "local" | "blob";
+  backend: "local" | "blob" | "cpanel";
 }
 
 export interface UploadPlanPdfInput {

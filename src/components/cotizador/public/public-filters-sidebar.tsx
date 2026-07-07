@@ -105,7 +105,7 @@ export function PublicFiltersSidebar({
         className={joinClasses(
           "fixed inset-y-0 left-0 z-50 flex w-full max-w-full flex-col border-r bg-white shadow-xl",
           compactEmbed
-            ? "max-md:max-w-[17rem] lg:static lg:z-20 lg:w-60 lg:max-w-[15rem] lg:shrink-0 lg:translate-x-0 lg:shadow-none"
+            ? "max-md:max-w-[17rem] lg:static lg:z-20 lg:w-52 lg:max-w-[13rem] lg:shrink-0 lg:translate-x-0 lg:shadow-none"
             : "lg:static lg:z-20 lg:w-72 lg:max-w-[18rem] lg:shrink-0 lg:translate-x-0 lg:shadow-none",
           ui.border,
           !open && "pointer-events-none lg:pointer-events-auto",

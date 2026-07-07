@@ -7,9 +7,12 @@ import { savePlanPdf } from "../src/lib/plan-pdf-storage/upload";
 import {
   assertBlobConfigured,
   resolvePlanPdfStorageBackend,
-  useVercelBlobStorage,
 } from "../src/lib/plan-pdf-storage/provider";
 import { isVercelBlobUrl } from "../src/lib/plan-pdf-storage/blob";
+import {
+  assertCpanelConfigured,
+  isCpanelPdfUrl,
+} from "../src/lib/plan-pdf-storage/cpanel";
 import { resolveIsapreIdFromName, resolveIsapreNameFromId } from "../src/lib/isapre-catalog";
 
 config({ path: path.join(process.cwd(), ".env.local") });
@@ -84,8 +87,14 @@ function planPdfAlreadySynced(
   if (plan.pdfPublicId !== storageKey) return false;
   if (!plan.pdfUrl) return false;
 
-  if (useVercelBlobStorage()) {
+  const backend = resolvePlanPdfStorageBackend();
+
+  if (backend === "blob") {
     return isVercelBlobUrl(plan.pdfUrl);
+  }
+
+  if (backend === "cpanel") {
+    return isCpanelPdfUrl(plan.pdfUrl);
   }
 
   return plan.pdfUrl.includes("/api/plans/");
@@ -103,6 +112,10 @@ async function main() {
 
   if (backend === "blob") {
     assertBlobConfigured();
+  }
+
+  if (backend === "cpanel") {
+    assertCpanelConfigured();
   }
 
   const sourceStats = await stat(sourceDir).catch(() => null);

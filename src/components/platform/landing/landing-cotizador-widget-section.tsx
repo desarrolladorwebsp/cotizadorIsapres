@@ -10,6 +10,8 @@ import {
   LANDING_WIDGET_SCRIPT_URL,
   resolveLandingWidgetBaseUrl,
 } from "./landing-widget-config";
+import { LandingSectionBackdrop } from "./landing-section-backdrop";
+import { LANDING_SECTION_BACKGROUNDS } from "./landing-visual-config";
 
 declare global {
   interface Window {
@@ -101,9 +103,13 @@ export function LandingCotizadorWidgetSection() {
   return (
     <section
       id="cotizar"
-      className={`${landing.sectionSurface} relative overflow-hidden`}
+      className={`${landing.sectionSurface} landing-section-with-photo relative overflow-visible`}
       aria-labelledby="landing-widget-title"
     >
+      <LandingSectionBackdrop
+        imageSrc={LANDING_SECTION_BACKGROUNDS.widget}
+        variant="widget"
+      />
       <div className={`${landing.container} relative py-20 sm:py-24 lg:py-28`}>
         <motion.div
           initial={reducedMotion ? false : "hidden"}
@@ -141,19 +147,19 @@ export function LandingCotizadorWidgetSection() {
           whileInView={{ opacity: 1, y: 0, scale: 1 }}
           viewport={{ once: true, margin: "-40px" }}
           transition={{ type: "spring", stiffness: 240, damping: 28, delay: 0.12 }}
-          className="relative mx-auto mt-12 max-w-6xl sm:mt-14"
+          className="landing-widget-bleed relative mt-12 sm:mt-14"
         >
-          <div className="landing-glass-panel-strong landing-widget-frame overflow-hidden rounded-[1.75rem] p-2 sm:p-3">
+          <div className="landing-glass-panel-strong landing-widget-frame overflow-visible rounded-[1.75rem] p-2 sm:p-3">
             <section
               ref={containerRef}
               data-cotizador-widget
               data-agent-key={LANDING_WIDGET_AGENT_KEY}
               data-partner={LANDING_WIDGET_AGENT_KEY}
               data-base-url={baseUrl ?? undefined}
-              data-full-width="true"
+              data-full-width="false"
               data-min-height={String(LANDING_WIDGET_MIN_HEIGHT)}
               data-title="Cotizador de planes Isapre — Cotizador Premium"
-              className="landing-widget-mount min-h-[720px] w-full overflow-hidden rounded-[1.35rem] bg-background"
+              className="landing-widget-mount min-h-[720px] w-full overflow-visible rounded-[1.35rem] bg-background"
             />
           </div>
 

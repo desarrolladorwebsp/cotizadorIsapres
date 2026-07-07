@@ -3,10 +3,12 @@
 import { motion, useReducedMotion } from "framer-motion";
 import type { PartnerEntityPublic } from "@/types/partner-entity";
 import { LandingPartnerLogo } from "./landing-partner-logo";
+import { LandingSectionBackdrop } from "./landing-section-backdrop";
 import {
   LANDING_PARTNERS,
   type LandingPartner,
 } from "./landing-partners-data";
+import { LANDING_SECTION_BACKGROUNDS } from "./landing-visual-config";
 import { landing } from "./landing-tokens";
 
 interface LandingPartnersSectionProps {
@@ -151,10 +153,14 @@ export function LandingPartnersSection({
   return (
     <section
       id="socios"
-      className={`${landing.sectionSurface} relative overflow-hidden`}
+      className={`${landing.sectionSurface} landing-section-with-photo relative overflow-hidden`}
       aria-labelledby="landing-partners-title"
     >
-      <div className="landing-partners-mesh pointer-events-none absolute inset-0" aria-hidden />
+      <LandingSectionBackdrop
+        imageSrc={LANDING_SECTION_BACKGROUNDS.partners}
+        variant="partners"
+      />
+      <div className="landing-partners-mesh pointer-events-none absolute inset-0 opacity-60" aria-hidden />
       <div className="landing-grid-pattern pointer-events-none absolute inset-0 opacity-40" aria-hidden />
 
       <div className={`${landing.container} relative py-20 sm:py-24 lg:py-28`}>

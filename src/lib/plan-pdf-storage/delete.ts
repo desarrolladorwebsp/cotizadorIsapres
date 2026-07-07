@@ -1,10 +1,18 @@
 import {
   deleteBlobPlanPdf,
 } from "@/lib/plan-pdf-storage/blob";
+import { deleteCpanelPlanPdf } from "@/lib/plan-pdf-storage/cpanel";
 import { deleteLocalPlanPdf } from "@/lib/plan-pdf-storage/local";
-import { useVercelBlobStorage } from "@/lib/plan-pdf-storage/provider";
+import {
+  useCpanelStorage,
+  useVercelBlobStorage,
+} from "@/lib/plan-pdf-storage/provider";
 
 export async function deletePlanPdfFile(storageKey: string): Promise<boolean> {
+  if (useCpanelStorage()) {
+    return deleteCpanelPlanPdf(storageKey);
+  }
+
   if (useVercelBlobStorage()) {
     return deleteBlobPlanPdf(storageKey);
   }

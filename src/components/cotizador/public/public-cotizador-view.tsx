@@ -849,9 +849,12 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
             ) : null}
 
             <div
+              data-embed-results-row={isEmbedded ? "true" : undefined}
               className={joinClasses(
-                safeWidth,
-                isEmbedded ? "flex gap-0 lg:gap-5 max-md:gap-0" : "flex min-h-0 gap-0 lg:gap-5",
+                isEmbedded ? "w-full min-w-0" : safeWidth,
+                isEmbedded
+                  ? "flex min-w-0 gap-2 lg:gap-3 max-md:gap-0"
+                  : "flex min-h-0 gap-0 lg:gap-5",
               )}
             >
               {hasSearched ? (

@@ -6,6 +6,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PublicPlanReview } from "@/types/plan-review";
 import { joinClasses } from "@/lib/utils";
 import { landing } from "./landing-tokens";
+import { LandingSectionBackdrop } from "./landing-section-backdrop";
+import { LANDING_SECTION_BACKGROUNDS } from "./landing-visual-config";
 
 interface LandingReviewsSectionProps {
   reviews: PublicPlanReview[];
@@ -266,10 +268,14 @@ export function LandingReviewsSection({ reviews }: LandingReviewsSectionProps) {
   return (
     <section
       id="reseñas"
-      className={`${landing.sectionSurface} relative overflow-hidden`}
+      className={`${landing.sectionSurface} landing-section-with-photo relative overflow-hidden`}
       aria-labelledby="landing-reviews-title"
     >
-      <div className="landing-reviews-mesh pointer-events-none absolute inset-0" aria-hidden />
+      <LandingSectionBackdrop
+        imageSrc={LANDING_SECTION_BACKGROUNDS.reviews}
+        variant="reviews"
+      />
+      <div className="landing-reviews-mesh pointer-events-none absolute inset-0 opacity-60" aria-hidden />
       <div className="landing-grid-pattern pointer-events-none absolute inset-0 opacity-35" aria-hidden />
 
       <div className={`${landing.container} relative py-20 sm:py-24 lg:py-28`}>

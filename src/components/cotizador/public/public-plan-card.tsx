@@ -230,9 +230,10 @@ export function PublicPlanCard({
       }}
       transition={planCard.elevation.spring}
       className={planCard.root}
+      data-public-plan-card
     >
       {/* Cabecera — hero del plan */}
-      <div className={planCard.header}>
+      <div className={joinClasses(planCard.header, "plan-card-header")}>
         <div className="flex min-w-0 flex-1 items-start gap-2.5 sm:gap-3">
           <IsapreLogo isapre={plan.isapre} size="sm" />
 
@@ -258,7 +259,7 @@ export function PublicPlanCard({
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center justify-between gap-3 sm:justify-end">
+        <div className="plan-card-header-actions flex shrink-0 flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3 lg:flex-col lg:items-stretch xl:flex-row xl:items-center xl:justify-end">
           <div className="flex items-center gap-3 sm:gap-4">
             <div className="text-center">
               <p className="text-[10px] font-medium text-muted">Desde</p>

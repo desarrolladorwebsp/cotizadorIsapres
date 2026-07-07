@@ -6,8 +6,12 @@ import {
 } from "@/lib/plan-pdf-storage/paths";
 import { deletePlanPdfVariants } from "@/lib/plan-pdf-storage/delete";
 import { saveBlobPlanPdf } from "@/lib/plan-pdf-storage/blob";
+import { saveCpanelPlanPdf } from "@/lib/plan-pdf-storage/cpanel";
 import { saveLocalPlanPdf } from "@/lib/plan-pdf-storage/local";
-import { useVercelBlobStorage } from "@/lib/plan-pdf-storage/provider";
+import {
+  useCpanelStorage,
+  useVercelBlobStorage,
+} from "@/lib/plan-pdf-storage/provider";
 import type {
   PlanPdfUploadResult,
   UploadPlanPdfInput,
@@ -47,6 +51,18 @@ export async function savePlanPdf({
   ).filter((key) => key !== storageKey);
 
   await deletePlanPdfVariants(cleanupKeys);
+
+  if (useCpanelStorage()) {
+    const uploaded = await saveCpanelPlanPdf(storageKey, fileBuffer);
+
+    return {
+      url: uploaded.url,
+      storagePath: storageKey,
+      bytes: uploaded.bytes,
+      uploadedAt: new Date().toISOString(),
+      backend: "cpanel",
+    };
+  }
 
   if (useVercelBlobStorage()) {
     const uploaded = await saveBlobPlanPdf(storageKey, fileBuffer);

@@ -253,14 +253,6 @@
   box-shadow: 0 8px 24px -8px rgb(0 119 182 / 0.14);
 }
 
-[data-landing] .landing-widget-frame {
-  box-shadow: var(--landing-card-glow);
-}
-
-[data-landing] .landing-widget-mount {
-  min-height: var(--cv-widget-min-height, 720px);
-}
-
 [data-landing] .landing-footer-mesh {
   background-image:
     radial-gradient(ellipse 55% 45% at 20% 100%, var(--landing-mesh-primary), transparent 55%),
@@ -300,4 +292,86 @@
   [data-landing] .landing-grid-pattern {
     mask-image: none;
   }
+
+  [data-landing] .landing-section-backdrop__image {
+    transform: none !important;
+  }
+}
+
+/* Fondos fotográficos por sección (estilo desdetu7: blur + overlay claro) */
+[data-landing] .landing-section-with-photo {
+  background: transparent;
+}
+
+[data-landing] .landing-section-backdrop__image {
+  transform: scale(1.06);
+  filter: blur(2px) saturate(1.05);
+}
+
+[data-landing] .landing-section-backdrop__overlay {
+  background:
+    linear-gradient(
+      180deg,
+      rgb(255 255 255 / 0.94) 0%,
+      rgb(248 251 253 / 0.88) 45%,
+      rgb(255 255 255 / 0.94) 100%
+    );
+}
+
+[data-landing] .landing-section-backdrop--widget .landing-section-backdrop__image {
+  object-position: 68% center;
+}
+
+[data-landing] .landing-section-backdrop--widget .landing-section-backdrop__overlay {
+  background:
+    linear-gradient(
+      105deg,
+      rgb(255 255 255 / 0.96) 0%,
+      rgb(248 251 253 / 0.9) 42%,
+      rgb(232 246 251 / 0.82) 100%
+    );
+}
+
+[data-landing] .landing-section-backdrop--partners .landing-section-backdrop__image {
+  object-position: 30% center;
+}
+
+[data-landing] .landing-section-backdrop--isapres .landing-section-backdrop__image {
+  object-position: 50% 35%;
+}
+
+[data-landing] .landing-section-backdrop--reviews .landing-section-backdrop__image {
+  object-position: 55% 40%;
+}
+
+[data-landing] .landing-section-backdrop--reviews .landing-section-backdrop__overlay {
+  background:
+    linear-gradient(
+      180deg,
+      rgb(255 255 255 / 0.93) 0%,
+      rgb(248 251 253 / 0.86) 50%,
+      rgb(255 255 255 / 0.95) 100%
+    );
+}
+
+/* Widget a ancho completo dentro de la landing (sin recortar iframe) */
+[data-landing] .landing-widget-bleed {
+  width: min(100vw, 100%);
+  max-width: none;
+  margin-inline: calc(50% - 50vw);
+  padding-inline: max(0.75rem, calc(50vw - 50%));
+}
+
+@media (min-width: 1024px) {
+  [data-landing] .landing-widget-bleed {
+    padding-inline: max(1rem, calc(50vw - min(50vw, 800px)));
+  }
+}
+
+[data-landing] .landing-widget-frame {
+  box-shadow: var(--landing-card-glow);
+}
+
+[data-landing] .landing-widget-mount {
+  min-height: var(--cv-widget-min-height, 720px);
 }
