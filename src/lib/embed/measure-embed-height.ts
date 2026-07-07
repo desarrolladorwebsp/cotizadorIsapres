@@ -55,7 +55,19 @@ function measureFlowContent(root: HTMLElement): number {
     maxBottom = safeMax(maxBottom, measureElementBottom(results, rootTop));
   }
 
-  return Math.ceil(safeMax(maxBottom, root.scrollHeight, root.offsetHeight));
+  return Math.ceil(maxBottom);
+}
+
+function isVisibleOverlay(el: HTMLElement): boolean {
+  const rect = el.getBoundingClientRect();
+  if (rect.height <= 0 || rect.width <= 0) return false;
+
+  const style = window.getComputedStyle(el);
+  return (
+    style.display !== "none" &&
+    style.visibility !== "hidden" &&
+    Number.parseFloat(style.opacity) > 0
+  );
 }
 
 function measureOverlayContent(root: HTMLElement): number {
@@ -65,8 +77,7 @@ function measureOverlayContent(root: HTMLElement): number {
   root.querySelectorAll<HTMLElement>(
     '[role="dialog"], [role="alertdialog"]',
   ).forEach((overlay) => {
-    const rect = overlay.getBoundingClientRect();
-    if (rect.height <= 0 || rect.width <= 0) return;
+    if (!isVisibleOverlay(overlay)) return;
     maxBottom = safeMax(maxBottom, measureElementBottom(overlay, rootTop));
   });
 
@@ -87,18 +98,17 @@ function measureDocumentHeight(): number {
   );
 }
 
-/** Altura total del contenido embebido (flujo + modales/alertas). */
+/** Altura total del contenido embebido (flujo + modales/alertas visibles). */
 export function measureEmbedContentHeight(root: HTMLElement): number {
   const flowHeight = measureFlowContent(root);
   const overlayHeight = measureOverlayContent(root);
-  const docHeight = measureDocumentHeight();
-  const total = safeMax(flowHeight, overlayHeight, docHeight) + EMBED_HEIGHT_BUFFER_PX;
+  const contentHeight = safeMax(flowHeight, overlayHeight);
 
-  if (Number.isFinite(total) && total > 0) {
-    return total;
+  if (contentHeight > 0) {
+    return contentHeight + EMBED_HEIGHT_BUFFER_PX;
   }
 
-  return docHeight + EMBED_HEIGHT_BUFFER_PX;
+  return measureDocumentHeight() + EMBED_HEIGHT_BUFFER_PX;
 }
 
 /**
