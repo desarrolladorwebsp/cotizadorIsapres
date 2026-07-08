@@ -261,9 +261,9 @@ export function PublicPlanCard({
           </div>
         </div>
 
-        <div className="plan-card-header-actions flex shrink-0 flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3 lg:flex-col lg:items-stretch xl:flex-row xl:items-center xl:justify-end">
+        <div className="plan-card-header-actions flex shrink-0 flex-col items-stretch gap-2 sm:items-end sm:gap-2.5">
           <div className="flex items-center gap-3 sm:gap-4">
-            <div className="text-center">
+            <div className="text-left sm:text-right">
               <p className="text-[10px] font-medium text-muted">Desde</p>
               <p
                 className={joinClasses(
@@ -276,7 +276,7 @@ export function PublicPlanCard({
                 {ufPriceLabel}
               </p>
             </div>
-            <div className="text-center">
+            <div className="text-left sm:text-right">
               <p className="text-[10px] font-medium text-muted">Desde</p>
               <p
                 className={joinClasses(
@@ -291,7 +291,7 @@ export function PublicPlanCard({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <PlanCardActionButton
               label="PDF"
               icon={<DownloadIcon />}

@@ -324,20 +324,14 @@ html[data-cotizador-embed="true"] body {
 }
 
 [data-embed="true"] [data-public-plan-card] .plan-card-header {
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0.75rem;
+  min-width: 0;
 }
 
-@media (min-width: 1280px) {
-  [data-embed="true"] [data-public-plan-card] .plan-card-header {
-    flex-direction: row;
-    align-items: center;
-  }
-
-  [data-embed="true"] [data-public-plan-card] .plan-card-header-actions {
-    flex-direction: row;
-    align-items: center;
-    justify-content: flex-end;
-  }
+[data-embed="true"] [data-public-plan-card] .plan-card-header-actions {
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem 0.75rem;
+  min-width: 0;
 }

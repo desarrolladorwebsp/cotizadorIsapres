@@ -23,10 +23,6 @@ const slideVariants = {
   }),
 };
 
-const swipeConfidenceThreshold = 10000;
-const swipePower = (offset: number, velocity: number) =>
-  Math.abs(offset) * velocity;
-
 function ChevronIcon({ direction }: { direction: "left" | "right" }) {
   return (
     <svg
@@ -139,16 +135,7 @@ export function LandingIsapresSection() {
                 x: { type: "spring", stiffness: 220, damping: 28 },
                 opacity: { duration: 0.35 },
               }}
-              drag={totalPages > 1 && !reducedMotion ? "x" : false}
-              dragConstraints={{ left: 0, right: 0 }}
-              dragElastic={0.9}
-              onDragEnd={(_, { offset, velocity }) => {
-                if (totalPages <= 1) return;
-                const swipe = swipePower(offset.x, velocity.x);
-                if (swipe < -swipeConfidenceThreshold) paginate(1);
-                else if (swipe > swipeConfidenceThreshold) paginate(-1);
-              }}
-              className="grid grid-cols-1 gap-x-6 gap-y-20 md:grid-cols-2 lg:grid-cols-3 lg:gap-x-8 cursor-grab active:cursor-grabbing"
+              className="grid grid-cols-1 gap-x-6 gap-y-20 md:grid-cols-2 lg:grid-cols-3 lg:gap-x-8"
             >
               {currentItems.map((item) => (
                 <LandingIsapreCard key={item.id} item={item} />
