@@ -1,4 +1,4 @@
-import { LANDING_FOOTER_CONTACT } from "@/components/platform/landing/landing-footer-data";
+import { LANDING_FOOTER_CONTACT } from "@/components/platform/landing/landing-social-data";
 import { resolveAppBaseUrl } from "@/lib/platform/routing";
 import {
   DEFAULT_DESCRIPTION,
@@ -35,7 +35,12 @@ export function buildLandingPageJsonLd() {
         },
         description: DEFAULT_DESCRIPTION,
         email: SITE_CONTACT_EMAIL,
-        telephone: LANDING_FOOTER_CONTACT.phone,
+        contactPoint: {
+          "@type": "ContactPoint",
+          contactType: "customer service",
+          availableLanguage: ["Spanish", "es"],
+          url: LANDING_FOOTER_CONTACT.whatsappHref,
+        },
         areaServed: {
           "@type": "Country",
           name: "Chile",

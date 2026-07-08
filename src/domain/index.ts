@@ -68,6 +68,13 @@ export {
 } from "@/lib/plan-metadata";
 export { applyDashboardFilters } from "@/lib/apply-plan-filters";
 export {
+  applyRegionToDashboardFilters,
+  buildZoneFilterStateFromRegion,
+  REGION_TO_ZONE_IDS,
+  resolveZoneIdsFromRegion,
+  RM_ZONE_FILTER_IDS,
+} from "@/lib/region-zones";
+export {
   COVERAGE_PERCENTAGE_OPTIONS,
   ISAPRE_FILTER_OPTIONS,
   PLAN_TYPE_FILTER_OPTIONS,

@@ -57,6 +57,8 @@ export function buildParsedDeepLinkFromEmbedState(
     hasDeepLinkParams: true,
     email: input.email?.trim() || undefined,
     hasSolicitarDeepLink: false,
+    hasExplicitZoneParams:
+      getActiveCheckboxIds(input.dashboardFilters.zones).length > 0,
   };
 }
 

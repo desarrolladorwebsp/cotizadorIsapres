@@ -4,6 +4,7 @@ import type { PublicPlanReview } from "@/types/plan-review";
 import { buildCotizadorPremiumCotizadorUrl } from "@/lib/partner-entity/platform-agent";
 import { LandingBrandThemeEffect } from "./landing/landing-brand-theme-effect";
 import { LandingCotizadorWidgetSection } from "./landing/landing-cotizador-widget-section";
+import { LandingFloatingSocial } from "./landing/landing-floating-social";
 import { LandingFooter } from "./landing/landing-footer";
 import { LandingHero } from "./landing/landing-hero";
 import { LandingIsapresSection } from "./landing/landing-isapres-section";
@@ -64,6 +65,7 @@ export function PlatformLandingView({
         <LandingReviewsSection reviews={reviews} />
       </main>
 
+      <LandingFloatingSocial />
       <LandingFooter />
     </div>
   );

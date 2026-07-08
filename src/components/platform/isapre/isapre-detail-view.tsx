@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { LandingFloatingSocial } from "@/components/platform/landing/landing-floating-social";
 import { LandingFooter } from "@/components/platform/landing/landing-footer";
 import { LandingLogo } from "@/components/platform/landing/landing-logo";
 import { landing } from "@/components/platform/landing/landing-tokens";
@@ -308,6 +309,7 @@ export function IsapreDetailView({ data }: { data: IsaprePageData }) {
         </section>
       </main>
 
+      <LandingFloatingSocial />
       <LandingFooter />
     </div>
   );

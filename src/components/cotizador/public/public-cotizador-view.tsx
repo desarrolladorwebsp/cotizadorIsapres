@@ -19,6 +19,7 @@ import { usePlanCatalogBounds } from "@/hooks/use-plan-catalog-bounds";
 import { useEmbedResize, postEmbedExitNavigate } from "@/hooks/use-embed-resize";
 import { useClientPlanSearch, FILTER_DEBOUNCE_MS } from "@/hooks/use-client-plan-search";
 import {
+  applyRegionToDashboardFilters,
   buildBeneficiaryGroupSummary,
   createDefaultDashboardFilters,
   getActiveClinicIds,
@@ -247,8 +248,20 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
       );
       dashboard.setDashboardFilters(
         isEmbedded
-          ? withoutEmbedWidgetFilters(deepLink.filters)
-          : deepLink.filters,
+          ? withoutEmbedWidgetFilters(
+              deepLink.hasExplicitZoneParams
+                ? deepLink.filters
+                : applyRegionToDashboardFilters(
+                    deepLink.filters,
+                    deepLink.criteria.region,
+                  ),
+            )
+          : deepLink.hasExplicitZoneParams
+            ? deepLink.filters
+            : applyRegionToDashboardFilters(
+                deepLink.filters,
+                deepLink.criteria.region,
+              ),
       );
 
       if (deepLink.priceMin !== undefined) {
@@ -280,6 +293,23 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
       setBootstrappedExitSearch(false);
     }
   }, [hasSearched, bootstrappedExitSearch]);
+
+  useEffect(() => {
+    if (!formReady || deepLink.hasExplicitZoneParams) return;
+
+    dashboard.setDashboardFilters((currentFilters) => {
+      const baseFilters = isEmbedded
+        ? withoutEmbedWidgetFilters(currentFilters)
+        : currentFilters;
+      return applyRegionToDashboardFilters(baseFilters, criteria.region);
+    });
+  }, [
+    formReady,
+    deepLink.hasExplicitZoneParams,
+    criteria.region,
+    isEmbedded,
+    dashboard.setDashboardFilters,
+  ]);
 
   const runSearch = useCallback(
     (
@@ -394,8 +424,16 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
     if (!deepLink.shouldAutoSearch) return;
 
     const filters = deepLink.hasDeepLinkParams
-      ? deepLink.filters
-      : dashboard.dashboardFilters;
+      ? deepLink.hasExplicitZoneParams
+        ? deepLink.filters
+        : applyRegionToDashboardFilters(
+            deepLink.filters,
+            deepLink.criteria.region,
+          )
+      : applyRegionToDashboardFilters(
+          dashboard.dashboardFilters,
+          criteria.region,
+        );
 
     void search(
       {
@@ -619,7 +657,8 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
   const showInlineLoading = loading && hasSearched && plans.length > 0;
 
   function handleResetAll() {
-    setCriteria(createDefaultQuoteCriteria());
+    const defaultCriteria = createDefaultQuoteCriteria();
+    setCriteria(defaultCriteria);
     const emptyBeneficiaries = {
       contributorAge: null,
       dependents: [],
@@ -628,7 +667,12 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
       emptyBeneficiaries,
       buildBeneficiaryGroupSummary(emptyBeneficiaries),
     );
-    dashboard.setDashboardFilters(createDefaultDashboardFilters());
+    dashboard.setDashboardFilters(
+      applyRegionToDashboardFilters(
+        createDefaultDashboardFilters(),
+        defaultCriteria.region,
+      ),
+    );
     const defaultPriceMin =
       bounds.totalPlans > 0 ? Math.floor(bounds.priceMin * 10) / 10 : 2;
     const defaultPriceMax =
@@ -699,6 +743,26 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
     postEmbedExitNavigate();
     navigateTopLevel(exitUrl, 420);
   }
+
+  const handleCriteriaChange = useCallback(
+    (patch: Partial<QuoteCriteria>) => {
+      setCriteria((current) => {
+        const next = { ...current, ...patch };
+
+        if (patch.region !== undefined) {
+          dashboard.setDashboardFilters((currentFilters) => {
+            const baseFilters = isEmbedded
+              ? withoutEmbedWidgetFilters(currentFilters)
+              : currentFilters;
+            return applyRegionToDashboardFilters(baseFilters, patch.region);
+          });
+        }
+
+        return next;
+      });
+    },
+    [dashboard.setDashboardFilters, isEmbedded],
+  );
 
   function handleCalculate() {
     if (isEmbedded) {
@@ -812,9 +876,7 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
           <div ref={criteriaBarRef}>
             <PublicQuoteCriteriaBar
               criteria={criteria}
-              onCriteriaChange={(patch) =>
-                setCriteria((current) => ({ ...current, ...patch }))
-              }
+              onCriteriaChange={handleCriteriaChange}
               beneficiaries={dashboard.beneficiaries}
               onBeneficiariesChange={dashboard.handleBeneficiariesChange}
               onCalculate={handleCalculate}

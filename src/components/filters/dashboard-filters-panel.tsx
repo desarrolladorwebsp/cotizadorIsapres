@@ -102,7 +102,7 @@ export function DashboardFiltersPanel({
 
         <FilterSection
           title="Filtrado por Zona"
-          description="Muestra planes con prestadores en las zonas seleccionadas (sector RM, norte, Valparaíso, etc.)."
+          description="Se sincroniza con la región del buscador. También puedes ajustar sectores RM, norte, Valparaíso, etc."
           compactEmbed={compactEmbed}
           infoLabel="Información sobre zonas y sectores geográficos"
           info={

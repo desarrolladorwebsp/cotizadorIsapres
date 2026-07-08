@@ -6,7 +6,7 @@ import { buildWhatsAppUrl } from "@/lib/partner-entity/theme";
 import { touchTarget } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 
-const DEFAULT_WHATSAPP_NUMBER = "56964133848";
+const DEFAULT_WHATSAPP_NUMBER = "56965822864";
 const DEFAULT_WHATSAPP_MESSAGE = "Hola, quiero cotizar un plan de salud";
 
 function WhatsAppIcon({ className }: { className?: string }) {

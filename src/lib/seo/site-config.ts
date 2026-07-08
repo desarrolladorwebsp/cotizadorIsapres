@@ -33,4 +33,5 @@ export const SITE_CONTACT_EMAIL = "contacto@cotizadorpremium.cl";
 export const SITE_SOCIAL_PROFILES = [
   "https://www.facebook.com/profile.php?id=61591687383169",
   "https://www.instagram.com/cotizadorpremium",
+  "https://www.linkedin.com/company/cotizadorpremium",
 ] as const;

@@ -1,12 +1,17 @@
-/** Datos de contacto y redes — configurables sin tocar el componente. */
-export const LANDING_FOOTER_CONTACT = {
-  email: "contacto@cotizadorpremium.cl",
-  phone: "+56 9 6582 2864",
-  phoneHref: "tel:+56965822864",
-  location: "Chile",
+import { buildWhatsAppUrl } from "@/lib/partner-entity/theme";
+
+/** WhatsApp oficial — sin línea telefónica de voz. */
+export const LANDING_WHATSAPP = {
+  number: "56965822864",
+  display: "+56 9 6582 2864",
+  message: "Hola, quiero cotizar un plan de salud con Cotizador Premium",
 } as const;
 
-export const LANDING_FOOTER_SOCIAL = [
+export function buildLandingWhatsAppHref(): string {
+  return buildWhatsAppUrl(LANDING_WHATSAPP.number, LANDING_WHATSAPP.message);
+}
+
+export const LANDING_SOCIAL_NETWORKS = [
   {
     id: "facebook",
     label: "Facebook",
@@ -18,9 +23,26 @@ export const LANDING_FOOTER_SOCIAL = [
     href: "https://www.instagram.com/cotizadorpremium",
   },
   {
+    id: "linkedin",
+    label: "LinkedIn",
+    href: "https://www.linkedin.com/company/cotizadorpremium",
+  },
+] as const;
+
+/** Datos de contacto del footer — configurables sin tocar el componente. */
+export const LANDING_FOOTER_CONTACT = {
+  email: "contacto@cotizadorpremium.cl",
+  whatsapp: LANDING_WHATSAPP.display,
+  whatsappHref: buildLandingWhatsAppHref(),
+  location: "Chile",
+} as const;
+
+export const LANDING_FOOTER_SOCIAL = [
+  ...LANDING_SOCIAL_NETWORKS,
+  {
     id: "whatsapp",
     label: "WhatsApp",
-    href: "https://wa.me/56965822864",
+    href: buildLandingWhatsAppHref(),
   },
 ] as const;
 

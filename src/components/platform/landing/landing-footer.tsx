@@ -13,7 +13,8 @@ import {
   LANDING_FOOTER_SMARTPRO_LOGO,
   LANDING_FOOTER_SMARTPRO_URL,
   LANDING_FOOTER_SOCIAL,
-} from "./landing-footer-data";
+} from "./landing-social-data";
+import { LandingSocialNetworkIcon } from "./landing-social-icons";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -32,14 +33,6 @@ function MailIcon({ className }: { className?: string }) {
   );
 }
 
-function PhoneIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
-      <path d="M6.5 4h3l1.5 5-2 1.5a13 13 0 005 5L17.5 14l5 1.5v3a1.5 1.5 0 01-1.5 1.5A15 15 0 013 6.5 1.5 1.5 0 014.5 5z" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
 function PinIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
@@ -47,33 +40,6 @@ function PinIcon({ className }: { className?: string }) {
       <circle cx="12" cy="11" r="2.5" />
     </svg>
   );
-}
-
-function SocialIcon({ id, className }: { id: string; className?: string }) {
-  switch (id) {
-    case "facebook":
-      return (
-        <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
-          <path d="M14 8h2.5V5.5H14c-2.2 0-3.5 1.3-3.5 3.6V11H8v2.7h2.5V21h3.1v-7.3H16l.5-2.7h-2.4V9.2c0-.8.2-1.2 1.2-1.2z" />
-        </svg>
-      );
-    case "instagram":
-      return (
-        <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
-          <rect x="3" y="3" width="18" height="18" rx="5" />
-          <circle cx="12" cy="12" r="4" />
-          <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
-        </svg>
-      );
-    case "whatsapp":
-      return (
-        <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
-          <path d="M12 2a9.8 9.8 0 00-8.4 14.8L2 22l5.4-1.4A9.8 9.8 0 1012 2zm0 1.8a8 8 0 018 8.2c0 4.4-3.6 8-8 8a7.9 7.9 0 01-4-.9l-.3-.2-3.2.8.9-3.1-.2-.3A8 8 0 0112 3.8zm-2.3 4.5c-.1 0-.3.1-.4.3-.2.2-.7.7-.7 1.6 0 .9.7 1.9 1 2.1.1.1 1.2 1.9 3 2.6 1.5.6 1.8.5 2.1.5.3 0 1-.4 1.1-.8.1-.4.1-.8.1-.8s0-.1-.1-.2-.2-.1-.3-.1-.8-.3-1-.4-.2-.1-.3-.1-.1.2-.3.4-.5.5-.6.5s-.3 0-.6-.2c-.3-.2-1.2-.5-2.3-1.5-.9-.8-1.4-1.7-1.6-2-.1-.3 0-.4.1-.6.1-.1.1-.2.2-.3.1-.1.1-.2.1-.3 0-.1 0-.2-.1-.3l-.4-.9c-.1-.2-.2-.3-.3-.3z" />
-        </svg>
-      );
-    default:
-      return null;
-  }
 }
 
 function FooterNavLink({
@@ -109,6 +75,8 @@ function SocialLink({
   href: string;
   reducedMotion: boolean;
 }) {
+  const isWhatsApp = id === "whatsapp";
+
   return (
     <motion.a
       href={href}
@@ -122,9 +90,13 @@ function SocialLink({
           : { y: -3, scale: 1.06, transition: { type: "spring", stiffness: 400, damping: 22 } }
       }
       whileTap={reducedMotion ? undefined : { scale: 0.96 }}
-      className="flex h-10 w-10 items-center justify-center rounded-xl border border-border/80 bg-background/80 text-muted shadow-sm transition-colors hover:border-primary/30 hover:bg-secondary-muted hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+      className={`flex h-10 w-10 items-center justify-center rounded-xl border shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
+        isWhatsApp
+          ? "border-[#25D366]/30 bg-[#25D366] text-white hover:brightness-105"
+          : "border-border/80 bg-background/80 text-muted hover:border-primary/30 hover:bg-secondary-muted hover:text-primary"
+      }`}
     >
-      <SocialIcon id={id} className="h-[18px] w-[18px]" />
+      <LandingSocialNetworkIcon id={id} className="h-[18px] w-[18px]" />
     </motion.a>
   );
 }
@@ -220,17 +192,19 @@ export function LandingFooter() {
               </li>
               <li>
                 <motion.a
-                  href={LANDING_FOOTER_CONTACT.phoneHref}
+                  href={LANDING_FOOTER_CONTACT.whatsappHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   whileHover={reducedMotion ? undefined : { x: 4 }}
                   className="group flex items-start gap-3 rounded-2xl border border-transparent p-2 transition-colors hover:border-border/80 hover:bg-secondary-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                 >
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary-muted text-primary">
-                    <PhoneIcon className="h-[18px] w-[18px]" />
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#25D366]/15 text-[#128C7E]">
+                    <LandingSocialNetworkIcon id="whatsapp" className="h-[18px] w-[18px]" />
                   </span>
                   <span>
-                    <span className="block text-xs font-medium text-muted">Teléfono</span>
+                    <span className="block text-xs font-medium text-muted">WhatsApp</span>
                     <span className="text-sm font-semibold text-foreground transition-colors group-hover:text-primary">
-                      {LANDING_FOOTER_CONTACT.phone}
+                      {LANDING_FOOTER_CONTACT.whatsapp}
                     </span>
                   </span>
                 </motion.a>

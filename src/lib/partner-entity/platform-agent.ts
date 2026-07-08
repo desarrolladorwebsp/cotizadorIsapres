@@ -42,7 +42,7 @@ export function buildCotizadorPremiumPartnerRecord(): Omit<
     name: "Cotizador Premium",
     logoUrl: PLATFORM_AGENT_LOGO_URL,
     websiteUrl: PLATFORM_AGENT_WEBSITE,
-    whatsappNumber: "56964133848",
+    whatsappNumber: "56965822864",
     whatsappMessage:
       "Hola, quiero cotizar un plan de salud con Cotizador Premium",
     exitLabel: "Volver a Cotizador Premium",

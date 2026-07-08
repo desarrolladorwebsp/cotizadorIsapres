@@ -1,14 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { FiltersFab, FiltersSidebar } from "@/components/filters";
+import { RegionFilterSelect } from "@/components/filters/region-filter-select";
 import { PlanResultsList } from "@/components/plan-card";
 import { CotizadorHeader, type CotizadorHeaderVariant } from "@/components/cotizador/cotizador-header";
 import { CotizadorNav } from "@/components/cotizador/cotizador-nav";
 import { AssignPlanToClientModal } from "@/components/executive/assign-plan-to-client-modal";
 import { useCotizadorDashboard } from "@/hooks/use-cotizador-dashboard";
 import { usePlansCatalog } from "@/hooks/use-plans-catalog";
-import { formatPlanClp, formatPlanUf, getActiveClinicIds } from "@/domain";
+import {
+  applyRegionToDashboardFilters,
+  createDefaultDashboardFilters,
+  formatPlanClp,
+  formatPlanUf,
+  getActiveClinicIds,
+} from "@/domain";
+import { createDefaultQuoteCriteria } from "@/lib/quote-criteria-options";
 import type { HealthPlan } from "@/domain";
 import {
   appShell,
@@ -32,9 +40,26 @@ export function CotizadorWorkspace({
   onNotify,
 }: CotizadorWorkspaceProps) {
   const { plans, loading, error } = usePlansCatalog();
-  const dashboard = useCotizadorDashboard(plans);
+  const defaultRegion = createDefaultQuoteCriteria().region;
+  const dashboard = useCotizadorDashboard(plans, {
+    initialDashboardFilters: applyRegionToDashboardFilters(
+      createDefaultDashboardFilters(),
+      defaultRegion,
+    ),
+  });
   const [assignPlan, setAssignPlan] = useState<HealthPlan | null>(null);
+  const [region, setRegion] = useState(defaultRegion);
   const isExecutive = variant === "executive";
+
+  const handleRegionChange = useCallback(
+    (nextRegion: string) => {
+      setRegion(nextRegion);
+      dashboard.setDashboardFilters((currentFilters) =>
+        applyRegionToDashboardFilters(currentFilters, nextRegion),
+      );
+    },
+    [dashboard.setDashboardFilters],
+  );
 
   function notify(message: string, tone: "success" | "error" = "success") {
     onNotify?.(message, tone);
@@ -103,11 +128,17 @@ export function CotizadorWorkspace({
             <section
               className={joinClasses(
                 "grid gap-5 rounded-xl border bg-white p-4 shadow-card sm:gap-6 sm:p-6",
-                "md:grid-cols-2 md:items-end",
+                "md:grid-cols-2 md:items-end lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)]",
                 ui.border,
               )}
             >
-              <div className="space-y-2 md:col-span-2 lg:col-span-1">
+              <RegionFilterSelect
+                id="executive-plan-region"
+                value={region}
+                onChange={handleRegionChange}
+              />
+
+              <div className="space-y-2">
                 <label
                   htmlFor="plan-search"
                   className="text-xs font-medium text-muted"
@@ -142,7 +173,7 @@ export function CotizadorWorkspace({
                 </div>
               </div>
 
-              <div className="w-full space-y-3 md:col-span-2">
+              <div className="w-full space-y-3 md:col-span-2 lg:col-span-1">
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-medium text-muted">Rango de precio</span>
                   <span className="tabular-nums text-muted/80">

@@ -9,6 +9,7 @@ import {
   PLAN_TYPE_FILTER_OPTIONS,
   ZONE_FILTER_OPTIONS,
 } from "@/lib/filter-options";
+import { buildZoneFilterStateFromRegion } from "@/lib/region-zones";
 import { formatMonthlyIncomeForDisplay } from "@/lib/deep-link/income";
 import {
   DEEP_LINK_PARAMS,
@@ -63,6 +64,8 @@ export interface ParsedCotizadorDeepLink {
   requestPrefill?: SolicitarRequestPrefill;
   /** true cuando la URL incluye plan= (flujo solicitar desde sitio externo). */
   hasSolicitarDeepLink: boolean;
+  /** true cuando la URL trae el parámetro zonas (no derivar desde región). */
+  hasExplicitZoneParams: boolean;
 }
 
 function parseCommaList(raw: string | null): string[] {
@@ -187,6 +190,7 @@ export function parseCotizadorUrl(
   const defaults = createDefaultDashboardFilters();
   const isapreIds = parseCommaList(params.get(DEEP_LINK_PARAMS.isapres));
   const zoneIds = parseCommaList(params.get(DEEP_LINK_PARAMS.zonas));
+  const hasExplicitZoneParams = params.has(DEEP_LINK_PARAMS.zonas);
   const planTypeIds = parseCommaList(params.get(DEEP_LINK_PARAMS.tipoPlan));
 
   const regionRaw = params.get(DEEP_LINK_PARAMS.region)?.trim().toLowerCase();
@@ -207,17 +211,20 @@ export function parseCotizadorUrl(
     ...(sexRaw && VALID_SEX_VALUES.has(sexRaw) ? { sex: sexRaw } : {}),
   };
 
+  const resolvedRegion = criteria.region;
+  const zoneDefaults = hasExplicitZoneParams
+    ? defaults.zones
+    : buildZoneFilterStateFromRegion(resolvedRegion);
+
   const filters: DashboardFiltersState = {
     isapres: applyCheckboxSelection(
       ISAPRE_FILTER_OPTIONS,
       defaults.isapres,
       isapreIds,
     ),
-    zones: applyCheckboxSelection(
-      ZONE_FILTER_OPTIONS,
-      defaults.zones,
-      zoneIds,
-    ),
+    zones: hasExplicitZoneParams
+      ? applyCheckboxSelection(ZONE_FILTER_OPTIONS, zoneDefaults, zoneIds)
+      : zoneDefaults,
     planTypes: applyCheckboxSelection(
       PLAN_TYPE_FILTER_OPTIONS,
       defaults.planTypes,
@@ -272,5 +279,6 @@ export function parseCotizadorUrl(
     modalTab,
     requestPrefill: hasRequestPrefill ? requestPrefill : undefined,
     hasSolicitarDeepLink: Boolean(planCode),
+    hasExplicitZoneParams,
   };
 }
