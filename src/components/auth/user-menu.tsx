@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { useRouter } from "next/navigation";
+import { performStaffLogout } from "@/lib/auth/client-logout";
 import { STAFF_LOGIN_PATH } from "@/lib/auth/constants";
 import { touchTarget, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
@@ -24,20 +24,12 @@ export function UserMenu({
   subtitle,
   loginPath = STAFF_LOGIN_PATH,
 }: UserMenuProps) {
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   const handleLogout = useCallback(async () => {
     setLoading(true);
-
-    try {
-      await fetch("/api/auth/logout", { method: "POST" });
-      router.replace(loginPath);
-      router.refresh();
-    } finally {
-      setLoading(false);
-    }
-  }, [loginPath, router]);
+    await performStaffLogout(loginPath);
+  }, [loginPath]);
 
   return (
     <div className="ml-auto flex items-center gap-2 sm:gap-3">

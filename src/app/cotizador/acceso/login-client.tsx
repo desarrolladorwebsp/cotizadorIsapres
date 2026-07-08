@@ -3,6 +3,7 @@
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { LoginForm } from "@/components/auth/login-form";
+import { StaffAccessLayout } from "@/components/auth/staff-access-layout";
 import { STAFF_DEFAULT_HOME } from "@/lib/auth/constants";
 
 function StaffLoginClient() {
@@ -11,16 +12,20 @@ function StaffLoginClient() {
   const redirectTo =
     next && next.startsWith("/cotizador") ? next : STAFF_DEFAULT_HOME;
 
-  return <LoginForm redirectTo={redirectTo} />;
+  return (
+    <StaffAccessLayout>
+      <LoginForm redirectTo={redirectTo} />
+    </StaffAccessLayout>
+  );
 }
 
 export default function StaffLoginPageClient() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center text-sm text-muted">
-          Cargando...
-        </div>
+        <StaffAccessLayout>
+          <div className="text-sm text-muted">Cargando...</div>
+        </StaffAccessLayout>
       }
     >
       <StaffLoginClient />

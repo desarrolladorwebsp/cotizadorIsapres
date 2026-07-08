@@ -59,10 +59,18 @@ export async function setStaffSessionCookie(token: string): Promise<void> {
 
 export async function clearAllStaffSessionCookies(): Promise<void> {
   const cookieStore = await cookies();
+  const clearOptions = {
+    httpOnly: true,
+    secure: isProduction(),
+    sameSite: "lax" as const,
+    path: "/",
+    maxAge: 0,
+    expires: new Date(0),
+  };
 
-  cookieStore.set(STAFF_SESSION_COOKIE, "", cookieOptions(0));
-  cookieStore.set(SESSION_COOKIE.admin, "", cookieOptions(0));
-  cookieStore.set(SESSION_COOKIE.executive, "", cookieOptions(0));
+  cookieStore.set(STAFF_SESSION_COOKIE, "", clearOptions);
+  cookieStore.set(SESSION_COOKIE.admin, "", clearOptions);
+  cookieStore.set(SESSION_COOKIE.executive, "", clearOptions);
 }
 
 /** @deprecated Usar setStaffSessionCookie. Mantenido por compatibilidad interna. */
@@ -208,22 +216,29 @@ export function applyStaffSessionCookieToResponse(
   }
 }
 
+function buildClearCookieHeader(name: string): string {
+  const parts = [
+    `${name}=`,
+    "Path=/",
+    "HttpOnly",
+    "SameSite=Lax",
+    "Max-Age=0",
+    "Expires=Thu, 01 Jan 1970 00:00:00 GMT",
+  ];
+
+  if (isProduction()) {
+    parts.push("Secure");
+  }
+
+  return parts.join("; ");
+}
+
 export function clearStaffSessionCookiesOnResponse(response: Response): void {
   for (const name of [
     STAFF_SESSION_COOKIE,
     SESSION_COOKIE.admin,
     SESSION_COOKIE.executive,
   ]) {
-    const parts = [
-      `${name}=`,
-      "Path=/",
-      "HttpOnly",
-      "SameSite=Lax",
-      "Max-Age=0",
-    ];
-    if (isProduction()) {
-      parts.push("Secure");
-    }
-    response.headers.append("Set-Cookie", parts.join("; "));
+    response.headers.append("Set-Cookie", buildClearCookieHeader(name));
   }
 }
