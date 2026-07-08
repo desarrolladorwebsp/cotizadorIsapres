@@ -2,11 +2,8 @@ import { Suspense } from "react";
 import { ExecutiveAuthGate } from "@/components/auth/executive-auth-gate";
 import { PremiumExecutiveShell } from "@/components/executive/premium-executive-shell";
 import { ExecutiveDashboard } from "@/components/executive/executive-dashboard";
-import { requireExecutivePanelPage } from "@/lib/auth/guards";
 
-export default async function CotizadorExecutivesPage() {
-  await requireExecutivePanelPage();
-
+export default function CotizadorExecutivesPage() {
   return (
     <PremiumExecutiveShell variant="dashboard">
       <ExecutiveAuthGate>

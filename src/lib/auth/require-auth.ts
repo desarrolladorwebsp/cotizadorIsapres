@@ -209,18 +209,23 @@ export async function requireExecutiveOrAdminSession(
 export async function buildStaffMeResponse(
   request?: Request,
 ): Promise<(StaffMeResponse & { sessionUpgraded?: boolean }) | null> {
-  const resolved = await resolveEffectiveStaffSession(request);
-  if (!resolved) return null;
+  try {
+    const resolved = await resolveEffectiveStaffSession(request);
+    if (!resolved) return null;
 
-  return {
-    realm: resolved.realm,
-    user: resolved.user,
-    capabilities: {
-      adminPanel: staffCanAccessAdminRoutes(resolved.realm),
-      executivePanel: staffCanAccessExecutiveRoutes(resolved.realm),
-    },
-    sessionUpgraded: resolved.sessionUpgraded,
-  };
+    return {
+      realm: resolved.realm,
+      user: resolved.user,
+      capabilities: {
+        adminPanel: staffCanAccessAdminRoutes(resolved.realm),
+        executivePanel: staffCanAccessExecutiveRoutes(resolved.realm),
+      },
+      sessionUpgraded: resolved.sessionUpgraded,
+    };
+  } catch (error) {
+    console.error("[buildStaffMeResponse] Failed to resolve staff session:", error);
+    return null;
+  }
 }
 
 export function unauthorizedResponse(_realm?: AuthRealm): NextResponse {
