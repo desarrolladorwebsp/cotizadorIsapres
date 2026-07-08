@@ -76,11 +76,19 @@ function measureOverlayContent(root: HTMLElement): number {
   root.querySelectorAll<HTMLElement>(
     '[role="dialog"], [role="alertdialog"]',
   ).forEach((overlay) => {
+    if (overlay.closest("[data-embed-overlay]")) return;
+    if (overlay.hasAttribute("data-embed-overlay")) return;
     if (!isVisibleOverlay(overlay)) return;
     maxBottom = safeMax(maxBottom, measureElementBottom(overlay, rootTop));
   });
 
   return Math.ceil(maxBottom);
+}
+
+function hasVisibleEmbedOverlay(): boolean {
+  return Array.from(
+    document.querySelectorAll<HTMLElement>("[data-embed-overlay]"),
+  ).some((node) => isVisibleOverlay(node));
 }
 
 function measureDocumentHeight(): number {
@@ -110,13 +118,24 @@ export function measureEmbedContentHeight(root: HTMLElement): number {
     );
   }
 
+  const flowHeight = measureFlowContent(root);
+
+  // Avisos del widget embebido: no inflar iframe ni usar scrollHeight del documento.
+  if (hasVisibleEmbedOverlay()) {
+    if (flowHeight > 0) {
+      return flowHeight + EMBED_HEIGHT_BUFFER_PX;
+    }
+    if (contentBottom > 0) {
+      return Math.ceil(contentBottom) + EMBED_HEIGHT_BUFFER_PX;
+    }
+  }
+
   contentBottom = safeMax(contentBottom, measureOverlayContent(root));
 
   if (contentBottom > 0) {
     return Math.ceil(contentBottom) + EMBED_HEIGHT_BUFFER_PX;
   }
 
-  const flowHeight = measureFlowContent(root);
   if (flowHeight > 0) {
     return flowHeight + EMBED_HEIGHT_BUFFER_PX;
   }

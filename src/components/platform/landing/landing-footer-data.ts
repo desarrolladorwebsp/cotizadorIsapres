@@ -37,3 +37,8 @@ export const LANDING_FOOTER_DESCRIPTION =
   "Cotizador Premium te ayuda a comparar planes de ISAPRE con el respaldo de asesores especializados, entregando una experiencia rápida, segura y personalizada.";
 
 export const LANDING_FOOTER_SMARTPRO_URL = "https://smartpro.cl";
+
+export const LANDING_FOOTER_SMARTPRO_LOGO =
+  "/images/landing/sections/logo-smartpro.png";
+
+export const LANDING_FOOTER_SMARTPRO_LABEL = "SmartPro — Agencia de Marketing";

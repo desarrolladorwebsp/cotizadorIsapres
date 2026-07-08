@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { touchTarget, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 
@@ -12,6 +13,8 @@ export interface PublicCotizadorNoticeProps {
   noticeKey?: number;
   /** Centrado con fondo y color de alerta (widget embebido). */
   prominent?: boolean;
+  /** Variante compacta para iframe auto-redimensionable (sin overlay a pantalla completa). */
+  embedded?: boolean;
   title?: string;
 }
 
@@ -34,15 +37,81 @@ function AlertIcon() {
   );
 }
 
+function NoticeCard({
+  title,
+  message,
+  onDismiss,
+  compact = false,
+}: {
+  title: string;
+  message: string;
+  onDismiss: () => void;
+  compact?: boolean;
+}) {
+  return (
+    <div
+      className={joinClasses(
+        "motion-safe-fade-in pointer-events-auto w-full max-w-md rounded-2xl border-2 border-warning bg-white text-center shadow-2xl",
+        "ring-4 ring-warning/25",
+        compact ? "p-4 sm:p-5" : "p-6",
+      )}
+    >
+      <div
+        className={joinClasses(
+          "mx-auto mb-3 flex items-center justify-center rounded-full bg-warning text-warning-foreground shadow-md",
+          compact ? "size-11" : "mb-4 size-14",
+        )}
+      >
+        <AlertIcon />
+      </div>
+      <p
+        id="cotizador-notice-title"
+        className={joinClasses(
+          "font-bold text-foreground",
+          compact ? "text-sm" : "text-base",
+        )}
+      >
+        {title}
+      </p>
+      <p
+        id="cotizador-notice-body"
+        className={joinClasses(
+          "mt-2 leading-relaxed text-foreground/90",
+          compact ? "text-xs sm:text-sm" : "text-sm",
+        )}
+      >
+        {message}
+      </p>
+      <button
+        type="button"
+        onClick={onDismiss}
+        className={joinClasses(
+          touchTarget,
+          "mt-4 w-full rounded-full px-6 text-sm font-bold text-white shadow-md",
+          ui.cta,
+        )}
+      >
+        Entendido
+      </button>
+    </div>
+  );
+}
+
 export function PublicCotizadorNotice({
   message,
   onDismiss,
   autoHideMs = 6000,
   noticeKey = 0,
   prominent = false,
+  embedded = false,
   title = "Completa los datos del cotizador",
 }: PublicCotizadorNoticeProps) {
   const [visible, setVisible] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!message) {
@@ -69,6 +138,29 @@ export function PublicCotizadorNotice({
 
   if (!message || !visible) return null;
 
+  if (prominent && embedded) {
+    if (!mounted) return null;
+
+    return createPortal(
+      <div
+        data-embed-overlay="notice"
+        className="pointer-events-none fixed inset-x-0 top-0 z-[120] flex justify-center px-3 pt-3"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="cotizador-notice-title"
+        aria-describedby="cotizador-notice-body"
+      >
+        <NoticeCard
+          title={title}
+          message={message}
+          onDismiss={dismiss}
+          compact
+        />
+      </div>,
+      document.body,
+    );
+  }
+
   if (prominent) {
     return (
       <div
@@ -78,39 +170,7 @@ export function PublicCotizadorNotice({
         aria-labelledby="cotizador-notice-title"
         aria-describedby="cotizador-notice-body"
       >
-        <div
-          className={joinClasses(
-            "motion-safe-fade-in pointer-events-auto w-full max-w-md rounded-2xl border-2 border-warning bg-white p-6 text-center shadow-2xl",
-            "ring-4 ring-warning/25",
-          )}
-        >
-          <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-warning text-warning-foreground shadow-md">
-            <AlertIcon />
-          </div>
-          <p
-            id="cotizador-notice-title"
-            className="text-base font-bold text-foreground"
-          >
-            {title}
-          </p>
-          <p
-            id="cotizador-notice-body"
-            className="mt-2 text-sm leading-relaxed text-foreground/90"
-          >
-            {message}
-          </p>
-          <button
-            type="button"
-            onClick={dismiss}
-            className={joinClasses(
-              touchTarget,
-              "mt-5 w-full rounded-full px-6 text-sm font-bold text-white shadow-md",
-              ui.cta,
-            )}
-          >
-            Entendido
-          </button>
-        </div>
+        <NoticeCard title={title} message={message} onDismiss={dismiss} />
       </div>
     );
   }

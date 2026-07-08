@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import { landing } from "./landing-tokens";
@@ -8,6 +9,8 @@ import {
   LANDING_FOOTER_CONTACT,
   LANDING_FOOTER_DESCRIPTION,
   LANDING_FOOTER_NAV,
+  LANDING_FOOTER_SMARTPRO_LABEL,
+  LANDING_FOOTER_SMARTPRO_LOGO,
   LANDING_FOOTER_SMARTPRO_URL,
   LANDING_FOOTER_SOCIAL,
 } from "./landing-footer-data";
@@ -257,15 +260,23 @@ export function LandingFooter() {
             <p className="text-sm text-muted">
               © 2026 Cotizador Premium. Todos los derechos reservados.
             </p>
-            <p className="text-sm text-muted">
-              Desarrollado por{" "}
+            <p className="flex flex-wrap items-center justify-center gap-2 text-sm text-muted sm:justify-end">
+              <span>Desarrollado por</span>
               <a
                 href={LANDING_FOOTER_SMARTPRO_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-semibold text-primary transition-colors hover:text-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:rounded"
+                aria-label={LANDING_FOOTER_SMARTPRO_LABEL}
+                title={LANDING_FOOTER_SMARTPRO_LABEL}
+                className="inline-flex items-center rounded-lg transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               >
-                SmartPro
+                <Image
+                  src={LANDING_FOOTER_SMARTPRO_LOGO}
+                  alt={LANDING_FOOTER_SMARTPRO_LABEL}
+                  width={140}
+                  height={40}
+                  className="h-8 w-auto object-contain sm:h-9"
+                />
               </a>
             </p>
           </div>

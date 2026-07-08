@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
+import { buildIsaprePagePath } from "@/lib/isapre-pages/urls";
 import { formatGesLabel, type LandingIsapreItem } from "./landing-isapres-data";
 
 interface LandingIsapreCardProps {
@@ -41,7 +42,12 @@ export function LandingIsapreCard({ item }: LandingIsapreCardProps) {
 
       <div className="flex flex-1 flex-col">
         <h3 className="text-base font-bold uppercase tracking-wide text-foreground sm:text-lg">
-          {item.title}
+          <Link
+            href={buildIsaprePagePath(item.id)}
+            className="transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:rounded"
+          >
+            {item.title}
+          </Link>
         </h3>
         <p className="mt-2 text-[11px] font-semibold uppercase tracking-wider text-muted">
           GES actual:{" "}
@@ -52,11 +58,11 @@ export function LandingIsapreCard({ item }: LandingIsapreCardProps) {
         </p>
 
         <Link
-          href="#cotizar"
-          className="group/more mx-auto mt-6 inline-flex h-10 w-10 items-center justify-center rounded-full border border-primary/25 bg-primary/8 text-xl font-light leading-none text-primary transition-colors hover:border-primary/40 hover:bg-primary hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
-          aria-label={`Cotizar planes de ${item.title}`}
+          href={buildIsaprePagePath(item.id)}
+          className="group/more mx-auto mt-6 inline-flex h-10 items-center gap-2 rounded-full border border-primary/25 bg-primary/8 px-4 text-sm font-semibold text-primary transition-colors hover:border-primary/40 hover:bg-primary hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
+          aria-label={`Ver planes de ${item.title}`}
         >
-          +
+          Ver planes
         </Link>
       </div>
     </motion.article>

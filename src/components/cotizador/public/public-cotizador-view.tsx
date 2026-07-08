@@ -220,13 +220,17 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
   const showEmbedValidationNotice = useCallback((message: string) => {
     setRecoveryNotice(message);
     setRecoveryNoticeKey((key) => key + 1);
+    if (isEmbedded) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
     window.requestAnimationFrame(() => {
       criteriaBarRef.current?.scrollIntoView({
         behavior: "smooth",
         block: "start",
       });
     });
-  }, []);
+  }, [isEmbedded]);
 
   useEffect(() => {
     if (deepLink.hasDeepLinkParams || deepLink.hasSolicitarDeepLink) {
@@ -1040,6 +1044,7 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
         noticeKey={recoveryNoticeKey}
         onDismiss={() => setRecoveryNotice(null)}
         prominent={isEmbedded}
+        embedded={isEmbedded}
         title="Completa los datos del cotizador"
       />
 
