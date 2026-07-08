@@ -53,6 +53,7 @@ export const LANDING_FOOTER_NAV = [
   { label: "Nuestros Socios", href: "#socios" },
   { label: "Reseñas", href: "#reseñas" },
   { label: "Contacto", href: "#contacto" },
+  { label: "Política de Privacidad", href: "/politica-privacidad" },
 ] as const;
 
 export const LANDING_FOOTER_DESCRIPTION =
