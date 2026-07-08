@@ -1,12 +1,12 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 import {
   EXECUTIVE_HOME_PATH,
   EXECUTIVE_ONBOARDING_PATH,
   STAFF_LOGIN_PATH,
 } from "@/lib/auth/constants";
+import { StaffAuthRedirectFallback } from "@/components/auth/staff-auth-redirect-fallback";
 import { useStaffSession } from "@/hooks/use-auth-session";
 
 interface ExecutiveAuthGateProps {
@@ -15,37 +15,59 @@ interface ExecutiveAuthGateProps {
   returnPath?: string;
 }
 
+function buildLoginUrl(returnPath: string): string {
+  return `${STAFF_LOGIN_PATH}?next=${encodeURIComponent(returnPath)}`;
+}
+
 export function ExecutiveAuthGate({
   children,
   returnPath = EXECUTIVE_HOME_PATH,
 }: ExecutiveAuthGateProps) {
-  const router = useRouter();
   const { user, loading, isExecutive, needsExecutiveOnboarding } = useStaffSession();
+  const loginUrl = buildLoginUrl(returnPath);
 
   useEffect(() => {
     if (loading) return;
 
     if (!user || !isExecutive) {
-      const loginUrl = `${STAFF_LOGIN_PATH}?next=${encodeURIComponent(returnPath)}`;
-      router.replace(loginUrl);
+      window.location.replace(loginUrl);
       return;
     }
 
     if (needsExecutiveOnboarding) {
-      router.replace(EXECUTIVE_ONBOARDING_PATH);
+      window.location.replace(EXECUTIVE_ONBOARDING_PATH);
     }
-  }, [loading, user, isExecutive, needsExecutiveOnboarding, router, returnPath]);
+  }, [loading, user, isExecutive, needsExecutiveOnboarding, loginUrl]);
 
   if (loading) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center text-sm text-[var(--muted)]">
-        Validando sesión…
-      </div>
+      <StaffAuthRedirectFallback
+        title="Validando sesión…"
+        message="Estamos comprobando tu acceso al panel."
+        href={loginUrl}
+      />
     );
   }
 
-  if (!user || !isExecutive || needsExecutiveOnboarding) {
-    return null;
+  if (!user || !isExecutive) {
+    return (
+      <StaffAuthRedirectFallback
+        title="Redirigiendo al acceso…"
+        message="Necesitas iniciar sesión para entrar al panel de ejecutivos."
+        href={loginUrl}
+      />
+    );
+  }
+
+  if (needsExecutiveOnboarding) {
+    return (
+      <StaffAuthRedirectFallback
+        title="Completando perfil…"
+        message="Te estamos llevando a completar tu perfil de ejecutivo."
+        href={EXECUTIVE_ONBOARDING_PATH}
+        linkLabel="Completar perfil"
+      />
+    );
   }
 
   return <>{children}</>;
