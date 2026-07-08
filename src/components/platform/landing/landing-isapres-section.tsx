@@ -6,7 +6,7 @@ import { landing } from "./landing-tokens";
 import { LandingIsapreCard } from "./landing-isapre-card";
 import { LandingSectionBackdrop } from "./landing-section-backdrop";
 import { LANDING_ISAPRES } from "./landing-isapres-data";
-import { LANDING_SECTION_BACKGROUNDS } from "./landing-visual-config";
+import { LANDING_SECTION_BACKGROUNDS, LANDING_SECTION_BACKGROUND_ALTS } from "./landing-visual-config";
 
 const slideVariants = {
   enter: (direction: number) => ({
@@ -99,6 +99,7 @@ export function LandingIsapresSection() {
     >
       <LandingSectionBackdrop
         imageSrc={LANDING_SECTION_BACKGROUNDS.isapres}
+        imageAlt={LANDING_SECTION_BACKGROUND_ALTS.isapres}
         variant="isapres"
       />
       <div className="landing-isapres-mesh pointer-events-none absolute inset-0 opacity-60" aria-hidden />

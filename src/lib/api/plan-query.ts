@@ -11,6 +11,7 @@ import {
   ISAPRE_GES_DEFAULTS,
   resolveGesPremiumUf,
 } from "@/lib/isapre-ges-defaults";
+import { enrichHealthPlanCatalog } from "@/lib/plan-zones";
 import { prisma } from "@/lib/prisma";
 import type { CoverageEntry, HealthPlan } from "@/types/plan";
 
@@ -339,12 +340,14 @@ async function runPlanQueryStrategies<T>(
 }
 
 export async function findManyHealthPlans(): Promise<HealthPlan[]> {
-  return runPlanQueryStrategies([
+  const plans = await runPlanQueryStrategies([
     { strategy: "prisma_full", load: findManyWithPrismaFull },
     { strategy: "prisma_coverages", load: findManyWithPrismaCoverages },
     { strategy: "raw_modern", load: findManyHealthPlansRawModern },
     { strategy: "raw_legacy", load: findManyHealthPlansRawLegacy },
   ]);
+
+  return enrichHealthPlanCatalog(plans);
 }
 
 export async function findHealthPlanByCode(

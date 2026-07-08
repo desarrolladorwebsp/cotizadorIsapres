@@ -8,7 +8,7 @@ import {
   LANDING_PARTNERS,
   type LandingPartner,
 } from "./landing-partners-data";
-import { LANDING_SECTION_BACKGROUNDS } from "./landing-visual-config";
+import { LANDING_SECTION_BACKGROUNDS, LANDING_SECTION_BACKGROUND_ALTS } from "./landing-visual-config";
 import { landing } from "./landing-tokens";
 
 interface LandingPartnersSectionProps {
@@ -158,6 +158,7 @@ export function LandingPartnersSection({
     >
       <LandingSectionBackdrop
         imageSrc={LANDING_SECTION_BACKGROUNDS.partners}
+        imageAlt={LANDING_SECTION_BACKGROUND_ALTS.partners}
         variant="partners"
       />
       <div className="landing-partners-mesh pointer-events-none absolute inset-0 opacity-60" aria-hidden />

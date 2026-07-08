@@ -1,5 +1,4 @@
 import { cookies } from "next/headers";
-import type { Metadata } from "next";
 import { PublicCotizadorView } from "@/components/cotizador";
 import {
   AGENT_QUERY_PARAM,
@@ -7,10 +6,6 @@ import {
   PARTNER_ENTITY_QUERY_PARAM,
 } from "@/lib/partner-entity/constants";
 import { resolvePartnerEntityForCotizador } from "@/lib/partner-entity/server";
-
-export const metadata: Metadata = {
-  robots: { index: false, follow: false },
-};
 
 interface EmbedHomePageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;

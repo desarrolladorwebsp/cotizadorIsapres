@@ -354,21 +354,16 @@
     );
 }
 
-/* Widget a ancho completo dentro de la landing (sin recortar iframe) */
-[data-landing] .landing-widget-bleed {
-  width: min(100vw, 100%);
-  max-width: none;
-  margin-inline: calc(50% - 50vw);
-  padding-inline: max(0.75rem, calc(50vw - 50%));
-}
-
-@media (min-width: 1024px) {
-  [data-landing] .landing-widget-bleed {
-    padding-inline: max(1rem, calc(50vw - min(50vw, 800px)));
-  }
+/* Tarjeta del widget centrada dentro del contenedor de la landing */
+[data-landing] .landing-widget-shell {
+  width: 100%;
+  max-width: min(100%, 72rem);
+  margin-inline: auto;
 }
 
 [data-landing] .landing-widget-frame {
+  width: 100%;
+  margin-inline: auto;
   box-shadow: var(--landing-card-glow);
 }
 

@@ -779,6 +779,7 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
       {isEmbedded ? null : <PublicCotizadorHeader />}
 
       <main
+        aria-label={isEmbedded ? "Cotizador embebido" : "Cotizador de planes Isapre"}
         className={joinClasses(
           shellScroll,
           isEmbedded ? "w-full max-w-none" : safeWidth,
@@ -831,25 +832,31 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
             )}
           >
             {hasSearched ? (
-              <PublicResultsToolbar
-                displayedCount={sortedPlans.length}
-                totalCount={total}
-                currency={currency}
-                onCurrencyChange={setCurrency}
-                compactEmbed={isEmbedded}
-              />
-            ) : null}
-
-            {hasSearched ? (
-              <div className={joinClasses(safeWidth, "relative")}>
+              <div
+                className={joinClasses(
+                  safeWidth,
+                  isEmbedded
+                    ? "max-md:space-y-2 max-md:rounded-xl max-md:bg-white max-md:p-2.5 max-md:shadow-sm max-md:ring-1 max-md:ring-border/70"
+                    : "space-y-4",
+                )}
+              >
+                <PublicResultsToolbar
+                  displayedCount={sortedPlans.length}
+                  totalCount={total}
+                  currency={currency}
+                  onCurrencyChange={setCurrency}
+                  compactEmbed={isEmbedded}
+                />
                 <input
                   type="search"
                   value={searchText}
                   onChange={(e) => handleSearchTextChange(e.target.value)}
                   placeholder="Buscar por nombre, código o Isapre..."
                   className={joinClasses(
-                    "mb-4 h-11 w-full max-w-full rounded-xl px-4 text-sm",
-                    isEmbedded && "max-md:mb-2 max-md:h-9 max-md:rounded-lg max-md:px-3 max-md:text-xs",
+                    "h-11 w-full max-w-full rounded-xl px-4 text-sm",
+                    isEmbedded
+                      ? "max-md:h-9 max-md:rounded-lg max-md:px-3 max-md:text-xs"
+                      : "mb-4",
                     ui.input,
                   )}
                 />

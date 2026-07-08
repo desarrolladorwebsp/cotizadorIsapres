@@ -1,6 +1,4 @@
-import {
-  findManyHealthPlans,
-} from "@/lib/api/plan-query";
+import { findManyHealthPlans } from "@/lib/api/plan-query";
 import type { HealthPlan } from "@/types/plan";
 
 /** TTL del catálogo en memoria (evita N consultas completas a BD por sesión). */

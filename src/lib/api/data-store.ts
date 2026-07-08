@@ -29,7 +29,7 @@ async function upsertClinicsForCoverage(
   }
 
   for (const [id, name] of uniqueClinics) {
-    const zones = resolveClinicZoneIds(id);
+    const zones = resolveClinicZoneIds(id, name);
     await tx.clinic.upsert({
       where: { id },
       create: { id, name, zones },

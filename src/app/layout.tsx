@@ -1,8 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { EMBED_DOCUMENT_HEADER } from "@/lib/embed/is-embed-request";
+import { buildRootMetadata } from "@/lib/seo/build-page-metadata";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -15,9 +16,12 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Cotizador Premium",
-  description: "Plataforma inteligente de cotizaciones para planes de Isapre.",
+export const metadata: Metadata = buildRootMetadata();
+
+export const viewport: Viewport = {
+  themeColor: "#0077B6",
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default async function RootLayout({

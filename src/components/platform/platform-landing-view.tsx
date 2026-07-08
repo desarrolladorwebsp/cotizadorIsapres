@@ -45,7 +45,7 @@ export function PlatformLandingView({
               </p>
             </div>
           </Link>
-          <nav className="flex items-center gap-1.5 sm:gap-2">
+          <nav aria-label="Navegación principal" className="flex items-center gap-1.5 sm:gap-2">
             <Link href={cotizadorHref} className={landing.navLink}>
               Cotizar
             </Link>
@@ -56,7 +56,7 @@ export function PlatformLandingView({
         </div>
       </header>
 
-      <main>
+      <main id="contenido-principal">
         <LandingHero cotizadorHref={cotizadorHref} />
         <LandingPartnersSection partners={partners} />
         <LandingCotizadorWidgetSection />

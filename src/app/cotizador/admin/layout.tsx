@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import { buildPageMetadata } from "@/lib/seo/build-page-metadata";
 
-export const metadata: Metadata = {
-  title: "Administración | Cotizador Virtual",
-  description: "Gestión de planes de salud y clínicas.",
-};
+export const metadata: Metadata = buildPageMetadata({
+  title: "Administración",
+  description: "Panel de administración de Cotizador Premium.",
+  noIndex: true,
+});
 
 export default function CotizadorAdminLayout({
   children,

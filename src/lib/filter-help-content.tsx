@@ -4,7 +4,7 @@
  * Referencias: superdesalud.gob.cl, ipsuss.cl, isapre.info
  */
 
-import { ZONE_FILTER_HELP_UI } from "@/lib/zone-filter-guide";
+import { ZONE_FILTER_HELP_UI } from "@/lib/zone-filter-definitions";
 
 export const FILTER_HELP = {
   isapre: {

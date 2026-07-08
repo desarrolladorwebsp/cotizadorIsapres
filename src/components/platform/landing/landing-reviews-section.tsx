@@ -7,7 +7,7 @@ import type { PublicPlanReview } from "@/types/plan-review";
 import { joinClasses } from "@/lib/utils";
 import { landing } from "./landing-tokens";
 import { LandingSectionBackdrop } from "./landing-section-backdrop";
-import { LANDING_SECTION_BACKGROUNDS } from "./landing-visual-config";
+import { LANDING_SECTION_BACKGROUNDS, LANDING_SECTION_BACKGROUND_ALTS } from "./landing-visual-config";
 
 interface LandingReviewsSectionProps {
   reviews: PublicPlanReview[];
@@ -97,7 +97,7 @@ function ReviewAvatar({
       <div className="relative size-10 shrink-0 overflow-hidden rounded-full ring-2 ring-white/80">
         <Image
           src={avatarUrl}
-          alt=""
+          alt={`Foto de perfil de ${name}`}
           fill
           className="object-cover"
           sizes="40px"
@@ -273,6 +273,7 @@ export function LandingReviewsSection({ reviews }: LandingReviewsSectionProps) {
     >
       <LandingSectionBackdrop
         imageSrc={LANDING_SECTION_BACKGROUNDS.reviews}
+        imageAlt={LANDING_SECTION_BACKGROUND_ALTS.reviews}
         variant="reviews"
       />
       <div className="landing-reviews-mesh pointer-events-none absolute inset-0 opacity-60" aria-hidden />

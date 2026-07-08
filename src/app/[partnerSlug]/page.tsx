@@ -1,7 +1,11 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PublicCotizadorView } from "@/components/cotizador";
+import { JsonLdScript } from "@/components/seo/json-ld-script";
 import { loadPartnerEntityPage } from "@/lib/partner-entity/server";
 import { isEmbedSearchParam } from "@/lib/embed/is-embed-request";
+import { buildPageMetadata } from "@/lib/seo/build-page-metadata";
+import { buildCotizadorPageJsonLd } from "@/lib/seo/json-ld";
 import {
   isReservedRootSegment,
   isValidPartnerSlugSegment,
@@ -10,6 +14,51 @@ import {
 interface PartnerCotizadorPageProps {
   params: Promise<{ partnerSlug: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
+
+export async function generateMetadata({
+  params,
+  searchParams,
+}: PartnerCotizadorPageProps): Promise<Metadata> {
+  const { partnerSlug } = await params;
+  const query = await searchParams;
+  const decodedSlug = decodeURIComponent(partnerSlug).trim().toLowerCase();
+
+  if (isReservedRootSegment(decodedSlug) || !isValidPartnerSlugSegment(decodedSlug)) {
+    return buildPageMetadata({
+      title: "Página no encontrada",
+      noIndex: true,
+    });
+  }
+
+  const entity = await loadPartnerEntityPage(decodedSlug);
+
+  if (!entity) {
+    return buildPageMetadata({
+      title: "Página no encontrada",
+      noIndex: true,
+    });
+  }
+
+  if (isEmbedSearchParam(query.embed)) {
+    return buildPageMetadata({
+      title: `Cotizador embebido — ${entity.name}`,
+      noIndex: true,
+    });
+  }
+
+  return buildPageMetadata({
+    title: `Cotizar plan de salud con ${entity.name}`,
+    description: `Compara y cotiza planes Isapre con ${entity.name}. Precios según tu edad, ingreso y región en Chile.`,
+    path: `/${decodedSlug}`,
+    keywords: [
+      "cotizador isapre",
+      entity.name.toLowerCase(),
+      "planes de salud chile",
+    ],
+    ogImagePath: entity.logoUrl.startsWith("http") ? entity.logoUrl : undefined,
+    ogImageAlt: `Logo de ${entity.name}`,
+  });
 }
 
 export default async function PartnerCotizadorPage({
@@ -30,10 +79,16 @@ export default async function PartnerCotizadorPage({
     notFound();
   }
 
+  const embedMode = isEmbedSearchParam(query.embed);
+
   return (
-    <PublicCotizadorView
-      entity={entity}
-      embedMode={isEmbedSearchParam(query.embed)}
-    />
+    <>
+      {embedMode ? null : (
+        <JsonLdScript
+          data={buildCotizadorPageJsonLd({ partnerName: entity.name })}
+        />
+      )}
+      <PublicCotizadorView entity={entity} embedMode={embedMode} />
+    </>
   );
 }

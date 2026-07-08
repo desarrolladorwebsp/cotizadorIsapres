@@ -11,7 +11,7 @@ import {
   resolveLandingWidgetBaseUrl,
 } from "./landing-widget-config";
 import { LandingSectionBackdrop } from "./landing-section-backdrop";
-import { LANDING_SECTION_BACKGROUNDS } from "./landing-visual-config";
+import { LANDING_SECTION_BACKGROUNDS, LANDING_SECTION_BACKGROUND_ALTS } from "./landing-visual-config";
 
 declare global {
   interface Window {
@@ -108,6 +108,7 @@ export function LandingCotizadorWidgetSection() {
     >
       <LandingSectionBackdrop
         imageSrc={LANDING_SECTION_BACKGROUNDS.widget}
+        imageAlt={LANDING_SECTION_BACKGROUND_ALTS.widget}
         variant="widget"
       />
       <div className={`${landing.container} relative py-20 sm:py-24 lg:py-28`}>
@@ -147,9 +148,9 @@ export function LandingCotizadorWidgetSection() {
           whileInView={{ opacity: 1, y: 0, scale: 1 }}
           viewport={{ once: true, margin: "-40px" }}
           transition={{ type: "spring", stiffness: 240, damping: 28, delay: 0.12 }}
-          className="landing-widget-bleed relative mt-12 sm:mt-14"
+          className="landing-widget-shell relative mt-12 sm:mt-14"
         >
-          <div className="landing-glass-panel-strong landing-widget-frame overflow-visible rounded-[1.75rem] p-2 sm:p-3">
+          <div className="landing-glass-panel-strong landing-widget-frame mx-auto w-full overflow-visible rounded-[1.75rem] p-2 sm:p-3">
             <section
               ref={containerRef}
               data-cotizador-widget

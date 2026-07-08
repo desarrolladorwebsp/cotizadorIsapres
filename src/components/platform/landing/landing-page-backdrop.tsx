@@ -4,6 +4,7 @@ import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
 import {
   LANDING_FAMILY_HERO_IMAGE,
+  LANDING_FAMILY_HERO_ALT,
 } from "./landing-visual-config";
 
 /** Fondo ambiental a ancho completo — imagen de familia + degradados de legibilidad. */
@@ -23,7 +24,7 @@ export function LandingPageBackdrop() {
       >
         <Image
           src={LANDING_FAMILY_HERO_IMAGE}
-          alt=""
+          alt={LANDING_FAMILY_HERO_ALT}
           fill
           priority
           className="object-cover object-[68%_center] lg:object-[72%_center]"

@@ -21,7 +21,7 @@ export interface ClinicPlanUsage {
 
 export function getClinicZoneIds(clinic: Clinic): string[] {
   if (clinic.zones.length > 0) return clinic.zones;
-  return resolveClinicZoneIds(clinic.id);
+  return resolveClinicZoneIds(clinic.id, clinic.name);
 }
 
 export function getZoneLabel(zoneId: string): string {

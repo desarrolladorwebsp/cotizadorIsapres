@@ -9,11 +9,11 @@ config({ path: path.join(process.cwd(), ".env.local") });
 const prisma = new PrismaClient();
 
 async function backfillClinicZones() {
-  const clinics = await prisma.clinic.findMany({ select: { id: true } });
+  const clinics = await prisma.clinic.findMany({ select: { id: true, name: true } });
   let updated = 0;
 
   for (const clinic of clinics) {
-    const zones = resolveClinicZoneIds(clinic.id);
+    const zones = resolveClinicZoneIds(clinic.id, clinic.name);
     await prisma.clinic.update({
       where: { id: clinic.id },
       data: { zones },
