@@ -29,6 +29,7 @@ const SECTION_LABELS: Record<
   cotizador: { label: "Cotizador", shortLabel: "Cotiz." },
   clientes: { label: "Clientes", shortLabel: "Clientes" },
   cotizaciones: { label: "Cotizaciones", shortLabel: "Leads" },
+  mapa: { label: "Mapa clínicas", shortLabel: "Mapa" },
   prospectos: {
     label: "Prospectos",
     shortLabel: "Prospectos",

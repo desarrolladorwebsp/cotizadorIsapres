@@ -3,6 +3,7 @@ export type StaffSection =
   | "cotizador"
   | "clientes"
   | "cotizaciones"
+  | "mapa"
   | "prospectos"
   | "usuarios"
   | "clinicas"
@@ -15,6 +16,7 @@ export const STAFF_BASE_SECTIONS: StaffSection[] = [
   "cotizador",
   "clientes",
   "cotizaciones",
+  "mapa",
 ];
 
 export const STAFF_ADMIN_SECTIONS: StaffSection[] = [

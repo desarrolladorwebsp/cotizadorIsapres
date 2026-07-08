@@ -10,6 +10,7 @@ import { GesPanel } from "@/components/admin/ges-panel";
 import { UsersPanel } from "@/components/admin/users-panel";
 import { ExecutiveAdminProspectsView } from "@/components/executive/admin/executive-admin-prospects-view";
 import { ExecutiveClientsPanel } from "@/components/executive/executive-clients-panel";
+import { ExecutiveClinicsMapPanel } from "@/components/executive/executive-clinics-map-panel";
 import { ExecutiveDashboardHome } from "@/components/executive/executive-dashboard-home";
 import { ExecutiveQuotesPanel } from "@/components/executive/executive-quotes-panel";
 import {
@@ -53,6 +54,23 @@ export function ExecutiveDashboard() {
     }
   }, [searchParams, isAdmin, router]);
 
+  const loadClinics = useCallback(async () => {
+    setLoadingCatalog(true);
+    try {
+      const nextClinics = await fetchClinics();
+      setClinics(nextClinics);
+    } catch (error) {
+      notify(
+        error instanceof Error
+          ? error.message
+          : "No se pudieron cargar las clínicas.",
+        "error",
+      );
+    } finally {
+      setLoadingCatalog(false);
+    }
+  }, [notify]);
+
   const loadCatalog = useCallback(async () => {
     setLoadingCatalog(true);
     try {
@@ -77,8 +95,12 @@ export function ExecutiveDashboard() {
   useEffect(() => {
     if (section === "clinicas" && isAdmin) {
       void loadCatalog();
+      return;
     }
-  }, [section, isAdmin, loadCatalog]);
+    if (section === "mapa") {
+      void loadClinics();
+    }
+  }, [section, isAdmin, loadCatalog, loadClinics]);
 
   function handleSectionChange(next: ExecutiveSection) {
     if (STAFF_ADMIN_SECTIONS.includes(next) && !isAdmin) return;
@@ -109,6 +131,14 @@ export function ExecutiveDashboard() {
 
         {section === "cotizaciones" ? (
           <ExecutiveQuotesPanel onNotify={notify} />
+        ) : null}
+
+        {section === "mapa" ? (
+          <ExecutiveClinicsMapPanel
+            clinics={clinics}
+            loading={loadingCatalog}
+            onRefresh={loadClinics}
+          />
         ) : null}
 
         {section === "prospectos" && isAdmin ? (

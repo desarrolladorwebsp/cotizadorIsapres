@@ -25,6 +25,7 @@
     "export-plan-reports": "tsx scripts/export-plan-reports.ts",
     "backfill-plan-zones": "tsx scripts/backfill-plan-zones.ts",
     "export-clinic-zones": "tsx scripts/export-clinic-zones-report.ts",
+    "build-clinic-locations": "node scripts/build-clinic-locations.mjs",
     "generate-favicons": "python3 scripts/generate-favicons.py",
     "capture:hero-screenshots": "node scripts/capture-hero-screenshots.mjs",
     "verify-blob": "tsx scripts/verify-blob-connection.ts",
@@ -41,6 +42,8 @@
     "seed": "npx tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@googlemaps/js-api-loader": "^2.1.1",
+    "@googlemaps/markerclusterer": "^2.6.2",
     "@prisma/client": "^6.19.3",
     "@vercel/analytics": "^2.0.1",
     "@vercel/blob": "^2.4.0",
@@ -57,6 +60,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.0",
     "@types/bcryptjs": "^2.4.6",
+    "@types/google.maps": "^3.65.2",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
