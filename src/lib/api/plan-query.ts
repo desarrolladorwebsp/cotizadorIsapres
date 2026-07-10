@@ -1,11 +1,14 @@
 import { Prisma } from "@prisma/client";
-import { dedupeCoverageEntries } from "@/lib/api/plan-validation";
 import {
-  mapDbPlanToHealthPlan,
-  mapDbPlanToHealthPlanLegacy,
-  type PlanWithCoverages,
-} from "@/lib/api/plan-mapper";
-import { resolveIsapreIdFromName } from "@/lib/isapre-catalog";
+  attachCoverageToHealthPlan,
+  buildHealthPlanCatalogItem,
+} from "@/lib/api/plan-catalog-builder";
+import {
+  getCachedCoverageMap,
+  loadCoveragesForPlanCode,
+} from "@/lib/api/plan-coverage-cache";
+import { dedupeCoverageEntries } from "@/lib/api/plan-validation";
+import { resolveIsapreIdFromName, resolveIsapreNameFromId } from "@/lib/isapre-catalog";
 import {
   DEFAULT_GES_PREMIUM_UF,
   ISAPRE_GES_DEFAULTS,
@@ -13,10 +16,7 @@ import {
 } from "@/lib/isapre-ges-defaults";
 import { enrichHealthPlanCatalog } from "@/lib/plan-zones";
 import { prisma } from "@/lib/prisma";
-import type { CoverageEntry, HealthPlan } from "@/types/plan";
-
-const planIncludeFull = { coverages: true, isapreRef: true } as const;
-const planIncludeLegacy = { coverages: true } as const;
+import type { CoverageEntry, HealthPlan, HealthPlanCatalogItem } from "@/types/plan";
 
 type PlanQueryStrategy =
   | "prisma_full"
@@ -42,37 +42,6 @@ function isSchemaMismatchError(error: unknown): boolean {
   return error instanceof Prisma.PrismaClientValidationError;
 }
 
-type RawCoverageRow = {
-  plan_code: string;
-  clinic_id: string;
-  clinic_name: string;
-  percentage: number;
-  type: string;
-};
-
-async function loadCoveragesByPlanCode(): Promise<
-  Map<string, CoverageEntry[]>
-> {
-  const rows = await prisma.$queryRaw<RawCoverageRow[]>`
-    SELECT plan_code, clinic_id, clinic_name, percentage, type
-    FROM coverage_entries
-  `;
-
-  const map = new Map<string, CoverageEntry[]>();
-
-  for (const row of rows) {
-    const entries = map.get(row.plan_code) ?? [];
-    entries.push({
-      clinic_id: row.clinic_id,
-      clinic_name: row.clinic_name,
-      percentage: row.percentage,
-      type: row.type as CoverageEntry["type"],
-    });
-    map.set(row.plan_code, entries);
-  }
-
-  return map;
-}
 
 function mapCoverageMap(
   uniqueCode: string,
@@ -112,7 +81,7 @@ async function findManyHealthPlansRawModern(): Promise<HealthPlan[]> {
       INNER JOIN isapres i ON i.id = p.isapre_id
       ORDER BY p.plan_name ASC
     `,
-    loadCoveragesByPlanCode(),
+    getCachedCoverageMap(),
   ]);
 
   return planRows.map((plan) => ({
@@ -133,7 +102,7 @@ async function findManyHealthPlansRawModern(): Promise<HealthPlan[]> {
 async function findHealthPlanByCodeRawModern(
   uniqueCode: string,
 ): Promise<HealthPlan | null> {
-  const [planRows, coverages] = await Promise.all([
+  const [planRows, coverage] = await Promise.all([
     prisma.$queryRaw<RawModernPlanRow[]>`
       SELECT
         p.unique_code,
@@ -151,7 +120,7 @@ async function findHealthPlanByCodeRawModern(
       WHERE p.unique_code = ${uniqueCode}
       LIMIT 1
     `,
-    loadCoveragesByPlanCode(),
+    loadCoveragesForPlanCode(uniqueCode),
   ]);
 
   const plan = planRows[0];
@@ -168,7 +137,7 @@ async function findHealthPlanByCodeRawModern(
     pdf_url: plan.pdf_url,
     pdf_public_id: plan.pdf_public_id,
     zones: plan.zones ?? [],
-    coverage: mapCoverageMap(plan.unique_code, coverages),
+    coverage,
   };
 }
 
@@ -200,7 +169,7 @@ async function findManyHealthPlansRawLegacy(): Promise<HealthPlan[]> {
       FROM plans
       ORDER BY plan_name ASC
     `,
-    loadCoveragesByPlanCode(),
+    getCachedCoverageMap(),
   ]);
 
   return planRows.map((plan) => {
@@ -225,7 +194,7 @@ async function findManyHealthPlansRawLegacy(): Promise<HealthPlan[]> {
 async function findHealthPlanByCodeRawLegacy(
   uniqueCode: string,
 ): Promise<HealthPlan | null> {
-  const [planRows, coverages] = await Promise.all([
+  const [planRows, coverage] = await Promise.all([
     prisma.$queryRaw<RawLegacyPlanRow[]>`
       SELECT
         unique_code,
@@ -241,7 +210,7 @@ async function findHealthPlanByCodeRawLegacy(
       WHERE unique_code = ${uniqueCode}
       LIMIT 1
     `,
-    loadCoveragesByPlanCode(),
+    loadCoveragesForPlanCode(uniqueCode),
   ]);
 
   const plan = planRows[0];
@@ -260,48 +229,122 @@ async function findHealthPlanByCodeRawLegacy(
     pdf_url: plan.pdf_url,
     pdf_public_id: plan.pdf_public_id,
     zones: plan.zones ?? [],
-    coverage: mapCoverageMap(plan.unique_code, coverages),
+    coverage,
   };
 }
 
 async function findManyWithPrismaFull(): Promise<HealthPlan[]> {
-  const plans = await prisma.plan.findMany({
-    include: planIncludeFull,
-    orderBy: { planName: "asc" },
-  });
+  const [plans, coverages] = await Promise.all([
+    prisma.plan.findMany({
+      include: { isapreRef: true },
+      orderBy: { planName: "asc" },
+    }),
+    getCachedCoverageMap(),
+  ]);
 
-  return (plans as PlanWithCoverages[]).map(mapDbPlanToHealthPlan);
+  return plans.map((plan) =>
+    attachCoverageToHealthPlan(
+      {
+        isapre: plan.isapreRef.name,
+        plan_name: plan.planName,
+        unique_code: plan.uniqueCode,
+        base_price_uf: plan.basePriceUf,
+        ges_premium_uf: resolveGesPremiumUf(plan.isapreRef.gesPremiumUf),
+        has_top: plan.hasTop,
+        additional_notes: plan.additionalNotes,
+        pdf_url: plan.pdfUrl,
+        pdf_public_id: plan.pdfPublicId,
+        zones: plan.zones ?? [],
+      },
+      coverages.get(plan.uniqueCode) ?? [],
+    ),
+  );
 }
 
 async function findManyWithPrismaCoverages(): Promise<HealthPlan[]> {
-  const plans = await prisma.plan.findMany({
-    include: planIncludeLegacy,
-    orderBy: { planName: "asc" },
-  });
+  const [plans, coverages] = await Promise.all([
+    prisma.plan.findMany({
+      orderBy: { planName: "asc" },
+    }),
+    getCachedCoverageMap(),
+  ]);
 
-  return plans.map(mapDbPlanToHealthPlanLegacy);
+  return plans.map((plan) =>
+    attachCoverageToHealthPlan(
+      {
+        isapre: resolveIsapreNameFromId(plan.isapreId),
+        plan_name: plan.planName,
+        unique_code: plan.uniqueCode,
+        base_price_uf: plan.basePriceUf,
+        ges_premium_uf: resolveGesPremiumForIsapreId(plan.isapreId),
+        has_top: plan.hasTop,
+        additional_notes: plan.additionalNotes,
+        pdf_url: plan.pdfUrl,
+        pdf_public_id: plan.pdfPublicId,
+        zones: plan.zones ?? [],
+      },
+      coverages.get(plan.uniqueCode) ?? [],
+    ),
+  );
 }
 
 async function findHealthPlanWithPrismaFull(
   uniqueCode: string,
 ): Promise<HealthPlan | null> {
-  const plan = await prisma.plan.findUnique({
-    where: { uniqueCode },
-    include: planIncludeFull,
-  });
+  const [plan, coverage] = await Promise.all([
+    prisma.plan.findUnique({
+      where: { uniqueCode },
+      include: { isapreRef: true },
+    }),
+    loadCoveragesForPlanCode(uniqueCode),
+  ]);
 
-  return plan ? mapDbPlanToHealthPlan(plan as PlanWithCoverages) : null;
+  if (!plan) return null;
+
+  return attachCoverageToHealthPlan(
+    {
+      isapre: plan.isapreRef.name,
+      plan_name: plan.planName,
+      unique_code: plan.uniqueCode,
+      base_price_uf: plan.basePriceUf,
+      ges_premium_uf: resolveGesPremiumUf(plan.isapreRef.gesPremiumUf),
+      has_top: plan.hasTop,
+      additional_notes: plan.additionalNotes,
+      pdf_url: plan.pdfUrl,
+      pdf_public_id: plan.pdfPublicId,
+      zones: plan.zones ?? [],
+    },
+    coverage,
+  );
 }
 
 async function findHealthPlanWithPrismaCoverages(
   uniqueCode: string,
 ): Promise<HealthPlan | null> {
-  const plan = await prisma.plan.findUnique({
-    where: { uniqueCode },
-    include: planIncludeLegacy,
-  });
+  const [plan, coverage] = await Promise.all([
+    prisma.plan.findUnique({
+      where: { uniqueCode },
+    }),
+    loadCoveragesForPlanCode(uniqueCode),
+  ]);
 
-  return plan ? mapDbPlanToHealthPlanLegacy(plan) : null;
+  if (!plan) return null;
+
+  return attachCoverageToHealthPlan(
+    {
+      isapre: resolveIsapreNameFromId(plan.isapreId),
+      plan_name: plan.planName,
+      unique_code: plan.uniqueCode,
+      base_price_uf: plan.basePriceUf,
+      ges_premium_uf: resolveGesPremiumForIsapreId(plan.isapreId),
+      has_top: plan.hasTop,
+      additional_notes: plan.additionalNotes,
+      pdf_url: plan.pdfUrl,
+      pdf_public_id: plan.pdfPublicId,
+      zones: plan.zones ?? [],
+    },
+    coverage,
+  );
 }
 
 async function runPlanQueryStrategies<T>(
@@ -348,6 +391,37 @@ export async function findManyHealthPlans(): Promise<HealthPlan[]> {
   ]);
 
   return enrichHealthPlanCatalog(plans);
+}
+
+/** Catálogo ligero para cotizador público (sin arrays coverage completos). */
+export async function findManyHealthPlanCatalogItems(): Promise<
+  HealthPlanCatalogItem[]
+> {
+  const [plans, coverages] = await Promise.all([
+    prisma.plan.findMany({
+      include: { isapreRef: true },
+      orderBy: { planName: "asc" },
+    }),
+    getCachedCoverageMap(),
+  ]);
+
+  return plans.map((plan) =>
+    buildHealthPlanCatalogItem(
+      {
+        isapre: plan.isapreRef.name,
+        plan_name: plan.planName,
+        unique_code: plan.uniqueCode,
+        base_price_uf: plan.basePriceUf,
+        ges_premium_uf: resolveGesPremiumUf(plan.isapreRef.gesPremiumUf),
+        has_top: plan.hasTop,
+        additional_notes: plan.additionalNotes,
+        pdf_url: plan.pdfUrl,
+        pdf_public_id: plan.pdfPublicId,
+        zones: plan.zones ?? [],
+      },
+      coverages.get(plan.uniqueCode) ?? [],
+    ),
+  );
 }
 
 export async function findHealthPlanByCode(

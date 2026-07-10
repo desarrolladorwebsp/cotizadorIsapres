@@ -1,4 +1,5 @@
 import { Prisma } from "@prisma/client";
+import { isDatabaseConnectivityError } from "@/lib/partner-entity/db-guard";
 
 export class ApiError extends Error {
   readonly status: number;
@@ -72,6 +73,14 @@ export function toApiError(error: unknown): ApiError {
 
   if (error instanceof SyntaxError) {
     return new ApiError("El cuerpo de la solicitud no es JSON válido.", 400);
+  }
+
+  if (isDatabaseConnectivityError(error)) {
+    return new ApiError(
+      "La base de datos no está disponible temporalmente. Intenta nuevamente en unos minutos.",
+      503,
+      "DATABASE_UNAVAILABLE",
+    );
   }
 
   if (error instanceof Error) {

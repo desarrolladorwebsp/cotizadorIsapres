@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { loadPlanCatalogClient } from "@/lib/load-plan-catalog-client";
 import type { HealthPlan } from "@/types/plan";
 
+/** Catálogo completo con coberturas para el panel de ejecutivos (requiere sesión staff). */
 export function usePlansCatalog() {
   const [plans, setPlans] = useState<HealthPlan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -12,10 +12,13 @@ export function usePlansCatalog() {
   useEffect(() => {
     let cancelled = false;
 
-    void loadPlanCatalogClient({
-      endpoint: "/api/plans",
-      credentials: "include",
-    })
+    void fetch("/api/plans", { credentials: "include" })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error("Error al cargar planes.");
+        }
+        return (await response.json()) as HealthPlan[];
+      })
       .then((data) => {
         if (!cancelled) {
           setPlans(data);

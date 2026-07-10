@@ -7,7 +7,7 @@ import {
   writeSessionPlanCatalog,
 } from "@/lib/plan-catalog-client-cache";
 import { EMBED_WIDGET_PLANS_LIMIT } from "@/lib/plan-search-config";
-import type { HealthPlan, PlanSearchResult } from "@/types/plan";
+import type { HealthPlanCatalogItem, PlanSearchResult } from "@/types/plan";
 
 export interface LoadPlanCatalogOptions {
   /** Ruta del catálogo completo. */
@@ -19,7 +19,7 @@ const DEFAULT_PUBLIC_CATALOG_ENDPOINT = "/api/plans/catalog";
 
 export async function loadPlanCatalogClient(
   options?: LoadPlanCatalogOptions,
-): Promise<HealthPlan[]> {
+): Promise<HealthPlanCatalogItem[]> {
   const cachedMemory = getMemoryPlanCatalog();
   if (cachedMemory) return cachedMemory;
 
@@ -40,7 +40,7 @@ export async function loadPlanCatalogClient(
       if (!response.ok) {
         throw new Error("No se pudo cargar el catálogo de planes.");
       }
-      return (await response.json()) as HealthPlan[];
+      return (await response.json()) as HealthPlanCatalogItem[];
     })
     .then((plans) => {
       setMemoryPlanCatalog(plans);

@@ -4,9 +4,11 @@ import {
 } from "@/lib/partner-entity/fallback-entities";
 import { RESERVED_ROOT_SEGMENTS } from "@/lib/partner-entity/constants";
 import {
+  isDatabaseConnectivityError,
   isPartnerEntityDbUnavailable,
   isPartnerEntitySchemaError,
   logPartnerEntitySchemaWarning,
+  markPartnerEntityDbCooldown,
   markPartnerEntityDbUnavailable,
 } from "@/lib/partner-entity/db-guard";
 import { prisma } from "@/lib/prisma";
@@ -92,6 +94,9 @@ export async function readPartnerEntityBySlug(
       if (isPartnerEntitySchemaError(error)) {
         markPartnerEntityDbUnavailable();
         logPartnerEntitySchemaWarning();
+      } else if (isDatabaseConnectivityError(error)) {
+        markPartnerEntityDbCooldown();
+        console.error("readPartnerEntityBySlug: base de datos no disponible", error);
       } else {
         console.error("readPartnerEntityBySlug: error de base de datos", error);
       }
@@ -123,6 +128,9 @@ export async function readPartnerEntityByEmbedKey(
       if (isPartnerEntitySchemaError(error)) {
         markPartnerEntityDbUnavailable();
         logPartnerEntitySchemaWarning();
+      } else if (isDatabaseConnectivityError(error)) {
+        markPartnerEntityDbCooldown();
+        console.error("readPartnerEntityByEmbedKey: base de datos no disponible", error);
       } else {
         console.error("readPartnerEntityByEmbedKey: error de base de datos", error);
       }
@@ -169,6 +177,9 @@ export async function readActivePartnerSlugs(): Promise<string[]> {
       if (isPartnerEntitySchemaError(error)) {
         markPartnerEntityDbUnavailable();
         logPartnerEntitySchemaWarning();
+      } else if (isDatabaseConnectivityError(error)) {
+        markPartnerEntityDbCooldown();
+        console.error("readActivePartnerSlugs: base de datos no disponible", error);
       } else {
         console.error("readActivePartnerSlugs: error de base de datos", error);
       }

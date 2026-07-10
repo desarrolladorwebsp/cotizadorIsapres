@@ -34,6 +34,9 @@ export interface PlanCoverageSummary {
   ambulatory_avg: number;
 }
 
+/** Índice compacto clinic_id → [hospitalaria %, ambulatoria %] para filtros. */
+export type ClinicCoverageIndex = Record<string, [number, number]>;
+
 /** Plan ligero para resultados de búsqueda (sin array de coberturas completo). */
 export interface HealthPlanSummary {
   isapre: string;
@@ -46,6 +49,12 @@ export interface HealthPlanSummary {
   pdf_url: string | null;
   pdf_public_id: string | null;
   coverage_summary: PlanCoverageSummary;
+}
+
+/** Catálogo público: resumen + metadatos mínimos para filtrar sin payload completo. */
+export interface HealthPlanCatalogItem extends HealthPlanSummary {
+  zones: string[];
+  clinic_index: ClinicCoverageIndex;
 }
 
 export interface PlanSearchResult {

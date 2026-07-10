@@ -1,27 +1,55 @@
-import { getCachedHealthPlans } from "@/lib/api/plan-catalog-cache";
+import { prisma } from "@/lib/prisma";
 
 export interface PlanCatalogClinicOption {
   id: string;
   name: string;
 }
 
-/** Clínicas presentes en el catálogo de planes (para filtro del cotizador público). */
-export async function readPlanCatalogClinics(): Promise<PlanCatalogClinicOption[]> {
-  const plans = await getCachedHealthPlans();
-  const clinics = new Map<string, string>();
+const CLINICS_CACHE_TTL_MS = 30 * 60 * 1000;
 
-  for (const plan of plans) {
-    for (const entry of plan.coverage) {
-      const id = entry.clinic_id?.trim();
-      const name = entry.clinic_name?.trim();
-      if (!id || !name) continue;
-      if (!clinics.has(id)) {
-        clinics.set(id, name);
-      }
-    }
+let clinicsCache: { items: PlanCatalogClinicOption[]; loadedAt: number } | null =
+  null;
+let clinicsInflight: Promise<PlanCatalogClinicOption[]> | null = null;
+
+/** Clínicas presentes en el catálogo (consulta SQL directa, sin cargar todos los planes). */
+export async function readPlanCatalogClinics(): Promise<PlanCatalogClinicOption[]> {
+  const now = Date.now();
+
+  if (clinicsCache && now - clinicsCache.loadedAt < CLINICS_CACHE_TTL_MS) {
+    return clinicsCache.items;
   }
 
-  return [...clinics.entries()]
-    .map(([id, name]) => ({ id, name }))
-    .sort((a, b) => a.name.localeCompare(b.name, "es"));
+  if (clinicsInflight) {
+    return clinicsInflight;
+  }
+
+  clinicsInflight = prisma
+    .$queryRaw<Array<{ clinic_id: string; clinic_name: string }>>`
+      SELECT DISTINCT clinic_id, clinic_name
+      FROM coverage_entries
+      WHERE clinic_id IS NOT NULL AND clinic_name IS NOT NULL
+      ORDER BY clinic_name ASC
+    `
+    .then((rows) =>
+      rows
+        .map((row) => ({
+          id: row.clinic_id.trim(),
+          name: row.clinic_name.trim(),
+        }))
+        .filter((row) => row.id && row.name),
+    )
+    .then((items) => {
+      clinicsCache = { items, loadedAt: Date.now() };
+      return items;
+    })
+    .finally(() => {
+      clinicsInflight = null;
+    });
+
+  return clinicsInflight;
+}
+
+export function invalidatePlanCatalogClinicsCache(): void {
+  clinicsCache = null;
+  clinicsInflight = null;
 }

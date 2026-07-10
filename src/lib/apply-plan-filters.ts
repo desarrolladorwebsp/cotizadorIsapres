@@ -12,7 +12,7 @@ import {
 } from "@/lib/filter-options";
 import { normalizeSearchText } from "@/lib/normalize-search-text";
 import type { DashboardFiltersState, PlanTypeFilterId } from "@/types/filters";
-import type { CoverageEntry, HealthPlan } from "@/types/plan";
+import type { CoverageEntry, HealthPlan, HealthPlanCatalogItem } from "@/types/plan";
 
 function normalizeText(value: string): string {
   return normalizeSearchText(value);
@@ -26,8 +26,13 @@ function getCoverageEntriesByType(
   return type === "hospitalaria" ? hospitalaria : ambulatoria;
 }
 
+type PlanFilterMetadata = Pick<
+  HealthPlan,
+  "isapre" | "plan_name" | "has_top" | "additional_notes"
+>;
+
 function matchesIsapreFilter(
-  plan: HealthPlan,
+  plan: PlanFilterMetadata,
   filters: DashboardFiltersState,
 ): boolean {
   if (!isCheckboxGroupActive(filters.isapres)) return true;
@@ -49,7 +54,7 @@ function matchesZoneFilter(
 }
 
 function matchesPlanTypeFilter(
-  plan: HealthPlan,
+  plan: PlanFilterMetadata,
   filters: DashboardFiltersState,
 ): boolean {
   if (!isCheckboxGroupActive(filters.planTypes)) return true;
@@ -203,4 +208,119 @@ export function getClinicCoveragePercent(
     (item) => item.clinic_id === clinicId,
   );
   return entry?.percentage ?? null;
+}
+
+function catalogIncludesAnyClinic(
+  plan: HealthPlanCatalogItem,
+  clinicIds: string[],
+): boolean {
+  return clinicIds.some((clinicId) => clinicId in plan.clinic_index);
+}
+
+function catalogCoverageMeetsThresholdForClinics(
+  plan: HealthPlanCatalogItem,
+  type: "hospitalaria" | "ambulatoria",
+  clinicIds: string[],
+  threshold: number,
+): boolean {
+  const index = type === "hospitalaria" ? 0 : 1;
+  return clinicIds.some((clinicId) => {
+    const values = plan.clinic_index[clinicId];
+    return values ? values[index] >= threshold : false;
+  });
+}
+
+function catalogBestCoveragePercent(
+  plan: HealthPlanCatalogItem,
+  type: "hospitalaria" | "ambulatoria",
+): number {
+  const index = type === "hospitalaria" ? 0 : 1;
+  let best = 0;
+
+  for (const values of Object.values(plan.clinic_index)) {
+    if (values[index] > best) best = values[index];
+  }
+
+  return best;
+}
+
+function matchesCatalogCoverageTypeFilter(
+  plan: HealthPlanCatalogItem,
+  type: "hospitalaria" | "ambulatoria",
+  filters: DashboardFiltersState,
+): boolean {
+  const clinicIds = getActiveClinicIds(filters);
+  const threshold =
+    type === "hospitalaria"
+      ? filters.hospitalCoveragePercent
+      : filters.ambulatoryCoveragePercent;
+
+  if (threshold !== null) {
+    if (clinicIds.length > 0) {
+      return catalogCoverageMeetsThresholdForClinics(
+        plan,
+        type,
+        clinicIds,
+        threshold,
+      );
+    }
+
+    const bestPercent = catalogBestCoveragePercent(plan, type);
+    if (bestPercent <= 0) {
+      const avg =
+        type === "hospitalaria"
+          ? plan.coverage_summary.hospital_avg
+          : plan.coverage_summary.ambulatory_avg;
+      return avg >= threshold;
+    }
+
+    return bestPercent >= threshold;
+  }
+
+  return true;
+}
+
+function matchesCatalogClinicOnlyFilter(
+  plan: HealthPlanCatalogItem,
+  filters: DashboardFiltersState,
+): boolean {
+  const clinicIds = getActiveClinicIds(filters);
+  if (clinicIds.length === 0) return true;
+
+  if (
+    filters.hospitalCoveragePercent !== null ||
+    filters.ambulatoryCoveragePercent !== null
+  ) {
+    return true;
+  }
+
+  return catalogIncludesAnyClinic(plan, clinicIds);
+}
+
+function matchesCatalogZoneFilter(
+  plan: HealthPlanCatalogItem,
+  filters: DashboardFiltersState,
+): boolean {
+  if (!isCheckboxGroupActive(filters.zones)) return true;
+  const activeIds = getActiveCheckboxIds(filters.zones);
+  if (activeIds.length === 0) return true;
+  if (plan.zones.length === 0) return false;
+
+  const active = new Set(activeIds);
+  return plan.zones.some((zoneId) => active.has(zoneId));
+}
+
+export function applyDashboardFiltersToCatalog(
+  plans: HealthPlanCatalogItem[],
+  filters: DashboardFiltersState,
+): HealthPlanCatalogItem[] {
+  return plans.filter(
+    (plan) =>
+      matchesIsapreFilter(plan, filters) &&
+      matchesCatalogZoneFilter(plan, filters) &&
+      matchesPlanTypeFilter(plan, filters) &&
+      matchesCatalogClinicOnlyFilter(plan, filters) &&
+      matchesCatalogCoverageTypeFilter(plan, "hospitalaria", filters) &&
+      matchesCatalogCoverageTypeFilter(plan, "ambulatoria", filters),
+  );
 }

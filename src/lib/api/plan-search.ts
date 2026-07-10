@@ -1,6 +1,5 @@
-import { getCachedHealthPlans } from "@/lib/api/plan-catalog-cache";
-import { mapHealthPlanToSummary } from "@/lib/api/plan-summary";
-import { filterPlanCatalog } from "@/lib/filter-plan-catalog";
+import { getCachedCatalogItems } from "@/lib/api/plan-catalog-cache";
+import { filterCatalogItems } from "@/lib/filter-catalog-items";
 import {
   getActiveCheckboxIds,
   getActiveClinicIds,
@@ -54,8 +53,8 @@ export function parsePlanSearchQuery(
 export async function searchPlanSummaries(
   query: PlanSearchQuery,
 ): Promise<PlanSearchResult> {
-  const dbPlans = await getCachedHealthPlans();
-  return filterPlanCatalog(dbPlans, query);
+  const catalog = await getCachedCatalogItems();
+  return filterCatalogItems(catalog, query);
 }
 
 /** Primeros N planes del catálogo (desde caché en memoria). */
@@ -65,10 +64,8 @@ export async function readLimitedPlanSummaries(
   const safeLimit =
     Number.isFinite(limit) && limit > 0 ? Math.floor(limit) : 1;
 
-  const allPlans = await getCachedHealthPlans();
-  const summaries = sortPlansByBasePriceAsc(
-    allPlans.map(mapHealthPlanToSummary),
-  ).slice(0, safeLimit);
+  const allPlans = await getCachedCatalogItems();
+  const summaries = sortPlansByBasePriceAsc(allPlans).slice(0, safeLimit);
 
   return {
     plans: summaries,
@@ -83,7 +80,7 @@ export async function readPlanCatalogBounds(): Promise<{
   priceMax: number;
   totalPlans: number;
 }> {
-  const plans = await getCachedHealthPlans();
+  const plans = await getCachedCatalogItems();
 
   if (plans.length === 0) {
     return { priceMin: 0, priceMax: 10, totalPlans: 0 };

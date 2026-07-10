@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server";
 import { apiErrorResponse } from "@/lib/api/api-error";
-import { getCachedHealthPlans } from "@/lib/api/plan-catalog-cache";
+import { getCachedCatalogItems } from "@/lib/api/plan-catalog-cache";
 
-/** Catálogo completo para filtrado en cliente (cotizador público y ejecutivos). */
+/** Catálogo ligero para filtrado en cliente (cotizador público). */
 export async function GET() {
   try {
-    const plans = await getCachedHealthPlans();
+    const plans = await getCachedCatalogItems();
 
     return NextResponse.json(plans, {
       headers: {
-        "Cache-Control": "public, max-age=300, stale-while-revalidate=600",
+        "Cache-Control": "public, max-age=900, stale-while-revalidate=1800",
       },
     });
   } catch (error) {

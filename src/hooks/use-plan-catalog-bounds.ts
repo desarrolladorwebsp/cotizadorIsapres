@@ -15,7 +15,7 @@ const DEFAULT_BOUNDS: PlanCatalogBounds = {
 };
 
 const BOUNDS_CACHE_KEY = "cotizador:plan-bounds";
-const BOUNDS_CACHE_TTL_MS = 5 * 60 * 1000;
+const BOUNDS_CACHE_TTL_MS = 30 * 60 * 1000;
 
 function readCachedBounds(): PlanCatalogBounds | null {
   if (typeof sessionStorage === "undefined") return null;

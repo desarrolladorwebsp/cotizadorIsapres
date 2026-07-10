@@ -1,17 +1,17 @@
-import type { HealthPlan } from "@/types/plan";
+import type { HealthPlanCatalogItem } from "@/types/plan";
 
-const CATALOG_CACHE_KEY = "cotizador:plan-catalog:v2";
-const CATALOG_CACHE_TTL_MS = 5 * 60 * 1000;
+const CATALOG_CACHE_KEY = "cotizador:plan-catalog:v3";
+const CATALOG_CACHE_TTL_MS = 30 * 60 * 1000;
 
 interface CachedPlanCatalog {
-  plans: HealthPlan[];
+  plans: HealthPlanCatalogItem[];
   cachedAt: number;
 }
 
-let memoryCatalog: HealthPlan[] | null = null;
-let memoryCatalogInflight: Promise<HealthPlan[]> | null = null;
+let memoryCatalog: HealthPlanCatalogItem[] | null = null;
+let memoryCatalogInflight: Promise<HealthPlanCatalogItem[]> | null = null;
 
-export function readSessionPlanCatalog(): HealthPlan[] | null {
+export function readSessionPlanCatalog(): HealthPlanCatalogItem[] | null {
   if (typeof sessionStorage === "undefined") return null;
 
   try {
@@ -30,7 +30,7 @@ export function readSessionPlanCatalog(): HealthPlan[] | null {
   }
 }
 
-export function writeSessionPlanCatalog(plans: HealthPlan[]): void {
+export function writeSessionPlanCatalog(plans: HealthPlanCatalogItem[]): void {
   if (typeof sessionStorage === "undefined") return;
 
   try {
@@ -44,20 +44,22 @@ export function writeSessionPlanCatalog(plans: HealthPlan[]): void {
   }
 }
 
-export function getMemoryPlanCatalog(): HealthPlan[] | null {
+export function getMemoryPlanCatalog(): HealthPlanCatalogItem[] | null {
   return memoryCatalog;
 }
 
-export function setMemoryPlanCatalog(plans: HealthPlan[]): void {
+export function setMemoryPlanCatalog(plans: HealthPlanCatalogItem[]): void {
   memoryCatalog = plans;
 }
 
-export function getMemoryPlanCatalogInflight(): Promise<HealthPlan[]> | null {
+export function getMemoryPlanCatalogInflight(): Promise<
+  HealthPlanCatalogItem[]
+> | null {
   return memoryCatalogInflight;
 }
 
 export function setMemoryPlanCatalogInflight(
-  promise: Promise<HealthPlan[]> | null,
+  promise: Promise<HealthPlanCatalogItem[]> | null,
 ): void {
   memoryCatalogInflight = promise;
 }

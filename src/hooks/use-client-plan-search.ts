@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { filterPlanCatalog } from "@/lib/filter-plan-catalog";
+import { filterCatalogItems } from "@/lib/filter-catalog-items";
 import {
   loadPlanCatalogClient,
   loadWidgetPreviewClient,
@@ -11,7 +11,11 @@ import {
   buildPlanSearchUrl,
   type PlanSearchRequest,
 } from "@/lib/plan-search-request";
-import type { HealthPlan, HealthPlanSummary, PlanSearchResult } from "@/types/plan";
+import type {
+  HealthPlanCatalogItem,
+  HealthPlanSummary,
+  PlanSearchResult,
+} from "@/types/plan";
 
 export type { PlanSearchRequest };
 
@@ -35,7 +39,7 @@ export function useClientPlanSearch(options?: UseClientPlanSearchOptions) {
   const [hasSearched, setHasSearched] = useState(false);
   const [catalogReady, setCatalogReady] = useState(false);
 
-  const catalogRef = useRef<HealthPlan[] | null>(null);
+  const catalogRef = useRef<HealthPlanCatalogItem[] | null>(null);
   const requestIdRef = useRef(0);
   const lastSuccessKeyRef = useRef<string | null>(null);
   const lastRequestRef = useRef<PlanSearchRequest | null>(null);
@@ -118,7 +122,7 @@ export function useClientPlanSearch(options?: UseClientPlanSearchOptions) {
 
       const catalog = catalogRef.current;
       if (catalog) {
-        const result = filterPlanCatalog(catalog, request);
+        const result = filterCatalogItems(catalog, request);
         applySearchResult(result, requestKey);
         return;
       }
@@ -157,7 +161,7 @@ export function useClientPlanSearch(options?: UseClientPlanSearchOptions) {
         setCatalogReady(true);
 
         if (lastRequestRef.current) {
-          const result = filterPlanCatalog(catalog, lastRequestRef.current);
+          const result = filterCatalogItems(catalog, lastRequestRef.current);
           applySearchResult(
             result,
             buildPlanSearchRequestKey(lastRequestRef.current),
