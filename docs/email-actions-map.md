@@ -7,14 +7,15 @@ Proveedor: **[Resend](https://resend.com)** (`resend` npm package).
 | Variable | Uso |
 |----------|-----|
 | `RESEND_API_KEY` | API key de Resend (obligatoria para cualquier envío) |
-| `RESEND_COTIZACION_FROM_EMAIL` | **FROM** correos al usuario que cotiza → `cotizaciones@cotizadorpremium.cl` |
-| `RESEND_EQUIPO_FROM_EMAIL` | **FROM** invitaciones staff y alertas internas → `equipo@cotizadorpremium.cl` |
-| `EQUIPO_NOTIFY_EMAIL` | **TO** buzón del equipo para nuevas cotizaciones → `equipo@cotizadorpremium.cl` |
+| `RESEND_COTIZACION_FROM_EMAIL` | **FROM** correos al usuario que cotiza y al ejecutivo al asignarle cliente → `cotizaciones@cotizadorpremium.cl` |
+| `RESEND_EQUIPO_FROM_EMAIL` | **FROM** invitaciones staff (unirse al sistema) → `equipo@cotizadorpremium.cl` |
+| `COTIZACION_NOTIFY_EMAIL` | **TO** buzón de alertas de cotizaciones y solicitudes de plan → `cotizaciones@cotizadorpremium.cl` |
 | `NEXT_PUBLIC_APP_URL` / `APP_BASE_URL` | Base URL para enlaces en correos de staff |
 
 Archivos de implementación:
 - `src/lib/email/send-staff-invite.ts` — staff (admin / ejecutivo)
 - `src/lib/email/send-cotizacion-notify.ts` — cotizador público y widget
+- `src/lib/email/notify-executive-client-assignment.ts` — aviso al ejecutivo al asignarle un cliente
 
 ---
 
@@ -44,7 +45,7 @@ Cada disparo envía **2 correos en paralelo** (usuario + equipo interno).
 | # | Acción del usuario | Disparador (UI) | API | Función | Destinatario | Asunto |
 |---|-------------------|-----------------|-----|---------|--------------|--------|
 | 2.1 | Usuario deja su correo y busca planes (sin contratar plan específico) | `public-cotizador-view.tsx` → `sendSearchCotizacionNotify` (una vez por sesión de búsqueda) | `POST /api/cotizacion-notify` | `sendCotizacionNotifyEmails` | **Usuario:** email ingresado | `Tu cotización de Isapre en Cotízalo Antes` |
-| | | | | | **Interno:** `COTIZACION_NOTIFY_EMAIL` | `Nueva cotización — {email}` o con plan/búsqueda |
+| | | | | | **Interno:** `COTIZACION_NOTIFY_EMAIL` (`cotizaciones@cotizadorpremium.cl`) | `Nueva cotización — {email}` o con plan/búsqueda |
 | 2.2 | Usuario solicita contratar / cotizar un plan concreto | `contract-plan-modal.tsx` tras `POST /api/quotes` exitoso | `POST /api/cotizacion-notify` | `sendCotizacionNotifyEmails` | Igual que 2.1 | Igual que 2.1 (incluye datos del plan en correo admin) |
 
 **Plantillas:** `src/lib/email/cotizacion-notify-templates.ts`
@@ -60,12 +61,25 @@ npm run test-cotizacion-notify -- tu-correo@ejemplo.cl
 
 ---
 
-## 3. Acciones que **no** envían correo hoy
+## 3. Asignación de cliente a ejecutivo
+
+| # | Acción | Disparador | Función | Destinatario | FROM | Asunto |
+|---|--------|------------|---------|--------------|------|--------|
+| 3.1 | Asignación automática (round-robin) | `autoAssignClientExecutive` · nueva cotización sin ejecutivo | `queueExecutiveClientAssignmentEmail` | Correo del ejecutivo asignado | `cotizaciones@cotizadorpremium.cl` | `Nuevo cliente asignado — {nombre}` |
+| 3.2 | Asignación manual desde admin | `PATCH /api/users/[id]` · panel usuarios | Igual que 3.1 | Ejecutivo | Igual | Igual |
+| 3.3 | Reasignación de cotización | `updateQuoteAssignment` | Igual que 3.1 (solo si el cliente no tenía ya ese ejecutivo) | Ejecutivo | Igual | Igual |
+| 3.4 | Cliente creado manualmente con ejecutivo | `createManualClient` | Igual que 3.1 | Ejecutivo | Igual | Igual |
+
+**Plantillas:** `src/lib/email/executive-client-assignment-templates.ts`
+
+**Nota:** el envío es en segundo plano; si Resend falla, la asignación en BD no se revierte (se registra error en logs).
+
+---
+
+## 4. Acciones que **no** envían correo hoy
 
 | Acción | Comportamiento actual |
 |--------|----------------------|
-| Asignación automática de cliente/cotización a ejecutivo | Solo actualiza BD; sin email al ejecutivo |
-| Asignación manual de cliente desde panel admin | Solo actualiza BD |
 | Activación exitosa de cuenta staff | Redirige al panel; sin email de bienvenida |
 | Cambio / recuperación de contraseña | Solo en app; sin email |
 | Suspender / reactivar usuario | Solo BD |
@@ -73,7 +87,7 @@ npm run test-cotizacion-notify -- tu-correo@ejemplo.cl
 
 ---
 
-## 4. Diagrama de flujo (staff)
+## 5. Diagrama de flujo (staff)
 
 ```mermaid
 flowchart TD
@@ -97,7 +111,7 @@ flowchart TD
 
 ---
 
-## 5. Diagrama de flujo (cotizaciones)
+## 6. Diagrama de flujo (cotizaciones)
 
 ```mermaid
 flowchart TD
@@ -108,12 +122,12 @@ flowchart TD
   X --> Y
   Y --> Z[sendCotizacionNotifyEmails]
   Z --> A1[Correo al usuario]
-  Z --> A2[Correo a COTIZACION_NOTIFY_EMAIL]
+  Z --> A2[Correo a cotizaciones@cotizadorpremium.cl]
 ```
 
 ---
 
-## 6. Verificación de configuración (local)
+## 7. Verificación de configuración (local)
 
 Comprobar que existan (sin exponer valores):
 
@@ -130,8 +144,7 @@ Estado esperado en desarrollo: las cuatro en `true`.
 
 ---
 
-## 7. Observaciones / deuda técnica
+## 8. Observaciones / deuda técnica
 
 1. **Branding mixto en cotizaciones:** las plantillas HTML dicen «Cotízalo Antes» pero el remitente configurado es «Cotizador Premium». Conviene unificar copy y marca.
-2. **Sin email al ejecutivo** cuando se le asigna un lead o cliente (solo visible en el panel).
-3. **Invitación vs. envío:** si el correo falla en 1.1, la invitación queda pendiente en BD; el admin puede usar **Reenviar invitación**.
+2. **Invitación vs. envío:** si el correo falla en 1.1, la invitación queda pendiente en BD; el admin puede usar **Reenviar invitación**.

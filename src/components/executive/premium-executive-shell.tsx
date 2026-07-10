@@ -20,7 +20,7 @@ export function PremiumExecutiveShell({
     <div
       data-premium-surface
       data-premium-variant={variant}
-      className="premium-surface-root min-h-full"
+      className="premium-surface-root flex min-h-0 flex-1 flex-col"
     >
       <motion.div
         initial={reducedMotion ? false : { opacity: 0, y: variant === "auth" ? 16 : 8 }}
@@ -30,7 +30,7 @@ export function PremiumExecutiveShell({
           stiffness: 280,
           damping: 30,
         }}
-        className="min-h-full"
+        className="flex min-h-0 flex-1 flex-col"
       >
         {children}
       </motion.div>

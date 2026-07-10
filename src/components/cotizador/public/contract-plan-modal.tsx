@@ -25,6 +25,7 @@ import {
 } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import { usePlanDetail } from "@/hooks/use-plan-detail";
+import { useScrollLock } from "@/hooks/use-scroll-lock";
 import { usePartnerEntity } from "@/components/partner/partner-entity-provider";
 import type {
   BeneficiaryGroupSummary,
@@ -185,18 +186,16 @@ export function ContractPlanModal({
     setIsCurrentIsapre("");
   }, [open, initialTab, deepLink.requestPrefill, deepLink.email]);
 
+  useScrollLock(open && !embedded);
+
   useEffect(() => {
     if (!open || embedded) return;
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") onClose();
     }
     document.addEventListener("keydown", onKeyDown);
-    document.body.style.overflow = "hidden";
-    document.body.style.overscrollBehavior = "none";
     return () => {
       document.removeEventListener("keydown", onKeyDown);
-      document.body.style.overflow = "";
-      document.body.style.overscrollBehavior = "";
     };
   }, [open, embedded, onClose]);
 

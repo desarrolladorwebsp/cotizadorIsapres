@@ -1,3 +1,12 @@
+export const CONTRIBUTOR_TYPE_OPTIONS = [
+  { value: "dependiente", label: "Dependiente" },
+  { value: "independiente", label: "Independiente" },
+  { value: "voluntario", label: "Voluntario" },
+] as const;
+
+export type ContributorType =
+  (typeof CONTRIBUTOR_TYPE_OPTIONS)[number]["value"];
+
 export const REGION_OPTIONS = [
   { value: "rm", label: "Región Metropolitana" },
   { value: "arica", label: "Arica y Parinacota" },
@@ -31,8 +40,10 @@ export const SORT_OPTIONS: { value: QuoteSortKey; label: string }[] = [
 ];
 
 export interface QuoteCriteria {
+  /** Mantenido para deep links y filtros de zona; ya no se muestra en el buscador. */
   region: string;
   monthlyIncome: string;
+  contributorType: ContributorType | "";
   /** Solo compatibilidad con deep links antiguos; ya no se solicita en la UI. */
   sex?: string;
 }
@@ -41,6 +52,7 @@ export function createDefaultQuoteCriteria(): QuoteCriteria {
   return {
     region: "rm",
     monthlyIncome: "",
+    contributorType: "",
     sex: "",
   };
 }

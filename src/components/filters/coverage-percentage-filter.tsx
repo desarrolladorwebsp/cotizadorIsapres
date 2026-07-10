@@ -36,8 +36,8 @@ export function CoveragePercentageFilter({
   return (
     <div
       className={joinClasses(
-        "space-y-3 rounded-xl border border-border/70 bg-white/70 p-3",
-        compactEmbed && "max-md:space-y-2 max-md:p-2.5",
+        "space-y-3",
+        compactEmbed && "max-md:space-y-2",
       )}
     >
       <p

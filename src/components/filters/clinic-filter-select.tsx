@@ -91,9 +91,8 @@ export function ClinicFilterSelect({
         onClick={() => setModalOpen(true)}
         disabled={loading}
         className={joinClasses(
-          "flex w-full items-center gap-2 rounded-lg border bg-white px-3 text-left transition",
+          "flex w-full items-center gap-2 rounded-lg border border-border/70 bg-bg-layout/30 px-3 text-left transition",
           compactEmbed ? "min-h-10 py-2 text-xs" : "min-h-11 py-2.5 text-sm",
-          ui.borderHairline,
           ui.hoverSurface,
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
           loading && "cursor-wait opacity-70",

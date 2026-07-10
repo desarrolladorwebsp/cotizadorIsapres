@@ -63,6 +63,10 @@ import {
   touchTarget,
   ui,
 } from "@/lib/ui-tokens";
+import {
+  scrollAppShellToTop,
+  scrollElementIntoAppShell,
+} from "@/lib/scroll/scroll-into-view";
 import { joinClasses } from "@/lib/utils";
 import type { DashboardFiltersState, HealthPlanSummary } from "@/domain";
 import type { HealthPlan } from "@/types/plan";
@@ -222,11 +226,11 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
     setRecoveryNotice(message);
     setRecoveryNoticeKey((key) => key + 1);
     if (isEmbedded) {
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      scrollAppShellToTop("smooth");
       return;
     }
     window.requestAnimationFrame(() => {
-      criteriaBarRef.current?.scrollIntoView({
+      scrollElementIntoAppShell(criteriaBarRef.current, {
         behavior: "smooth",
         block: "start",
       });
@@ -447,7 +451,7 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
     ).then(() => {
       void sendSearchCotizacionNotify();
       if (deepLink.hasDeepLinkParams) {
-        resultsRef.current?.scrollIntoView({
+        scrollElementIntoAppShell(resultsRef.current, {
           behavior: "smooth",
           block: "start",
         });
@@ -513,6 +517,16 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
       dashboard.ufToClp,
     );
   }, [plans, dashboard.beneficiarySummary, dashboard.ufToClp]);
+
+  const defaultPriceBounds = useMemo(
+    () => ({
+      min:
+        bounds.totalPlans > 0 ? Math.floor(bounds.priceMin * 10) / 10 : 2,
+      max:
+        bounds.totalPlans > 0 ? Math.ceil(bounds.priceMax * 10) / 10 : 8,
+    }),
+    [bounds.priceMin, bounds.priceMax, bounds.totalPlans],
+  );
 
   useEffect(() => {
     if (!solicitarFlowActive || !deepLink.planCode) return;
@@ -621,7 +635,7 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
         );
       }
 
-      resultsRef.current?.scrollIntoView({
+      scrollElementIntoAppShell(resultsRef.current, {
         behavior: "smooth",
         block: "start",
       });
@@ -784,7 +798,10 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
     ).then(() => {
       void sendSearchCotizacionNotify();
     });
-    resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    scrollElementIntoAppShell(resultsRef.current, {
+      behavior: "smooth",
+      block: "start",
+    });
   }
 
   function handleEmbedSolicitar(plan: HealthPlanSummary) {
@@ -886,6 +903,7 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
                 deepLink.hasDeepLinkParams &&
                 dashboard.beneficiaries.dependents.length > 0
               }
+              partnerEntitySlug={entity?.slug}
             />
           </div>
 
@@ -901,9 +919,8 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
               <div
                 className={joinClasses(
                   safeWidth,
-                  isEmbedded
-                    ? "max-md:space-y-2 max-md:rounded-xl max-md:bg-white max-md:p-2.5 max-md:shadow-sm max-md:ring-1 max-md:ring-border/70"
-                    : "space-y-4",
+                  isEmbedded &&
+                    "max-md:rounded-xl max-md:bg-white max-md:p-2.5 max-md:shadow-sm max-md:ring-1 max-md:ring-border/70",
                 )}
               >
                 <PublicResultsToolbar
@@ -911,20 +928,9 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
                   totalCount={total}
                   currency={currency}
                   onCurrencyChange={setCurrency}
+                  searchText={searchText}
+                  onSearchTextChange={handleSearchTextChange}
                   compactEmbed={isEmbedded}
-                />
-                <input
-                  type="search"
-                  value={searchText}
-                  onChange={(e) => handleSearchTextChange(e.target.value)}
-                  placeholder="Buscar por nombre, código o Isapre..."
-                  className={joinClasses(
-                    "h-11 w-full max-w-full rounded-xl px-4 text-sm",
-                    isEmbedded
-                      ? "max-md:h-9 max-md:rounded-lg max-md:px-3 max-md:text-xs"
-                      : "mb-4",
-                    ui.input,
-                  )}
                 />
               </div>
             ) : null}
@@ -935,7 +941,7 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
                 isEmbedded ? "w-full min-w-0" : safeWidth,
                 isEmbedded
                   ? "flex min-w-0 gap-2 lg:gap-3 max-md:gap-0"
-                  : "flex min-h-0 gap-0 lg:gap-5",
+                  : "flex min-h-0 items-start gap-0 lg:gap-5",
               )}
             >
               {hasSearched ? (
@@ -953,6 +959,8 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
                   hidePlanTypeFilter={isEmbedded}
                   showClinicFilter={!isEmbedded}
                   compactEmbed={isEmbedded}
+                  defaultPriceMin={defaultPriceBounds.min}
+                  defaultPriceMax={defaultPriceBounds.max}
                 />
               ) : null}
 

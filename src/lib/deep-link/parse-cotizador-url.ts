@@ -16,6 +16,7 @@ import {
   VALID_CURRENCY,
   VALID_MODAL_VIEWS,
   VALID_REGIONS,
+  VALID_CONTRIBUTOR_TYPES,
   VALID_SEX_VALUES,
   VALID_SORT_KEYS,
 } from "@/lib/deep-link/params";
@@ -195,6 +196,10 @@ export function parseCotizadorUrl(
 
   const regionRaw = params.get(DEEP_LINK_PARAMS.region)?.trim().toLowerCase();
   const sexRaw = params.get(DEEP_LINK_PARAMS.sexo)?.trim().toLowerCase();
+  const contributorTypeRaw = params
+    .get(DEEP_LINK_PARAMS.tipoCotizante)
+    ?.trim()
+    .toLowerCase();
   const sortRaw = params.get(DEEP_LINK_PARAMS.orden)?.trim().toLowerCase();
   const currencyRaw = params.get(DEEP_LINK_PARAMS.moneda)?.trim().toLowerCase();
 
@@ -208,6 +213,10 @@ export function parseCotizadorUrl(
     monthlyIncome: formatMonthlyIncomeForDisplay(
       params.get(DEEP_LINK_PARAMS.ingreso),
     ),
+    contributorType:
+      contributorTypeRaw && VALID_CONTRIBUTOR_TYPES.has(contributorTypeRaw)
+        ? (contributorTypeRaw as QuoteCriteria["contributorType"])
+        : "",
     ...(sexRaw && VALID_SEX_VALUES.has(sexRaw) ? { sex: sexRaw } : {}),
   };
 

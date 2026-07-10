@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect } from "react";
+import { useScrollLock } from "@/hooks/use-scroll-lock";
 import { AnimatePresence, motion } from "framer-motion";
 import { DashboardFiltersPanel } from "@/components/filters/dashboard-filters-panel";
 import { usePlanClinicOptions } from "@/hooks/use-plan-clinic-options";
 import { useIsLargeScreen } from "@/hooks/use-media-query";
-import { formatPlanClp, formatPlanUf } from "@/domain";
-import { touchTarget, ui } from "@/lib/ui-tokens";
+import { touchTarget, filtersSidebarDesktopShell, filtersSidebarScrollBody, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type { DashboardFiltersState } from "@/domain";
 
@@ -25,6 +24,8 @@ export interface PublicFiltersSidebarProps {
   showClinicFilter?: boolean;
   /** Vista compacta para widget embebido en móvil. */
   compactEmbed?: boolean;
+  defaultPriceMin?: number;
+  defaultPriceMax?: number;
 }
 
 function CloseIcon() {
@@ -54,6 +55,8 @@ export function PublicFiltersSidebar({
   hidePlanTypeFilter = false,
   showClinicFilter = false,
   compactEmbed = false,
+  defaultPriceMin,
+  defaultPriceMax,
 }: PublicFiltersSidebarProps) {
   const isLargeScreen = useIsLargeScreen();
   const {
@@ -62,20 +65,7 @@ export function PublicFiltersSidebar({
     error: clinicOptionsError,
   } = usePlanClinicOptions(showClinicFilter);
 
-  useEffect(() => {
-    if (!open) return;
-    const previousOverflow = document.body.style.overflow;
-    const previousOverscroll = document.body.style.overscrollBehavior;
-    const isMobile = window.matchMedia("(max-width: 1023px)").matches;
-    if (isMobile) {
-      document.body.style.overflow = "hidden";
-      document.body.style.overscrollBehavior = "none";
-    }
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      document.body.style.overscrollBehavior = previousOverscroll;
-    };
-  }, [open]);
+  useScrollLock(open && !isLargeScreen && !compactEmbed);
 
   return (
     <>
@@ -105,14 +95,22 @@ export function PublicFiltersSidebar({
         className={joinClasses(
           "fixed inset-y-0 left-0 z-50 flex w-full max-w-full flex-col border-r bg-white shadow-xl",
           compactEmbed
-            ? "max-md:max-w-[17rem] lg:static lg:z-20 lg:w-52 lg:max-w-[13rem] lg:shrink-0 lg:translate-x-0 lg:shadow-none"
-            : "lg:static lg:z-20 lg:w-72 lg:max-w-[18rem] lg:shrink-0 lg:translate-x-0 lg:shadow-none",
+            ? "max-md:max-w-[17rem] lg:static lg:z-20 lg:h-auto lg:max-h-none lg:w-52 lg:max-w-[13rem] lg:shrink-0 lg:translate-x-0 lg:shadow-none"
+            : joinClasses(
+                "lg:w-72 lg:max-w-[18rem] lg:shrink-0 lg:translate-x-0 lg:shadow-none",
+                filtersSidebarDesktopShell,
+              ),
           ui.border,
           !open && "pointer-events-none lg:pointer-events-auto",
           open ? "lg:flex" : "lg:hidden",
         )}
       >
-        <div className="flex h-full flex-col">
+        <div
+          className={joinClasses(
+            "flex h-full flex-col",
+            !compactEmbed && "min-h-0 lg:max-h-[inherit]",
+          )}
+        >
           <div
             className={joinClasses(
               "flex shrink-0 items-center justify-between border-b px-4 py-4",
@@ -140,66 +138,11 @@ export function PublicFiltersSidebar({
 
           <div
             className={joinClasses(
-              "flex-1 space-y-6 overflow-y-auto overscroll-y-contain p-4",
-              compactEmbed && "max-md:space-y-3 max-md:p-3",
+              filtersSidebarScrollBody,
+              "px-4 py-2",
+              compactEmbed && "max-md:px-3 max-md:py-1",
             )}
           >
-            <section className={joinClasses("space-y-3", compactEmbed && "max-md:space-y-2")}>
-              <div className="flex items-center justify-between gap-2">
-                <h3
-                  className={joinClasses(
-                    "text-sm font-bold text-foreground",
-                    compactEmbed && "max-md:text-xs",
-                  )}
-                >
-                  Precio
-                </h3>
-                <span
-                  className={joinClasses(
-                    "rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-bold tabular-nums text-primary-dark",
-                    compactEmbed && "max-md:px-2 max-md:py-0.5 max-md:text-[10px]",
-                  )}
-                >
-                  {formatPlanClp(priceMin * ufToClp)} –{" "}
-                  {formatPlanClp(priceMax * ufToClp)}
-                </span>
-              </div>
-              <input
-                type="range"
-                min={2}
-                max={8}
-                step={0.1}
-                value={priceMin}
-                onChange={(e) =>
-                  onPriceMinChange(
-                    Math.min(Number(e.target.value), priceMax),
-                  )
-                }
-                className="h-2 w-full cursor-pointer appearance-none rounded-full bg-border accent-primary"
-              />
-              <input
-                type="range"
-                min={2}
-                max={8}
-                step={0.1}
-                value={priceMax}
-                onChange={(e) =>
-                  onPriceMaxChange(
-                    Math.max(Number(e.target.value), priceMin),
-                  )
-                }
-                className="h-2 w-full cursor-pointer appearance-none rounded-full bg-border accent-primary"
-              />
-              <p
-                className={joinClasses(
-                  "text-[11px] text-muted",
-                  compactEmbed && "max-md:text-[10px]",
-                )}
-              >
-                {formatPlanUf(priceMin)} – {formatPlanUf(priceMax)} UF
-              </p>
-            </section>
-
             <DashboardFiltersPanel
               value={filters}
               onChange={onFiltersChange}
@@ -210,6 +153,13 @@ export function PublicFiltersSidebar({
               clinicOptions={clinicOptions}
               clinicOptionsLoading={clinicOptionsLoading}
               clinicOptionsError={clinicOptionsError}
+              priceMin={priceMin}
+              priceMax={priceMax}
+              ufToClp={ufToClp}
+              onPriceMinChange={onPriceMinChange}
+              onPriceMaxChange={onPriceMaxChange}
+              defaultPriceMin={defaultPriceMin}
+              defaultPriceMax={defaultPriceMax}
             />
           </div>
         </div>

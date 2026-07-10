@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect } from "react";
+import { useScrollLock } from "@/hooks/use-scroll-lock";
 import { AnimatePresence, motion } from "framer-motion";
 import { BeneficiariesForm } from "@/components/beneficiaries";
 import { usePlanClinicOptions } from "@/hooks/use-plan-clinic-options";
 import { useIsLargeScreen } from "@/hooks/use-media-query";
-import { touchTarget, ui } from "@/lib/ui-tokens";
+import { touchTarget, filtersSidebarDesktopShell, filtersSidebarScrollBody, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type {
   BeneficiaryGroupSummary,
@@ -24,6 +24,13 @@ export interface FiltersSidebarProps {
   ) => void;
   filters: DashboardFiltersState;
   onFiltersChange: (next: DashboardFiltersState) => void;
+  priceMin: number;
+  priceMax: number;
+  ufToClp: number;
+  onPriceMinChange: (value: number) => void;
+  onPriceMaxChange: (value: number) => void;
+  defaultPriceMin?: number;
+  defaultPriceMax?: number;
 }
 
 function CloseIcon() {
@@ -46,6 +53,13 @@ export function FiltersSidebar({
   onBeneficiariesChange,
   filters,
   onFiltersChange,
+  priceMin,
+  priceMax,
+  ufToClp,
+  onPriceMinChange,
+  onPriceMaxChange,
+  defaultPriceMin,
+  defaultPriceMax,
 }: FiltersSidebarProps) {
   const isLargeScreen = useIsLargeScreen();
   const {
@@ -54,20 +68,7 @@ export function FiltersSidebar({
     error: clinicOptionsError,
   } = usePlanClinicOptions(true);
 
-  useEffect(() => {
-    if (!open) return;
-    const previousOverflow = document.body.style.overflow;
-    const previousOverscroll = document.body.style.overscrollBehavior;
-    const isMobile = window.matchMedia("(max-width: 1023px)").matches;
-    if (isMobile) {
-      document.body.style.overflow = "hidden";
-      document.body.style.overscrollBehavior = "none";
-    }
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      document.body.style.overscrollBehavior = previousOverscroll;
-    };
-  }, [open]);
+  useScrollLock(open && !isLargeScreen);
 
   return (
     <>
@@ -98,13 +99,14 @@ export function FiltersSidebar({
         transition={{ type: "spring", stiffness: 320, damping: 32 }}
         className={joinClasses(
           "fixed inset-y-0 left-0 z-50 flex w-full max-w-full flex-col border-r bg-white shadow-xl",
-          "lg:static lg:z-20 lg:h-auto lg:max-h-none lg:w-80 lg:max-w-[20rem] lg:shrink-0 lg:translate-x-0 lg:shadow-none",
+          "lg:w-80 lg:max-w-[20rem] lg:shrink-0 lg:translate-x-0 lg:shadow-none",
+          filtersSidebarDesktopShell,
           ui.border,
           !open && "pointer-events-none lg:pointer-events-auto",
           open ? "lg:flex" : "lg:hidden",
         )}
       >
-        <div className="flex h-full w-full flex-col">
+        <div className="flex h-full min-h-0 w-full flex-col lg:max-h-[inherit]">
           <div
             className={joinClasses(
               "flex shrink-0 items-center justify-between border-b bg-white px-4 py-4 sm:px-6 lg:px-6",
@@ -141,20 +143,37 @@ export function FiltersSidebar({
             </div>
           </div>
 
-          <div className="flex-1 space-y-8 overflow-y-auto overscroll-contain bg-bg-layout/40 p-4 sm:p-6 lg:p-6">
-            <BeneficiariesForm
-              value={beneficiaries}
-              onChange={onBeneficiariesChange}
-            />
+          <div
+            className={joinClasses(
+              filtersSidebarScrollBody,
+              "px-4 py-2 sm:px-5",
+            )}
+          >
+            <div className="divide-y divide-border/50">
+              <BeneficiariesForm
+                value={beneficiaries}
+                onChange={onBeneficiariesChange}
+                className="!rounded-none !border-0 !bg-transparent !p-0 !py-4 !shadow-none sm:!py-5"
+              />
 
-            <DashboardFiltersPanel
-              value={filters}
-              onChange={onFiltersChange}
-              showClinicFilter
-              clinicOptions={clinicOptions}
-              clinicOptionsLoading={clinicOptionsLoading}
-              clinicOptionsError={clinicOptionsError}
-            />
+              <div className="py-2">
+                <DashboardFiltersPanel
+                  value={filters}
+                  onChange={onFiltersChange}
+                  showClinicFilter
+                  clinicOptions={clinicOptions}
+                  clinicOptionsLoading={clinicOptionsLoading}
+                  clinicOptionsError={clinicOptionsError}
+                  priceMin={priceMin}
+                  priceMax={priceMax}
+                  ufToClp={ufToClp}
+                  onPriceMinChange={onPriceMinChange}
+                  onPriceMaxChange={onPriceMaxChange}
+                  defaultPriceMin={defaultPriceMin}
+                  defaultPriceMax={defaultPriceMax}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </motion.aside>

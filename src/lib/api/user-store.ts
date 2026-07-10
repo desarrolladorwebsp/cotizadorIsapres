@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { ApiError } from "@/lib/api/api-error";
+import { queueExecutiveClientAssignmentEmail } from "@/lib/email/notify-executive-client-assignment";
 import {
   parseClientClosedRecord,
   resolveClientChecklist,
@@ -330,6 +331,14 @@ export async function createManualClient(
     include: clientRecordInclude,
   });
 
+  if (assignedExecutiveId) {
+    queueExecutiveClientAssignmentEmail({
+      clientUserId: user.id,
+      executiveAccountId: assignedExecutiveId,
+      assignmentType: "manual",
+    });
+  }
+
   return mapDbClientRecord(user);
 }
 
@@ -370,7 +379,7 @@ export async function assignUserToExecutive(
 ): Promise<UserRecord> {
   const existing = await prisma.user.findUnique({
     where: { id: userId },
-    select: { role: true },
+    select: { role: true, assignedExecutiveId: true },
   });
 
   if (!existing || existing.role !== "CLIENT") {
@@ -389,6 +398,13 @@ export async function assignUserToExecutive(
 
   if (executiveAccountId) {
     await syncClientQuotesExecutive(userId, executiveAccountId);
+    if (existing.assignedExecutiveId !== executiveAccountId) {
+      queueExecutiveClientAssignmentEmail({
+        clientUserId: userId,
+        executiveAccountId,
+        assignmentType: "manual",
+      });
+    }
   }
 
   return mapDbClientRecord(user);

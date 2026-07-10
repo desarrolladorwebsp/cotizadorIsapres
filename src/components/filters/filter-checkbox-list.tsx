@@ -1,4 +1,4 @@
-import { touchRow, ui } from "@/lib/ui-tokens";
+import { touchRow } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type { FilterOption } from "@/domain";
 
@@ -25,7 +25,7 @@ export function FilterCheckboxList({
     <div
       className={joinClasses(
         "space-y-1",
-        scrollable && "max-h-52 overflow-y-auto overscroll-contain pr-1",
+        scrollable && "max-h-52 overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch]",
         compactEmbed && scrollable && "max-md:max-h-36",
         className,
       )}
@@ -38,10 +38,10 @@ export function FilterCheckboxList({
             key={option.id}
             htmlFor={inputId}
             className={joinClasses(
-              "flex w-full cursor-pointer items-center gap-3 rounded-lg text-sm text-foreground transition",
+              "flex w-full cursor-pointer items-center gap-3 rounded-md text-sm text-foreground transition",
               touchRow,
               compactEmbed && "max-md:gap-2 max-md:text-xs",
-              ui.hoverSurface,
+              "hover:bg-surface-hover/70",
             )}
           >
             <input

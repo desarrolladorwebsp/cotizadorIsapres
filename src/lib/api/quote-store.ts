@@ -8,6 +8,7 @@ import {
   logQuoteActivity,
   resolveExecutiveName,
 } from "@/lib/api/quote-activity-store";
+import { queueExecutiveClientAssignmentEmail } from "@/lib/email/notify-executive-client-assignment";
 import type { QuoteActivityActor } from "@/types/quote-activity";
 import type { CreateQuoteInput, QuoteRecord, QuoteStatus } from "@/types/quote";
 import type { Quote as DbQuote, Plan, Isapre, StaffAccount } from "@prisma/client";
@@ -178,6 +179,14 @@ export async function updateQuoteAssignment(input: {
   actor?: QuoteActivityActor;
 }): Promise<QuoteRecord> {
   const existing = await readQuoteById(input.quoteId);
+  const previousClientExecutiveId = existing?.userId
+    ? (
+        await prisma.user.findUnique({
+          where: { id: existing.userId },
+          select: { assignedExecutiveId: true },
+        })
+      )?.assignedExecutiveId ?? null
+    : null;
 
   const quote = await prisma.quote.update({
     where: { id: input.quoteId },
@@ -193,6 +202,15 @@ export async function updateQuoteAssignment(input: {
       where: { id: quote.userId },
       data: { assignedExecutiveId: input.executiveAccountId },
     });
+
+    if (previousClientExecutiveId !== input.executiveAccountId) {
+      queueExecutiveClientAssignmentEmail({
+        clientUserId: quote.userId,
+        executiveAccountId: input.executiveAccountId,
+        assignmentType: "manual",
+        quoteId: input.quoteId,
+      });
+    }
   }
 
   if (existing && existing.executiveAccountId !== input.executiveAccountId) {

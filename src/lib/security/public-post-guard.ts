@@ -13,6 +13,7 @@ const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
 const PUBLIC_POST_PROFILES = {
   quote: { limit: 15, label: "cotizaciones" },
   "cotizacion-notify": { limit: 8, label: "notificaciones" },
+  "company-agreement": { limit: 10, label: "consultas de convenio" },
 } as const;
 
 export type PublicPostProfile = keyof typeof PUBLIC_POST_PROFILES;

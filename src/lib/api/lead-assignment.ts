@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { isSubscriptionActive } from "@/lib/auth/subscription";
+import { queueExecutiveClientAssignmentEmail } from "@/lib/email/notify-executive-client-assignment";
 
 /**
  * Ejecutivos elegibles para recibir nuevos clientes:
@@ -114,6 +115,12 @@ export async function autoAssignClientExecutive(
   await prisma.user.update({
     where: { id: userId },
     data: { assignedExecutiveId: executiveId },
+  });
+
+  queueExecutiveClientAssignmentEmail({
+    clientUserId: userId,
+    executiveAccountId: executiveId,
+    assignmentType: "auto",
   });
 
   return executiveId;

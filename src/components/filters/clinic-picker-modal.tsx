@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useScrollLock } from "@/hooks/use-scroll-lock";
 import { createPortal } from "react-dom";
 import type { PlanCatalogClinicOption } from "@/lib/api/plan-clinics";
 import { textIncludesSearch } from "@/lib/normalize-search-text";
@@ -84,11 +85,10 @@ export function ClinicPickerModal({
     return () => window.clearTimeout(timer);
   }, [open, value]);
 
+  useScrollLock(open);
+
   useEffect(() => {
     if (!open) return;
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") onClose();
@@ -96,7 +96,6 @@ export function ClinicPickerModal({
 
     document.addEventListener("keydown", handleKeyDown);
     return () => {
-      document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [open, onClose]);

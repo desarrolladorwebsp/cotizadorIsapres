@@ -25,19 +25,17 @@ export function FilterSection({
   compactEmbed = false,
 }: FilterSectionProps) {
   return (
-    <section
-      className={joinClasses(
-        ui.surfaceCard,
-        "p-5 sm:p-6",
-        compactEmbed && "max-md:p-3",
-        className,
-      )}
-    >
-      <header className={joinClasses("mb-5 space-y-1", compactEmbed && "max-md:mb-3")}>
+    <section className={joinClasses("min-w-0 py-4", compactEmbed && "max-md:py-3", className)}>
+      <header
+        className={joinClasses(
+          "mb-3 space-y-0.5",
+          compactEmbed && "max-md:mb-2",
+        )}
+      >
         <div className="flex items-center gap-1.5">
           <h2
             className={joinClasses(
-              "text-sm font-bold tracking-tight",
+              "text-[13px] font-bold tracking-tight",
               compactEmbed && "max-md:text-xs",
               ui.sectionTitle,
             )}
@@ -53,7 +51,7 @@ export function FilterSection({
         {description ? (
           <p
             className={joinClasses(
-              "text-xs leading-relaxed text-muted",
+              "text-[11px] leading-relaxed text-muted",
               compactEmbed && "max-md:hidden",
             )}
           >

@@ -73,8 +73,9 @@ Skill de proyecto que sintetiza tres enfoques probados:
 1. **Sin desborde lateral** — nunca dejar que un hijo empuje el viewport. Envolver con `safeWidth` o `max-w-full min-w-0`; no eliminar el elemento problemático.
 2. **Sin rebote** — `overscroll-y-contain` en zonas de scroll internas; `horizontalScrollRail` en scroll horizontal; al bloquear `body` (modal/sidebar) también `overscrollBehavior: none`.
 3. **Un solo scroll vertical en móvil** — header/nav/footer fuera de `appShellScroll`; marcar barras fijas con `shrink-0`.
-4. **Modales y drawers** — contenedor `overflow-hidden` + cuerpo `overscroll-y-contain`; tabs con `horizontalScrollRail`.
-5. **No romper lo existente** — solo añadir contención; no cambiar lógica de negocio ni tokens de color.
+4. **Scroll fluido (no negociable)** — usar `app-shell-scroll` (clase de `appShellScroll`) como único contenedor de scroll vertical en móvil; `-webkit-overflow-scrolling: touch`, `touch-action: pan-y`, `scroll-behavior: smooth` (respetando `prefers-reduced-motion`). Nunca dejar pantallas en blanco ni scroll bloqueado tras cerrar overlays.
+5. **Modales y drawers** — bloquear scroll con `useScrollLock` (contenedor app-shell en móvil, `body` en desktop); cuerpo interno con `overscroll-y-contain`; tabs con `horizontalScrollRail`.
+6. **No romper lo existente** — solo añadir contención; no cambiar lógica de negocio ni tokens de color.
 
 ### Referencia global
 
@@ -102,6 +103,7 @@ Skill de proyecto que sintetiza tres enfoques probados:
 - [ ] Focus keyboard visible
 - [ ] Estados: loading, error, vacío
 - [ ] Responsive probado sm / lg
+- [ ] Scroll fluido en móvil y desktop (sin bloqueos ni doble contenedor de scroll)
 - [ ] Copy en español claro, sentence case
 - [ ] **Móvil app-like:** `appShellRoot` + `appShellScroll` en vistas; `safeWidth` en hijos anchos
 - [ ] **Sin tambaleo:** probado arrastre horizontal y pull al final del scroll en móvil

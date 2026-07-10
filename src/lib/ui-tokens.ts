@@ -31,11 +31,19 @@ export const appShellRoot =
 
 /** Zona de scroll vertical contenida (móvil). */
 export const appShellScroll =
-  "min-h-0 flex-1 overflow-x-clip max-lg:overflow-y-auto max-lg:overscroll-y-contain";
+  "app-shell-scroll min-h-0 flex-1 overflow-x-clip max-lg:overflow-y-auto max-lg:overscroll-y-contain";
 
 /** Carril horizontal interno (tabs, nav) sin arrastrar la página. */
 export const horizontalScrollRail =
-  "max-w-full overflow-x-auto overscroll-x-contain";
+  "horizontal-scroll-rail max-w-full overflow-x-auto overscroll-x-contain";
+
+/** Panel lateral de filtros (cotizador principal y ejecutivos, no widget). */
+export const filtersSidebarDesktopShell =
+  "lg:sticky lg:top-24 lg:z-20 lg:max-h-[calc(100dvh-7rem)] lg:min-h-0 lg:self-start";
+
+/** Cuerpo con scroll independiente dentro del panel de filtros. */
+export const filtersSidebarScrollBody =
+  "filters-sidebar-scroll min-h-0 flex-1 overflow-y-auto overscroll-y-contain";
 
 export const motionGpu =
   "will-change-[transform,opacity] transform-gpu backface-hidden";

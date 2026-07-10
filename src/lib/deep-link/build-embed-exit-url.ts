@@ -11,13 +11,17 @@ import type {
   DashboardFiltersState,
   FamilyBeneficiariesState,
 } from "@/domain";
+import {
+  formatMissingQuoteCriteriaMessage,
+  getMissingQuoteCriteriaFields,
+} from "@/lib/quote-criteria-validation";
 import type { QuoteCriteria, QuoteSortKey } from "@/lib/quote-criteria-options";
 
 export const EMBED_SOLICITAR_VALIDATION_MESSAGE =
-  "Para solicitar el plan y recibir un precio adecuado, completa región, ingreso mensual líquido y edad en la barra superior.";
+  "Para solicitar el plan y recibir un precio adecuado, completa edad, tipo de cotizante y renta imponible en la barra superior.";
 
 export const EMBED_SEARCH_VALIDATION_MESSAGE =
-  "Para continuar al cotizador completo, completa región, ingreso mensual líquido y edad en la barra superior.";
+  "Para continuar al cotizador completo, completa edad, tipo de cotizante y renta imponible en la barra superior.";
 
 export interface EmbedExitUrlInput {
   baseUrl?: string;
@@ -119,7 +123,10 @@ export function validateEmbedQuoteCriteria(
 ): string | null {
   const missing = getMissingEmbedCriteriaFields(input);
   if (missing.length === 0) return null;
-  return `${EMBED_SEARCH_VALIDATION_MESSAGE} Falta: ${missing.join(", ")}.`;
+  return formatMissingQuoteCriteriaMessage(
+    missing,
+    EMBED_SEARCH_VALIDATION_MESSAGE,
+  );
 }
 
 export function validateEmbedSolicitarCriteria(
@@ -130,7 +137,10 @@ export function validateEmbedSolicitarCriteria(
 ): string | null {
   const missing = getMissingEmbedCriteriaFields(input);
   if (missing.length === 0) return null;
-  return `${EMBED_SOLICITAR_VALIDATION_MESSAGE} Falta: ${missing.join(", ")}.`;
+  return formatMissingQuoteCriteriaMessage(
+    missing,
+    EMBED_SOLICITAR_VALIDATION_MESSAGE,
+  );
 }
 
 function getMissingEmbedCriteriaFields(
@@ -139,23 +149,7 @@ function getMissingEmbedCriteriaFields(
     "criteria" | "beneficiarySummary" | "beneficiaries"
   >,
 ): string[] {
-  const missing: string[] = [];
-
-  if (!input.criteria.region?.trim()) {
-    missing.push("región");
-  }
-  if (!input.criteria.monthlyIncome?.trim()) {
-    missing.push("ingreso mensual líquido");
-  }
-
-  const age =
-    input.beneficiarySummary.contributor.age ??
-    input.beneficiaries.contributorAge;
-  if (age === null || age === undefined) {
-    missing.push("edad");
-  }
-
-  return missing;
+  return getMissingQuoteCriteriaFields(input);
 }
 
 /** Navega al cotizador completo desde un iframe embebido (recarga completa). */

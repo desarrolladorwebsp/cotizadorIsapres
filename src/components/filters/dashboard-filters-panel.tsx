@@ -8,16 +8,17 @@ import {
   toggleCheckboxFilter,
   ZONE_FILTER_OPTIONS,
 } from "@/domain";
-import { touchTarget, ui } from "@/lib/ui-tokens";
+import { FILTER_HELP } from "@/lib/filter-help-content";
+import { touchTarget } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type { PlanCatalogClinicOption } from "@/lib/api/plan-clinics";
 import type { DashboardFiltersState } from "@/domain";
-import { FILTER_HELP } from "@/lib/filter-help-content";
 import { ClinicFilterSelect } from "./clinic-filter-select";
 import { CoveragePercentageFilter } from "./coverage-percentage-filter";
 import { FilterCheckboxList } from "./filter-checkbox-list";
 import { FilterHelpBlock } from "./filter-info-tip";
 import { FilterSection } from "./filter-section";
+import { PriceFilterSection } from "./price-filter-section";
 
 export interface DashboardFiltersPanelProps {
   value: DashboardFiltersState;
@@ -34,6 +35,13 @@ export interface DashboardFiltersPanelProps {
   clinicOptionsError?: string | null;
   /** Vista compacta para widget embebido en móvil. */
   compactEmbed?: boolean;
+  priceMin?: number;
+  priceMax?: number;
+  ufToClp?: number;
+  onPriceMinChange?: (value: number) => void;
+  onPriceMaxChange?: (value: number) => void;
+  defaultPriceMin?: number;
+  defaultPriceMax?: number;
 }
 
 export function DashboardFiltersPanel({
@@ -47,35 +55,117 @@ export function DashboardFiltersPanel({
   clinicOptionsLoading = false,
   clinicOptionsError = null,
   compactEmbed = false,
+  priceMin,
+  priceMax,
+  ufToClp = 1,
+  onPriceMinChange,
+  onPriceMaxChange,
+  defaultPriceMin,
+  defaultPriceMax,
 }: DashboardFiltersPanelProps) {
+  const showPriceFilter =
+    priceMin !== undefined &&
+    priceMax !== undefined &&
+    onPriceMinChange !== undefined &&
+    onPriceMaxChange !== undefined;
+
   function update(partial: Partial<DashboardFiltersState>) {
     onChange({ ...value, ...partial });
   }
 
   function clearFilters() {
     onChange(createClearedDashboardFilters());
+
+    if (
+      showPriceFilter &&
+      defaultPriceMin !== undefined &&
+      defaultPriceMax !== undefined
+    ) {
+      onPriceMinChange(defaultPriceMin);
+      onPriceMaxChange(defaultPriceMax);
+    }
   }
 
   return (
     <div className={className}>
-      <div className={joinClasses("mb-4 flex justify-end", compactEmbed && "max-md:mb-2")}>
-        <button
-          type="button"
-          onClick={clearFilters}
-          className={joinClasses(
-            "inline-flex items-center gap-1.5 rounded-lg px-4 text-xs font-semibold",
-            compactEmbed && "max-md:px-2.5 max-md:text-[11px]",
-            touchTarget,
-            ui.dangerGhost,
-          )}
-        >
-          Limpiar filtros
-        </button>
-      </div>
+      <div
+        className={joinClasses(
+          "divide-y divide-border/50",
+          compactEmbed && "max-md:divide-border/40",
+        )}
+      >
+        {showClinicFilter ? (
+          <FilterSection
+            title="Clínica"
+            description="Elige prestadores y, si lo deseas, un umbral mínimo de cobertura."
+            compactEmbed={compactEmbed}
+            infoLabel="Información sobre filtro de clínicas"
+            info={
+              <FilterHelpBlock
+                title="Prestadores y clínicas"
+                paragraphs={[
+                  "Filtra planes que incluyan al menos una de las clínicas o centros que selecciones.",
+                  FILTER_HELP.coverage.body[1],
+                ]}
+                source={FILTER_HELP.coverage.source}
+              />
+            }
+          >
+            <div className="space-y-4">
+              <ClinicFilterSelect
+                value={value.clinicIds}
+                onChange={(clinicIds) => update({ clinicIds })}
+                options={clinicOptions}
+                loading={clinicOptionsLoading}
+                error={clinicOptionsError}
+                modalTitle="Seleccionar prestador"
+                compactEmbed={compactEmbed}
+                showSelectedHint
+              />
 
-      <div className={joinClasses("space-y-6", compactEmbed && "max-md:space-y-3")}>
+              {hideCoverageFilter ? null : (
+                <>
+                  <CoveragePercentageFilter
+                    title="Cobertura hospitalaria"
+                    value={value.hospitalCoveragePercent}
+                    tone="hospital"
+                    compactEmbed={compactEmbed}
+                    onChange={(hospitalCoveragePercent) =>
+                      update({ hospitalCoveragePercent })
+                    }
+                  />
+
+                  <CoveragePercentageFilter
+                    title="Cobertura ambulatoria"
+                    value={value.ambulatoryCoveragePercent}
+                    tone="ambulatory"
+                    compactEmbed={compactEmbed}
+                    onChange={(ambulatoryCoveragePercent) =>
+                      update({ ambulatoryCoveragePercent })
+                    }
+                  />
+
+                  {getActiveClinicIds(value).length > 0 ? (
+                    <p
+                      className={joinClasses(
+                        "text-[11px] leading-snug text-muted",
+                        compactEmbed && "max-md:text-[10px]",
+                      )}
+                    >
+                      Si eliges un porcentaje junto con clínicas, el plan debe
+                      cumplir ese mínimo en al menos una de las clínicas
+                      seleccionadas (hospitalaria y/o ambulatoria según
+                      corresponda).
+                    </p>
+                  ) : null}
+                </>
+              )}
+            </div>
+          </FilterSection>
+        ) : null}
+
         <FilterSection
-          title="Filtrado por Isapre"
+          title="Isapre"
           description="Selecciona una o más Isapres para acotar los resultados."
           compactEmbed={compactEmbed}
           infoLabel="Información sobre Isapres"
@@ -100,8 +190,53 @@ export function DashboardFiltersPanel({
           />
         </FilterSection>
 
+        {hidePlanTypeFilter ? null : (
+          <FilterSection
+            title="Tipo de plan"
+            description="Modalidad de contratación del plan de salud."
+            compactEmbed={compactEmbed}
+            infoLabel="Información sobre tipos de plan"
+            info={
+              <FilterHelpBlock
+                title={FILTER_HELP.planType.title}
+                paragraphs={FILTER_HELP.planType.paragraphs}
+                items={FILTER_HELP.planType.items}
+                footnote={FILTER_HELP.planType.footnote}
+                source={FILTER_HELP.planType.source}
+              />
+            }
+          >
+            <FilterCheckboxList
+              options={PLAN_TYPE_FILTER_OPTIONS}
+              state={value.planTypes}
+              idPrefix="filter-plan-type"
+              compactEmbed={compactEmbed}
+              onToggle={(optionId, checked) =>
+                update({
+                  planTypes: toggleCheckboxFilter(
+                    value.planTypes,
+                    optionId,
+                    checked,
+                  ),
+                })
+              }
+            />
+          </FilterSection>
+        )}
+
+        {showPriceFilter ? (
+          <PriceFilterSection
+            priceMin={priceMin}
+            priceMax={priceMax}
+            ufToClp={ufToClp}
+            onPriceMinChange={onPriceMinChange}
+            onPriceMaxChange={onPriceMaxChange}
+            compactEmbed={compactEmbed}
+          />
+        ) : null}
+
         <FilterSection
-          title="Filtrado por Zona"
+          title="Zonas"
           description="Se sincroniza con la región del buscador. También puedes ajustar sectores RM, norte, Valparaíso, etc."
           compactEmbed={compactEmbed}
           infoLabel="Información sobre zonas y sectores geográficos"
@@ -129,111 +264,19 @@ export function DashboardFiltersPanel({
           />
         </FilterSection>
 
-        {hidePlanTypeFilter ? null : (
-        <FilterSection
-          title="Filtrado por Tipo de Plan"
-          description="Modalidad de contratación del plan de salud."
-          infoLabel="Información sobre tipos de plan"
-          info={
-            <FilterHelpBlock
-              title={FILTER_HELP.planType.title}
-              paragraphs={FILTER_HELP.planType.paragraphs}
-              items={FILTER_HELP.planType.items}
-              footnote={FILTER_HELP.planType.footnote}
-              source={FILTER_HELP.planType.source}
-            />
-          }
-        >
-          <FilterCheckboxList
-            options={PLAN_TYPE_FILTER_OPTIONS}
-            state={value.planTypes}
-            idPrefix="filter-plan-type"
-            onToggle={(optionId, checked) =>
-              update({
-                planTypes: toggleCheckboxFilter(
-                  value.planTypes,
-                  optionId,
-                  checked,
-                ),
-              })
-            }
-          />
-        </FilterSection>
-        )}
-
-        {hideCoverageFilter ? null : (
-        <FilterSection
-          title="Filtrado por Cobertura"
-          description="Clínicas opcionales y umbral mínimo de cobertura hospitalaria y ambulatoria."
-          infoLabel="Información sobre porcentajes de cobertura"
-          info={
-            <FilterHelpBlock
-              title={FILTER_HELP.coverage.title}
-              paragraphs={FILTER_HELP.coverage.body}
-              items={FILTER_HELP.coverage.items}
-              source={FILTER_HELP.coverage.source}
-            />
-          }
-        >
-          <div className="space-y-4">
-            {showClinicFilter ? (
-              <div className="space-y-2">
-                <p
-                  className={joinClasses(
-                    "text-xs font-semibold text-primary-dark/80",
-                    compactEmbed && "max-md:text-[11px]",
-                  )}
-                >
-                  Prestador / clínica (opcional, una o más)
-                </p>
-                <ClinicFilterSelect
-                  value={value.clinicIds}
-                  onChange={(clinicIds) => update({ clinicIds })}
-                  options={clinicOptions}
-                  loading={clinicOptionsLoading}
-                  error={clinicOptionsError}
-                  modalTitle="Seleccionar prestador"
-                  compactEmbed={compactEmbed}
-                  showSelectedHint
-                />
-              </div>
-            ) : null}
-
-            <CoveragePercentageFilter
-              title="Cobertura hospitalaria"
-              value={value.hospitalCoveragePercent}
-              tone="hospital"
-              compactEmbed={compactEmbed}
-              onChange={(hospitalCoveragePercent) =>
-                update({ hospitalCoveragePercent })
-              }
-            />
-
-            <CoveragePercentageFilter
-              title="Cobertura ambulatoria"
-              value={value.ambulatoryCoveragePercent}
-              tone="ambulatory"
-              compactEmbed={compactEmbed}
-              onChange={(ambulatoryCoveragePercent) =>
-                update({ ambulatoryCoveragePercent })
-              }
-            />
-
-            {showClinicFilter && getActiveClinicIds(value).length > 0 ? (
-              <p
-                className={joinClasses(
-                  "text-[11px] leading-snug text-muted",
-                  compactEmbed && "max-md:text-[10px]",
-                )}
-              >
-                Si eliges un porcentaje junto con clínicas, el plan debe
-                cumplir ese mínimo en al menos una de las clínicas seleccionadas
-                (hospitalaria y/o ambulatoria según corresponda).
-              </p>
-            ) : null}
-          </div>
-        </FilterSection>
-        )}
+        <div className={joinClasses("py-4", compactEmbed && "max-md:py-3")}>
+          <button
+            type="button"
+            onClick={clearFilters}
+            className={joinClasses(
+              "inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-border/80 bg-bg-layout/40 px-4 text-xs font-semibold text-muted transition hover:border-border hover:bg-surface-hover hover:text-foreground",
+              compactEmbed && "max-md:px-2.5 max-md:text-[11px]",
+              touchTarget,
+            )}
+          >
+            Limpiar filtros
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -1,19 +1,21 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { buildBeneficiaryGroupSummary, parseBeneficiaryAge } from "@/domain";
 import { DependentLoadsEditor } from "@/components/beneficiaries/dependent-loads-editor";
+import { formatMonthlyIncomeForDisplay } from "@/lib/deep-link/income";
+import { getMissingQuoteCriteriaFields } from "@/lib/quote-criteria-validation";
 import {
-  createDefaultQuoteCriteria,
-  REGION_OPTIONS,
+  CONTRIBUTOR_TYPE_OPTIONS,
   type QuoteCriteria,
 } from "@/lib/quote-criteria-options";
 import {
-  formatBeneficiariesBarSummary,
+  formatDependentsCountLabel,
   getConfirmedDependents,
 } from "@/lib/beneficiary-display";
-import { criteriaBar, touchTarget, ui } from "@/lib/ui-tokens";
+import { criteriaBar, safeWidth, touchTarget, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
+import { CompanyAgreementValidationSection } from "@/components/cotizador/company-agreement";
 import type {
   BeneficiaryGroupSummary,
   FamilyBeneficiariesState,
@@ -21,6 +23,8 @@ import type {
 
 export type { QuoteCriteria } from "@/lib/quote-criteria-options";
 export { createDefaultQuoteCriteria } from "@/lib/quote-criteria-options";
+
+export type CompanyAgreementVariant = "standalone" | "inline";
 
 export interface PublicQuoteCriteriaBarProps {
   criteria: QuoteCriteria;
@@ -36,6 +40,9 @@ export interface PublicQuoteCriteriaBarProps {
   compactEmbed?: boolean;
   /** Abre el panel de cargas cuando vienen prellenadas desde la URL. */
   showPreloadedDependents?: boolean;
+  /** Muestra consulta de convenio empresa integrada en la tarjeta. */
+  showCompanyAgreement?: boolean;
+  partnerEntitySlug?: string;
 }
 
 const fieldClass = joinClasses(
@@ -44,6 +51,8 @@ const fieldClass = joinClasses(
 
 const compactFieldClass =
   "max-md:h-9 max-md:rounded-lg max-md:px-2.5 max-md:text-xs";
+
+const labelClass = "text-xs font-semibold text-muted";
 
 export function PublicQuoteCriteriaBar({
   criteria,
@@ -54,13 +63,15 @@ export function PublicQuoteCriteriaBar({
   onResetAll,
   compactEmbed = false,
   showPreloadedDependents = false,
+  showCompanyAgreement = true,
+  partnerEntitySlug,
 }: PublicQuoteCriteriaBarProps) {
   const [ageInput, setAgeInput] = useState(
     beneficiaries.contributorAge !== null
       ? String(beneficiaries.contributorAge)
       : "",
   );
-  const [insuredOpen, setInsuredOpen] = useState(showPreloadedDependents);
+  const [loadsOpen, setLoadsOpen] = useState(showPreloadedDependents);
   const popoverRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -73,40 +84,86 @@ export function PublicQuoteCriteriaBar({
 
   useEffect(() => {
     if (showPreloadedDependents && getConfirmedDependents(beneficiaries).length > 0) {
-      setInsuredOpen(true);
+      setLoadsOpen(true);
     }
   }, [showPreloadedDependents, beneficiaries]);
 
   useEffect(() => {
-    if (!insuredOpen) return;
+    if (!loadsOpen) return;
     function handleClick(event: MouseEvent) {
       if (
         popoverRef.current &&
         !popoverRef.current.contains(event.target as Node)
       ) {
-        setInsuredOpen(false);
+        setLoadsOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
-  }, [insuredOpen]);
+  }, [loadsOpen]);
 
-  function emit(next: FamilyBeneficiariesState) {
-    onBeneficiariesChange(next, buildBeneficiaryGroupSummary(next));
-  }
+  const emitBeneficiaries = useCallback(
+    (next: FamilyBeneficiariesState) => {
+      onBeneficiariesChange(next, buildBeneficiaryGroupSummary(next));
+    },
+    [onBeneficiariesChange],
+  );
 
   function updateAge(raw: string) {
     setAgeInput(raw);
-    emit({
+    emitBeneficiaries({
       ...beneficiaries,
       contributorAge: parseBeneficiaryAge(raw),
       dependents: getConfirmedDependents(beneficiaries),
     });
   }
 
+  function updateContributorType(value: QuoteCriteria["contributorType"]) {
+    onCriteriaChange({ contributorType: value });
+  }
+
+  function updateIncome(raw: string) {
+    onCriteriaChange({ monthlyIncome: raw });
+  }
+
+  function commitIncomeFormat() {
+    const formatted = formatMonthlyIncomeForDisplay(criteria.monthlyIncome);
+    if (formatted !== criteria.monthlyIncome) {
+      onCriteriaChange({ monthlyIncome: formatted });
+    }
+  }
+
+  function emitDependents(nextDependents: FamilyBeneficiariesState["dependents"]) {
+    emitBeneficiaries({
+      ...beneficiaries,
+      dependents: nextDependents,
+    });
+  }
+
   const confirmedDependents = getConfirmedDependents(beneficiaries);
-  const insuredSummary = formatBeneficiariesBarSummary(beneficiaries);
-  const insuredCount = 1 + confirmedDependents.length;
+  const loadsCount = confirmedDependents.length;
+
+  function handleSearchClick() {
+    commitIncomeFormat();
+
+    const missing = getMissingQuoteCriteriaFields({
+      criteria,
+      beneficiaries,
+    });
+
+    if (missing.length > 0) {
+      if (missing.includes("edad")) {
+        document.getElementById("qc-age")?.focus();
+      } else if (missing.includes("tipo de cotizante")) {
+        document.getElementById("qc-contributor-type")?.focus();
+      } else if (missing.includes("renta imponible")) {
+        document.getElementById("qc-income")?.focus();
+      }
+      return;
+    }
+
+    onCalculate();
+  }
 
   return (
     <section
@@ -117,88 +174,24 @@ export function PublicQuoteCriteriaBar({
     >
       <div
         className={joinClasses(
-          "grid gap-3 sm:grid-cols-2 lg:grid-cols-[1.4fr_1.2fr_5rem_auto_auto_auto] lg:items-end lg:gap-4",
-          compactEmbed &&
-            "max-md:grid-cols-[5.25rem_minmax(0,1fr)] max-md:gap-x-2.5 max-md:gap-y-2.5",
+          "flex w-full flex-col gap-3",
+          "lg:grid lg:items-end lg:gap-4",
+          "lg:grid-cols-[minmax(4.5rem,0.55fr)_minmax(9.5rem,1fr)_minmax(10rem,1.35fr)_minmax(10rem,1.2fr)_minmax(10.5rem,1.05fr)_minmax(9rem,0.95fr)]",
+          "xl:gap-5",
+          compactEmbed && "max-md:gap-y-2.5 sm:grid sm:grid-cols-2 sm:items-end",
         )}
       >
+        {/* Edad */}
         <div
           className={joinClasses(
-            "space-y-1.5",
-            compactEmbed && "max-md:order-1 max-md:col-span-2 max-md:space-y-1",
-          )}
-        >
-          <label
-            htmlFor="qc-region"
-            className={joinClasses(
-              "text-xs font-semibold text-muted",
-              compactEmbed && "max-md:text-[11px]",
-            )}
-          >
-            Región
-          </label>
-          <select
-            id="qc-region"
-            value={criteria.region}
-            onChange={(e) => onCriteriaChange({ region: e.target.value })}
-            className={joinClasses(fieldClass, compactEmbed && compactFieldClass)}
-          >
-            <option value="">Selecciona...</option>
-            {REGION_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div
-          className={joinClasses(
-            "space-y-1.5",
-            compactEmbed && "max-md:order-3 max-md:space-y-1",
-          )}
-        >
-          <label
-            htmlFor="qc-income"
-            className={joinClasses(
-              "text-xs font-semibold text-muted",
-              compactEmbed && "max-md:text-[11px]",
-            )}
-          >
-            {compactEmbed ? (
-              <>
-                <span className="md:hidden">Ingreso líquido</span>
-                <span className="hidden md:inline">Ingreso mensual líquido</span>
-              </>
-            ) : (
-              "Ingreso mensual líquido"
-            )}
-          </label>
-          <input
-            id="qc-income"
-            type="text"
-            inputMode="numeric"
-            placeholder={compactEmbed ? "$1.200.000" : "Ej: $1.200.000"}
-            value={criteria.monthlyIncome}
-            onChange={(e) =>
-              onCriteriaChange({ monthlyIncome: e.target.value })
-            }
-            className={joinClasses(fieldClass, compactEmbed && compactFieldClass)}
-          />
-        </div>
-
-        <div
-          className={joinClasses(
-            "space-y-1.5",
-            compactEmbed && "max-md:order-2 max-md:space-y-1",
+            safeWidth,
+            "min-w-0 space-y-1.5",
+            compactEmbed && "max-md:col-span-2 max-md:space-y-1",
           )}
         >
           <label
             htmlFor="qc-age"
-            className={joinClasses(
-              "text-xs font-semibold text-muted",
-              compactEmbed && "max-md:text-[11px]",
-            )}
+            className={joinClasses(labelClass, compactEmbed && "max-md:text-[11px]")}
           >
             Edad
           </label>
@@ -207,38 +200,108 @@ export function PublicQuoteCriteriaBar({
             type="number"
             min={18}
             max={120}
+            inputMode="numeric"
+            placeholder="35"
             value={ageInput}
-            onChange={(e) => updateAge(e.target.value)}
+            onChange={(event) => updateAge(event.target.value)}
             className={joinClasses(
               fieldClass,
               compactEmbed && compactFieldClass,
-              compactEmbed && "max-md:text-center max-md:px-2",
+              "text-center tabular-nums lg:px-2",
             )}
           />
         </div>
 
+        {/* Tipo de cotizante */}
         <div
           className={joinClasses(
-            "relative",
-            compactEmbed && "max-md:order-4 max-md:col-span-2",
+            safeWidth,
+            "min-w-0 space-y-1.5",
+            compactEmbed && "max-md:space-y-1",
           )}
-          ref={popoverRef}
         >
+          <label
+            htmlFor="qc-contributor-type"
+            className={joinClasses(labelClass, compactEmbed && "max-md:text-[11px]")}
+          >
+            Tipo de cotizante
+          </label>
+          <select
+            id="qc-contributor-type"
+            value={criteria.contributorType}
+            onChange={(event) =>
+              updateContributorType(
+                event.target.value as QuoteCriteria["contributorType"],
+              )
+            }
+            className={joinClasses(fieldClass, compactEmbed && compactFieldClass)}
+          >
+            <option value="">Selecciona...</option>
+            {CONTRIBUTOR_TYPE_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Renta imponible */}
+        <div
+          className={joinClasses(
+            safeWidth,
+            "min-w-0 space-y-1.5",
+            compactEmbed && "max-md:space-y-1",
+          )}
+        >
+          <label
+            htmlFor="qc-income"
+            className={joinClasses(labelClass, compactEmbed && "max-md:text-[11px]")}
+          >
+            Renta imponible
+          </label>
+          <input
+            id="qc-income"
+            type="text"
+            inputMode="numeric"
+            placeholder="Ej: $1.200.000"
+            value={criteria.monthlyIncome}
+            onChange={(event) => updateIncome(event.target.value)}
+            onBlur={commitIncomeFormat}
+            className={joinClasses(fieldClass, compactEmbed && compactFieldClass)}
+          />
+        </div>
+
+        {/* Cargas médicas */}
+        <div
+          ref={popoverRef}
+          className={joinClasses(
+            safeWidth,
+            "relative min-w-0 space-y-1.5",
+            compactEmbed && "max-md:space-y-1",
+          )}
+        >
+          <p
+            className={joinClasses(labelClass, compactEmbed && "max-md:text-[11px]")}
+          >
+            Cargas médicas
+          </p>
           <button
             type="button"
-            onClick={() => setInsuredOpen((v) => !v)}
+            onClick={() => setLoadsOpen((open) => !open)}
             className={joinClasses(
               touchTarget,
-              "h-11 w-full flex-col gap-0.5 rounded-xl border border-dashed border-primary/40 bg-white px-4 py-2 text-sm font-semibold text-primary-dark transition hover:bg-primary/5 lg:w-auto lg:min-w-[12rem]",
-              compactEmbed &&
-                "max-md:flex max-md:min-h-10 max-md:flex-row max-md:items-center max-md:justify-between max-md:gap-2 max-md:rounded-lg max-md:px-3 max-md:py-2 max-md:text-xs",
+              "flex h-11 w-full items-center justify-between gap-2 rounded-xl border border-dashed border-primary/40 bg-white px-3 text-sm font-semibold text-primary-dark transition hover:bg-primary/5",
+              compactEmbed && "max-md:min-h-10 max-md:rounded-lg max-md:px-2.5 max-md:text-xs",
             )}
           >
             <span className="inline-flex min-w-0 items-center gap-1.5">
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
-                className={joinClasses("size-4 shrink-0", compactEmbed && "max-md:size-3.5")}
+                className={joinClasses(
+                  "size-4 shrink-0",
+                  compactEmbed && "max-md:size-3.5",
+                )}
                 aria-hidden
               >
                 <path
@@ -248,37 +311,19 @@ export function PublicQuoteCriteriaBar({
                   strokeLinecap="round"
                 />
               </svg>
-              <span className={compactEmbed ? "max-md:truncate" : undefined}>
-                Agregar asegurados
-              </span>
-              {insuredCount > 1 ? (
-                <span className="shrink-0 rounded-full bg-primary px-2 py-0.5 text-xs text-white max-md:text-[10px]">
-                  {insuredCount}
+              <span className="truncate">Gestionar cargas</span>
+              {loadsCount > 0 ? (
+                <span className="shrink-0 rounded-full bg-primary px-2 py-0.5 text-[10px] text-white">
+                  {loadsCount}
                 </span>
               ) : null}
             </span>
-            {insuredSummary ? (
-              <span
-                className={joinClasses(
-                  "max-w-full truncate text-[10px] font-medium text-muted max-md:text-[9px]",
-                  compactEmbed && "max-md:ml-auto max-md:max-w-[45%] max-md:text-right",
-                )}
-              >
-                {insuredSummary}
-              </span>
-            ) : (
-              <span
-                className={joinClasses(
-                  "text-[10px] font-normal text-muted max-md:text-[9px]",
-                  compactEmbed && "max-md:ml-auto max-md:shrink-0",
-                )}
-              >
-                Sin cargas
-              </span>
-            )}
+            <span className="shrink-0 text-[10px] font-medium text-muted">
+              {formatDependentsCountLabel(loadsCount)}
+            </span>
           </button>
 
-          {insuredOpen ? (
+          {loadsOpen ? (
             <div
               className={joinClasses(
                 "absolute right-0 top-full z-20 mt-2 rounded-2xl border bg-white p-4 shadow-xl",
@@ -288,28 +333,30 @@ export function PublicQuoteCriteriaBar({
                 ui.border,
               )}
             >
-              <p className="mb-3 text-xs font-bold uppercase tracking-wide text-muted">
-                Cargas familiares
+              <p className="mb-1 text-xs font-bold uppercase tracking-wide text-muted">
+                Cargas médicas
+              </p>
+              <p className="mb-3 text-[11px] text-muted/90">
+                Solo se cuentan las cargas agregadas; el cotizante titular no
+                suma en este total.
               </p>
               <DependentLoadsEditor
                 dependents={confirmedDependents}
-                onDependentsChange={(dependents) =>
-                  emit({ ...beneficiaries, dependents })
-                }
+                onDependentsChange={(dependents) => emitDependents(dependents)}
                 variant="popover"
               />
             </div>
           ) : null}
         </div>
 
+        {/* Buscar mejor plan */}
         <button
           type="button"
-          onClick={onCalculate}
+          onClick={handleSearchClick}
           className={joinClasses(
             touchTarget,
-            "h-11 rounded-full px-8 text-sm font-bold text-white shadow-[var(--shadow-cta)] transition hover:brightness-105 sm:col-span-2 lg:col-span-1",
-            compactEmbed &&
-              "max-md:order-5 max-md:col-span-2 max-md:h-10 max-md:w-full max-md:px-4 max-md:text-xs",
+            "h-11 w-full shrink-0 rounded-full px-5 text-sm font-bold text-white shadow-[var(--shadow-cta)] transition hover:brightness-105",
+            compactEmbed && "max-md:h-10 max-md:px-4 max-md:text-xs sm:col-span-2",
             ui.cta,
           )}
         >
@@ -323,22 +370,39 @@ export function PublicQuoteCriteriaBar({
           )}
         </button>
 
+        {/* Limpiar todo */}
         {onResetAll ? (
           <button
             type="button"
             onClick={onResetAll}
             className={joinClasses(
               touchTarget,
-              "h-11 rounded-full border px-5 text-sm font-semibold sm:col-span-2 lg:col-span-1",
-              compactEmbed && "max-md:hidden",
+              "h-11 w-full shrink-0 rounded-full border px-4 text-sm font-semibold",
+              compactEmbed && "max-md:h-10 max-md:px-4 max-md:text-xs sm:col-span-2",
               ui.border,
               "bg-white text-muted transition hover:border-primary/35 hover:bg-surface-hover hover:text-primary-dark",
             )}
           >
-            Limpiar todo
+            {compactEmbed ? (
+              <>
+                <span className="md:hidden">Limpiar</span>
+                <span className="hidden md:inline">Limpiar todo</span>
+              </>
+            ) : (
+              "Limpiar todo"
+            )}
           </button>
         ) : null}
       </div>
+
+      {showCompanyAgreement ? (
+        <CompanyAgreementValidationSection
+          variant="inline"
+          compactEmbed={compactEmbed}
+          source="public"
+          partnerEntitySlug={partnerEntitySlug}
+        />
+      ) : null}
     </section>
   );
 }

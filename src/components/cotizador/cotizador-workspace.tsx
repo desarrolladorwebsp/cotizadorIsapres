@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { FiltersFab, FiltersSidebar } from "@/components/filters";
+import { CompanyAgreementValidationSection } from "@/components/cotizador/company-agreement";
 import { RegionFilterSelect } from "@/components/filters/region-filter-select";
 import { PlanResultsList } from "@/components/plan-card";
 import { CotizadorHeader, type CotizadorHeaderVariant } from "@/components/cotizador/cotizador-header";
@@ -12,8 +13,6 @@ import { usePlansCatalog } from "@/hooks/use-plans-catalog";
 import {
   applyRegionToDashboardFilters,
   createDefaultDashboardFilters,
-  formatPlanClp,
-  formatPlanUf,
   getActiveClinicIds,
 } from "@/domain";
 import { createDefaultQuoteCriteria } from "@/lib/quote-criteria-options";
@@ -65,6 +64,24 @@ export function CotizadorWorkspace({
     onNotify?.(message, tone);
   }
 
+  const defaultPriceBounds = useMemo(() => {
+    if (plans.length === 0) {
+      return { min: 2, max: 8 };
+    }
+
+    let min = plans[0].base_price_uf;
+    let max = plans[0].base_price_uf;
+    for (const plan of plans) {
+      if (plan.base_price_uf < min) min = plan.base_price_uf;
+      if (plan.base_price_uf > max) max = plan.base_price_uf;
+    }
+
+    return {
+      min: Math.floor(min * 10) / 10,
+      max: Math.ceil(max * 10) / 10,
+    };
+  }, [plans]);
+
   return (
     <div
       className={joinClasses(
@@ -83,24 +100,45 @@ export function CotizadorWorkspace({
         </>
       ) : null}
 
-      <div className={joinClasses(appShellScroll, safeWidth, "flex min-h-0")}>
-        {dashboard.sidebarReady ? (
-          <FiltersSidebar
-            open={dashboard.sidebarOpen}
-            onClose={() => dashboard.setSidebarOpen(false)}
-            beneficiaries={dashboard.beneficiaries}
-            onBeneficiariesChange={dashboard.handleBeneficiariesChange}
-            filters={dashboard.dashboardFilters}
-            onFiltersChange={dashboard.handleDashboardFiltersChange}
-          />
-        ) : null}
-
-        <main
+      <div
+        className={joinClasses(
+          embeddedInExecutiveShell
+            ? "flex min-h-0 flex-1 flex-col"
+            : appShellScroll,
+          safeWidth,
+          !embeddedInExecutiveShell && "flex min-h-0 flex-col",
+          embeddedInExecutiveShell && "flex min-h-0 flex-1 flex-col",
+        )}
+      >
+        <div
           className={joinClasses(
-            safeWidth,
-            "min-w-0 flex-1 px-4 py-6 sm:px-6 sm:py-8 lg:px-10 lg:py-10",
+            "flex w-full min-w-0 flex-1 flex-col lg:flex-row lg:items-start",
           )}
         >
+          {dashboard.sidebarReady ? (
+            <FiltersSidebar
+              open={dashboard.sidebarOpen}
+              onClose={() => dashboard.setSidebarOpen(false)}
+              beneficiaries={dashboard.beneficiaries}
+              onBeneficiariesChange={dashboard.handleBeneficiariesChange}
+              filters={dashboard.dashboardFilters}
+              onFiltersChange={dashboard.handleDashboardFiltersChange}
+              priceMin={dashboard.priceMin}
+              priceMax={dashboard.priceMax}
+              ufToClp={dashboard.ufToClp}
+              onPriceMinChange={dashboard.handlePriceMinChange}
+              onPriceMaxChange={dashboard.handlePriceMaxChange}
+              defaultPriceMin={defaultPriceBounds.min}
+              defaultPriceMax={defaultPriceBounds.max}
+            />
+          ) : null}
+
+          <main
+            className={joinClasses(
+              safeWidth,
+              "min-w-0 flex-1 px-4 py-6 sm:px-6 sm:py-8 lg:px-10 lg:py-10",
+            )}
+          >
           <div
             className={joinClasses(
               appShell,
@@ -128,7 +166,7 @@ export function CotizadorWorkspace({
             <section
               className={joinClasses(
                 "grid gap-5 rounded-xl border bg-white p-4 shadow-card sm:gap-6 sm:p-6",
-                "md:grid-cols-2 md:items-end lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)]",
+                "md:grid-cols-2 md:items-end",
                 ui.border,
               )}
             >
@@ -172,45 +210,6 @@ export function CotizadorWorkspace({
                   />
                 </div>
               </div>
-
-              <div className="w-full space-y-3 md:col-span-2 lg:col-span-1">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-medium text-muted">Rango de precio</span>
-                  <span className="tabular-nums text-muted/80">
-                    {formatPlanUf(dashboard.priceMin)} –{" "}
-                    {formatPlanUf(dashboard.priceMax)}
-                  </span>
-                </div>
-                <div className="space-y-4">
-                  <input
-                    type="range"
-                    min={2}
-                    max={8}
-                    step={0.1}
-                    value={dashboard.priceMin}
-                    onChange={(event) =>
-                      dashboard.handlePriceMinChange(Number(event.target.value))
-                    }
-                    className="h-2 w-full cursor-pointer appearance-none rounded-full bg-border accent-primary [&::-webkit-slider-thumb]:size-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-primary [&::-webkit-slider-thumb]:bg-white md:[&::-webkit-slider-thumb]:size-4"
-                  />
-                  <input
-                    type="range"
-                    min={2}
-                    max={8}
-                    step={0.1}
-                    value={dashboard.priceMax}
-                    onChange={(event) =>
-                      dashboard.handlePriceMaxChange(Number(event.target.value))
-                    }
-                    className="h-2 w-full cursor-pointer appearance-none rounded-full bg-border accent-primary [&::-webkit-slider-thumb]:size-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-primary [&::-webkit-slider-thumb]:bg-white md:[&::-webkit-slider-thumb]:size-4"
-                  />
-                </div>
-                <p className="text-[11px] text-muted/80">
-                  Aprox. {formatPlanClp(dashboard.priceMin * dashboard.ufToClp)}{" "}
-                  – {formatPlanClp(dashboard.priceMax * dashboard.ufToClp)} en
-                  pesos
-                </p>
-              </div>
             </section>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
@@ -243,6 +242,8 @@ export function CotizadorWorkspace({
                 </button>
               ) : null}
             </div>
+
+            <CompanyAgreementValidationSection source="executive" />
 
             {loading ? (
               <div
@@ -290,9 +291,9 @@ export function CotizadorWorkspace({
             )}
           </div>
         </main>
-      </div>
+        </div>
 
-      <FiltersFab
+        <FiltersFab
         visible={!dashboard.sidebarOpen && !dashboard.isLargeScreen}
         onClick={() => dashboard.setSidebarOpen(true)}
       />
@@ -308,6 +309,7 @@ export function CotizadorWorkspace({
           onNotify={notify}
         />
       ) : null}
+      </div>
     </div>
   );
 }

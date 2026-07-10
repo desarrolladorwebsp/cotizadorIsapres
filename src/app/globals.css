@@ -248,6 +248,32 @@ body {
   }
 }
 
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  .app-shell-scroll {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Contenedores de scroll nativos — fluidos en móvil y desktop */
+.app-shell-scroll {
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+}
+
+.horizontal-scroll-rail {
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+}
+
+.filters-sidebar-scroll {
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+}
+
 /* Utilidad para animaciones opcionales */
 @media (prefers-reduced-motion: no-preference) {
   .motion-safe-fade-in {

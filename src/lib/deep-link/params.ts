@@ -6,6 +6,7 @@ export const DEEP_LINK_PARAMS = {
   edad: "edad",
   sexo: "sexo",
   ingreso: "ingreso",
+  tipoCotizante: "tipoCotizante",
   cargas: "cargas",
   q: "q",
   precioMin: "precioMin",
@@ -66,6 +67,12 @@ export const VALID_SORT_KEYS = new Set([
 ]);
 
 export const VALID_CURRENCY = new Set(["clp", "uf"]);
+
+export const VALID_CONTRIBUTOR_TYPES = new Set([
+  "dependiente",
+  "independiente",
+  "voluntario",
+]);
 
 /** Params que no deben persistirse al limpiar la URL tras hidratar. */
 export const DEEP_LINK_BOOTSTRAP_PARAMS = new Set([

@@ -1,5 +1,6 @@
 export { FiltersSidebar, type FiltersSidebarProps } from "./filters-sidebar";
 export { FiltersFab, type FiltersFabProps } from "./filters-fab";
+export { PriceFilterSection, type PriceFilterSectionProps } from "./price-filter-section";
 export {
   DashboardFiltersPanel,
   type DashboardFiltersPanelProps,

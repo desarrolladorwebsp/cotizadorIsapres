@@ -10,8 +10,7 @@ import {
 import { buildInlineAttachmentsForHtml } from "@/lib/email/email-inline-assets";
 import {
   getCotizacionFromEmail,
-  getEquipoFromEmail,
-  getEquipoNotifyEmail,
+  getCotizacionNotifyEmail,
   getResendApiKey,
 } from "@/lib/email/resend-config";
 
@@ -25,8 +24,7 @@ export async function sendCotizacionNotifyEmails(
 ): Promise<CotizacionNotifyResult> {
   const resend = new Resend(getResendApiKey());
   const cotizacionFrom = getCotizacionFromEmail();
-  const equipoFrom = getEquipoFromEmail();
-  const equipoNotify = getEquipoNotifyEmail();
+  const cotizacionNotify = getCotizacionNotifyEmail();
 
   const userHtml = buildUserCotizacionEmailHtml(data);
   const adminHtml = buildAdminCotizacionEmailHtml(data);
@@ -42,8 +40,8 @@ export async function sendCotizacionNotifyEmails(
       attachments: userAttachments.length > 0 ? userAttachments : undefined,
     }),
     resend.emails.send({
-      from: equipoFrom,
-      to: equipoNotify,
+      from: cotizacionFrom,
+      to: cotizacionNotify,
       replyTo: data.email,
       subject: buildAdminCotizacionSubject(data),
       html: adminHtml,

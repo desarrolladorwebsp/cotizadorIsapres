@@ -53,8 +53,8 @@ function readAuthHealth(): HealthCheckResult {
 function readEmailHealth(): HealthCheckResult {
   const hasResend = Boolean(process.env.RESEND_API_KEY?.trim());
   const hasNotifyTarget = Boolean(
-    process.env.EQUIPO_NOTIFY_EMAIL?.trim() ||
-      process.env.COTIZACION_NOTIFY_EMAIL?.trim(),
+    process.env.COTIZACION_NOTIFY_EMAIL?.trim() ||
+      process.env.EQUIPO_NOTIFY_EMAIL?.trim(),
   );
 
   if (hasResend && hasNotifyTarget) {

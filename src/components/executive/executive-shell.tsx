@@ -153,7 +153,15 @@ export function ExecutiveShell({
       </header>
 
       {isFullBleed ? (
-        <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+        <div
+          className={joinClasses(
+            appShellScroll,
+            safeWidth,
+            "flex min-h-0 flex-1 flex-col",
+          )}
+        >
+          {children}
+        </div>
       ) : (
         <main
           className={joinClasses(

@@ -4,12 +4,20 @@ import { ApiError } from "@/lib/api/api-error";
 export const DEFAULT_COTIZACION_FROM_EMAIL =
   "Cotizador Premium <cotizaciones@cotizadorpremium.cl>";
 
-/** Correo del equipo (staff, alertas internas). */
+/** Correo del equipo (invitaciones staff). */
 export const DEFAULT_EQUIPO_FROM_EMAIL =
   "Cotizador Premium <equipo@cotizadorpremium.cl>";
 
-/** Buzón que recibe alertas de nuevas cotizaciones. */
+/** Buzón que recibe alertas de cotizaciones y solicitudes de plan. */
+export const DEFAULT_COTIZACION_NOTIFY_EMAIL = "cotizaciones@cotizadorpremium.cl";
+
+/** @deprecated Usar COTIZACION_NOTIFY_EMAIL. Mantenido por compatibilidad. */
 export const DEFAULT_EQUIPO_NOTIFY_EMAIL = "equipo@cotizadorpremium.cl";
+
+function extractEmailAddress(fromHeader: string): string {
+  const match = fromHeader.match(/<([^>]+)>/);
+  return (match?.[1] ?? fromHeader).trim();
+}
 
 export function getResendApiKey(): string {
   const apiKey = process.env.RESEND_API_KEY?.trim();
@@ -39,6 +47,16 @@ export function getEquipoFromEmail(): string {
   );
 }
 
+/** Buzón interno: nuevas cotizaciones y solicitudes de plan. */
+export function getCotizacionNotifyEmail(): string {
+  return (
+    process.env.COTIZACION_NOTIFY_EMAIL?.trim() ||
+    extractEmailAddress(getCotizacionFromEmail()) ||
+    DEFAULT_COTIZACION_NOTIFY_EMAIL
+  );
+}
+
+/** @deprecated Usar getCotizacionNotifyEmail para alertas de cotización. */
 export function getEquipoNotifyEmail(): string {
   return (
     process.env.EQUIPO_NOTIFY_EMAIL?.trim() ||
