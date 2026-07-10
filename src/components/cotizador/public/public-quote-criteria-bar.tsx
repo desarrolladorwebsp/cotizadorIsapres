@@ -174,10 +174,12 @@ export function PublicQuoteCriteriaBar({
       <div
         className={joinClasses(
           "flex w-full flex-col gap-3",
-          "lg:grid lg:items-end lg:gap-4",
-          "lg:grid-cols-[minmax(4.5rem,0.55fr)_minmax(9.5rem,1fr)_minmax(10rem,1.35fr)_minmax(10rem,1.2fr)_minmax(10.5rem,1.05fr)_minmax(9rem,0.95fr)]",
-          "xl:gap-5",
-          compactEmbed && "max-md:gap-y-2.5 sm:grid sm:grid-cols-2 sm:items-end",
+          compactEmbed
+            ? "max-md:gap-y-2.5 sm:grid sm:grid-cols-2 sm:items-end"
+            : joinClasses(
+                "md:grid md:items-end md:gap-2 lg:gap-3 xl:gap-4",
+                "md:grid-cols-[minmax(3.25rem,4rem)_minmax(0,0.85fr)_minmax(0,1.1fr)_minmax(0,1fr)_auto_auto]",
+              ),
         )}
       >
         {/* Edad */}
@@ -206,7 +208,7 @@ export function PublicQuoteCriteriaBar({
             className={joinClasses(
               fieldClass,
               compactEmbed && compactFieldClass,
-              "text-center tabular-nums lg:px-2",
+              "text-center tabular-nums md:px-1.5 lg:px-2",
             )}
           />
         </div>
@@ -290,6 +292,7 @@ export function PublicQuoteCriteriaBar({
             className={joinClasses(
               touchTarget,
               "flex h-11 w-full items-center gap-2 rounded-xl border border-dashed border-primary/40 bg-white px-3 text-sm font-semibold text-primary-dark transition hover:bg-primary/5",
+              !compactEmbed && "md:px-2.5 lg:px-3",
               compactEmbed && "max-md:min-h-10 max-md:rounded-lg max-md:px-2.5 max-md:text-xs",
             )}
           >
@@ -310,7 +313,9 @@ export function PublicQuoteCriteriaBar({
                   strokeLinecap="round"
                 />
               </svg>
-              <span className="truncate">Gestionar cargas</span>
+              <span className="truncate md:hidden">Gestionar cargas</span>
+              <span className="hidden truncate md:inline xl:hidden">Cargas</span>
+              <span className="hidden truncate xl:inline">Gestionar cargas</span>
               {loadsCount > 0 ? (
                 <span className="shrink-0 rounded-full bg-primary px-2 py-0.5 text-[10px] text-white">
                   {loadsCount}
@@ -348,6 +353,7 @@ export function PublicQuoteCriteriaBar({
           className={joinClasses(
             touchTarget,
             "h-11 w-full shrink-0 rounded-full px-5 text-sm font-bold text-white shadow-[var(--shadow-cta)] transition hover:brightness-105",
+            !compactEmbed && "md:w-auto md:whitespace-nowrap md:px-4 xl:px-5",
             compactEmbed && "max-md:h-10 max-md:px-4 max-md:text-xs sm:col-span-2",
             ui.cta,
           )}
@@ -358,7 +364,10 @@ export function PublicQuoteCriteriaBar({
               <span className="hidden md:inline">Buscar mejor plan</span>
             </>
           ) : (
-            "Buscar mejor plan"
+            <>
+              <span className="xl:hidden">Buscar plan</span>
+              <span className="hidden xl:inline">Buscar mejor plan</span>
+            </>
           )}
         </button>
 
@@ -370,6 +379,7 @@ export function PublicQuoteCriteriaBar({
             className={joinClasses(
               touchTarget,
               "h-11 w-full shrink-0 rounded-full border px-4 text-sm font-semibold",
+              !compactEmbed && "md:w-auto md:whitespace-nowrap md:px-3.5 xl:px-4",
               compactEmbed && "max-md:h-10 max-md:px-4 max-md:text-xs sm:col-span-2",
               ui.border,
               "bg-white text-muted transition hover:border-primary/35 hover:bg-surface-hover hover:text-primary-dark",
@@ -381,7 +391,10 @@ export function PublicQuoteCriteriaBar({
                 <span className="hidden md:inline">Limpiar todo</span>
               </>
             ) : (
-              "Limpiar todo"
+              <>
+                <span className="xl:hidden">Limpiar</span>
+                <span className="hidden xl:inline">Limpiar todo</span>
+              </>
             )}
           </button>
         ) : null}
