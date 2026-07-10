@@ -56,14 +56,6 @@ export function PublicResultsToolbar({
         >
           {resultsLabel}
         </span>
-        <span
-          className={joinClasses(
-            "text-xs font-medium leading-snug text-primary-dark/80",
-            compactEmbed && "max-md:text-[10px]",
-          )}
-        >
-          Orden: menor a mayor precio · Sin costo adicional
-        </span>
       </div>
 
       <input

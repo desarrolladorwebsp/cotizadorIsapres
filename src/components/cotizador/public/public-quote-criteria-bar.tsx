@@ -10,7 +10,6 @@ import {
   type QuoteCriteria,
 } from "@/lib/quote-criteria-options";
 import {
-  formatDependentsCountLabel,
   getConfirmedDependents,
 } from "@/lib/beneficiary-display";
 import { criteriaBar, safeWidth, touchTarget, ui } from "@/lib/ui-tokens";
@@ -290,7 +289,7 @@ export function PublicQuoteCriteriaBar({
             onClick={() => setLoadsOpen((open) => !open)}
             className={joinClasses(
               touchTarget,
-              "flex h-11 w-full items-center justify-between gap-2 rounded-xl border border-dashed border-primary/40 bg-white px-3 text-sm font-semibold text-primary-dark transition hover:bg-primary/5",
+              "flex h-11 w-full items-center gap-2 rounded-xl border border-dashed border-primary/40 bg-white px-3 text-sm font-semibold text-primary-dark transition hover:bg-primary/5",
               compactEmbed && "max-md:min-h-10 max-md:rounded-lg max-md:px-2.5 max-md:text-xs",
             )}
           >
@@ -318,9 +317,6 @@ export function PublicQuoteCriteriaBar({
                 </span>
               ) : null}
             </span>
-            <span className="shrink-0 text-[10px] font-medium text-muted">
-              {formatDependentsCountLabel(loadsCount)}
-            </span>
           </button>
 
           {loadsOpen ? (
@@ -333,12 +329,8 @@ export function PublicQuoteCriteriaBar({
                 ui.border,
               )}
             >
-              <p className="mb-1 text-xs font-bold uppercase tracking-wide text-muted">
+              <p className="mb-3 text-xs font-bold uppercase tracking-wide text-muted">
                 Cargas médicas
-              </p>
-              <p className="mb-3 text-[11px] text-muted/90">
-                Solo se cuentan las cargas agregadas; el cotizante titular no
-                suma en este total.
               </p>
               <DependentLoadsEditor
                 dependents={confirmedDependents}
