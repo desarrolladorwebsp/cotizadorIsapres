@@ -1,23 +1,43 @@
 import { z } from "zod";
 
+function optionalThemeColor() {
+  return z
+    .string()
+    .trim()
+    .transform((value) => (value.length > 0 ? value : undefined))
+    .optional();
+}
+
+function sanitizePartnerEntityTheme(
+  theme: unknown,
+): z.infer<typeof partnerEntityThemeSchema> {
+  if (!theme || typeof theme !== "object" || Array.isArray(theme)) {
+    return undefined;
+  }
+
+  const parsed = partnerEntityThemeSchema.safeParse(theme);
+  return parsed.success ? parsed.data : undefined;
+}
+
 const partnerEntityThemeSchema = z
   .object({
-    primary: z.string().trim().min(1).optional(),
-    primaryHover: z.string().trim().min(1).optional(),
-    primaryDark: z.string().trim().min(1).optional(),
-    primaryForeground: z.string().trim().min(1).optional(),
-    secondary: z.string().trim().min(1).optional(),
-    secondaryMuted: z.string().trim().min(1).optional(),
-    bgLayout: z.string().trim().min(1).optional(),
-    foreground: z.string().trim().min(1).optional(),
-    muted: z.string().trim().min(1).optional(),
-    border: z.string().trim().min(1).optional(),
-    surfaceHover: z.string().trim().min(1).optional(),
-    criteriaSurface: z.string().trim().min(1).optional(),
-    criteriaRing: z.string().trim().min(1).optional(),
-    accentWarning: z.string().trim().min(1).optional(),
-    accentWarningForeground: z.string().trim().min(1).optional(),
+    primary: optionalThemeColor(),
+    primaryHover: optionalThemeColor(),
+    primaryDark: optionalThemeColor(),
+    primaryForeground: optionalThemeColor(),
+    secondary: optionalThemeColor(),
+    secondaryMuted: optionalThemeColor(),
+    bgLayout: optionalThemeColor(),
+    foreground: optionalThemeColor(),
+    muted: optionalThemeColor(),
+    border: optionalThemeColor(),
+    surfaceHover: optionalThemeColor(),
+    criteriaSurface: optionalThemeColor(),
+    criteriaRing: optionalThemeColor(),
+    accentWarning: optionalThemeColor(),
+    accentWarningForeground: optionalThemeColor(),
   })
+  .partial()
   .optional();
 
 export const cotizacionNotifyPlanSchema = z.object({
@@ -77,7 +97,17 @@ export type CotizacionNotifySolicitante = z.infer<
 export function parseCotizacionNotifyInput(
   payload: unknown,
 ): CotizacionNotifyInput {
-  const result = cotizacionNotifyInputSchema.safeParse(payload);
+  const normalized =
+    payload && typeof payload === "object" && !Array.isArray(payload)
+      ? {
+          ...payload,
+          partnerEntityTheme: sanitizePartnerEntityTheme(
+            (payload as { partnerEntityTheme?: unknown }).partnerEntityTheme,
+          ),
+        }
+      : payload;
+
+  const result = cotizacionNotifyInputSchema.safeParse(normalized);
 
   if (!result.success) {
     const message = result.error.issues

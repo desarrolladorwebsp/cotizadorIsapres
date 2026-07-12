@@ -220,11 +220,17 @@ export function buildAdminCotizacionEmailHtml(
         renderTableRow("Nombre", escapeHtml(data.solicitante.nombre)),
         renderTableRow("RUT", escapeHtml(data.solicitante.rut ?? "—")),
         renderTableRow("Teléfono", escapeHtml(data.solicitante.telefono ?? "—")),
-        renderTableRow(
-          "Isapre actual",
-          escapeHtml(data.solicitante.isapreActual ?? "—"),
-        ),
-        renderTableRow("Notas", escapeHtml(data.solicitante.notas ?? "—")),
+        ...(data.solicitante.isapreActual
+          ? [
+              renderTableRow(
+                "Isapre actual",
+                escapeHtml(data.solicitante.isapreActual),
+              ),
+            ]
+          : []),
+        ...(data.solicitante.notas
+          ? [renderTableRow("Notas", escapeHtml(data.solicitante.notas))]
+          : []),
       ]
     : [];
 

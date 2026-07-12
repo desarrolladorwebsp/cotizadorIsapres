@@ -161,7 +161,7 @@ export function ModalPlanOverviewPanel({
 
       {/* Formulario solicitar */}
       <aside className="min-w-0 p-4 sm:p-6 lg:bg-bg-layout/25 lg:pl-6">
-        <ModalRequestForm {...formProps} variant="card" radioGroupName="overview-current-isapre" />
+        <ModalRequestForm {...formProps} variant="card" />
       </aside>
     </div>
   );

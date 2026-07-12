@@ -145,6 +145,7 @@ export function ContractPlanModal({
   const [activeTab, setActiveTab] = useState<ModalTabId>("overview");
   const [submitted, setSubmitted] = useState(false);
   const [emailNotifyFailed, setEmailNotifyFailed] = useState(false);
+  const [emailNotifyError, setEmailNotifyError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
@@ -153,13 +154,13 @@ export function ContractPlanModal({
   const [rut, setRut] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [isCurrentIsapre, setIsCurrentIsapre] = useState<"yes" | "no" | "">("");
 
   useEffect(() => {
     if (!open) {
       setActiveTab("overview");
       setSubmitted(false);
       setEmailNotifyFailed(false);
+      setEmailNotifyError(null);
       setSubmitting(false);
       setSubmitError(null);
       setValidationErrors([]);
@@ -168,13 +169,13 @@ export function ContractPlanModal({
       setRut("");
       setEmail("");
       setPhone("");
-      setIsCurrentIsapre("");
       return;
     }
 
     setActiveTab(initialTab ?? "overview");
     setSubmitted(false);
     setEmailNotifyFailed(false);
+    setEmailNotifyError(null);
     setSubmitting(false);
     setSubmitError(null);
     setValidationErrors([]);
@@ -183,7 +184,6 @@ export function ContractPlanModal({
     setRut(deepLink.requestPrefill?.rut ?? "");
     setEmail(deepLink.requestPrefill?.email ?? deepLink.email ?? "");
     setPhone(deepLink.requestPrefill?.phone ?? "");
-    setIsCurrentIsapre("");
   }, [open, initialTab, deepLink.requestPrefill, deepLink.email]);
 
   useScrollLock(open && !embedded);
@@ -256,9 +256,6 @@ export function ContractPlanModal({
     } else if (normalizeRequestPhoneDigits(phone).length < 8) {
       errors.push("Ingresa un teléfono válido (mínimo 8 dígitos).");
     }
-    if (isCurrentIsapre === "") {
-      errors.push(`Indica si ${summary.isapre} es tu Isapre actual.`);
-    }
 
     return errors;
   }
@@ -301,10 +298,6 @@ export function ContractPlanModal({
           beneficiaryCount: beneficiarySummary.beneficiaryCount,
           totalFactors: beneficiarySummary.totalFactors,
           quoteReason: "Solicitud desde cotizador público",
-          notes:
-            isCurrentIsapre === "yes"
-              ? `Ya es afiliado a ${summary.isapre}`
-              : `No es afiliado actualmente a ${summary.isapre}`,
           partnerEntitySlug: partnerEntity?.slug ?? deepLink.entidad ?? null,
           partnerEntityName: partnerEntity?.name ?? null,
         }),
@@ -337,23 +330,17 @@ export function ContractPlanModal({
             nombre: name.trim(),
             rut: rut.trim() || undefined,
             telefono: phone.trim() || undefined,
-            isapreActual:
-              isCurrentIsapre === "yes"
-                ? `Sí — ${summary.isapre}`
-                : isCurrentIsapre === "no"
-                  ? `No — no es afiliado a ${summary.isapre}`
-                  : undefined,
-            notas:
-              isCurrentIsapre === "yes"
-                ? `Ya es afiliado a ${summary.isapre}`
-                : isCurrentIsapre === "no"
-                  ? `No es afiliado actualmente a ${summary.isapre}`
-                  : undefined,
           },
         });
         setEmailNotifyFailed(false);
+        setEmailNotifyError(null);
       } catch (notifyError) {
         setEmailNotifyFailed(true);
+        setEmailNotifyError(
+          notifyError instanceof Error
+            ? notifyError.message
+            : "No se pudo enviar el correo de confirmación.",
+        );
         console.error(
           "La solicitud se guardó, pero falló el envío de correos:",
           notifyError,
@@ -586,8 +573,18 @@ export function ContractPlanModal({
                       role="alert"
                     >
                       Tu solicitud quedó registrada, pero no pudimos enviar el
-                      correo de confirmación en este momento. Revisa tu bandeja
-                      más tarde o contáctanos si no recibes respuesta.
+                      correo de confirmación en este momento.
+                      {emailNotifyError ? (
+                        <>
+                          {" "}
+                          <span className="block mt-2 text-xs text-muted">
+                            {emailNotifyError}
+                          </span>
+                        </>
+                      ) : null}
+                      {" "}
+                      Revisa tu bandeja más tarde o contáctanos si no recibes
+                      respuesta.
                     </p>
                   ) : (
                     <p className="mx-auto mt-3 max-w-md text-sm font-medium text-primary">
@@ -608,7 +605,6 @@ export function ContractPlanModal({
                 ) : (
                   <ModalPlanOverviewPanel
                     plan={detailPlan}
-                    planIsapre={summary.isapre}
                     name={name}
                     onNameChange={setName}
                     rut={rut}
@@ -617,8 +613,6 @@ export function ContractPlanModal({
                     onEmailChange={setEmail}
                     phone={phone}
                     onPhoneChange={setPhone}
-                    isCurrentIsapre={isCurrentIsapre}
-                    onIsCurrentIsapreChange={setIsCurrentIsapre}
                     attemptedSubmit={attemptedSubmit}
                     validationErrors={validationErrors}
                     submitError={submitError}
@@ -703,7 +697,6 @@ export function ContractPlanModal({
 
                   <div className="p-4 sm:p-6">
                     <ModalRequestForm
-                      planIsapre={summary.isapre}
                       name={name}
                       onNameChange={setName}
                       rut={rut}
@@ -712,15 +705,12 @@ export function ContractPlanModal({
                       onEmailChange={setEmail}
                       phone={phone}
                       onPhoneChange={setPhone}
-                      isCurrentIsapre={isCurrentIsapre}
-                      onIsCurrentIsapreChange={setIsCurrentIsapre}
                       attemptedSubmit={attemptedSubmit}
                       validationErrors={validationErrors}
                       submitError={submitError}
                       submitting={submitting}
                       onSubmit={handleSubmit}
                       variant="plain"
-                      radioGroupName="request-current-isapre"
                     />
                   </div>
                 </div>

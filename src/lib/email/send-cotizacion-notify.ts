@@ -16,7 +16,8 @@ import {
 
 export interface CotizacionNotifyResult {
   userId: string;
-  adminId: string;
+  adminId: string | null;
+  adminEmailFailed?: boolean;
 }
 
 export async function sendCotizacionNotifyEmails(
@@ -31,45 +32,43 @@ export async function sendCotizacionNotifyEmails(
   const userAttachments = buildInlineAttachmentsForHtml(userHtml);
   const adminAttachments = buildInlineAttachmentsForHtml(adminHtml);
 
-  const [userResult, adminResult] = await Promise.all([
-    resend.emails.send({
-      from: cotizacionFrom,
-      to: data.email,
-      subject: buildUserCotizacionSubject(data),
-      html: userHtml,
-      attachments: userAttachments.length > 0 ? userAttachments : undefined,
-    }),
-    resend.emails.send({
-      from: cotizacionFrom,
-      to: cotizacionNotify,
-      replyTo: data.email,
-      subject: buildAdminCotizacionSubject(data),
-      html: adminHtml,
-      attachments: adminAttachments.length > 0 ? adminAttachments : undefined,
-    }),
-  ]);
+  const userResult = await resend.emails.send({
+    from: cotizacionFrom,
+    to: data.email,
+    subject: buildUserCotizacionSubject(data),
+    html: userHtml,
+    attachments: userAttachments.length > 0 ? userAttachments : undefined,
+  });
 
-  if (userResult.error || adminResult.error) {
-    const details = [userResult.error?.message, adminResult.error?.message]
-      .filter(Boolean)
-      .join(" · ");
+  if (userResult.error || !userResult.data?.id) {
+    const details = userResult.error?.message?.trim();
     throw new ApiError(
       details
-        ? `No se pudieron enviar los correos: ${details}`
-        : "No se pudieron enviar los correos de cotización.",
+        ? `No se pudo enviar el correo de confirmación: ${details}`
+        : "No se pudo enviar el correo de confirmación al usuario.",
       500,
     );
   }
 
-  const userId = userResult.data?.id;
-  const adminId = adminResult.data?.id;
+  const adminResult = await resend.emails.send({
+    from: cotizacionFrom,
+    to: cotizacionNotify,
+    replyTo: data.email,
+    subject: buildAdminCotizacionSubject(data),
+    html: adminHtml,
+    attachments: adminAttachments.length > 0 ? adminAttachments : undefined,
+  });
 
-  if (!userId || !adminId) {
-    throw new ApiError(
-      "Resend no devolvió los IDs de los correos enviados.",
-      500,
+  if (adminResult.error || !adminResult.data?.id) {
+    console.error(
+      "Cotizacion admin notify failed:",
+      adminResult.error?.message ?? "missing admin email id",
     );
   }
 
-  return { userId, adminId };
+  return {
+    userId: userResult.data.id,
+    adminId: adminResult.data?.id ?? null,
+    adminEmailFailed: Boolean(adminResult.error || !adminResult.data?.id),
+  };
 }

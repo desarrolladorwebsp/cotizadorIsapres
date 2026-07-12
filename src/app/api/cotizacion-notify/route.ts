@@ -17,6 +17,7 @@ export async function POST(request: Request) {
       ok: true,
       userId: result.userId,
       adminId: result.adminId,
+      adminEmailFailed: result.adminEmailFailed ?? false,
     });
   } catch (error) {
     console.error("POST /api/cotizacion-notify", error);

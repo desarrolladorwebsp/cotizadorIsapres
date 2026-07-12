@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { accent, safeWidth, ui } from "@/lib/ui-tokens";
+import { safeWidth, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 
 export function isValidRequestEmail(value: string): boolean {
@@ -29,22 +29,7 @@ function LockIcon() {
   );
 }
 
-function InfoIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className="size-3.5" aria-hidden>
-      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.6" />
-      <path
-        d="M12 10v5M12 8h.01"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
 export interface ModalRequestFormProps {
-  planIsapre: string;
   name: string;
   onNameChange: (value: string) => void;
   rut: string;
@@ -53,19 +38,15 @@ export interface ModalRequestFormProps {
   onEmailChange: (value: string) => void;
   phone: string;
   onPhoneChange: (value: string) => void;
-  isCurrentIsapre: "yes" | "no" | "";
-  onIsCurrentIsapreChange: (value: "yes" | "no") => void;
   attemptedSubmit: boolean;
   validationErrors: string[];
   submitError: string | null;
   submitting: boolean;
   onSubmit: (event: React.FormEvent) => void;
   variant?: "card" | "plain";
-  radioGroupName?: string;
 }
 
 export function ModalRequestForm({
-  planIsapre,
   name,
   onNameChange,
   rut,
@@ -74,15 +55,12 @@ export function ModalRequestForm({
   onEmailChange,
   phone,
   onPhoneChange,
-  isCurrentIsapre,
-  onIsCurrentIsapreChange,
   attemptedSubmit,
   validationErrors,
   submitError,
   submitting,
   onSubmit,
   variant = "plain",
-  radioGroupName = "current-isapre",
 }: ModalRequestFormProps) {
   const formContent = (
     <>
@@ -194,50 +172,6 @@ export function ModalRequestForm({
             )}
           />
         </label>
-
-        <fieldset
-          className={joinClasses(
-            "space-y-2 rounded-xl p-1",
-            attemptedSubmit && isCurrentIsapre === ""
-              ? "ring-1 ring-accent-danger/30"
-              : "",
-          )}
-        >
-          <legend className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground">
-            ¿Es {planIsapre} tu Isapre actual?
-            <span className="text-accent-danger">*</span>
-            <span
-              className={accent.valueSecondary}
-              title="Información sobre tu afiliación actual"
-            >
-              <InfoIcon />
-            </span>
-          </legend>
-          <div className="flex gap-4">
-            <label className="inline-flex cursor-pointer items-center gap-2 text-sm">
-              <input
-                type="radio"
-                name={radioGroupName}
-                value="no"
-                checked={isCurrentIsapre === "no"}
-                onChange={() => onIsCurrentIsapreChange("no")}
-                className="size-4 accent-primary"
-              />
-              No
-            </label>
-            <label className="inline-flex cursor-pointer items-center gap-2 text-sm">
-              <input
-                type="radio"
-                name={radioGroupName}
-                value="yes"
-                checked={isCurrentIsapre === "yes"}
-                onChange={() => onIsCurrentIsapreChange("yes")}
-                className="size-4 accent-primary"
-              />
-              Sí
-            </label>
-          </div>
-        </fieldset>
       </div>
 
       {submitError ? (

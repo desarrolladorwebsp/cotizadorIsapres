@@ -120,8 +120,12 @@ function buildPlanPayload(
     precioBaseUf: formatPlanUf(plan.base_price_uf),
     gesPremiumUf: formatPlanUf(plan.ges_premium_uf),
     tieneTop: plan.has_top,
-    coberturaHospitalaria: plan.coverage_summary.hospital_avg,
-    coberturaAmbulatoria: plan.coverage_summary.ambulatory_avg,
+    coberturaHospitalaria: Number.isFinite(plan.coverage_summary.hospital_avg)
+      ? plan.coverage_summary.hospital_avg
+      : 0,
+    coberturaAmbulatoria: Number.isFinite(plan.coverage_summary.ambulatory_avg)
+      ? plan.coverage_summary.ambulatory_avg
+      : 0,
     clinicas: plan.coverage_summary.clinic_count,
     notas: plan.additional_notes?.trim() || undefined,
     pdfUrl: resolveAbsoluteLogoUrl(plan.pdf_url),
