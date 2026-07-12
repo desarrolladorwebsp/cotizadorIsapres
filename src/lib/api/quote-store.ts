@@ -110,8 +110,8 @@ export async function createQuote(
     role: "CLIENT",
   });
 
-  let executiveAccountId =
-    client.assignedExecutiveId ?? (await autoAssignClientExecutive(client.id));
+  // Solo hereda un ejecutivo ya asignado manualmente; sin auto-asignación al cotizar.
+  const executiveAccountId = client.assignedExecutiveId;
 
   const quote = await prisma.quote.create({
     data: {

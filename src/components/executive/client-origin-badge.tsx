@@ -27,7 +27,7 @@ export function ClientOriginBadge({
         title={
           cotizadorSource?.slug
             ? `Lead desde ${cotizadorSource.label} (/${cotizadorSource.slug})`
-            : "Asignado automáticamente desde el cotizador"
+            : "Lead generado desde el cotizador"
         }
       >
         {label}

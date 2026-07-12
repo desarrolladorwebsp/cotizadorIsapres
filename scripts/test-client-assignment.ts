@@ -135,19 +135,19 @@ async function main() {
     dependentsCount: 0,
   });
 
-  if (!quote.executiveAccountId) {
-    throw new Error("createQuote no asignó ejecutivo.");
+  if (quote.executiveAccountId) {
+    throw new Error("createQuote no debe asignar ejecutivo automáticamente.");
   }
 
   const widgetClient = await prisma.user.findUnique({
     where: { email: `${TEST_PREFIX}widget@test.cl` },
   });
 
-  if (widgetClient?.assignedExecutiveId !== quote.executiveAccountId) {
-    throw new Error("createQuote no sincronizó cliente y cotización.");
+  if (widgetClient?.assignedExecutiveId) {
+    throw new Error("createQuote no debe asignar ejecutivo al cliente automáticamente.");
   }
 
-  console.log("createQuote asignó:", quote.executiveName, "→", quote.executiveAccountId);
+  console.log("createQuote sin asignación automática: OK");
 
   const unassigned = await prisma.user.create({
     data: {

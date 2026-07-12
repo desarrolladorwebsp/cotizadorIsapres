@@ -171,8 +171,8 @@ export function ExecutiveClientsPanel({
         title="Clientes"
         description={
           isAdmin
-            ? "Cartera completa del cotizador: leads asignados automáticamente y registros manuales de ejecutivos."
-            : "Tu cartera de clientes: agrega personas que captaste por tu cuenta y gestiona los leads que el sistema te asigne."
+            ? "Cartera completa del cotizador: leads del cotizador y registros manuales de ejecutivos."
+            : "Tu cartera de clientes: agrega personas que captaste por tu cuenta y gestiona los leads que te asignen."
         }
         actions={
           <>
@@ -202,7 +202,7 @@ export function ExecutiveClientsPanel({
           Tienes{" "}
           <span className="font-semibold">{assignedLeadCount}</span>{" "}
           {assignedLeadCount === 1 ? "lead del cotizador" : "leads del cotizador"}{" "}
-          asignados automáticamente. El color de la etiqueta indica desde qué
+          en tu cartera. El color de la etiqueta indica desde qué
           cotizador provienen.
         </p>
       ) : null}

@@ -255,7 +255,7 @@ export function QuotesPanel({
     <AdminPanel>
       <AdminPanelHeader
         title="Cotizaciones"
-        description="Leads del cotizador. Se asignan automáticamente al ejecutivo con menos carga; puedes redistribuir o reasignar manualmente."
+        description="Leads del cotizador. Asígnalos manualmente o usa «Distribuir» para repartir los pendientes entre ejecutivos."
         actions={
           <>
             <Button
