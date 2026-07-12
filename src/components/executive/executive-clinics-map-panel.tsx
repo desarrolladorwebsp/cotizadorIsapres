@@ -10,7 +10,10 @@ import {
   AdminRefreshButton,
 } from "@/components/admin/admin-data-table";
 import { getClinicZoneIds, getZoneLabel } from "@/lib/clinic-admin";
-import { attachClinicLocations } from "@/lib/clinic-locations";
+import {
+  attachClinicLocations,
+  dedupeClinicMapLocations,
+} from "@/lib/clinic-locations";
 import { ZONE_FILTER_OPTIONS } from "@/lib/filter-options";
 import { ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
@@ -29,7 +32,8 @@ export function ExecutiveClinicsMapPanel({
 }: ExecutiveClinicsMapPanelProps) {
   const [search, setSearch] = useState("");
   const [zoneFilter, setZoneFilter] = useState("all");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedLocationKey, setSelectedLocationKey] = useState<string | null>(null);
+  const [selectedClinicId, setSelectedClinicId] = useState<string | null>(null);
 
   const markers = useMemo(() => attachClinicLocations(clinics), [clinics]);
 
@@ -61,27 +65,41 @@ export function ExecutiveClinicsMapPanel({
     });
   }, [markers, search, zoneFilter]);
 
+  const uniqueLocations = useMemo(
+    () => dedupeClinicMapLocations(filteredMarkers),
+    [filteredMarkers],
+  );
+
   const withoutLocation = clinics.length - markers.length;
+
+  const handleSelectClinic = (clinicId: string, locationKey: string) => {
+    setSelectedClinicId(clinicId);
+    setSelectedLocationKey(locationKey);
+  };
 
   return (
     <AdminPanel>
       <AdminPanelHeader
         title="Mapa de clínicas"
-        description="Ubicaciones reales de prestadores del catálogo en Google Maps. Filtra por zona o nombre para orientar cotizaciones y asesorías."
+        description="Ubicaciones verificadas de prestadores del catálogo. Cada pin representa una sede física real; si varios planes comparten el mismo lugar, se agrupan en un solo marcador."
         actions={<AdminRefreshButton onClick={() => void onRefresh()} />}
       />
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(280px,340px)] lg:items-start">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(300px,360px)] xl:items-start">
         <GoogleMapsClinicsMap
-          markers={filteredMarkers}
-          selectedId={selectedId}
-          onSelect={setSelectedId}
+          locations={uniqueLocations}
+          selectedLocationKey={selectedLocationKey}
+          selectedClinicId={selectedClinicId}
+          onSelectLocation={(locationKey, clinicId) =>
+            handleSelectClinic(clinicId, locationKey)
+          }
         />
 
         <aside className="flex flex-col gap-4">
           <div className="rounded-2xl border border-border bg-white p-4 shadow-sm">
             <div className="flex flex-wrap items-center gap-2">
-              <AdminBadge tone="success">{filteredMarkers.length} en mapa</AdminBadge>
+              <AdminBadge tone="success">{uniqueLocations.length} sedes</AdminBadge>
+              <AdminBadge tone="neutral">{filteredMarkers.length} en mapa</AdminBadge>
               <AdminBadge tone="neutral">{clinics.length} clínicas</AdminBadge>
               {withoutLocation > 0 ? (
                 <AdminBadge tone="warning">{withoutLocation} sin ubicación</AdminBadge>
@@ -92,7 +110,7 @@ export function ExecutiveClinicsMapPanel({
               <Input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Buscar clínica o dirección…"
+                placeholder="Buscar clínica, comuna o dirección…"
                 className={joinClasses("h-11", ui.input)}
               />
               <label className="block space-y-2">
@@ -115,39 +133,43 @@ export function ExecutiveClinicsMapPanel({
             </div>
           </div>
 
-          <div className="max-h-[min(52vh,480px)] overflow-hidden rounded-2xl border border-border bg-white shadow-sm">
+          <div className="max-h-[min(56vh,520px)] overflow-hidden rounded-2xl border border-border bg-white shadow-sm">
             <div className="border-b border-border px-4 py-3">
-              <p className="text-sm font-semibold text-foreground">Listado</p>
+              <p className="text-sm font-semibold text-foreground">Sedes por ubicación</p>
               <p className="text-xs text-muted">
-                Toca una clínica para centrarla en el mapa.
+                Selecciona una sede para centrarla en el mapa.
               </p>
             </div>
-            <ul className="max-h-[calc(min(52vh,480px)-64px)] overflow-y-auto">
+            <ul className="max-h-[calc(min(56vh,520px)-64px)] overflow-y-auto">
               {loading ? (
                 <li className="px-4 py-8 text-center text-sm text-muted">
                   Cargando clínicas…
                 </li>
-              ) : filteredMarkers.length === 0 ? (
+              ) : uniqueLocations.length === 0 ? (
                 <li className="px-4 py-8 text-center text-sm text-muted">
-                  No hay clínicas con los filtros actuales.
+                  No hay sedes con los filtros actuales.
                 </li>
               ) : (
-                filteredMarkers.map((marker) => {
+                uniqueLocations.map((entry) => {
+                  const primary = entry.clinics[0];
                   const zoneIds =
-                    marker.zones.length > 0
-                      ? marker.zones
+                    primary.zones.length > 0
+                      ? primary.zones
                       : getClinicZoneIds({
-                          id: marker.id,
-                          name: marker.name,
+                          id: primary.id,
+                          name: primary.name,
                           zones: [],
                         });
-                  const isSelected = selectedId === marker.id;
+                  const isSelected = selectedLocationKey === entry.locationKey;
+                  const extraCount = entry.clinics.length - 1;
 
                   return (
-                    <li key={marker.id}>
+                    <li key={entry.locationKey}>
                       <button
                         type="button"
-                        onClick={() => setSelectedId(marker.id)}
+                        onClick={() =>
+                          handleSelectClinic(primary.id, entry.locationKey)
+                        }
                         className={joinClasses(
                           "w-full border-b border-border/70 px-4 py-3 text-left transition",
                           isSelected
@@ -155,12 +177,29 @@ export function ExecutiveClinicsMapPanel({
                             : "hover:bg-secondary-muted/50",
                         )}
                       >
-                        <p className="text-sm font-semibold text-foreground">
-                          {marker.name}
-                        </p>
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-sm font-semibold text-foreground">
+                            {primary.name}
+                          </p>
+                          {extraCount > 0 ? (
+                            <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                              +{extraCount}
+                            </span>
+                          ) : null}
+                        </div>
                         <p className="mt-1 text-xs leading-relaxed text-muted">
-                          {marker.location.address}
+                          {entry.location.address}
                         </p>
+                        {extraCount > 0 ? (
+                          <p className="mt-1.5 text-[11px] text-muted/90">
+                            También:{" "}
+                            {entry.clinics
+                              .slice(1, 3)
+                              .map((c) => c.name)
+                              .join(" · ")}
+                            {extraCount > 2 ? ` · +${extraCount - 2} más` : ""}
+                          </p>
+                        ) : null}
                         {zoneIds[0] ? (
                           <p className="mt-2 text-[11px] font-medium text-primary">
                             {getZoneLabel(zoneIds[0])}
@@ -173,6 +212,13 @@ export function ExecutiveClinicsMapPanel({
               )}
             </ul>
           </div>
+
+          {withoutLocation > 0 ? (
+            <div className="rounded-2xl border border-amber-200/80 bg-amber-50/80 px-4 py-3 text-xs leading-relaxed text-amber-900">
+              {withoutLocation} entrada{withoutLocation === 1 ? "" : "s"} del catálogo no tienen
+              sede física (p. ej. Libre Elección) y no aparecen en el mapa.
+            </div>
+          ) : null}
         </aside>
       </div>
     </AdminPanel>

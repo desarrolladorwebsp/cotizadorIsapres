@@ -11,3 +11,13 @@ export interface ClinicMapMarker {
   zones: string[];
   location: ClinicLocationRecord;
 }
+
+export interface UniqueClinicMapLocation {
+  locationKey: string;
+  location: ClinicLocationRecord;
+  clinics: ClinicMapMarker[];
+}
+
+export function locationKeyFromRecord(location: ClinicLocationRecord): string {
+  return `${location.lat.toFixed(4)},${location.lng.toFixed(4)}`;
+}

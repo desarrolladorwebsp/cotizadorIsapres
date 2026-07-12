@@ -193,6 +193,8 @@ export function DashboardFiltersPanel({
                   </div>
 
                   <div className={ambulatoryCoverageBlockClass}>
+                    <CoveragePercentageFilter
+                      title="Cobertura ambulatoria"
                       value={value.ambulatoryCoveragePercent}
                       tone="ambulatory"
                       compactEmbed={compactEmbed}
