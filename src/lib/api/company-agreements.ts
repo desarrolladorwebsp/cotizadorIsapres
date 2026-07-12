@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import {
   normalizeCompanyAgreementName,
@@ -9,6 +10,10 @@ import type {
 } from "@/types/company-agreement";
 
 const AGREEMENT_LOOKUP_LIMIT = 10;
+
+function hasCompanyAgreementDelegate(): boolean {
+  return "companyAgreement" in prisma && Boolean(prisma.companyAgreement);
+}
 
 function toAgreementRecord(row: {
   id: string;
@@ -41,6 +46,13 @@ export async function lookupCompanyAgreements(input: {
     return { matches: [] };
   }
 
+  if (!hasCompanyAgreementDelegate()) {
+    console.warn(
+      "lookupCompanyAgreements: prisma.companyAgreement no disponible. Ejecuta `npx prisma generate` y aplica el esquema.",
+    );
+    return { matches: [] };
+  }
+
   const where =
     normalizedRut.length > 0
       ? { active: true, companyRut: normalizedRut }
@@ -49,18 +61,33 @@ export async function lookupCompanyAgreements(input: {
           normalizedName: { contains: normalizedName },
         };
 
-  const matches = await prisma.companyAgreement.findMany({
-    where,
-    select: {
-      id: true,
-      companyRut: true,
-      companyRutRaw: true,
-      companyName: true,
-      discountPercent: true,
-    },
-    orderBy: { companyName: "asc" },
-    take: AGREEMENT_LOOKUP_LIMIT,
-  });
+  try {
+    const matches = await prisma.companyAgreement.findMany({
+      where,
+      select: {
+        id: true,
+        companyRut: true,
+        companyRutRaw: true,
+        companyName: true,
+        discountPercent: true,
+      },
+      orderBy: { companyName: "asc" },
+      take: AGREEMENT_LOOKUP_LIMIT,
+    });
 
-  return { matches: matches.map(toAgreementRecord) };
+    return { matches: matches.map(toAgreementRecord) };
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      (error.code === "P2021" || error.code === "P2022")
+    ) {
+      console.warn(
+        "lookupCompanyAgreements: tabla company_agreements no disponible.",
+        error.message,
+      );
+      return { matches: [] };
+    }
+
+    throw error;
+  }
 }

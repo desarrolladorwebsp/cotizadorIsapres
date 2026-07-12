@@ -127,6 +127,9 @@ export function buildPublicApiAgentGuide(request: Request) {
             isapres: "string[]",
             zonas: "string[]",
             tipoPlan: "string[]",
+            clinicaH: "string[] — clinic_id para cobertura hospitalaria",
+            clinicaA: "string[] — clinic_id para cobertura ambulatoria",
+            clinica: "string[] — legacy, misma lista en ambos tipos",
             coberturaH: "number",
             coberturaA: "number",
             orden: "price_asc | price_desc | coverage",
@@ -194,12 +197,12 @@ export function buildPublicApiAgentGuide(request: Request) {
         method: "GET",
         path: `${baseUrl.replace(/\/api\/public\/v1$/, "")}/api/public/v1/ui/filters`,
         summary:
-          "Guía de filtros del cotizador — zonas geográficas y sectores RM (sin autenticación)",
+          "Guía de filtros del cotizador — zonas, tipos de plan y clínicas (sin autenticación)",
         auth_required: false,
         response: {
           content_type: "application/json",
           description:
-            "Definición de zonas/sectores, tipos de plan, lógica de filtrado, limpiar filtros, deep links zonas=/tipoPlan= y textos ui_help. Versión actual: 1.1.0.",
+            "Definición de zonas/sectores, tipos de plan, filtro de clínicas (clinicaH/clinicaA), lógica de filtrado, limpiar filtros, deep links y textos ui_help. Versión actual: 1.2.0.",
         },
       },
       {

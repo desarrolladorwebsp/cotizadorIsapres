@@ -69,11 +69,16 @@ function SparkIcon() {
 }
 
 function formatDiscountPercent(value: number | null): string {
-  if (value == null) return "beneficio vigente";
+  if (value == null) return "un beneficio preferencial";
   const formatted = Number.isInteger(value)
     ? String(value)
     : value.toLocaleString("es-CL", { maximumFractionDigits: 2 });
   return `hasta un ${formatted}% de descuento`;
+}
+
+function formatAgreementRut(value: string | null | undefined): string | null {
+  if (!value?.trim()) return null;
+  return value.trim();
 }
 
 export type CompanyAgreementSource = "public" | "executive" | "embed";
@@ -133,6 +138,7 @@ export function CompanyAgreementValidationSection({
   const [submitted, setSubmitted] = useState(false);
   const [agreementMatch, setAgreementMatch] =
     useState<CompanyAgreementRecord | null>(null);
+  const [agreementNotFound, setAgreementNotFound] = useState(false);
 
   const resolvedSource: CompanyAgreementSource = compactEmbed ? "embed" : source;
 
@@ -144,7 +150,10 @@ export function CompanyAgreementValidationSection({
       setFieldErrors((current) => ({ ...current, [field]: undefined }));
       setSubmitError(null);
       setSubmitted(false);
-      if (field === "companyRut") setAgreementMatch(null);
+      if (field === "companyRut") {
+        setAgreementMatch(null);
+        setAgreementNotFound(false);
+      }
     },
     [],
   );
@@ -157,7 +166,10 @@ export function CompanyAgreementValidationSection({
     setFieldErrors((current) => ({ ...current, [field]: undefined }));
     setSubmitError(null);
     setSubmitted(false);
-    if (field === "companyRut") setAgreementMatch(null);
+    if (field === "companyRut") {
+      setAgreementMatch(null);
+      setAgreementNotFound(false);
+    }
   }, []);
 
   async function findCompanyAgreement(): Promise<CompanyAgreementRecord | null> {
@@ -171,7 +183,7 @@ export function CompanyAgreementValidationSection({
 
     if (!response.ok) {
       throw new Error(
-        payload?.error ?? "No pudimos validar el convenio. Intenta nuevamente.",
+        "No pudimos validar el convenio en este momento. Intenta nuevamente.",
       );
     }
 
@@ -181,12 +193,22 @@ export function CompanyAgreementValidationSection({
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setSubmitError(null);
+    setAgreementMatch(null);
+    setAgreementNotFound(false);
+    setSubmitted(false);
 
     const values = { userRut, email, phone, companyRut };
 
+    if (!companyRut.trim()) {
+      setSubmitError(
+        "Ingresa el RUT de tu empresa para validar si cuenta con convenio.",
+      );
+      return;
+    }
+
     if (!hasCompanyAgreementInquiryData(values)) {
       setSubmitError(
-        "Puedes dejar tus datos para que revisemos tu convenio, o continuar cotizando sin completar este formulario.",
+        "Ingresa el RUT de tu empresa para validar si cuenta con convenio.",
       );
       return;
     }
@@ -203,8 +225,18 @@ export function CompanyAgreementValidationSection({
       const match = await findCompanyAgreement();
       if (match) {
         setAgreementMatch(match);
-        setSubmitted(false);
         setFieldErrors({});
+        if (isInline) setExpanded(true);
+        return;
+      }
+
+      setAgreementNotFound(true);
+
+      const wantsFollowUp = Boolean(
+        email.trim() || phone.trim() || userRut.trim(),
+      );
+
+      if (!wantsFollowUp) {
         if (isInline) setExpanded(true);
         return;
       }
@@ -227,19 +259,19 @@ export function CompanyAgreementValidationSection({
 
       if (!response.ok) {
         throw new Error(
-          payload?.error ?? "No pudimos enviar tu consulta. Intenta nuevamente.",
+          payload?.error ??
+            "No pudimos registrar tu consulta. Intenta nuevamente.",
         );
       }
 
       setSubmitted(true);
-      setAgreementMatch(null);
       setFieldErrors({});
       if (isInline) setExpanded(true);
     } catch (error) {
       setSubmitError(
         error instanceof Error
           ? error.message
-          : "No pudimos enviar tu consulta. Intenta nuevamente.",
+          : "No pudimos validar el convenio. Intenta nuevamente.",
       );
     } finally {
       setSubmitting(false);
@@ -255,30 +287,26 @@ export function CompanyAgreementValidationSection({
 
   function renderFieldInput(
     field: FieldKey,
-    options?: { inline?: boolean; hideLabel?: boolean },
+    options?: { inline?: boolean },
   ) {
     const inline = options?.inline ?? false;
-    const hideLabel = options?.hideLabel ?? false;
 
     return (
       <label
         key={field}
         className={joinClasses(
           "block min-w-0",
-          inline ? "space-y-1 lg:space-y-0.5" : "space-y-1.5",
+          inline ? "space-y-1" : "space-y-1.5",
         )}
       >
-        {hideLabel ? null : (
-          <span
-            className={joinClasses(
-              "text-xs font-semibold text-foreground/90",
-              inline && "lg:sr-only",
-              compactEmbed && "max-md:text-[11px]",
-            )}
-          >
-            {FIELD_LABELS[field]}
-          </span>
-        )}
+        <span
+          className={joinClasses(
+            "text-xs font-semibold text-foreground/90",
+            compactEmbed && "max-md:text-[11px]",
+          )}
+        >
+          {FIELD_LABELS[field]}
+        </span>
         <input
           type={field === "email" ? "email" : "text"}
           inputMode={
@@ -316,7 +344,7 @@ export function CompanyAgreementValidationSection({
                 ),
             fieldErrors[field] && "ring-red-500/60 focus:ring-red-500/40",
           )}
-          aria-label={hideLabel ? FIELD_LABELS[field] : undefined}
+          aria-label={FIELD_LABELS[field]}
           aria-invalid={Boolean(fieldErrors[field])}
           aria-describedby={
             fieldErrors[field] ? `company-agreement-${field}-error` : undefined
@@ -334,95 +362,131 @@ export function CompanyAgreementValidationSection({
     );
   }
 
-  const formContent = submitted ? (
-    <div
-      className={joinClasses(
-        "rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-900",
-        isInline && "mt-2",
-        compactEmbed && "max-md:text-xs",
-      )}
-      role="status"
-    >
-      <p className="font-semibold">¡Consulta enviada!</p>
-      <p className="mt-0.5 text-xs text-emerald-800/90">
-        Revisaremos si tu empresa tiene convenio vigente y te contactaremos si
-        aplica un beneficio.
-      </p>
-    </div>
-  ) : agreementMatch ? (
-    <div
-      className={joinClasses(
-        "rounded-xl border border-red-300 bg-red-600 px-3 py-2.5 text-sm text-white shadow-sm",
-        isInline && "mt-2",
-        compactEmbed && "max-md:text-xs",
-      )}
-      role="status"
-    >
-      <p className="font-bold">Sí, esta empresa cuenta con beneficio.</p>
-      <p className="mt-0.5 text-xs text-white/95">
-        {agreementMatch.companyName} tiene{" "}
-        {formatDiscountPercent(agreementMatch.discountPercent)}.
-      </p>
-    </div>
-  ) : (
-    <form onSubmit={handleSubmit} className="space-y-2" noValidate>
+  const statusMessage =
+    submitted ? (
       <div
         className={joinClasses(
-          isInline
-            ? "grid gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-center lg:gap-2"
-            : "grid gap-3 sm:grid-cols-2",
-          compactEmbed && "max-md:gap-2",
+          "rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-3 text-sm text-emerald-950",
+          isInline && "mb-2",
+          compactEmbed && "max-md:text-xs",
         )}
+        role="status"
       >
-        {(Object.keys(FIELD_LABELS) as FieldKey[]).map((field) =>
-          renderFieldInput(field, { inline: isInline, hideLabel: isInline }),
+        <p className="font-semibold">Consulta registrada</p>
+        <p className="mt-1 text-xs leading-relaxed text-emerald-900/90">
+          No encontramos un convenio activo para el RUT ingresado, pero recibimos
+          tus datos. Te contactaremos si corresponde un beneficio.
+        </p>
+      </div>
+    ) : agreementMatch ? (
+      <div
+        className={joinClasses(
+          "rounded-xl border border-red-200 bg-white px-3 py-3 text-sm shadow-sm",
+          isInline && "mb-2",
+          compactEmbed && "max-md:text-xs",
         )}
-        <div
-          className={joinClasses(
-            isInline
-              ? "sm:col-span-2 lg:col-span-1 lg:flex lg:justify-end"
-              : "sm:col-span-2 flex justify-end",
+        role="status"
+      >
+        <p className="font-semibold text-red-700">Convenio vigente confirmado</p>
+        <p className="mt-1 text-xs leading-relaxed text-foreground/90">
+          La empresa{" "}
+          <span className="font-semibold text-foreground">
+            {agreementMatch.companyName}
+          </span>
+          {formatAgreementRut(agreementMatch.companyRutRaw) ? (
+            <>
+              {" "}
+              (RUT {formatAgreementRut(agreementMatch.companyRutRaw)}) cuenta con{" "}
+            </>
+          ) : (
+            " cuenta con "
           )}
-        >
-          <Button
-            type="submit"
-            size="sm"
-            disabled={submitting}
+          {formatDiscountPercent(agreementMatch.discountPercent)}. Puedes
+          continuar cotizando con este beneficio aplicable.
+        </p>
+      </div>
+    ) : agreementNotFound ? (
+      <div
+        className={joinClasses(
+          "rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-950",
+          isInline && "mb-2",
+          compactEmbed && "max-md:text-xs",
+        )}
+        role="status"
+      >
+        <p className="font-semibold">Convenio no encontrado</p>
+        <p className="mt-1 text-xs leading-relaxed text-amber-900/90">
+          No identificamos un convenio activo para el RUT de empresa ingresado.
+          Puedes continuar cotizando con normalidad o dejarnos tus datos de
+          contacto para una revisión manual.
+        </p>
+      </div>
+    ) : null;
+
+  const formContent = (
+    <>
+      {statusMessage}
+      {!agreementMatch && !submitted ? (
+        <form onSubmit={handleSubmit} className="space-y-2" noValidate>
+          <div
             className={joinClasses(
-              "w-full shrink-0 bg-red-600 text-white hover:bg-red-700 lg:w-auto lg:min-w-[7.5rem]",
-              isInline && "h-9 rounded-lg px-4 text-xs",
-              compactEmbed && "max-md:h-8 max-md:px-3 max-md:text-[11px]",
+              isInline
+                ? "grid gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-end lg:gap-2"
+                : "grid gap-3 sm:grid-cols-2",
+              compactEmbed && "max-md:gap-2",
             )}
           >
-            {submitting ? "Validando…" : "Validar convenio"}
-          </Button>
-        </div>
-      </div>
+            {(Object.keys(FIELD_LABELS) as FieldKey[]).map((field) =>
+              renderFieldInput(field, { inline: isInline }),
+            )}
+            <div
+              className={joinClasses(
+                isInline
+                  ? "sm:col-span-2 lg:col-span-1 lg:flex lg:justify-end"
+                  : "sm:col-span-2 flex justify-end",
+              )}
+            >
+              <Button
+                type="submit"
+                size="sm"
+                disabled={submitting}
+                className={joinClasses(
+                  "w-full shrink-0 bg-red-600 text-white hover:bg-red-700 lg:w-auto lg:min-w-[7.5rem]",
+                  isInline && "h-9 rounded-lg px-4 text-xs",
+                  compactEmbed && "max-md:h-8 max-md:px-3 max-md:text-[11px]",
+                )}
+              >
+                {submitting ? "Validando…" : "Validar convenio"}
+              </Button>
+            </div>
+          </div>
 
-      {!isInline ? (
-        <p
-          className={joinClasses(
-            "text-[11px] leading-relaxed text-muted",
-            compactEmbed && "max-md:text-[10px]",
-          )}
-        >
-          Todos los campos son opcionales. Puedes seguir cotizando sin completar
-          este formulario.
-        </p>
-      ) : null}
+          {!isInline ? (
+            <p
+              className={joinClasses(
+                "text-[11px] leading-relaxed text-muted",
+                compactEmbed && "max-md:text-[10px]",
+              )}
+            >
+              El RUT empresa es necesario para validar el convenio. Los demás
+              campos son opcionales.
+            </p>
+          ) : null}
 
-      {submitError ? (
-        <p
-          className={joinClasses(
-            "rounded-lg bg-red-50 px-2.5 py-2 text-[11px] text-red-900 ring-1 ring-red-200/80",
-            compactEmbed && "max-md:text-[10px]",
-          )}
-          role="status"
-        >
-          {submitError}
-        </p>
+          {submitError ? (
+            <p
+              className={joinClasses(
+                "rounded-lg bg-red-50 px-2.5 py-2 text-[11px] text-red-900 ring-1 ring-red-200/80",
+                compactEmbed && "max-md:text-[10px]",
+              )}
+              role="status"
+            >
+              {submitError}
+            </p>
+          ) : null}
+        </form>
       ) : null}
-    </form>
+    </>
   );
 
   if (isInline) {
@@ -493,18 +557,21 @@ export function CompanyAgreementValidationSection({
                 <div className={joinClasses("pt-2", compactEmbed && "pt-1.5")}>
                   {formContent}
                   <p className="mt-1.5 text-[10px] text-muted/90">
-                    Campos opcionales. Puedes seguir cotizando sin completarlos.
+                    El RUT empresa es necesario para validar. Los demás campos
+                    son opcionales.
                   </p>
                 </div>
               </motion.div>
             ) : null}
           </AnimatePresence>
 
-          {(submitted || agreementMatch) && !expanded ? (
+          {(submitted || agreementMatch || agreementNotFound) && !expanded ? (
             <p className="mt-1.5 text-[11px] font-medium text-red-700">
               {agreementMatch
-                ? "Beneficio encontrado para esta empresa."
-                : "Consulta enviada. Te contactaremos si hay convenio aplicable."}
+                ? "Convenio vigente confirmado para esta empresa."
+                : submitted
+                  ? "Consulta registrada. Te contactaremos si corresponde."
+                  : "No se encontró convenio para el RUT ingresado."}
             </p>
           ) : null}
         </div>
@@ -601,11 +668,13 @@ export function CompanyAgreementValidationSection({
               ) : null}
             </AnimatePresence>
 
-            {(submitted || agreementMatch) && !expanded ? (
+            {(submitted || agreementMatch || agreementNotFound) && !expanded ? (
               <p className="mt-2 text-xs font-medium text-red-700">
                 {agreementMatch
-                  ? "Beneficio encontrado para esta empresa."
-                  : "Consulta enviada. Te contactaremos si hay convenio aplicable."}
+                  ? "Convenio vigente confirmado para esta empresa."
+                  : submitted
+                    ? "Consulta registrada. Te contactaremos si corresponde."
+                    : "No se encontró convenio para el RUT ingresado."}
               </p>
             ) : null}
           </div>

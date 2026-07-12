@@ -1,6 +1,7 @@
 import {
   getActiveCheckboxIds,
-  getActiveClinicIds,
+  getActiveAmbulatoryClinicIds,
+  getActiveHospitalClinicIds,
 } from "@/lib/filter-options";
 import {
   ISAPRE_FILTER_OPTIONS,
@@ -34,7 +35,10 @@ export interface BuildCotizadorUrlInput {
   precioMax?: number;
   isapres?: string[];
   zonas?: string[];
+  /** @deprecated Usar clinicaH y clinicaA */
   clinica?: string | string[];
+  clinicaH?: string | string[];
+  clinicaA?: string | string[];
   tipoPlan?: string[];
   coberturaH?: number;
   coberturaA?: number;
@@ -100,16 +104,25 @@ function appendCotizadorQueryParams(
   if (input.zonas?.length) {
     params.set(DEEP_LINK_PARAMS.zonas, input.zonas.join(","));
   }
-  if (input.clinica) {
-    const clinicIds = Array.isArray(input.clinica)
-      ? input.clinica.map((id) => id.trim()).filter(Boolean)
-      : input.clinica
+  const appendClinicParam = (
+    key: "clinica" | "clinicaH" | "clinicaA",
+    value: string | string[] | undefined,
+  ) => {
+    if (!value) return;
+    const clinicIds = Array.isArray(value)
+      ? value.map((id) => id.trim()).filter(Boolean)
+      : value
           .split(",")
           .map((id) => id.trim())
           .filter(Boolean);
     if (clinicIds.length > 0) {
-      params.set(DEEP_LINK_PARAMS.clinica, clinicIds.join(","));
+      params.set(DEEP_LINK_PARAMS[key], clinicIds.join(","));
     }
+  };
+  appendClinicParam("clinicaH", input.clinicaH);
+  appendClinicParam("clinicaA", input.clinicaA);
+  if (!input.clinicaH && !input.clinicaA) {
+    appendClinicParam("clinica", input.clinica);
   }
   if (input.tipoPlan?.length) {
     params.set(DEEP_LINK_PARAMS.tipoPlan, input.tipoPlan.join(","));
@@ -178,7 +191,8 @@ export function buildCotizadorUrlFromParsed(
     precioMax: parsed.priceMax,
     isapres: getActiveCheckboxIds(parsed.filters.isapres),
     zonas: getActiveCheckboxIds(parsed.filters.zones),
-    clinica: getActiveClinicIds(parsed.filters),
+    clinicaH: getActiveHospitalClinicIds(parsed.filters),
+    clinicaA: getActiveAmbulatoryClinicIds(parsed.filters),
     tipoPlan: getActiveCheckboxIds(parsed.filters.planTypes),
     coberturaH: parsed.filters.hospitalCoveragePercent ?? undefined,
     coberturaA: parsed.filters.ambulatoryCoveragePercent ?? undefined,
@@ -392,6 +406,8 @@ export function getDeepLinkDocumentation(baseUrl = "https://cotizador.cotizaloan
     precioMax: 6,
     coberturaH: 70,
     coberturaA: 60,
+    clinicaH: ["clinica-alemana", "clinica-indisa"],
+    clinicaA: ["clinica-redsalud-providencia"],
     orden: "price_asc",
     moneda: "clp",
     auto: true,
@@ -439,7 +455,7 @@ export function getDeepLinkDocumentation(baseUrl = "https://cotizador.cotizaloan
       steps: [
         "1. Define la entidad aliada en el parámetro entidad (ej. cotizaloantes) o en la ruta /cotizaloantes.",
         "2. Agrega los datos del cotizante: region, edad, ingreso, cargas (sexo opcional/legacy).",
-        "3. Agrega filtros opcionales: isapres, zonas, tipoPlan, precioMin, precioMax, coberturaH, coberturaA.",
+        "3. Agrega filtros opcionales: isapres, zonas, tipoPlan, clinicaH, clinicaA, precioMin, precioMax, coberturaH, coberturaA.",
         "4. Incluye auto=1 para ejecutar la búsqueda al cargar (recomendado cuando envías datos).",
         "5. Redirige al usuario con window.location.href, <a href>, o HTTP 302 desde tu backend.",
       ],
@@ -568,6 +584,33 @@ export function getDeepLinkDocumentation(baseUrl = "https://cotizador.cotizaloan
         allowed_values: PLAN_TYPE_FILTER_OPTIONS.map((option) => option.id),
       },
       {
+        name: DEEP_LINK_PARAMS.clinicaH,
+        required: false,
+        type: "string",
+        description:
+          "Clínicas para filtrar cobertura hospitalaria (clinic_id separados por coma). Ver GET /api/plans/clinics y guía GET /api/public/v1/ui/filters (clinic_filter).",
+        example: "clinica-alemana,clinica-indisa",
+        documentation_url: "/api/public/v1/ui/filters",
+      },
+      {
+        name: DEEP_LINK_PARAMS.clinicaA,
+        required: false,
+        type: "string",
+        description:
+          "Clínicas para filtrar cobertura ambulatoria (clinic_id separados por coma). Independiente de clinicaH.",
+        example: "clinica-redsalud-providencia",
+        documentation_url: "/api/public/v1/ui/filters",
+      },
+      {
+        name: DEEP_LINK_PARAMS.clinica,
+        required: false,
+        type: "string",
+        description:
+          "Legacy — aplica la misma lista de clínicas a hospitalario y ambulatorio. Ignorado si envías clinicaH o clinicaA.",
+        example: "clinica-alemana",
+        documentation_url: "/api/public/v1/ui/filters",
+      },
+      {
         name: DEEP_LINK_PARAMS.coberturaH,
         required: false,
         type: "integer",
@@ -649,6 +692,8 @@ exit;`,
       "Para integraciones ligeras usa GET /api/public/v1/plans/preview (6 planes con resumen de coberturas).",
       "Usa entidad=cotizaloantes para el branding de Cotízalo Antes (logo naranja, WhatsApp y botón volver).",
       "Si envías isapres o zonas, solo quedan activos los ids listados; el resto se desactiva.",
+      "Usa clinicaH y clinicaA para filtrar clínicas por tipo de cobertura; clinica (legacy) aplica la misma lista a ambos.",
+      "Los clinic_id válidos están en GET /api/plans/clinics (id + name).",
       "Para el significado de cada zona/sector (RM Oriente, Norte, etc.) y textos del ícono informativo, consulta GET /api/public/v1/ui/filters (público, sin API key).",
       "Parámetros desconocidos o mal formados se ignoran silenciosamente.",
     ],

@@ -26,7 +26,8 @@ export interface PlanCardProps {
   onAddInsurance?: () => void;
   selectLabel?: string;
   selectVariant?: "primary" | "success";
-  highlightClinicIds?: string[];
+  highlightHospitalClinicIds?: string[];
+  highlightAmbulatoryClinicIds?: string[];
 }
 
 export function PlanCard({
@@ -42,7 +43,8 @@ export function PlanCard({
   onAddInsurance,
   selectLabel,
   selectVariant,
-  highlightClinicIds = [],
+  highlightHospitalClinicIds = [],
+  highlightAmbulatoryClinicIds = [],
 }: PlanCardProps) {
   const [isSelected, setIsSelected] = useState(selected);
   const [isHovered, setIsHovered] = useState(false);
@@ -126,7 +128,8 @@ export function PlanCard({
       <PlanCardCoverage
         hospitalaria={hospitalaria}
         ambulatoria={ambulatoria}
-        highlightClinicIds={highlightClinicIds}
+        highlightHospitalClinicIds={highlightHospitalClinicIds}
+        highlightAmbulatoryClinicIds={highlightAmbulatoryClinicIds}
       />
 
       <PlanCardActions

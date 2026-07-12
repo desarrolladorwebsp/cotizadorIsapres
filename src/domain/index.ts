@@ -88,6 +88,8 @@ export {
   PLAN_TYPE_FILTER_DEFAULT_IDS,
   getActiveCheckboxIds,
   getActiveClinicIds,
+  getActiveHospitalClinicIds,
+  getActiveAmbulatoryClinicIds,
   hasClinicFilter,
   isCheckboxGroupActive,
   resolveIsapreDisplayName,

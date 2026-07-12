@@ -13,7 +13,8 @@ import { usePlansCatalog } from "@/hooks/use-plans-catalog";
 import {
   applyRegionToDashboardFilters,
   createDefaultDashboardFilters,
-  getActiveClinicIds,
+  getActiveAmbulatoryClinicIds,
+  getActiveHospitalClinicIds,
 } from "@/domain";
 import { createDefaultQuoteCriteria } from "@/lib/quote-criteria-options";
 import type { HealthPlan } from "@/domain";
@@ -269,7 +270,12 @@ export function CotizadorWorkspace({
                 plans={dashboard.filteredPlans}
                 beneficiarySummary={dashboard.beneficiarySummary}
                 ufToClp={dashboard.ufToClp}
-                highlightClinicIds={getActiveClinicIds(dashboard.dashboardFilters)}
+                highlightHospitalClinicIds={getActiveHospitalClinicIds(
+                  dashboard.dashboardFilters,
+                )}
+                highlightAmbulatoryClinicIds={getActiveAmbulatoryClinicIds(
+                  dashboard.dashboardFilters,
+                )}
                 onAssignPlan={
                   isExecutive ? (plan) => setAssignPlan(plan) : undefined
                 }

@@ -10,8 +10,10 @@ export interface DashboardFiltersState {
   isapres: CheckboxFilterState;
   zones: CheckboxFilterState;
   planTypes: CheckboxFilterState;
-  /** Clínicas preferidas (OR); no disponible en el widget embebido. */
-  clinicIds: string[];
+  /** Clínicas preferidas para cobertura hospitalaria (OR); no disponible en el widget embebido. */
+  hospitalClinicIds: string[];
+  /** Clínicas preferidas para cobertura ambulatoria (OR); no disponible en el widget embebido. */
+  ambulatoryClinicIds: string[];
   hospitalCoveragePercent: CoveragePercentageOption | null;
   ambulatoryCoveragePercent: CoveragePercentageOption | null;
 }

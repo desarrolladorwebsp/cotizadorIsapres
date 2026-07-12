@@ -6,7 +6,8 @@ import { inferPlanTypes } from "@/lib/plan-metadata";
 import { planMatchesZoneFilter } from "@/lib/plan-zones";
 import {
   getActiveCheckboxIds,
-  getActiveClinicIds,
+  getActiveAmbulatoryClinicIds,
+  getActiveHospitalClinicIds,
   isCheckboxGroupActive,
   resolveIsapreDisplayName,
 } from "@/lib/filter-options";
@@ -65,12 +66,24 @@ function matchesPlanTypeFilter(
   return activeTypes.some((type) => planTypes.includes(type));
 }
 
-function planIncludesAnyClinic(
+function planIncludesAnyClinicForType(
   plan: HealthPlan,
+  type: "hospitalaria" | "ambulatoria",
   clinicIds: string[],
 ): boolean {
+  if (clinicIds.length === 0) return true;
+  const entries = getCoverageEntriesByType(plan, type);
   const selected = new Set(clinicIds);
-  return plan.coverage.some((entry) => selected.has(entry.clinic_id));
+  return entries.some((entry) => selected.has(entry.clinic_id));
+}
+
+function getClinicIdsForCoverageType(
+  filters: DashboardFiltersState,
+  type: "hospitalaria" | "ambulatoria",
+): string[] {
+  return type === "hospitalaria"
+    ? getActiveHospitalClinicIds(filters)
+    : getActiveAmbulatoryClinicIds(filters);
 }
 
 function coverageTypeMeetsThresholdForClinics(
@@ -96,7 +109,7 @@ function matchesCoverageTypeFilter(
   type: "hospitalaria" | "ambulatoria",
   filters: DashboardFiltersState,
 ): boolean {
-  const clinicIds = getActiveClinicIds(filters);
+  const clinicIds = getClinicIdsForCoverageType(filters, type);
   const threshold =
     type === "hospitalaria"
       ? filters.hospitalCoveragePercent
@@ -118,24 +131,18 @@ function matchesCoverageTypeFilter(
     return bestPercent >= threshold;
   }
 
+  if (clinicIds.length > 0) {
+    return planIncludesAnyClinicForType(plan, type, clinicIds);
+  }
+
   return true;
 }
 
 function matchesClinicOnlyFilter(
-  plan: HealthPlan,
-  filters: DashboardFiltersState,
+  _plan: HealthPlan,
+  _filters: DashboardFiltersState,
 ): boolean {
-  const clinicIds = getActiveClinicIds(filters);
-  if (clinicIds.length === 0) return true;
-
-  if (
-    filters.hospitalCoveragePercent !== null ||
-    filters.ambulatoryCoveragePercent !== null
-  ) {
-    return true;
-  }
-
-  return planIncludesAnyClinic(plan, clinicIds);
+  return true;
 }
 
 export function applyDashboardFilters(
@@ -171,7 +178,12 @@ export function summaryMatchesCoverageThresholds(
   ambulatoryAvg: number,
   filters: DashboardFiltersState,
 ): boolean {
-  if (getActiveClinicIds(filters).length > 0) return true;
+  if (
+    getActiveHospitalClinicIds(filters).length > 0 ||
+    getActiveAmbulatoryClinicIds(filters).length > 0
+  ) {
+    return true;
+  }
 
   if (
     filters.hospitalCoveragePercent !== null &&
@@ -210,11 +222,17 @@ export function getClinicCoveragePercent(
   return entry?.percentage ?? null;
 }
 
-function catalogIncludesAnyClinic(
+function catalogIncludesAnyClinicForType(
   plan: HealthPlanCatalogItem,
+  type: "hospitalaria" | "ambulatoria",
   clinicIds: string[],
 ): boolean {
-  return clinicIds.some((clinicId) => clinicId in plan.clinic_index);
+  if (clinicIds.length === 0) return true;
+  const index = type === "hospitalaria" ? 0 : 1;
+  return clinicIds.some((clinicId) => {
+    const values = plan.clinic_index[clinicId];
+    return values ? values[index] > 0 : false;
+  });
 }
 
 function catalogCoverageMeetsThresholdForClinics(
@@ -249,7 +267,7 @@ function matchesCatalogCoverageTypeFilter(
   type: "hospitalaria" | "ambulatoria",
   filters: DashboardFiltersState,
 ): boolean {
-  const clinicIds = getActiveClinicIds(filters);
+  const clinicIds = getClinicIdsForCoverageType(filters, type);
   const threshold =
     type === "hospitalaria"
       ? filters.hospitalCoveragePercent
@@ -277,24 +295,18 @@ function matchesCatalogCoverageTypeFilter(
     return bestPercent >= threshold;
   }
 
+  if (clinicIds.length > 0) {
+    return catalogIncludesAnyClinicForType(plan, type, clinicIds);
+  }
+
   return true;
 }
 
 function matchesCatalogClinicOnlyFilter(
-  plan: HealthPlanCatalogItem,
-  filters: DashboardFiltersState,
+  _plan: HealthPlanCatalogItem,
+  _filters: DashboardFiltersState,
 ): boolean {
-  const clinicIds = getActiveClinicIds(filters);
-  if (clinicIds.length === 0) return true;
-
-  if (
-    filters.hospitalCoveragePercent !== null ||
-    filters.ambulatoryCoveragePercent !== null
-  ) {
-    return true;
-  }
-
-  return catalogIncludesAnyClinic(plan, clinicIds);
+  return true;
 }
 
 function matchesCatalogZoneFilter(

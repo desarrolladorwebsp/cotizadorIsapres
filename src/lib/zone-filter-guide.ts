@@ -105,8 +105,8 @@ export function buildZoneFilterApiGuide(request: Request) {
 
 export const FILTER_CLEARING_HELP_UI = {
   title: "¿Cómo limpiar filtros y ver todos los planes?",
-  paragraphs: [
-    "El botón «Limpiar filtros» del panel desactiva Isapres, zonas, tipos de plan y umbrales de cobertura.",
+    paragraphs: [
+      "El botón «Limpiar filtros» del panel desactiva Isapres, zonas, tipos de plan, clínicas (hospitalaria y ambulatoria) y umbrales de cobertura.",
     "En cada grupo de checkboxes, si ninguna opción está marcada, ese filtro no se aplica (se incluyen todos los valores de ese eje).",
     "«Limpiar todo» en la barra superior además resetea región, ingreso, edad, cargas, precio y resultados de búsqueda.",
   ],
@@ -163,6 +163,65 @@ export function buildPlanTypeFilterApiGuide() {
   } as const;
 }
 
+export function buildClinicFilterApiGuide() {
+  return {
+    version: "1.0.0",
+    component: "clinic_filter",
+    title: "Guía — Filtro por clínica (hospitalaria y ambulatoria)",
+    description:
+      "El cotizador permite seleccionar prestadores de forma independiente para cobertura hospitalaria y ambulatoria.",
+    filter_logic: {
+      hospital_clinics: {
+        matching_rule:
+          "OR — el plan se incluye si tiene cobertura hospitalaria en al menos una clínica seleccionada.",
+        with_coverage_percent:
+          "Si también envías coberturaH, al menos una clínica hospitalaria seleccionada debe cumplir ese porcentaje mínimo.",
+      },
+      ambulatory_clinics: {
+        matching_rule:
+          "OR — el plan se incluye si tiene cobertura ambulatoria en al menos una clínica seleccionada.",
+        with_coverage_percent:
+          "Si también envías coberturaA, al menos una clínica ambulatoria seleccionada debe cumplir ese porcentaje mínimo.",
+      },
+      combined_behavior:
+        "Si envías clínicas en ambos tipos, el plan debe cumplir hospitalario y ambulatorio por separado (AND entre tipos).",
+      no_clinic_filter_active:
+        "Si no envías clinicaH ni clinicaA, no se aplica filtro por clínica en ese tipo.",
+    },
+    clinic_ids: {
+      source_endpoint: "/api/plans/clinics",
+      auth_required: false,
+      shape: { id: "string — clinic_id slug", name: "string — nombre visible" },
+      note: "Usa el campo id en clinicaH y clinicaA. Lista ordenada alfabéticamente por nombre.",
+    },
+    deep_link: {
+      clinicaH: {
+        param: "clinicaH",
+        format: "Lista separada por comas de clinic_id (cobertura hospitalaria)",
+        example: "clinicaH=clinica-alemana,clinica-indisa",
+      },
+      clinicaA: {
+        param: "clinicaA",
+        format: "Lista separada por comas de clinic_id (cobertura ambulatoria)",
+        example: "clinicaA=clinica-redsalud-providencia",
+      },
+      clinica_legacy: {
+        param: "clinica",
+        format: "Legacy — aplica la misma lista a hospitalario y ambulatorio",
+        example: "clinica=clinica-alemana",
+        behavior:
+          "Solo se usa si no envías clinicaH ni clinicaA. Preferir clinicaH/clinicaA para selecciones distintas por tipo.",
+      },
+    },
+    ui_help: FILTER_HELP.coverage,
+    integrator_notes: [
+      "clinicaH y clinicaA son independientes: puedes filtrar una clínica en hospitalario y otra en ambulatorio.",
+      "Combina con coberturaH / coberturaA para exigir un porcentaje mínimo en clínicas del tipo correspondiente.",
+      "En POST /api/public/v1/cotizador/url usa clinicaH y clinicaA como string[] (ids de clínica).",
+    ],
+  } as const;
+}
+
 export function buildFilterClearingApiGuide() {
   return {
     version: "1.0.0",
@@ -172,6 +231,8 @@ export function buildFilterClearingApiGuide() {
       isapres: "ninguna isapre marcada → sin filtro por isapre",
       zones: "ninguna zona marcada → sin filtro geográfico",
       plan_types: "ningún tipo marcado → sin filtro por modalidad",
+      hospital_clinic_ids: [],
+      ambulatory_clinic_ids: [],
       hospital_coverage_percent: null,
       ambulatory_coverage_percent: null,
     },
@@ -180,6 +241,8 @@ export function buildFilterClearingApiGuide() {
       isapres: ["consalud"],
       zones: ["rm-metropolitana", "rm-oriente", "rm-centro"],
       plan_types: PLAN_TYPE_FILTER_DEFAULT_IDS,
+      hospital_clinic_ids: [],
+      ambulatory_clinic_ids: [],
       hospital_coverage_percent: null,
       ambulatory_coverage_percent: null,
     },
@@ -190,17 +253,19 @@ export function buildFilterClearingApiGuide() {
 export function buildFiltersUiGuide(request: Request) {
   const zoneGuide = buildZoneFilterApiGuide(request);
   const planTypeGuide = buildPlanTypeFilterApiGuide();
+  const clinicGuide = buildClinicFilterApiGuide();
   const clearingGuide = buildFilterClearingApiGuide();
 
   return {
-    version: "1.1.0",
+    version: "1.2.0",
     title: "Guía UI — Filtros del cotizador",
     description:
-      "Documentación de filtros del panel lateral para integradores: zonas, tipos de plan y cómo limpiar filtros.",
+      "Documentación de filtros del panel lateral para integradores: zonas, tipos de plan, clínicas (hospitalaria/ambulatoria) y cómo limpiar filtros.",
     canonical_url: zoneGuide.canonical_url,
     sections: {
       zone_filter: zoneGuide,
       plan_type_filter: planTypeGuide,
+      clinic_filter: clinicGuide,
       filter_clearing: clearingGuide,
     },
   } as const;

@@ -14,6 +14,8 @@ export interface ClinicFilterSelectProps {
   error?: string | null;
   showSelectedHint?: boolean;
   modalTitle?: string;
+  /** Contexto del hint cuando hay selección (hospitalaria / ambulatoria). */
+  coverageContext?: "hospitalaria" | "ambulatoria";
   compactEmbed?: boolean;
 }
 
@@ -64,6 +66,7 @@ export function ClinicFilterSelect({
   error = null,
   showSelectedHint = false,
   modalTitle = "Seleccionar prestador",
+  coverageContext,
   compactEmbed = false,
 }: ClinicFilterSelectProps) {
   const [modalOpen, setModalOpen] = useState(false);
@@ -147,7 +150,9 @@ export function ClinicFilterSelect({
 
       {showSelectedHint && hasSelection ? (
         <p className="text-[11px] text-muted">
-          Mostrando planes con cobertura en{" "}
+          {coverageContext
+            ? `Filtrando cobertura ${coverageContext} en `
+            : "Mostrando planes con cobertura en "}
           <span className="font-medium text-foreground">
             {selected.map((clinic) => clinic.name).join(", ")}
           </span>

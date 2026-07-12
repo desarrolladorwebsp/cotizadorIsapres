@@ -22,7 +22,8 @@ import {
   applyRegionToDashboardFilters,
   buildBeneficiaryGroupSummary,
   createDefaultDashboardFilters,
-  getActiveClinicIds,
+  getActiveAmbulatoryClinicIds,
+  getActiveHospitalClinicIds,
   withoutEmbedWidgetFilters,
 } from "@/domain";
 import {
@@ -1016,7 +1017,12 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
                       beneficiarySummary={dashboard.beneficiarySummary}
                       ufToClp={dashboard.ufToClp}
                       currency={currency}
-                      highlightClinicIds={getActiveClinicIds(dashboard.dashboardFilters)}
+                      highlightHospitalClinicIds={getActiveHospitalClinicIds(
+                        dashboard.dashboardFilters,
+                      )}
+                      highlightAmbulatoryClinicIds={getActiveAmbulatoryClinicIds(
+                        dashboard.dashboardFilters,
+                      )}
                       onRequestPlan={(plan) => {
                         if (isEmbedded) {
                           handleEmbedSolicitar(plan);

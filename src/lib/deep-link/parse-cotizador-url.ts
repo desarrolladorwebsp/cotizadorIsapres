@@ -162,6 +162,8 @@ function hasDeepLinkFilterParams(params: URLSearchParams): boolean {
     DEEP_LINK_PARAMS.isapres,
     DEEP_LINK_PARAMS.zonas,
     DEEP_LINK_PARAMS.clinica,
+    DEEP_LINK_PARAMS.clinicaH,
+    DEEP_LINK_PARAMS.clinicaA,
     DEEP_LINK_PARAMS.tipoPlan,
     DEEP_LINK_PARAMS.coberturaH,
     DEEP_LINK_PARAMS.coberturaA,
@@ -225,6 +227,21 @@ export function parseCotizadorUrl(
     ? defaults.zones
     : buildZoneFilterStateFromRegion(resolvedRegion);
 
+  const legacyClinicIds = parseCommaList(params.get(DEEP_LINK_PARAMS.clinica));
+  const hasTypedClinicParams =
+    params.has(DEEP_LINK_PARAMS.clinicaH) ||
+    params.has(DEEP_LINK_PARAMS.clinicaA);
+  const hospitalClinicIds = params.has(DEEP_LINK_PARAMS.clinicaH)
+    ? parseCommaList(params.get(DEEP_LINK_PARAMS.clinicaH))
+    : hasTypedClinicParams
+      ? []
+      : legacyClinicIds;
+  const ambulatoryClinicIds = params.has(DEEP_LINK_PARAMS.clinicaA)
+    ? parseCommaList(params.get(DEEP_LINK_PARAMS.clinicaA))
+    : hasTypedClinicParams
+      ? []
+      : legacyClinicIds;
+
   const filters: DashboardFiltersState = {
     isapres: applyCheckboxSelection(
       ISAPRE_FILTER_OPTIONS,
@@ -239,7 +256,8 @@ export function parseCotizadorUrl(
       defaults.planTypes,
       planTypeIds,
     ),
-    clinicIds: parseCommaList(params.get(DEEP_LINK_PARAMS.clinica)),
+    hospitalClinicIds,
+    ambulatoryClinicIds,
     hospitalCoveragePercent: parseCoveragePercent(
       params.get(DEEP_LINK_PARAMS.coberturaH),
     ),

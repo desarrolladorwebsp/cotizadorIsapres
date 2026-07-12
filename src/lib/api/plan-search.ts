@@ -3,7 +3,8 @@ import { filterCatalogItems } from "@/lib/filter-catalog-items";
 import { prisma } from "@/lib/prisma";
 import {
   getActiveCheckboxIds,
-  getActiveClinicIds,
+  getActiveAmbulatoryClinicIds,
+  getActiveHospitalClinicIds,
   isCheckboxGroupActive,
 } from "@/lib/filter-options";
 import { sortPlansByBasePriceAsc } from "@/lib/plan-sort";
@@ -165,9 +166,13 @@ export function describeActiveFilters(filters: DashboardFiltersState): string {
   if (isCheckboxGroupActive(filters.zones)) {
     parts.push(`zonas:${getActiveCheckboxIds(filters.zones).join(",")}`);
   }
-  const clinicIds = getActiveClinicIds(filters);
-  if (clinicIds.length > 0) {
-    parts.push(`clinica:${clinicIds.join(",")}`);
+  const hospitalClinicIds = getActiveHospitalClinicIds(filters);
+  if (hospitalClinicIds.length > 0) {
+    parts.push(`clinicaH:${hospitalClinicIds.join(",")}`);
+  }
+  const ambulatoryClinicIds = getActiveAmbulatoryClinicIds(filters);
+  if (ambulatoryClinicIds.length > 0) {
+    parts.push(`clinicaA:${ambulatoryClinicIds.join(",")}`);
   }
   return parts.join(" ");
 }

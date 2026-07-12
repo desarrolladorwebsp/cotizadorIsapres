@@ -12,7 +12,8 @@ export interface PlanResultsListProps {
   beneficiarySummary: BeneficiaryGroupSummary;
   ufToClp: number;
   onAssignPlan?: (plan: HealthPlan) => void;
-  highlightClinicIds?: string[];
+  highlightHospitalClinicIds?: string[];
+  highlightAmbulatoryClinicIds?: string[];
 }
 
 const listVariants = {
@@ -47,7 +48,8 @@ export function PlanResultsList({
   beneficiarySummary,
   ufToClp,
   onAssignPlan,
-  highlightClinicIds = [],
+  highlightHospitalClinicIds = [],
+  highlightAmbulatoryClinicIds = [],
 }: PlanResultsListProps) {
   return (
     <motion.div
@@ -69,7 +71,8 @@ export function PlanResultsList({
             plan={plan}
             beneficiarySummary={beneficiarySummary}
             ufToClp={ufToClp}
-            highlightClinicIds={highlightClinicIds}
+            highlightHospitalClinicIds={highlightHospitalClinicIds}
+            highlightAmbulatoryClinicIds={highlightAmbulatoryClinicIds}
             onSelect={
               onAssignPlan ? () => onAssignPlan(plan) : undefined
             }

@@ -2,7 +2,8 @@
 
 import {
   createClearedDashboardFilters,
-  getActiveClinicIds,
+  getActiveAmbulatoryClinicIds,
+  getActiveHospitalClinicIds,
   ISAPRE_FILTER_OPTIONS,
   PLAN_TYPE_FILTER_OPTIONS,
   toggleCheckboxFilter,
@@ -99,8 +100,8 @@ export function DashboardFiltersPanel({
       >
         {showClinicFilter ? (
           <FilterSection
-            title="Clínica"
-            description="Elige prestadores y, si lo deseas, un umbral mínimo de cobertura."
+            title="Clínicas y cobertura"
+            description="Elige prestadores y umbrales mínimos por tipo de atención."
             compactEmbed={compactEmbed}
             hideDescription={hideHelperText}
             infoLabel="Información sobre filtro de clínicas"
@@ -108,7 +109,8 @@ export function DashboardFiltersPanel({
               <FilterHelpBlock
                 title="Prestadores y clínicas"
                 paragraphs={[
-                  "Filtra planes que incluyan al menos una de las clínicas o centros que selecciones.",
+                  "Puedes elegir clínicas distintas para cobertura hospitalaria y ambulatoria.",
+                  "Si defines un porcentaje junto con clínicas, el plan debe cumplir ese mínimo en al menos una de las clínicas seleccionadas para ese tipo.",
                   FILTER_HELP.coverage.body[1],
                 ]}
                 source={FILTER_HELP.coverage.source}
@@ -116,50 +118,98 @@ export function DashboardFiltersPanel({
             }
           >
             <div className="space-y-4">
-              <ClinicFilterSelect
-                value={value.clinicIds}
-                onChange={(clinicIds) => update({ clinicIds })}
-                options={clinicOptions}
-                loading={clinicOptionsLoading}
-                error={clinicOptionsError}
-                modalTitle="Seleccionar prestador"
-                compactEmbed={compactEmbed}
-                showSelectedHint
-              />
-
-              {hideCoverageFilter ? null : (
+              {hideCoverageFilter ? (
                 <>
-                  <CoveragePercentageFilter
-                    title="Cobertura hospitalaria"
-                    value={value.hospitalCoveragePercent}
-                    tone="hospital"
-                    compactEmbed={compactEmbed}
-                    onChange={(hospitalCoveragePercent) =>
-                      update({ hospitalCoveragePercent })
+                  <ClinicFilterSelect
+                    value={value.hospitalClinicIds}
+                    onChange={(hospitalClinicIds) =>
+                      update({ hospitalClinicIds })
                     }
-                  />
-
-                  <CoveragePercentageFilter
-                    title="Cobertura ambulatoria"
-                    value={value.ambulatoryCoveragePercent}
-                    tone="ambulatory"
+                    options={clinicOptions}
+                    loading={clinicOptionsLoading}
+                    error={clinicOptionsError}
+                    modalTitle="Clínicas hospitalarias"
+                    coverageContext="hospitalaria"
                     compactEmbed={compactEmbed}
-                    onChange={(ambulatoryCoveragePercent) =>
-                      update({ ambulatoryCoveragePercent })
-                    }
+                    showSelectedHint
                   />
+                  <ClinicFilterSelect
+                    value={value.ambulatoryClinicIds}
+                    onChange={(ambulatoryClinicIds) =>
+                      update({ ambulatoryClinicIds })
+                    }
+                    options={clinicOptions}
+                    loading={clinicOptionsLoading}
+                    error={clinicOptionsError}
+                    modalTitle="Clínicas ambulatorias"
+                    coverageContext="ambulatoria"
+                    compactEmbed={compactEmbed}
+                    showSelectedHint
+                  />
+                </>
+              ) : (
+                <>
+                  <div className="space-y-3 rounded-lg border border-border/60 bg-bg-layout/20 p-3">
+                    <CoveragePercentageFilter
+                      title="Cobertura hospitalaria"
+                      value={value.hospitalCoveragePercent}
+                      tone="hospital"
+                      compactEmbed={compactEmbed}
+                      onChange={(hospitalCoveragePercent) =>
+                        update({ hospitalCoveragePercent })
+                      }
+                    />
+                    <ClinicFilterSelect
+                      value={value.hospitalClinicIds}
+                      onChange={(hospitalClinicIds) =>
+                        update({ hospitalClinicIds })
+                      }
+                      options={clinicOptions}
+                      loading={clinicOptionsLoading}
+                      error={clinicOptionsError}
+                      modalTitle="Clínicas hospitalarias"
+                      coverageContext="hospitalaria"
+                      compactEmbed={compactEmbed}
+                      showSelectedHint
+                    />
+                  </div>
 
-                  {getActiveClinicIds(value).length > 0 ? (
+                  <div className="space-y-3 rounded-lg border border-border/60 bg-bg-layout/20 p-3">
+                    <CoveragePercentageFilter
+                      title="Cobertura ambulatoria"
+                      value={value.ambulatoryCoveragePercent}
+                      tone="ambulatory"
+                      compactEmbed={compactEmbed}
+                      onChange={(ambulatoryCoveragePercent) =>
+                        update({ ambulatoryCoveragePercent })
+                      }
+                    />
+                    <ClinicFilterSelect
+                      value={value.ambulatoryClinicIds}
+                      onChange={(ambulatoryClinicIds) =>
+                        update({ ambulatoryClinicIds })
+                      }
+                      options={clinicOptions}
+                      loading={clinicOptionsLoading}
+                      error={clinicOptionsError}
+                      modalTitle="Clínicas ambulatorias"
+                      coverageContext="ambulatoria"
+                      compactEmbed={compactEmbed}
+                      showSelectedHint
+                    />
+                  </div>
+
+                  {getActiveHospitalClinicIds(value).length > 0 ||
+                  getActiveAmbulatoryClinicIds(value).length > 0 ? (
                     <p
                       className={joinClasses(
                         "text-[11px] leading-snug text-muted",
                         compactEmbed && "max-md:text-[10px]",
                       )}
                     >
-                      Si eliges un porcentaje junto con clínicas, el plan debe
-                      cumplir ese mínimo en al menos una de las clínicas
-                      seleccionadas (hospitalaria y/o ambulatoria según
-                      corresponda).
+                      Cada tipo de cobertura usa su propia selección de clínicas.
+                      Si eliges un porcentaje, el plan debe cumplir ese mínimo en
+                      al menos una clínica del tipo correspondiente.
                     </p>
                   ) : null}
                 </>

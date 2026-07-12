@@ -84,7 +84,8 @@ export function createDefaultDashboardFilters(): DashboardFiltersState {
       PLAN_TYPE_FILTER_OPTIONS.map((o) => ({ id: o.id, label: o.label })),
       PLAN_TYPE_FILTER_DEFAULT_IDS,
     ),
-    clinicIds: [],
+    hospitalClinicIds: [],
+    ambulatoryClinicIds: [],
     hospitalCoveragePercent: null,
     ambulatoryCoveragePercent: null,
   };
@@ -124,12 +125,34 @@ export function withoutClinicFilter(
 ): DashboardFiltersState {
   return {
     ...filters,
-    clinicIds: [],
+    hospitalClinicIds: [],
+    ambulatoryClinicIds: [],
   };
 }
 
+function normalizeClinicIds(ids: string[]): string[] {
+  return ids.map((id) => id.trim()).filter((id) => id.length > 0);
+}
+
+export function getActiveHospitalClinicIds(
+  filters: DashboardFiltersState,
+): string[] {
+  return normalizeClinicIds(filters.hospitalClinicIds);
+}
+
+export function getActiveAmbulatoryClinicIds(
+  filters: DashboardFiltersState,
+): string[] {
+  return normalizeClinicIds(filters.ambulatoryClinicIds);
+}
+
+/** Unión de clínicas activas en ambos tipos de cobertura. */
 export function getActiveClinicIds(filters: DashboardFiltersState): string[] {
-  return filters.clinicIds.filter((id) => id.trim().length > 0);
+  const merged = new Set([
+    ...getActiveHospitalClinicIds(filters),
+    ...getActiveAmbulatoryClinicIds(filters),
+  ]);
+  return [...merged];
 }
 
 export function hasClinicFilter(filters: DashboardFiltersState): boolean {

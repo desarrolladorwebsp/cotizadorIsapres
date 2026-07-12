@@ -14,7 +14,8 @@ export interface PublicPlanResultsListProps {
   ufToClp: number;
   currency: CurrencyDisplay;
   onRequestPlan: (plan: HealthPlanSummary) => void;
-  highlightClinicIds?: string[];
+  highlightHospitalClinicIds?: string[];
+  highlightAmbulatoryClinicIds?: string[];
 }
 
 const listVariants = {
@@ -40,7 +41,8 @@ export function PublicPlanResultsList({
   ufToClp,
   currency,
   onRequestPlan,
-  highlightClinicIds = [],
+  highlightHospitalClinicIds = [],
+  highlightAmbulatoryClinicIds = [],
 }: PublicPlanResultsListProps) {
   return (
     <motion.div
@@ -60,7 +62,8 @@ export function PublicPlanResultsList({
             beneficiarySummary={beneficiarySummary}
             ufToClp={ufToClp}
             currency={currency}
-            highlightClinicIds={highlightClinicIds}
+            highlightHospitalClinicIds={highlightHospitalClinicIds}
+            highlightAmbulatoryClinicIds={highlightAmbulatoryClinicIds}
             onRequest={() => onRequestPlan(plan)}
           />
         </motion.div>

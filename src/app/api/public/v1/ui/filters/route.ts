@@ -8,7 +8,7 @@ export async function OPTIONS(request: Request) {
 
 /**
  * Guía de filtros del cotizador — acceso público (sin API key).
- * Incluye definición de zonas/sectores para integradores y Cotízalo Antes.
+ * Incluye zonas, tipos de plan, clínicas (hospitalaria/ambulatoria) e integradores.
  */
 export async function GET(request: Request) {
   try {
