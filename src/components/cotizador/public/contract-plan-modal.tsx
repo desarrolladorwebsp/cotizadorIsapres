@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { IsapreLogo } from "@/components/plan-card/isapre-logo";
@@ -65,7 +66,7 @@ export interface ContractPlanModalProps {
   deepLink: ParsedCotizadorDeepLink;
   initialTab?: SolicitarModalTab;
   onClose: () => void;
-  /** Widget embebido: posicionamiento absoluto y altura natural (sin fixed). */
+  /** Widget embebido: overlay fijo sobre el iframe (portal a body). */
   embedded?: boolean;
 }
 
@@ -139,6 +140,7 @@ export function ContractPlanModal({
   onClose,
   embedded = false,
 }: ContractPlanModalProps) {
+  const [mounted, setMounted] = useState(false);
   const { plan: detailPlan, loading: detailLoading } = usePlanDetail(
     planSummary?.unique_code ?? null,
     open,
@@ -190,10 +192,14 @@ export function ContractPlanModal({
     setPhone(deepLink.requestPrefill?.phone ?? "");
   }, [open, initialTab, deepLink.requestPrefill, deepLink.email]);
 
-  useScrollLock(open && !embedded);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useScrollLock(open);
 
   useEffect(() => {
-    if (!open || embedded) return;
+    if (!open) return;
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") onClose();
     }
@@ -201,18 +207,7 @@ export function ContractPlanModal({
     return () => {
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [open, embedded, onClose]);
-
-  useEffect(() => {
-    if (!open || !embedded) return;
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") onClose();
-    }
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [open, embedded, onClose]);
+  }, [open, onClose]);
 
   const priceQuote = useMemo(() => {
     if (!planSummary) return null;
@@ -367,41 +362,39 @@ export function ContractPlanModal({
     }
   }
 
-  return (
+  const overlayZ = embedded ? "z-[110]" : "z-50";
+
+  const modalLayer = (
     <AnimatePresence>
       {open ? (
         <motion.div
-          data-embed-measure
+          {...(embedded ? { "data-embed-overlay": "contract-modal" } : {})}
           className={joinClasses(
-            embedded
-              ? "relative z-50 w-full overflow-visible py-2 sm:py-4"
-              : "fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4",
+            "fixed inset-0 flex items-end justify-center p-0 sm:items-center sm:p-4",
+            embedded ? "px-2 py-2 sm:px-3" : "",
+            overlayZ,
           )}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
-          {embedded ? null : (
-            <button
-              type="button"
-              aria-label="Cerrar"
-              className="absolute inset-0 bg-primary-dark/55 backdrop-blur-[3px]"
-              onClick={onClose}
-            />
-          )}
+          <button
+            type="button"
+            aria-label="Cerrar"
+            className="absolute inset-0 bg-primary-dark/55 backdrop-blur-[3px]"
+            onClick={onClose}
+          />
 
           <motion.div
             role="dialog"
             aria-modal="true"
             aria-labelledby="contract-plan-title"
-            initial={{ opacity: 0, y: embedded ? 16 : 32 }}
+            initial={{ opacity: 0, y: 32 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: embedded ? 12 : 24 }}
+            exit={{ opacity: 0, y: 24 }}
             className={joinClasses(
               safeWidth,
-              embedded
-                ? "relative z-10 mx-auto flex w-full max-w-full flex-col overflow-visible rounded-2xl border bg-white shadow-2xl sm:max-w-6xl"
-                : "relative z-10 flex max-h-[96dvh] w-full max-w-full flex-col overflow-hidden overscroll-none rounded-t-2xl border bg-white shadow-2xl sm:max-h-[92dvh] sm:max-w-6xl sm:rounded-2xl",
+              "relative z-10 flex max-h-[96dvh] w-full max-w-full flex-col overflow-hidden overscroll-none rounded-t-2xl border bg-white shadow-2xl sm:max-h-[92dvh] sm:max-w-6xl sm:rounded-2xl",
               ui.border,
             )}
           >
@@ -549,13 +542,7 @@ export function ContractPlanModal({
               })}
             </div>
 
-            <div
-              className={
-                embedded
-                  ? "overflow-x-clip overflow-y-visible"
-                  : "min-h-0 flex-1 overflow-x-clip overflow-y-auto overscroll-y-contain"
-              }
-            >
+            <div className="min-h-0 flex-1 overflow-x-clip overflow-y-auto overscroll-y-contain">
               {submitted ? (
                 <div className="space-y-4 px-6 py-12 text-center">
                   <div
@@ -729,4 +716,11 @@ export function ContractPlanModal({
       ) : null}
     </AnimatePresence>
   );
+
+  if (embedded) {
+    if (!mounted) return null;
+    return createPortal(modalLayer, document.body);
+  }
+
+  return modalLayer;
 }

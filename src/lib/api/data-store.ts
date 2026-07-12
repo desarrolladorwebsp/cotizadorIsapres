@@ -194,6 +194,15 @@ export async function readClinics(): Promise<Clinic[]> {
     id: clinic.id,
     name: clinic.name,
     zones: clinic.zones ?? [],
+    location:
+      clinic.address != null && clinic.lat != null && clinic.lng != null
+        ? {
+            address: clinic.address,
+            lat: clinic.lat,
+            lng: clinic.lng,
+            source: clinic.locationSource ?? "manual",
+          }
+        : null,
   }));
 }
 
@@ -214,6 +223,35 @@ export async function writeClinics(clinics: Clinic[]): Promise<void> {
       }),
     ),
   );
+}
+
+export async function updateClinicLocation(
+  clinicId: string,
+  location: { address: string; lat: number; lng: number; source?: string },
+): Promise<void> {
+  await prisma.clinic.update({
+    where: { id: clinicId },
+    data: {
+      address: location.address,
+      lat: location.lat,
+      lng: location.lng,
+      locationSource: location.source ?? "manual",
+      locationUpdatedAt: new Date(),
+    },
+  });
+}
+
+export async function clearClinicLocation(clinicId: string): Promise<void> {
+  await prisma.clinic.update({
+    where: { id: clinicId },
+    data: {
+      address: null,
+      lat: null,
+      lng: null,
+      locationSource: null,
+      locationUpdatedAt: null,
+    },
+  });
 }
 
 export async function syncClinicNameInPlans(

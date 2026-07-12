@@ -15,9 +15,26 @@ export function getClinicLocation(clinicId: string): ClinicLocationRecord | null
   return clinicLocations.locations[clinicId] ?? null;
 }
 
+/**
+ * Ubicación efectiva de una clínica: prioriza la dirección persistida y editable
+ * (BD, vía panel admin) y cae al asset estático `clinic-locations.json`.
+ */
+export function resolveClinicLocation(
+  clinic: Clinic,
+): ClinicLocationRecord | null {
+  if (
+    clinic.location &&
+    Number.isFinite(clinic.location.lat) &&
+    Number.isFinite(clinic.location.lng)
+  ) {
+    return clinic.location;
+  }
+  return getClinicLocation(clinic.id);
+}
+
 export function attachClinicLocations(clinics: Clinic[]): ClinicMapMarker[] {
   return clinics.flatMap((clinic) => {
-    const location = getClinicLocation(clinic.id);
+    const location = resolveClinicLocation(clinic);
     if (!location) return [];
 
     return [

@@ -23,6 +23,7 @@ import {
   ClinicPlansModalContent,
   ClinicZoneBadges,
 } from "@/components/admin/clinic-plans-modal";
+import { ClinicLocationModalContent } from "@/components/admin/clinic-location-modal";
 import {
   createClinic,
   createEmptyClinic,
@@ -68,6 +69,8 @@ export function ClinicsPanel({
   const [formMode, setFormMode] = useState<FormMode>(null);
   const [draftClinic, setDraftClinic] = useState<Clinic>(createEmptyClinic());
   const [plansModalClinic, setPlansModalClinic] = useState<Clinic | null>(null);
+  const [locationModalClinic, setLocationModalClinic] =
+    useState<Clinic | null>(null);
   const [saving, setSaving] = useState(false);
 
   const filteredClinics = useMemo(() => {
@@ -87,6 +90,14 @@ export function ClinicsPanel({
 
     return sortClinics(matched, plans, sortKey);
   }, [clinics, plans, search, zoneFilter, sortKey]);
+
+  const activeLocationClinic = useMemo(() => {
+    if (!locationModalClinic) return null;
+    return (
+      clinics.find((clinic) => clinic.id === locationModalClinic.id) ??
+      locationModalClinic
+    );
+  }, [clinics, locationModalClinic]);
 
   function openCreateForm() {
     setDraftClinic(createEmptyClinic());
@@ -219,11 +230,12 @@ export function ClinicsPanel({
         loadingMessage="Cargando clínicas…"
         footer={`Mostrando ${filteredClinics.length} de ${clinics.length} prestadores.`}
       >
-        <AdminTable minWidth="64rem">
+        <AdminTable minWidth="76rem">
           <AdminTableHead>
             <tr>
               <AdminTableHeaderCell>Nombre</AdminTableHeaderCell>
               <AdminTableHeaderCell>Identificador</AdminTableHeaderCell>
+              <AdminTableHeaderCell>Dirección (mapa)</AdminTableHeaderCell>
               <AdminTableHeaderCell>Zonas geográficas</AdminTableHeaderCell>
               <AdminTableHeaderCell align="center">Planes</AdminTableHeaderCell>
               <AdminTableHeaderCell align="right">Acciones</AdminTableHeaderCell>
@@ -247,6 +259,17 @@ export function ClinicsPanel({
                     <code className="rounded bg-bg-layout px-1.5 py-0.5 font-mono text-xs text-muted">
                       {clinic.id}
                     </code>
+                  </AdminTableCell>
+                  <AdminTableCell>
+                    {clinic.location ? (
+                      <span className="block max-w-[18rem] truncate text-sm text-foreground">
+                        {clinic.location.address}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-amber-600">
+                        Sin dirección
+                      </span>
+                    )}
                   </AdminTableCell>
                   <AdminTableCell>
                     <ClinicZoneBadges zoneIds={zoneIds} />
@@ -275,6 +298,14 @@ export function ClinicsPanel({
                   <AdminTableCell align="right">
                     {canManage ? (
                       <AdminRowActions>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setLocationModalClinic(clinic)}
+                        >
+                          Ubicación
+                        </Button>
                         <Button
                           type="button"
                           size="sm"
@@ -342,6 +373,29 @@ export function ClinicsPanel({
           <ClinicPlansModalContent clinic={plansModalClinic} plans={plans} />
         ) : null}
       </AdminFormModal>
+
+      {canManage ? (
+        <AdminFormModal
+          open={locationModalClinic !== null}
+          title={
+            locationModalClinic
+              ? `Ubicación — ${locationModalClinic.name}`
+              : "Ubicación"
+          }
+          description="Valida y actualiza la dirección que se muestra en el mapa."
+          onClose={() => setLocationModalClinic(null)}
+          size="md"
+        >
+          {activeLocationClinic ? (
+            <ClinicLocationModalContent
+              clinic={activeLocationClinic}
+              onSaved={onRefresh}
+              onNotify={onNotify}
+              onClose={() => setLocationModalClinic(null)}
+            />
+          ) : null}
+        </AdminFormModal>
+      ) : null}
     </AdminPanel>
   );
 }

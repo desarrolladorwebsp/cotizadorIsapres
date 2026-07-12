@@ -375,6 +375,33 @@ export async function deleteClinic(clinicId: string): Promise<void> {
   await parseJsonResponse<{ ok: boolean }>(response);
 }
 
+export interface UpdateClinicLocationResult extends Clinic {
+  queried: string;
+}
+
+export async function updateClinicLocation(
+  clinicId: string,
+  address: string,
+): Promise<UpdateClinicLocationResult> {
+  const response = await fetch(
+    `/api/clinics/${encodeURIComponent(clinicId)}/location`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ address }),
+    },
+  );
+  return parseJsonResponse<UpdateClinicLocationResult>(response);
+}
+
+export async function clearClinicLocation(clinicId: string): Promise<void> {
+  const response = await fetch(
+    `/api/clinics/${encodeURIComponent(clinicId)}/location`,
+    { method: "DELETE" },
+  );
+  await parseJsonResponse<{ ok: boolean }>(response);
+}
+
 export async function uploadPlanPdf(
   file: File,
   params: UploadPlanPdfRequest,

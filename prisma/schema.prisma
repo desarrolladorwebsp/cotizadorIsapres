@@ -97,12 +97,17 @@ model CompanyAgreement {
 }
 
 model Clinic {
-  id        String          @id
-  name      String
-  zones     String[]        @default([])
-  createdAt DateTime        @default(now()) @map("created_at")
-  updatedAt DateTime        @updatedAt @map("updated_at")
-  coverages CoverageEntry[]
+  id                String          @id
+  name              String
+  zones             String[]        @default([])
+  address           String?
+  lat               Float?
+  lng               Float?
+  locationSource    String?         @map("location_source")
+  locationUpdatedAt DateTime?       @map("location_updated_at")
+  createdAt         DateTime        @default(now()) @map("created_at")
+  updatedAt         DateTime        @updatedAt @map("updated_at")
+  coverages         CoverageEntry[]
 
   @@map("clinics")
 }
