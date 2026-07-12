@@ -18,6 +18,10 @@ import {
 } from "@/domain";
 import { comparePlansByFinalPriceAsc } from "@/lib/plan-sort";
 import {
+  INITIAL_PLANS_PAGE_SIZE,
+  PLANS_PAGE_SIZE_STEP,
+} from "@/lib/plan-search-config";
+import {
   createDefaultQuoteCriteria,
   SORT_OPTIONS,
   type QuoteSortKey,
@@ -28,6 +32,7 @@ import {
   appShellRoot,
   appShellScroll,
   safeWidth,
+  touchTarget,
   ui,
 } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
@@ -77,6 +82,7 @@ export function CotizadorWorkspace({
   const [assignPlan, setAssignPlan] = useState<HealthPlan | null>(null);
   const [region, setRegion] = useState(defaultRegion);
   const [sortKey, setSortKey] = useState<QuoteSortKey>("price_asc");
+  const [visibleCount, setVisibleCount] = useState(INITIAL_PLANS_PAGE_SIZE);
   const [priceBoundsInitialized, setPriceBoundsInitialized] = useState(false);
   const isExecutive = variant === "executive";
 
@@ -107,6 +113,45 @@ export function CotizadorWorkspace({
 
     return plans;
   }, [filteredPlans, sortKey, beneficiarySummary, ufToClp]);
+
+  const visiblePlans = useMemo(
+    () => displayedPlans.slice(0, visibleCount),
+    [displayedPlans, visibleCount],
+  );
+
+  const hasMorePlans = displayedPlans.length > visiblePlans.length;
+
+  const resultsFingerprint = useMemo(
+    () =>
+      [
+        search,
+        sortKey,
+        priceMin,
+        priceMax,
+        region,
+        displayedPlans.length,
+        beneficiarySummary.totalFactors,
+      ].join("|"),
+    [
+      search,
+      sortKey,
+      priceMin,
+      priceMax,
+      region,
+      displayedPlans.length,
+      beneficiarySummary.totalFactors,
+    ],
+  );
+
+  useEffect(() => {
+    setVisibleCount(INITIAL_PLANS_PAGE_SIZE);
+  }, [resultsFingerprint]);
+
+  function handleLoadMorePlans() {
+    setVisibleCount((current) =>
+      Math.min(current + PLANS_PAGE_SIZE_STEP, displayedPlans.length),
+    );
+  }
 
   const handleRegionChange = useCallback(
     (nextRegion: string) => {
@@ -378,20 +423,42 @@ export function CotizadorWorkspace({
                 <p className="text-base font-medium text-foreground">{error}</p>
               </div>
             ) : displayedPlans.length > 0 ? (
-              <PlanResultsList
-                plans={displayedPlans}
-                beneficiarySummary={beneficiarySummary}
-                ufToClp={ufToClp}
-                highlightHospitalClinicIds={getActiveHospitalClinicIds(
-                  dashboardFilters,
-                )}
-                highlightAmbulatoryClinicIds={getActiveAmbulatoryClinicIds(
-                  dashboardFilters,
-                )}
-                onAssignPlan={
-                  isExecutive ? (plan) => setAssignPlan(plan) : undefined
-                }
-              />
+              <>
+                <PlanResultsList
+                  plans={visiblePlans}
+                  beneficiarySummary={beneficiarySummary}
+                  ufToClp={ufToClp}
+                  highlightHospitalClinicIds={getActiveHospitalClinicIds(
+                    dashboardFilters,
+                  )}
+                  highlightAmbulatoryClinicIds={getActiveAmbulatoryClinicIds(
+                    dashboardFilters,
+                  )}
+                  onAssignPlan={
+                    isExecutive ? (plan) => setAssignPlan(plan) : undefined
+                  }
+                />
+                {hasMorePlans ? (
+                  <div className="flex justify-center">
+                    <button
+                      type="button"
+                      onClick={handleLoadMorePlans}
+                      className={joinClasses(
+                        touchTarget,
+                        "rounded-full border px-8 text-sm font-semibold text-primary-dark transition hover:border-primary/40 hover:bg-primary/5",
+                        ui.border,
+                      )}
+                    >
+                      Ver más planes (
+                      {Math.min(
+                        PLANS_PAGE_SIZE_STEP,
+                        displayedPlans.length - visiblePlans.length,
+                      )}{" "}
+                      adicionales)
+                    </button>
+                  </div>
+                ) : null}
+              </>
             ) : (
               <div
                 className={joinClasses(

@@ -16,6 +16,8 @@ export interface PlanResultsListProps {
   highlightAmbulatoryClinicIds?: string[];
 }
 
+const ANIMATED_LIST_LIMIT = 24;
+
 const listVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -51,13 +53,33 @@ export function PlanResultsList({
   highlightHospitalClinicIds = [],
   highlightAmbulatoryClinicIds = [],
 }: PlanResultsListProps) {
+  const shouldAnimate = plans.length <= ANIMATED_LIST_LIMIT;
+  const listClassName = "flex flex-col gap-4 sm:gap-5 xl:gap-6";
+
+  const cards = plans.map((plan) => (
+    <PlanCard
+      key={plan.unique_code}
+      plan={plan}
+      beneficiarySummary={beneficiarySummary}
+      ufToClp={ufToClp}
+      highlightHospitalClinicIds={highlightHospitalClinicIds}
+      highlightAmbulatoryClinicIds={highlightAmbulatoryClinicIds}
+      onSelect={onAssignPlan ? () => onAssignPlan(plan) : undefined}
+      selectLabel={onAssignPlan ? "Asignar a cliente" : undefined}
+      selectVariant={onAssignPlan ? "success" : undefined}
+    />
+  ));
+
+  if (!shouldAnimate) {
+    return <div className={listClassName}>{cards}</div>;
+  }
+
   return (
     <motion.div
-      key={`${plans.map((p) => p.unique_code).join(",")}-${beneficiarySummary.totalFactors}-${beneficiarySummary.beneficiaryCount}`}
       variants={listVariants}
       initial="hidden"
       animate="visible"
-      className="flex flex-col gap-4 sm:gap-5 xl:gap-6"
+      className={listClassName}
     >
       {plans.map((plan) => (
         <motion.div
@@ -73,9 +95,7 @@ export function PlanResultsList({
             ufToClp={ufToClp}
             highlightHospitalClinicIds={highlightHospitalClinicIds}
             highlightAmbulatoryClinicIds={highlightAmbulatoryClinicIds}
-            onSelect={
-              onAssignPlan ? () => onAssignPlan(plan) : undefined
-            }
+            onSelect={onAssignPlan ? () => onAssignPlan(plan) : undefined}
             selectLabel={onAssignPlan ? "Asignar a cliente" : undefined}
             selectVariant={onAssignPlan ? "success" : undefined}
           />
