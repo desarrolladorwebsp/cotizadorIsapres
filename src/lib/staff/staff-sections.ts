@@ -7,7 +7,8 @@ export type StaffSection =
   | "prospectos"
   | "usuarios"
   | "clinicas"
-  | "ges";
+  | "ges"
+  | "reportes-pdf";
 
 export const STAFF_SECTION_QUERY = "section";
 
@@ -24,6 +25,7 @@ export const STAFF_ADMIN_SECTIONS: StaffSection[] = [
   "usuarios",
   "clinicas",
   "ges",
+  "reportes-pdf",
 ];
 
 const ALL_SECTIONS = new Set<StaffSection>([

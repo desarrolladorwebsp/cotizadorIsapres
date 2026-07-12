@@ -71,8 +71,29 @@ model Isapre {
   createdAt          DateTime @default(now()) @map("created_at")
   updatedAt          DateTime @updatedAt @map("updated_at")
   plans              Plan[]
+  companyAgreements  CompanyAgreement[]
 
   @@map("isapres")
+}
+
+model CompanyAgreement {
+  id              String   @id @default(cuid())
+  companyRut      String   @unique @map("company_rut")
+  companyRutRaw   String?  @map("company_rut_raw")
+  companyName     String   @map("company_name")
+  normalizedName  String   @map("normalized_name")
+  discountPercent Float?   @map("discount_percent")
+  isapreId        String?  @map("isapre_id")
+  sourceFile      String?  @map("source_file")
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  isapre          Isapre?  @relation(fields: [isapreId], references: [id], onDelete: SetNull)
+
+  @@index([normalizedName])
+  @@index([active])
+  @@index([isapreId])
+  @@map("company_agreements")
 }
 
 model Clinic {

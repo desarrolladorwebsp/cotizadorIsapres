@@ -9,8 +9,12 @@ import {
   validateCompanyAgreementFields,
 } from "@/lib/email/company-agreement-schema";
 import { sanitizeRutInput } from "@/lib/auth/rut";
-import { accent, safeWidth, touchTarget, ui } from "@/lib/ui-tokens";
+import { safeWidth, touchTarget, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
+import type {
+  CompanyAgreementLookupResult,
+  CompanyAgreementRecord,
+} from "@/types/company-agreement";
 
 function InfoIcon({ className }: { className?: string }) {
   return (
@@ -62,6 +66,14 @@ function SparkIcon() {
       />
     </svg>
   );
+}
+
+function formatDiscountPercent(value: number | null): string {
+  if (value == null) return "beneficio vigente";
+  const formatted = Number.isInteger(value)
+    ? String(value)
+    : value.toLocaleString("es-CL", { maximumFractionDigits: 2 });
+  return `hasta un ${formatted}% de descuento`;
 }
 
 export type CompanyAgreementSource = "public" | "executive" | "embed";
@@ -119,6 +131,8 @@ export function CompanyAgreementValidationSection({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [agreementMatch, setAgreementMatch] =
+    useState<CompanyAgreementRecord | null>(null);
 
   const resolvedSource: CompanyAgreementSource = compactEmbed ? "embed" : source;
 
@@ -130,6 +144,7 @@ export function CompanyAgreementValidationSection({
       setFieldErrors((current) => ({ ...current, [field]: undefined }));
       setSubmitError(null);
       setSubmitted(false);
+      if (field === "companyRut") setAgreementMatch(null);
     },
     [],
   );
@@ -142,7 +157,26 @@ export function CompanyAgreementValidationSection({
     setFieldErrors((current) => ({ ...current, [field]: undefined }));
     setSubmitError(null);
     setSubmitted(false);
+    if (field === "companyRut") setAgreementMatch(null);
   }, []);
+
+  async function findCompanyAgreement(): Promise<CompanyAgreementRecord | null> {
+    if (!companyRut.trim()) return null;
+
+    const params = new URLSearchParams({ rut: companyRut.trim() });
+    const response = await fetch(`/api/company-agreements/lookup?${params}`);
+    const payload = (await response.json().catch(() => null)) as
+      | (CompanyAgreementLookupResult & { error?: string })
+      | null;
+
+    if (!response.ok) {
+      throw new Error(
+        payload?.error ?? "No pudimos validar el convenio. Intenta nuevamente.",
+      );
+    }
+
+    return payload?.matches[0] ?? null;
+  }
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -166,6 +200,15 @@ export function CompanyAgreementValidationSection({
     setSubmitting(true);
 
     try {
+      const match = await findCompanyAgreement();
+      if (match) {
+        setAgreementMatch(match);
+        setSubmitted(false);
+        setFieldErrors({});
+        if (isInline) setExpanded(true);
+        return;
+      }
+
       const response = await fetch("/api/company-agreement-inquiry", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -189,6 +232,7 @@ export function CompanyAgreementValidationSection({
       }
 
       setSubmitted(true);
+      setAgreementMatch(null);
       setFieldErrors({});
       if (isInline) setExpanded(true);
     } catch (error) {
@@ -270,8 +314,7 @@ export function CompanyAgreementValidationSection({
                   compactEmbed && "max-md:h-9 max-md:rounded-lg max-md:text-xs",
                   ui.input,
                 ),
-            fieldErrors[field] &&
-              "ring-accent-danger/50 focus:ring-accent-danger/40",
+            fieldErrors[field] && "ring-red-500/60 focus:ring-red-500/40",
           )}
           aria-label={hideLabel ? FIELD_LABELS[field] : undefined}
           aria-invalid={Boolean(fieldErrors[field])}
@@ -282,7 +325,7 @@ export function CompanyAgreementValidationSection({
         {fieldErrors[field] ? (
           <span
             id={`company-agreement-${field}-error`}
-            className="text-[10px] text-accent-danger"
+            className="text-[10px] text-red-700"
           >
             {fieldErrors[field]}
           </span>
@@ -304,6 +347,21 @@ export function CompanyAgreementValidationSection({
       <p className="mt-0.5 text-xs text-emerald-800/90">
         Revisaremos si tu empresa tiene convenio vigente y te contactaremos si
         aplica un beneficio.
+      </p>
+    </div>
+  ) : agreementMatch ? (
+    <div
+      className={joinClasses(
+        "rounded-xl border border-red-300 bg-red-600 px-3 py-2.5 text-sm text-white shadow-sm",
+        isInline && "mt-2",
+        compactEmbed && "max-md:text-xs",
+      )}
+      role="status"
+    >
+      <p className="font-bold">Sí, esta empresa cuenta con beneficio.</p>
+      <p className="mt-0.5 text-xs text-white/95">
+        {agreementMatch.companyName} tiene{" "}
+        {formatDiscountPercent(agreementMatch.discountPercent)}.
       </p>
     </div>
   ) : (
@@ -331,12 +389,12 @@ export function CompanyAgreementValidationSection({
             size="sm"
             disabled={submitting}
             className={joinClasses(
-              "w-full shrink-0 lg:w-auto lg:min-w-[7.5rem]",
+              "w-full shrink-0 bg-red-600 text-white hover:bg-red-700 lg:w-auto lg:min-w-[7.5rem]",
               isInline && "h-9 rounded-lg px-4 text-xs",
               compactEmbed && "max-md:h-8 max-md:px-3 max-md:text-[11px]",
             )}
           >
-            {submitting ? "Enviando…" : "Validar convenio"}
+            {submitting ? "Validando…" : "Validar convenio"}
           </Button>
         </div>
       </div>
@@ -356,7 +414,7 @@ export function CompanyAgreementValidationSection({
       {submitError ? (
         <p
           className={joinClasses(
-            "rounded-lg bg-amber-50 px-2.5 py-2 text-[11px] text-amber-900 ring-1 ring-amber-200/80",
+            "rounded-lg bg-red-50 px-2.5 py-2 text-[11px] text-red-900 ring-1 ring-red-200/80",
             compactEmbed && "max-md:text-[10px]",
           )}
           role="status"
@@ -374,7 +432,7 @@ export function CompanyAgreementValidationSection({
           data-embed-measure
           className={joinClasses(
             safeWidth,
-            "border-t border-primary/15",
+            "border-t border-red-200",
             compactEmbed ? "mt-2.5 pt-2.5" : "mt-3 pt-3",
             className,
           )}
@@ -393,7 +451,7 @@ export function CompanyAgreementValidationSection({
             >
               <span
                 className={joinClasses(
-                  "min-w-0 flex-1 font-semibold leading-snug text-primary-dark",
+                  "min-w-0 flex-1 font-semibold leading-snug text-red-700",
                   compactEmbed
                     ? "text-xs max-md:text-[11px]"
                     : "text-sm sm:text-[15px]",
@@ -401,7 +459,7 @@ export function CompanyAgreementValidationSection({
               >
                 {INLINE_TITLE}
               </span>
-              <span className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-primary">
+              <span className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-red-700">
                 {expanded ? "Ocultar" : "Consultar"}
                 <ChevronIcon expanded={expanded} />
               </span>
@@ -410,10 +468,9 @@ export function CompanyAgreementValidationSection({
             <button
               type="button"
               onClick={() => setInfoOpen(true)}
-              aria-label="Más información sobre convenios empresa–Isapre"
+              aria-label="Más información sobre convenios empresa"
               className={joinClasses(
-                "inline-flex shrink-0 items-center justify-center rounded-full border text-secondary transition hover:bg-white/60 hover:text-secondary",
-                accent.ringSecondary,
+                "inline-flex shrink-0 items-center justify-center rounded-full border border-red-200 text-red-700 transition hover:bg-red-50",
                 "size-8",
                 touchTarget,
               )}
@@ -443,9 +500,11 @@ export function CompanyAgreementValidationSection({
             ) : null}
           </AnimatePresence>
 
-          {submitted && !expanded ? (
-            <p className="mt-1.5 text-[11px] font-medium text-emerald-700">
-              Consulta enviada. Te contactaremos si hay convenio aplicable.
+          {(submitted || agreementMatch) && !expanded ? (
+            <p className="mt-1.5 text-[11px] font-medium text-red-700">
+              {agreementMatch
+                ? "Beneficio encontrado para esta empresa."
+                : "Consulta enviada. Te contactaremos si hay convenio aplicable."}
             </p>
           ) : null}
         </div>
@@ -466,8 +525,7 @@ export function CompanyAgreementValidationSection({
         aria-labelledby="company-agreement-title"
         className={joinClasses(
           safeWidth,
-          "rounded-2xl border bg-gradient-to-br from-primary/[0.07] via-white to-secondary/[0.06] shadow-sm",
-          accent.borderPrimary,
+          "rounded-2xl border border-red-200 bg-gradient-to-br from-red-50 via-white to-red-50 shadow-sm",
           compactEmbed ? "p-3 max-md:p-2.5" : "p-4 sm:p-5",
           className,
         )}
@@ -480,8 +538,7 @@ export function CompanyAgreementValidationSection({
         >
           <span
             className={joinClasses(
-              "inline-flex shrink-0 items-center justify-center rounded-xl text-primary-dark",
-              accent.iconPrimary,
+              "inline-flex shrink-0 items-center justify-center rounded-xl bg-red-100 text-red-700",
               compactEmbed ? "size-9 max-md:size-8" : "size-10",
             )}
             aria-hidden
@@ -500,7 +557,7 @@ export function CompanyAgreementValidationSection({
                 <h2
                   id="company-agreement-title"
                   className={joinClasses(
-                    "font-bold leading-snug text-primary-dark",
+                    "font-bold leading-snug text-red-700",
                     compactEmbed
                       ? "text-sm max-md:text-[13px]"
                       : "text-base sm:text-lg",
@@ -508,7 +565,7 @@ export function CompanyAgreementValidationSection({
                 >
                   {INLINE_TITLE}
                 </h2>
-                <span className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-primary">
+                <span className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-red-700">
                   {expanded ? "Ocultar formulario" : "Consultar convenio"}
                   <ChevronIcon expanded={expanded} />
                 </span>
@@ -517,10 +574,9 @@ export function CompanyAgreementValidationSection({
               <button
                 type="button"
                 onClick={() => setInfoOpen(true)}
-                aria-label="Más información sobre convenios empresa–Isapre"
+                aria-label="Más información sobre convenios empresa"
                 className={joinClasses(
-                  "inline-flex shrink-0 items-center justify-center rounded-full border text-secondary transition hover:bg-secondary/10 hover:text-secondary",
-                  accent.ringSecondary,
+                  "inline-flex shrink-0 items-center justify-center rounded-full border border-red-200 text-red-700 transition hover:bg-red-50",
                   compactEmbed ? "size-8" : "size-9",
                   touchTarget,
                 )}
@@ -545,9 +601,11 @@ export function CompanyAgreementValidationSection({
               ) : null}
             </AnimatePresence>
 
-            {submitted && !expanded ? (
-              <p className="mt-2 text-xs font-medium text-emerald-700">
-                Consulta enviada. Te contactaremos si hay convenio aplicable.
+            {(submitted || agreementMatch) && !expanded ? (
+              <p className="mt-2 text-xs font-medium text-red-700">
+                {agreementMatch
+                  ? "Beneficio encontrado para esta empresa."
+                  : "Consulta enviada. Te contactaremos si hay convenio aplicable."}
               </p>
             ) : null}
           </div>

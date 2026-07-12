@@ -13,6 +13,8 @@ export interface FilterSectionProps {
   className?: string;
   /** Oculta descripciones y reduce padding en widget móvil. */
   compactEmbed?: boolean;
+  /** Oculta el texto descriptivo bajo el título de la sección. */
+  hideDescription?: boolean;
 }
 
 export function FilterSection({
@@ -23,6 +25,7 @@ export function FilterSection({
   children,
   className,
   compactEmbed = false,
+  hideDescription = false,
 }: FilterSectionProps) {
   return (
     <section className={joinClasses("min-w-0 py-4", compactEmbed && "max-md:py-3", className)}>
@@ -48,7 +51,7 @@ export function FilterSection({
             </FilterInfoTip>
           ) : null}
         </div>
-        {description ? (
+        {description && !hideDescription ? (
           <p
             className={joinClasses(
               "text-[11px] leading-relaxed text-muted",

@@ -12,6 +12,7 @@ export interface DependentLoadsEditorProps {
   onDependentsChange: (dependents: DependentBeneficiary[]) => void;
   variant?: "popover" | "form";
   dependentFactors?: PersonRiskFactor[];
+  hideEmptyHint?: boolean;
 }
 
 function sanitizeDependents(dependents: DependentBeneficiary[]) {
@@ -23,6 +24,7 @@ export function DependentLoadsEditor({
   onDependentsChange,
   variant = "form",
   dependentFactors = [],
+  hideEmptyHint = false,
 }: DependentLoadsEditorProps) {
   const [draftAge, setDraftAge] = useState("");
   const confirmedDependents = sanitizeDependents(dependents);
@@ -95,7 +97,7 @@ export function DependentLoadsEditor({
             );
           })}
         </ul>
-      ) : (
+      ) : hideEmptyHint ? null : (
         <p className={joinClasses("text-xs text-muted/80", isPopover && "text-[11px]")}>
           Aún no hay cargas agregadas. Ingresa la edad y pulsa Agregar.
         </p>

@@ -42,6 +42,8 @@ export interface DashboardFiltersPanelProps {
   onPriceMaxChange?: (value: number) => void;
   defaultPriceMin?: number;
   defaultPriceMax?: number;
+  /** Oculta textos de ayuda bajo cada bloque de filtro. */
+  hideHelperText?: boolean;
 }
 
 export function DashboardFiltersPanel({
@@ -62,6 +64,7 @@ export function DashboardFiltersPanel({
   onPriceMaxChange,
   defaultPriceMin,
   defaultPriceMax,
+  hideHelperText = false,
 }: DashboardFiltersPanelProps) {
   const showPriceFilter =
     priceMin !== undefined &&
@@ -99,6 +102,7 @@ export function DashboardFiltersPanel({
             title="Clínica"
             description="Elige prestadores y, si lo deseas, un umbral mínimo de cobertura."
             compactEmbed={compactEmbed}
+            hideDescription={hideHelperText}
             infoLabel="Información sobre filtro de clínicas"
             info={
               <FilterHelpBlock
@@ -168,6 +172,7 @@ export function DashboardFiltersPanel({
           title="Isapre"
           description="Selecciona una o más Isapres para acotar los resultados."
           compactEmbed={compactEmbed}
+          hideDescription={hideHelperText}
           infoLabel="Información sobre Isapres"
           info={
             <FilterHelpBlock
@@ -195,6 +200,7 @@ export function DashboardFiltersPanel({
             title="Tipo de plan"
             description="Modalidad de contratación del plan de salud."
             compactEmbed={compactEmbed}
+            hideDescription={hideHelperText}
             infoLabel="Información sobre tipos de plan"
             info={
               <FilterHelpBlock
@@ -232,6 +238,7 @@ export function DashboardFiltersPanel({
             onPriceMinChange={onPriceMinChange}
             onPriceMaxChange={onPriceMaxChange}
             compactEmbed={compactEmbed}
+            hideHelperText={hideHelperText}
           />
         ) : null}
 
@@ -239,6 +246,7 @@ export function DashboardFiltersPanel({
           title="Zonas"
           description="Se sincroniza con la región del buscador. También puedes ajustar sectores RM, norte, Valparaíso, etc."
           compactEmbed={compactEmbed}
+          hideDescription={hideHelperText}
           infoLabel="Información sobre zonas y sectores geográficos"
           info={
             <FilterHelpBlock

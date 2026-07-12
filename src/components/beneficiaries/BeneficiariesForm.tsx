@@ -20,12 +20,15 @@ export interface BeneficiariesFormProps {
     summary: BeneficiaryGroupSummary,
   ) => void;
   className?: string;
+  /** Oculta textos de ayuda del formulario (panel ejecutivo). */
+  hideHelperText?: boolean;
 }
 
 export function BeneficiariesForm({
   value,
   onChange,
   className,
+  hideHelperText = false,
 }: BeneficiariesFormProps) {
   const [contributorInput, setContributorInput] = useState(
     value.contributorAge !== null ? String(value.contributorAge) : "",
@@ -75,9 +78,11 @@ export function BeneficiariesForm({
         <h2 className={joinClasses("text-sm font-bold tracking-tight", ui.sectionTitle)}>
           Beneficiarios
         </h2>
-        <p className="text-xs leading-relaxed text-muted">
-          Cotizante y cargas según Tabla Única de Factores N°604.
-        </p>
+        {!hideHelperText ? (
+          <p className="text-xs leading-relaxed text-muted">
+            Cotizante y cargas según Tabla Única de Factores N°604.
+          </p>
+        ) : null}
       </header>
 
       <div className="space-y-6">
@@ -133,6 +138,7 @@ export function BeneficiariesForm({
             onDependentsChange={handleDependentsChange}
             dependentFactors={summary.dependents}
             variant="form"
+            hideEmptyHint={hideHelperText}
           />
         </div>
 

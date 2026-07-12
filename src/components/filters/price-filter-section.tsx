@@ -12,6 +12,7 @@ export interface PriceFilterSectionProps {
   onPriceMinChange: (value: number) => void;
   onPriceMaxChange: (value: number) => void;
   compactEmbed?: boolean;
+  hideHelperText?: boolean;
 }
 
 export function PriceFilterSection({
@@ -21,12 +22,14 @@ export function PriceFilterSection({
   onPriceMinChange,
   onPriceMaxChange,
   compactEmbed = false,
+  hideHelperText = false,
 }: PriceFilterSectionProps) {
   return (
     <FilterSection
       title="Precio"
       description="Ajusta el rango de precio en UF. Los resultados se actualizan al instante."
       compactEmbed={compactEmbed}
+      hideDescription={hideHelperText}
       infoLabel="Información sobre filtro de precio"
       info={
         <FilterHelpBlock

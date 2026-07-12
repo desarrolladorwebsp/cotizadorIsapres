@@ -7,6 +7,7 @@ import { ExecutiveToastStack } from "@/components/executive/executive-toast";
 import { useExecutiveToast } from "@/hooks/use-executive-toast";
 import { ClinicsPanel } from "@/components/admin/clinics-panel";
 import { GesPanel } from "@/components/admin/ges-panel";
+import { PlanPdfReportPanel } from "@/components/admin/plan-pdf-report-panel";
 import { UsersPanel } from "@/components/admin/users-panel";
 import { ExecutiveAdminProspectsView } from "@/components/executive/admin/executive-admin-prospects-view";
 import { ExecutiveClientsPanel } from "@/components/executive/executive-clients-panel";
@@ -162,6 +163,10 @@ export function ExecutiveDashboard() {
 
         {section === "ges" && isAdmin ? (
           <GesPanel onNotify={notify} canManage />
+        ) : null}
+
+        {section === "reportes-pdf" && isAdmin ? (
+          <PlanPdfReportPanel onNotify={notify} />
         ) : null}
       </ExecutiveShell>
 

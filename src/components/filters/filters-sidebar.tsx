@@ -31,6 +31,8 @@ export interface FiltersSidebarProps {
   onPriceMaxChange: (value: number) => void;
   defaultPriceMin?: number;
   defaultPriceMax?: number;
+  /** Oculta textos de ayuda en beneficiarios y filtros. */
+  hideHelperText?: boolean;
 }
 
 function CloseIcon() {
@@ -60,6 +62,7 @@ export function FiltersSidebar({
   onPriceMaxChange,
   defaultPriceMin,
   defaultPriceMax,
+  hideHelperText = false,
 }: FiltersSidebarProps) {
   const isLargeScreen = useIsLargeScreen();
   const {
@@ -153,6 +156,7 @@ export function FiltersSidebar({
               <BeneficiariesForm
                 value={beneficiaries}
                 onChange={onBeneficiariesChange}
+                hideHelperText={hideHelperText}
                 className="!rounded-none !border-0 !bg-transparent !p-0 !py-4 !shadow-none sm:!py-5"
               />
 
@@ -171,6 +175,7 @@ export function FiltersSidebar({
                   onPriceMaxChange={onPriceMaxChange}
                   defaultPriceMin={defaultPriceMin}
                   defaultPriceMax={defaultPriceMax}
+                  hideHelperText={hideHelperText}
                 />
               </div>
             </div>

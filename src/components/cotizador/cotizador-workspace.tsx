@@ -130,6 +130,7 @@ export function CotizadorWorkspace({
               onPriceMaxChange={dashboard.handlePriceMaxChange}
               defaultPriceMin={defaultPriceBounds.min}
               defaultPriceMax={defaultPriceBounds.max}
+              hideHelperText={embeddedInExecutiveShell}
             />
           ) : null}
 

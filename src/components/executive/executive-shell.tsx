@@ -43,6 +43,11 @@ const SECTION_LABELS: Record<
   usuarios: { label: "Usuarios", shortLabel: "Usuarios", adminOnly: true },
   clinicas: { label: "Clínicas", shortLabel: "Clínicas", adminOnly: true },
   ges: { label: "GES", shortLabel: "GES", adminOnly: true },
+  "reportes-pdf": {
+    label: "PDFs Isapre",
+    shortLabel: "PDFs",
+    adminOnly: true,
+  },
 };
 
 export interface ExecutiveShellProps {

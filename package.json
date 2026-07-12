@@ -22,9 +22,11 @@
     "import-consalud": "tsx scripts/import-consalud-plans.ts",
     "import-cruzblanca": "tsx scripts/import-cruzblanca-plans.ts",
     "import-esencial": "tsx scripts/import-esencial-plans.ts",
+    "import-convenios": "tsx scripts/import-company-agreements.ts",
     "export-missing-pdfs": "tsx scripts/export-plan-reports.ts",
     "export-plan-reports": "tsx scripts/export-plan-reports.ts",
     "backfill-plan-zones": "tsx scripts/backfill-plan-zones.ts",
+    "backfill-clinic-zones": "tsx scripts/backfill-clinic-zones.ts",
     "export-clinic-zones": "tsx scripts/export-clinic-zones-report.ts",
     "build-clinic-locations": "node scripts/build-clinic-locations.mjs",
     "generate-favicons": "python3 scripts/generate-favicons.py",
@@ -70,6 +72,7 @@
     "prisma": "^6.19.3",
     "tailwindcss": "^4.3.0",
     "tsx": "^4.22.4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "xlsx": "^0.18.5"
   }
 }

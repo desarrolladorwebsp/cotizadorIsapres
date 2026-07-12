@@ -47,11 +47,11 @@ export interface CompanyAgreementInfoModalProps {
 const BENEFIT_ITEMS = [
   {
     title: "Convenios colectivos",
-    text: "Muchas Isapres mantienen acuerdos con empresas que permiten acceder a condiciones preferentes para sus trabajadores y cargas.",
+    text: "Algunas empresas mantienen convenios que permiten acceder a condiciones preferentes para sus trabajadores y cargas.",
   },
   {
     title: "Descuentos de hasta un 10%",
-    text: "Según la empresa, el convenio vigente y la Isapre seleccionada, puedes obtener beneficios que reducen el costo de tu plan de salud.",
+    text: "Según la empresa y el convenio vigente, puedes obtener beneficios que reducen el costo de tu plan de salud.",
   },
   {
     title: "Validación sin compromiso",
@@ -125,7 +125,7 @@ export function CompanyAgreementInfoModal({
                     id="company-agreement-info-title"
                     className="text-base font-bold text-primary-dark"
                   >
-                    Convenios empresa–Isapre
+                    Convenios empresa
                   </p>
                   <p className="mt-0.5 text-xs text-muted">
                     Beneficios colectivos para trabajadores
@@ -147,9 +147,9 @@ export function CompanyAgreementInfoModal({
 
             <div className="space-y-4 overflow-y-auto overscroll-y-contain px-4 py-4 sm:px-5 sm:py-5">
               <p className="text-sm leading-relaxed text-foreground/90">
-                Las Isapres en Chile suscriben convenios colectivos con diversas
-                empresas. Estos acuerdos pueden habilitar descuentos, bonificaciones
-                o condiciones preferentes para afiliados vinculados a esos empleadores.
+                Algunas empresas cuentan con convenios colectivos que pueden
+                habilitar descuentos, bonificaciones o condiciones preferentes
+                para sus trabajadores y cargas.
               </p>
 
               <ul className="space-y-3">
@@ -172,8 +172,8 @@ export function CompanyAgreementInfoModal({
               </ul>
 
               <p className="rounded-lg bg-primary/8 px-3 py-2.5 text-[11px] leading-relaxed text-primary-dark">
-                El beneficio depende del convenio vigente entre tu empresa y la Isapre.
-                Nuestro equipo puede validarlo con la información que nos compartas.
+                El beneficio depende del convenio vigente de tu empresa. Nuestro
+                equipo puede validarlo con la información que nos compartas.
               </p>
             </div>
 

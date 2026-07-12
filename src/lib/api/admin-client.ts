@@ -4,6 +4,7 @@ import type {
 } from "@/lib/plan-pdf-storage/types";
 import type { Clinic } from "@/types/clinic";
 import type { HealthPlan } from "@/types/plan";
+import type { PlanPdfReport } from "@/types/plan-pdf-report";
 import type { QuoteRecord } from "@/types/quote";
 import type { IsapreRecord, UpdateIsapreGesInput } from "@/types/isapre";
 import type {
@@ -126,6 +127,11 @@ export async function fetchLatestQuoteActivities(
 export async function fetchIsapres(): Promise<IsapreRecord[]> {
   const response = await fetch("/api/isapres");
   return parseJsonResponse<IsapreRecord[]>(response);
+}
+
+export async function fetchPlanPdfReport(): Promise<PlanPdfReport> {
+  const response = await fetch("/api/admin/plan-pdf-report");
+  return parseJsonResponse<PlanPdfReport>(response);
 }
 
 export async function updateIsapreGes(
