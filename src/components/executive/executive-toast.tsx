@@ -157,7 +157,7 @@ function ExecutiveToastCard({
 export function ExecutiveToastStack({ toasts, onDismiss }: ExecutiveToastStackProps) {
   return (
     <div
-      className="pointer-events-none fixed right-4 top-20 z-[60] flex w-[min(92vw,22rem)] flex-col gap-3 sm:right-6 sm:top-24"
+      className="pointer-events-none fixed right-4 top-16 z-[60] flex w-[min(92vw,22rem)] flex-col gap-3 sm:right-6 sm:top-24"
       aria-label="Notificaciones"
     >
       <AnimatePresence mode="popLayout">

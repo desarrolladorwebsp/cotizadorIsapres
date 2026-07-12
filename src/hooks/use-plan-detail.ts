@@ -4,6 +4,35 @@ import { useEffect, useState } from "react";
 import type { HealthPlan } from "@/types/plan";
 
 const planDetailCache = new Map<string, HealthPlan>();
+const planDetailInflight = new Map<string, Promise<HealthPlan>>();
+
+async function fetchPlanDetail(uniqueCode: string): Promise<HealthPlan> {
+  const cached = planDetailCache.get(uniqueCode);
+  if (cached) return cached;
+
+  const inflight = planDetailInflight.get(uniqueCode);
+  if (inflight) return inflight;
+
+  const promise = (async () => {
+    const response = await fetch(
+      `/api/plans/${encodeURIComponent(uniqueCode)}`,
+    );
+    if (!response.ok) {
+      throw new Error("No se pudo cargar el detalle del plan.");
+    }
+    const data = (await response.json()) as HealthPlan;
+    planDetailCache.set(uniqueCode, data);
+    return data;
+  })();
+
+  planDetailInflight.set(uniqueCode, promise);
+
+  try {
+    return await promise;
+  } finally {
+    planDetailInflight.delete(uniqueCode);
+  }
+}
 
 export function usePlanDetail(uniqueCode: string | null, enabled: boolean) {
   const [plan, setPlan] = useState<HealthPlan | null>(null);
@@ -30,19 +59,12 @@ export function usePlanDetail(uniqueCode: string | null, enabled: boolean) {
     setLoading(true);
     setError(null);
 
-    async function loadPlan() {
-      try {
-        const response = await fetch(
-          `/api/plans/${encodeURIComponent(uniqueCode!)}`,
-        );
-        if (!response.ok) {
-          throw new Error("No se pudo cargar el detalle del plan.");
-        }
-        const data = (await response.json()) as HealthPlan;
+    void fetchPlanDetail(uniqueCode)
+      .then((data) => {
         if (cancelled) return;
-        planDetailCache.set(uniqueCode!, data);
         setPlan(data);
-      } catch (loadError) {
+      })
+      .catch((loadError) => {
         if (cancelled) return;
         setPlan(null);
         setError(
@@ -50,12 +72,11 @@ export function usePlanDetail(uniqueCode: string | null, enabled: boolean) {
             ? loadError.message
             : "Error al cargar el plan.",
         );
-      } finally {
+      })
+      .finally(() => {
         if (!cancelled) setLoading(false);
-      }
-    }
+      });
 
-    void loadPlan();
     return () => {
       cancelled = true;
     };
@@ -66,4 +87,11 @@ export function usePlanDetail(uniqueCode: string | null, enabled: boolean) {
 
 export function primePlanDetailCache(plan: HealthPlan) {
   planDetailCache.set(plan.unique_code, plan);
+}
+
+export function prefetchPlanDetail(uniqueCode: string) {
+  if (planDetailCache.has(uniqueCode) || planDetailInflight.has(uniqueCode)) {
+    return;
+  }
+  void fetchPlanDetail(uniqueCode).catch(() => undefined);
 }

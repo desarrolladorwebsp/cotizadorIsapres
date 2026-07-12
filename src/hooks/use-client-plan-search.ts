@@ -30,7 +30,7 @@ export const FILTER_DEBOUNCE_MS = 120;
 
 export function useClientPlanSearch(options?: UseClientPlanSearchOptions) {
   const embedPreviewOnMount = options?.embedPreviewOnMount ?? false;
-  const preloadCatalog = options?.preloadCatalog ?? true;
+  const preloadCatalog = options?.preloadCatalog ?? false;
 
   const [plans, setPlans] = useState<HealthPlanSummary[]>([]);
   const [total, setTotal] = useState(0);
@@ -47,8 +47,25 @@ export function useClientPlanSearch(options?: UseClientPlanSearchOptions) {
   const previewLoadedRef = useRef(false);
 
   const applySearchResult = useCallback(
-    (result: PlanSearchResult, requestKey: string) => {
-      setPlans(result.plans);
+    (
+      result: PlanSearchResult,
+      requestKey: string,
+      options?: { append?: boolean },
+    ) => {
+      if (options?.append) {
+        setPlans((current) => {
+          const seen = new Set(current.map((plan) => plan.unique_code));
+          const merged = [...current];
+          for (const plan of result.plans) {
+            if (seen.has(plan.unique_code)) continue;
+            seen.add(plan.unique_code);
+            merged.push(plan);
+          }
+          return merged;
+        });
+      } else {
+        setPlans(result.plans);
+      }
       setTotal(result.total);
       setHasSearched(true);
       setError(null);
@@ -58,7 +75,10 @@ export function useClientPlanSearch(options?: UseClientPlanSearchOptions) {
   );
 
   const searchViaApi = useCallback(
-    async (request: PlanSearchRequest, options?: { force?: boolean }) => {
+    async (
+      request: PlanSearchRequest,
+      options?: { force?: boolean; append?: boolean },
+    ) => {
       const requestKey = buildPlanSearchRequestKey(request);
       if (!options?.force && requestKey === lastSuccessKeyRef.current) {
         return;
@@ -85,7 +105,7 @@ export function useClientPlanSearch(options?: UseClientPlanSearchOptions) {
         const data = (await response.json()) as PlanSearchResult;
         if (requestId !== requestIdRef.current) return;
 
-        applySearchResult(data, requestKey);
+        applySearchResult(data, requestKey, { append: options?.append });
       } catch (searchError) {
         if (
           searchError instanceof DOMException &&
@@ -112,7 +132,10 @@ export function useClientPlanSearch(options?: UseClientPlanSearchOptions) {
   );
 
   const search = useCallback(
-    async (request: PlanSearchRequest, options?: { force?: boolean }) => {
+    async (
+      request: PlanSearchRequest,
+      options?: { force?: boolean; append?: boolean },
+    ) => {
       const requestKey = buildPlanSearchRequestKey(request);
       if (!options?.force && requestKey === lastSuccessKeyRef.current) {
         return;
@@ -121,9 +144,9 @@ export function useClientPlanSearch(options?: UseClientPlanSearchOptions) {
       lastRequestRef.current = request;
 
       const catalog = catalogRef.current;
-      if (catalog) {
+      if (catalog && !options?.append) {
         const result = filterCatalogItems(catalog, request);
-        applySearchResult(result, requestKey);
+        applySearchResult(result, requestKey, options);
         return;
       }
 

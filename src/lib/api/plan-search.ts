@@ -1,5 +1,6 @@
 import { getCachedCatalogItems } from "@/lib/api/plan-catalog-cache";
 import { filterCatalogItems } from "@/lib/filter-catalog-items";
+import { prisma } from "@/lib/prisma";
 import {
   getActiveCheckboxIds,
   getActiveClinicIds,
@@ -75,30 +76,81 @@ export async function readLimitedPlanSummaries(
   };
 }
 
+/** TTL del rango de precios (evita cargar el catálogo completo solo por bounds). */
+const BOUNDS_CACHE_TTL_MS = 30 * 60 * 1000;
+
+let boundsCache: {
+  priceMin: number;
+  priceMax: number;
+  totalPlans: number;
+  loadedAt: number;
+} | null = null;
+
+let boundsInflight: Promise<{
+  priceMin: number;
+  priceMax: number;
+  totalPlans: number;
+}> | null = null;
+
+async function loadPlanCatalogBoundsFromDb(): Promise<{
+  priceMin: number;
+  priceMax: number;
+  totalPlans: number;
+}> {
+  const rows = await prisma.$queryRaw<
+    Array<{ price_min: number; price_max: number; total: bigint }>
+  >`
+    SELECT
+      COALESCE(MIN(base_price_uf), 0)::float AS price_min,
+      COALESCE(MAX(base_price_uf), 10)::float AS price_max,
+      COUNT(*)::bigint AS total
+    FROM plans
+  `;
+
+  const row = rows[0];
+  const totalPlans = Number(row?.total ?? 0);
+
+  if (totalPlans === 0) {
+    return { priceMin: 0, priceMax: 10, totalPlans: 0 };
+  }
+
+  return {
+    priceMin: row?.price_min ?? 0,
+    priceMax: row?.price_max ?? 10,
+    totalPlans,
+  };
+}
+
 export async function readPlanCatalogBounds(): Promise<{
   priceMin: number;
   priceMax: number;
   totalPlans: number;
 }> {
-  const plans = await getCachedCatalogItems();
+  const now = Date.now();
 
-  if (plans.length === 0) {
-    return { priceMin: 0, priceMax: 10, totalPlans: 0 };
+  if (boundsCache && now - boundsCache.loadedAt < BOUNDS_CACHE_TTL_MS) {
+    const { priceMin, priceMax, totalPlans } = boundsCache;
+    return { priceMin, priceMax, totalPlans };
   }
 
-  let priceMin = plans[0].base_price_uf;
-  let priceMax = plans[0].base_price_uf;
-
-  for (const plan of plans) {
-    if (plan.base_price_uf < priceMin) priceMin = plan.base_price_uf;
-    if (plan.base_price_uf > priceMax) priceMax = plan.base_price_uf;
+  if (boundsInflight) {
+    return boundsInflight;
   }
 
-  return {
-    priceMin,
-    priceMax,
-    totalPlans: plans.length,
-  };
+  boundsInflight = loadPlanCatalogBoundsFromDb()
+    .then((bounds) => {
+      boundsCache = { ...bounds, loadedAt: Date.now() };
+      return bounds;
+    })
+    .finally(() => {
+      boundsInflight = null;
+    });
+
+  return boundsInflight;
+}
+
+export function invalidatePlanCatalogBoundsCache(): void {
+  boundsCache = null;
 }
 
 /** Expone filtros activos para depuración en cliente (opcional). */

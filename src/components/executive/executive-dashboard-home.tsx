@@ -100,27 +100,27 @@ export function ExecutiveDashboardHome() {
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5 sm:space-y-8">
       <section
         className={joinClasses(
-          "overflow-hidden rounded-2xl border bg-gradient-to-br from-primary/10 via-white to-white p-6 shadow-sm sm:p-8",
+          "overflow-hidden rounded-2xl border bg-gradient-to-br from-primary/10 via-white to-white p-5 shadow-sm sm:p-8",
           ui.border,
         )}
       >
-        <p className="text-sm font-semibold uppercase tracking-wide text-primary">
+        <p className="text-xs font-semibold uppercase tracking-wide text-primary sm:text-sm">
           Dashboard
         </p>
-        <h1 className="mt-2 text-2xl font-bold text-primary-dark sm:text-3xl">
+        <h1 className="mt-1.5 text-xl font-bold leading-tight text-primary-dark sm:mt-2 sm:text-3xl">
           {greeting}
           {user?.fullName ? `, ${user.fullName.split(" ")[0]}` : ""}
         </h1>
-        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted">
-          Usa el menú superior para acceder al cotizador, tus clientes y
+        <p className="mt-2.5 max-w-2xl text-sm leading-relaxed text-muted sm:mt-3">
+          Usa el menú de navegación para acceder al cotizador, tus clientes y
           cotizaciones.
         </p>
       </section>
 
-      <section className="grid gap-3 sm:grid-cols-3">
+      <section className="grid gap-3 sm:grid-cols-3 sm:gap-4">
         {statCards.map((item) => (
           <div key={item.label} className={executiveStatCardClass(item.tone)}>
             <div className="flex items-start justify-between gap-3">

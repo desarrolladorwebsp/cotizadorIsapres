@@ -8,7 +8,6 @@ import {
 } from "@/lib/api/plan-mapper";
 import {
   findHealthPlanByCode,
-  findManyHealthPlans,
 } from "@/lib/api/plan-query";
 import { prisma } from "@/lib/prisma";
 import { resolveClinicZoneIds } from "@/lib/clinic-zones";
@@ -48,7 +47,8 @@ function mapCoverageCreateInput(coverage: HealthPlan["coverage"]) {
 }
 
 export async function readPlans(): Promise<HealthPlan[]> {
-  return findManyHealthPlans();
+  const { getCachedHealthPlans } = await import("@/lib/api/plan-catalog-cache");
+  return getCachedHealthPlans();
 }
 
 export async function readPlanByCode(

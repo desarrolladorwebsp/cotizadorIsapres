@@ -33,7 +33,11 @@ export async function GET(_request: Request, context: RouteContext) {
       );
     }
 
-    return NextResponse.json(plan);
+    return NextResponse.json(plan, {
+      headers: {
+        "Cache-Control": "public, max-age=300, stale-while-revalidate=600",
+      },
+    });
   } catch (error) {
     console.error("GET /api/plans/[uniqueCode]", error);
     const { body, status } = apiErrorResponse(error);

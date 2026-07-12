@@ -1,6 +1,7 @@
 import { findManyHealthPlanCatalogItems } from "@/lib/api/plan-query";
 import { findManyHealthPlans } from "@/lib/api/plan-query";
 import { invalidateCoverageCache } from "@/lib/api/plan-coverage-cache";
+import { invalidatePlanCatalogBoundsCache } from "@/lib/api/plan-search";
 import { invalidatePlanCatalogClinicsCache } from "@/lib/api/plan-clinics";
 import type { HealthPlan, HealthPlanCatalogItem } from "@/types/plan";
 
@@ -80,6 +81,7 @@ export async function getCachedCatalogItems(): Promise<HealthPlanCatalogItem[]> 
 export function invalidatePlanCatalogCache(): void {
   catalogCache = null;
   catalogItemsCache = null;
+  invalidatePlanCatalogBoundsCache();
   invalidateCoverageCache();
   invalidatePlanCatalogClinicsCache();
 }

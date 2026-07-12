@@ -24,3 +24,7 @@
 [data-premium-surface] .premium-executive-tab-active {
   box-shadow: 0 4px 16px -6px rgb(47 128 237 / 0.28);
 }
+
+[data-premium-surface] .premium-executive-mobile-nav {
+  background: color-mix(in srgb, var(--background) 96%, var(--secondary-muted));
+}

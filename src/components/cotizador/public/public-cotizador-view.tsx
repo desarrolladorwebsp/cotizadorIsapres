@@ -174,7 +174,7 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
     resetSearch,
   } = useClientPlanSearch({
     embedPreviewOnMount: loadEmbedPreview,
-    preloadCatalog: true,
+    preloadCatalog: false,
   });
   const resultsRef = useRef<HTMLElement>(null);
   const criteriaBarRef = useRef<HTMLDivElement>(null);
@@ -825,8 +825,6 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
   }
 
   function handleLoadMore() {
-    const nextLimit = resultsLimit + activePlansStep;
-    setResultsLimit(nextLimit);
     skipDebouncedSearchRef.current = true;
     void search(
       {
@@ -834,9 +832,10 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
         priceMin: dashboard.priceMin,
         priceMax: dashboard.priceMax,
         filters: dashboard.dashboardFilters,
-        limit: nextLimit,
+        limit: activePlansStep,
+        offset: plans.length,
       },
-      { force: true },
+      { force: true, append: true },
     );
   }
 

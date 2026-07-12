@@ -184,10 +184,11 @@ export function PublicPlanCard({
   highlightClinicIds = [],
 }: PublicPlanCardProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const needsClinicDetail = highlightClinicIds.length > 0;
   const { ref, inView } = useInView<HTMLElement>();
   const { plan: detailPlan, loading: detailLoading } = usePlanDetail(
     plan.unique_code,
-    inView,
+    needsClinicDetail && inView,
   );
 
   const { hospitalaria, ambulatoria } = useMemo(() => {
@@ -345,7 +346,7 @@ export function PublicPlanCard({
         />
       </div>
 
-      {detailLoading && inView ? (
+      {detailLoading && needsClinicDetail && inView ? (
         <p className={planCard.footer}>
           Cargando prestadores…
         </p>

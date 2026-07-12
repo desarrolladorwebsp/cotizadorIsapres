@@ -10,6 +10,8 @@ export interface UserMenuProps {
   fullName: string;
   subtitle: string;
   loginPath?: string;
+  /** Vista compacta para cabeceras móviles del panel ejecutivo. */
+  compact?: boolean;
 }
 
 function getInitials(fullName: string): string {
@@ -23,6 +25,7 @@ export function UserMenu({
   fullName,
   subtitle,
   loginPath = STAFF_LOGIN_PATH,
+  compact = false,
 }: UserMenuProps) {
   const [loading, setLoading] = useState(false);
 
@@ -32,7 +35,12 @@ export function UserMenu({
   }, [loginPath]);
 
   return (
-    <div className="ml-auto flex items-center gap-2 sm:gap-3">
+    <div
+      className={joinClasses(
+        "ml-auto flex items-center",
+        compact ? "gap-1.5" : "gap-2 sm:gap-3",
+      )}
+    >
       <div className="hidden text-right sm:block">
         <p className="text-sm font-medium tracking-tight text-foreground">
           {fullName}
@@ -42,8 +50,10 @@ export function UserMenu({
 
       <div
         className={joinClasses(
-          touchTarget,
-          "rounded-full text-xs font-semibold text-muted md:size-10",
+          "rounded-full text-xs font-semibold text-muted",
+          compact
+            ? "flex size-9 items-center justify-center"
+            : joinClasses(touchTarget, "md:size-10"),
           ui.borderHairline,
         )}
         aria-hidden
@@ -56,7 +66,10 @@ export function UserMenu({
         onClick={() => void handleLogout()}
         disabled={loading}
         className={joinClasses(
-          "rounded-lg px-3 py-2 text-xs font-semibold text-muted transition",
+          "rounded-lg font-semibold text-muted transition",
+          compact
+            ? "px-2.5 py-2 text-[11px]"
+            : "px-3 py-2 text-xs",
           ui.borderHairline,
           ui.hoverSurface,
           "disabled:cursor-not-allowed disabled:opacity-60",
