@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { FiltersFab, FiltersSidebar } from "@/components/filters";
 import { CompanyAgreementValidationSection } from "@/components/cotizador/company-agreement";
 import { RegionFilterSelect } from "@/components/filters/region-filter-select";
@@ -47,18 +47,41 @@ export function CotizadorWorkspace({
       defaultRegion,
     ),
   });
+  const {
+    setPriceMin,
+    setPriceMax,
+    setDashboardFilters,
+    filteredPlans,
+    sidebarOpen,
+    setSidebarOpen,
+    sidebarReady,
+    search,
+    handleSearchChange,
+    priceMin,
+    priceMax,
+    handlePriceMinChange,
+    handlePriceMaxChange,
+    beneficiaries,
+    handleBeneficiariesChange,
+    beneficiarySummary,
+    dashboardFilters,
+    handleDashboardFiltersChange,
+    isLargeScreen,
+    ufToClp,
+  } = dashboard;
   const [assignPlan, setAssignPlan] = useState<HealthPlan | null>(null);
   const [region, setRegion] = useState(defaultRegion);
+  const [priceBoundsInitialized, setPriceBoundsInitialized] = useState(false);
   const isExecutive = variant === "executive";
 
   const handleRegionChange = useCallback(
     (nextRegion: string) => {
       setRegion(nextRegion);
-      dashboard.setDashboardFilters((currentFilters) =>
+      setDashboardFilters((currentFilters) =>
         applyRegionToDashboardFilters(currentFilters, nextRegion),
       );
     },
-    [dashboard.setDashboardFilters],
+    [setDashboardFilters],
   );
 
   function notify(message: string, tone: "success" | "error" = "success") {
@@ -83,6 +106,21 @@ export function CotizadorWorkspace({
     };
   }, [plans]);
 
+  useEffect(() => {
+    if (!isExecutive || priceBoundsInitialized || plans.length === 0) return;
+    setPriceMin(defaultPriceBounds.min);
+    setPriceMax(defaultPriceBounds.max);
+    setPriceBoundsInitialized(true);
+  }, [
+    isExecutive,
+    priceBoundsInitialized,
+    plans.length,
+    defaultPriceBounds.min,
+    defaultPriceBounds.max,
+    setPriceMin,
+    setPriceMax,
+  ]);
+
   return (
     <div
       className={joinClasses(
@@ -94,8 +132,8 @@ export function CotizadorWorkspace({
         <>
           <CotizadorHeader
             variant={variant}
-            sidebarOpen={dashboard.sidebarOpen}
-            onToggleSidebar={() => dashboard.setSidebarOpen((open) => !open)}
+            sidebarOpen={sidebarOpen}
+            onToggleSidebar={() => setSidebarOpen((open) => !open)}
           />
           <CotizadorNav />
         </>
@@ -116,22 +154,23 @@ export function CotizadorWorkspace({
             "flex w-full min-w-0 flex-1 flex-col lg:flex-row lg:items-start",
           )}
         >
-          {dashboard.sidebarReady ? (
+          {sidebarReady ? (
             <FiltersSidebar
-              open={dashboard.sidebarOpen}
-              onClose={() => dashboard.setSidebarOpen(false)}
-              beneficiaries={dashboard.beneficiaries}
-              onBeneficiariesChange={dashboard.handleBeneficiariesChange}
-              filters={dashboard.dashboardFilters}
-              onFiltersChange={dashboard.handleDashboardFiltersChange}
-              priceMin={dashboard.priceMin}
-              priceMax={dashboard.priceMax}
-              ufToClp={dashboard.ufToClp}
-              onPriceMinChange={dashboard.handlePriceMinChange}
-              onPriceMaxChange={dashboard.handlePriceMaxChange}
+              open={sidebarOpen}
+              onClose={() => setSidebarOpen(false)}
+              beneficiaries={beneficiaries}
+              onBeneficiariesChange={handleBeneficiariesChange}
+              filters={dashboardFilters}
+              onFiltersChange={handleDashboardFiltersChange}
+              priceMin={priceMin}
+              priceMax={priceMax}
+              ufToClp={ufToClp}
+              onPriceMinChange={handlePriceMinChange}
+              onPriceMaxChange={handlePriceMaxChange}
               defaultPriceMin={defaultPriceBounds.min}
               defaultPriceMax={defaultPriceBounds.max}
               hideHelperText={embeddedInExecutiveShell}
+              executiveVisual={embeddedInExecutiveShell}
             />
           ) : null}
 
@@ -200,9 +239,9 @@ export function CotizadorWorkspace({
                   <input
                     id="plan-search"
                     type="search"
-                    value={dashboard.search}
+                    value={search}
                     onChange={(event) =>
-                      dashboard.handleSearchChange(event.target.value)
+                      handleSearchChange(event.target.value)
                     }
                     placeholder="Nombre, código o Isapre..."
                     className={joinClasses(
@@ -215,29 +254,42 @@ export function CotizadorWorkspace({
             </section>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-              <p className="text-sm text-muted">
-                <span className="font-bold text-primary-dark">
-                  {dashboard.filteredPlans.length}
-                </span>{" "}
-                planes encontrados
-                <span className="mx-2 hidden text-border sm:inline">·</span>
-                <span className="mt-1 block text-foreground/80 sm:mt-0 sm:inline">
-                  Factor total:{" "}
-                  <span className="font-bold tabular-nums text-primary-dark">
-                    {dashboard.beneficiarySummary.totalFactors.toLocaleString(
-                      "es-CL",
-                      {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      },
-                    )}
+              <div className="space-y-1">
+                <p className="text-sm text-muted">
+                  <span className="font-bold text-primary-dark">
+                    {filteredPlans.length}
+                  </span>{" "}
+                  planes encontrados
+                  <span className="mx-2 hidden text-border sm:inline">·</span>
+                  <span className="mt-1 block text-foreground/80 sm:mt-0 sm:inline">
+                    Factor total:{" "}
+                    <span className="font-bold tabular-nums text-primary-dark">
+                      {beneficiarySummary.totalFactors.toLocaleString(
+                        "es-CL",
+                        {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        },
+                      )}
+                    </span>
                   </span>
-                </span>
-              </p>
-              {!dashboard.sidebarOpen && dashboard.isLargeScreen ? (
+                </p>
+                {isExecutive ? (
+                  <p className="inline-flex items-center gap-1.5 text-[11px] font-medium text-primary-dark/80">
+                    <span
+                      className="inline-flex items-center rounded-md border border-primary/20 bg-primary/[0.06] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-dark"
+                      aria-hidden
+                    >
+                      Precio ↑
+                    </span>
+                    Ordenados del más económico al más caro según el precio estimado del grupo.
+                  </p>
+                ) : null}
+              </div>
+              {!sidebarOpen && isLargeScreen ? (
                 <button
                   type="button"
-                  onClick={() => dashboard.setSidebarOpen(true)}
+                  onClick={() => setSidebarOpen(true)}
                   className={joinClasses("text-sm font-semibold", ui.link)}
                 >
                   Mostrar filtros
@@ -265,16 +317,16 @@ export function CotizadorWorkspace({
               >
                 <p className="text-base font-medium text-foreground">{error}</p>
               </div>
-            ) : dashboard.filteredPlans.length > 0 ? (
+            ) : filteredPlans.length > 0 ? (
               <PlanResultsList
-                plans={dashboard.filteredPlans}
-                beneficiarySummary={dashboard.beneficiarySummary}
-                ufToClp={dashboard.ufToClp}
+                plans={filteredPlans}
+                beneficiarySummary={beneficiarySummary}
+                ufToClp={ufToClp}
                 highlightHospitalClinicIds={getActiveHospitalClinicIds(
-                  dashboard.dashboardFilters,
+                  dashboardFilters,
                 )}
                 highlightAmbulatoryClinicIds={getActiveAmbulatoryClinicIds(
-                  dashboard.dashboardFilters,
+                  dashboardFilters,
                 )}
                 onAssignPlan={
                   isExecutive ? (plan) => setAssignPlan(plan) : undefined
@@ -301,15 +353,15 @@ export function CotizadorWorkspace({
         </div>
 
         <FiltersFab
-        visible={!dashboard.sidebarOpen && !dashboard.isLargeScreen}
-        onClick={() => dashboard.setSidebarOpen(true)}
+        visible={!sidebarOpen && !isLargeScreen}
+        onClick={() => setSidebarOpen(true)}
       />
 
       {isExecutive ? (
         <AssignPlanToClientModal
           plan={assignPlan}
-          beneficiarySummary={dashboard.beneficiarySummary}
-          ufToClp={dashboard.ufToClp}
+          beneficiarySummary={beneficiarySummary}
+          ufToClp={ufToClp}
           open={Boolean(assignPlan)}
           onClose={() => setAssignPlan(null)}
           onAssigned={() => undefined}

@@ -56,6 +56,8 @@ export function comparePlansByFinalPriceAsc(
   ).finalPriceUf;
   const diff = priceA - priceB;
   if (Math.abs(diff) > 1e-9) return diff;
+  const baseDiff = a.base_price_uf - b.base_price_uf;
+  if (Math.abs(baseDiff) > 1e-9) return baseDiff;
   return comparePlanNames(a, b);
 }
 

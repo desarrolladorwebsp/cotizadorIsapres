@@ -45,6 +45,8 @@ export interface DashboardFiltersPanelProps {
   defaultPriceMax?: number;
   /** Oculta textos de ayuda bajo cada bloque de filtro. */
   hideHelperText?: boolean;
+  /** Estilo reforzado para el panel ejecutivo. */
+  executiveVisual?: boolean;
 }
 
 export function DashboardFiltersPanel({
@@ -66,6 +68,7 @@ export function DashboardFiltersPanel({
   defaultPriceMin,
   defaultPriceMax,
   hideHelperText = false,
+  executiveVisual = false,
 }: DashboardFiltersPanelProps) {
   const showPriceFilter =
     priceMin !== undefined &&
@@ -90,12 +93,25 @@ export function DashboardFiltersPanel({
     }
   }
 
+  const coverageBlockClass = joinClasses(
+    "space-y-3 rounded-lg border p-3",
+    executiveVisual
+      ? "border-primary/15 bg-primary/[0.03]"
+      : "border-border/60 bg-bg-layout/20",
+  );
+  const ambulatoryCoverageBlockClass = joinClasses(
+    "space-y-3 rounded-lg border p-3",
+    executiveVisual
+      ? "border-secondary/25 bg-secondary/[0.04]"
+      : "border-border/60 bg-bg-layout/20",
+  );
+
   return (
     <div className={className}>
       <div
         className={joinClasses(
-          "divide-y divide-border/50",
-          compactEmbed && "max-md:divide-border/40",
+          executiveVisual ? "space-y-3" : "divide-y divide-border/50",
+          compactEmbed && !executiveVisual && "max-md:divide-border/40",
         )}
       >
         {showClinicFilter ? (
@@ -104,6 +120,8 @@ export function DashboardFiltersPanel({
             description="Elige prestadores y umbrales mínimos por tipo de atención."
             compactEmbed={compactEmbed}
             hideDescription={hideHelperText}
+            executiveVisual={executiveVisual}
+            executiveAccent="primary"
             infoLabel="Información sobre filtro de clínicas"
             info={
               <FilterHelpBlock
@@ -149,7 +167,7 @@ export function DashboardFiltersPanel({
                 </>
               ) : (
                 <>
-                  <div className="space-y-3 rounded-lg border border-border/60 bg-bg-layout/20 p-3">
+                  <div className={coverageBlockClass}>
                     <CoveragePercentageFilter
                       title="Cobertura hospitalaria"
                       value={value.hospitalCoveragePercent}
@@ -174,9 +192,7 @@ export function DashboardFiltersPanel({
                     />
                   </div>
 
-                  <div className="space-y-3 rounded-lg border border-border/60 bg-bg-layout/20 p-3">
-                    <CoveragePercentageFilter
-                      title="Cobertura ambulatoria"
+                  <div className={ambulatoryCoverageBlockClass}>
                       value={value.ambulatoryCoveragePercent}
                       tone="ambulatory"
                       compactEmbed={compactEmbed}
@@ -223,6 +239,8 @@ export function DashboardFiltersPanel({
           description="Selecciona una o más Isapres para acotar los resultados."
           compactEmbed={compactEmbed}
           hideDescription={hideHelperText}
+          executiveVisual={executiveVisual}
+          executiveAccent="primary"
           infoLabel="Información sobre Isapres"
           info={
             <FilterHelpBlock
@@ -237,6 +255,7 @@ export function DashboardFiltersPanel({
             state={value.isapres}
             idPrefix="filter-isapre"
             compactEmbed={compactEmbed}
+            executiveVisual={executiveVisual}
             onToggle={(optionId, checked) =>
               update({
                 isapres: toggleCheckboxFilter(value.isapres, optionId, checked),
@@ -251,6 +270,8 @@ export function DashboardFiltersPanel({
             description="Modalidad de contratación del plan de salud."
             compactEmbed={compactEmbed}
             hideDescription={hideHelperText}
+            executiveVisual={executiveVisual}
+            executiveAccent="secondary"
             infoLabel="Información sobre tipos de plan"
             info={
               <FilterHelpBlock
@@ -267,6 +288,7 @@ export function DashboardFiltersPanel({
               state={value.planTypes}
               idPrefix="filter-plan-type"
               compactEmbed={compactEmbed}
+              executiveVisual={executiveVisual}
               onToggle={(optionId, checked) =>
                 update({
                   planTypes: toggleCheckboxFilter(
@@ -287,8 +309,11 @@ export function DashboardFiltersPanel({
             ufToClp={ufToClp}
             onPriceMinChange={onPriceMinChange}
             onPriceMaxChange={onPriceMaxChange}
+            rangeMin={defaultPriceMin}
+            rangeMax={defaultPriceMax}
             compactEmbed={compactEmbed}
             hideHelperText={hideHelperText}
+            executiveVisual={executiveVisual}
           />
         ) : null}
 
@@ -297,6 +322,8 @@ export function DashboardFiltersPanel({
           description="Se sincroniza con la región del buscador. También puedes ajustar sectores RM, norte, Valparaíso, etc."
           compactEmbed={compactEmbed}
           hideDescription={hideHelperText}
+          executiveVisual={executiveVisual}
+          executiveAccent="neutral"
           infoLabel="Información sobre zonas y sectores geográficos"
           info={
             <FilterHelpBlock
@@ -314,6 +341,7 @@ export function DashboardFiltersPanel({
             idPrefix="filter-zone"
             scrollable
             compactEmbed={compactEmbed}
+            executiveVisual={executiveVisual}
             onToggle={(optionId, checked) =>
               update({
                 zones: toggleCheckboxFilter(value.zones, optionId, checked),
@@ -322,12 +350,15 @@ export function DashboardFiltersPanel({
           />
         </FilterSection>
 
-        <div className={joinClasses("py-4", compactEmbed && "max-md:py-3")}>
+        <div className={joinClasses(executiveVisual ? "pt-1" : "py-4", compactEmbed && "max-md:py-3")}>
           <button
             type="button"
             onClick={clearFilters}
             className={joinClasses(
-              "inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-border/80 bg-bg-layout/40 px-4 text-xs font-semibold text-muted transition hover:border-border hover:bg-surface-hover hover:text-foreground",
+              "inline-flex w-full items-center justify-center gap-1.5 rounded-lg border px-4 text-xs font-semibold transition",
+              executiveVisual
+                ? "border-primary/25 bg-white text-primary-dark shadow-sm hover:border-primary/40 hover:bg-primary/[0.04]"
+                : "border-border/80 bg-bg-layout/40 text-muted hover:border-border hover:bg-surface-hover hover:text-foreground",
               compactEmbed && "max-md:px-2.5 max-md:text-[11px]",
               touchTarget,
             )}

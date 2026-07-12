@@ -1,6 +1,7 @@
 "use client";
 
 import { formatPlanClp, formatPlanUf } from "@/domain";
+import { joinClasses } from "@/lib/utils";
 import { FilterSection } from "./filter-section";
 import { FILTER_HELP } from "@/lib/filter-help-content";
 import { FilterHelpBlock } from "./filter-info-tip";
@@ -11,8 +12,11 @@ export interface PriceFilterSectionProps {
   ufToClp: number;
   onPriceMinChange: (value: number) => void;
   onPriceMaxChange: (value: number) => void;
+  rangeMin?: number;
+  rangeMax?: number;
   compactEmbed?: boolean;
   hideHelperText?: boolean;
+  executiveVisual?: boolean;
 }
 
 export function PriceFilterSection({
@@ -21,15 +25,23 @@ export function PriceFilterSection({
   ufToClp,
   onPriceMinChange,
   onPriceMaxChange,
+  rangeMin = 2,
+  rangeMax = 8,
   compactEmbed = false,
   hideHelperText = false,
+  executiveVisual = false,
 }: PriceFilterSectionProps) {
+  const sliderMin = Math.min(rangeMin, rangeMax);
+  const sliderMax = Math.max(rangeMin, rangeMax);
+
   return (
     <FilterSection
       title="Precio"
       description="Ajusta el rango de precio en UF. Los resultados se actualizan al instante."
       compactEmbed={compactEmbed}
       hideDescription={hideHelperText}
+      executiveVisual={executiveVisual}
+      executiveAccent="primary"
       infoLabel="Información sobre filtro de precio"
       info={
         <FilterHelpBlock
@@ -44,15 +56,22 @@ export function PriceFilterSection({
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-2">
           <span className="text-[11px] font-medium text-muted">Rango seleccionado</span>
-          <span className="rounded-md bg-primary/8 px-2 py-0.5 text-[10px] font-bold tabular-nums text-primary-dark">
+          <span
+            className={joinClasses(
+              "rounded-md px-2 py-0.5 text-[10px] font-bold tabular-nums",
+              executiveVisual
+                ? "bg-primary/12 text-primary-dark ring-1 ring-primary/15"
+                : "bg-primary/8 text-primary-dark",
+            )}
+          >
             {formatPlanClp(priceMin * ufToClp)} –{" "}
             {formatPlanClp(priceMax * ufToClp)}
           </span>
         </div>
         <input
           type="range"
-          min={2}
-          max={8}
+          min={sliderMin}
+          max={sliderMax}
           step={0.1}
           value={priceMin}
           onChange={(event) =>
@@ -63,8 +82,8 @@ export function PriceFilterSection({
         />
         <input
           type="range"
-          min={2}
-          max={8}
+          min={sliderMin}
+          max={sliderMax}
           step={0.1}
           value={priceMax}
           onChange={(event) =>

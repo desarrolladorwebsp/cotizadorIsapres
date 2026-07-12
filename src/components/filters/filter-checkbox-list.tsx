@@ -10,6 +10,7 @@ export interface FilterCheckboxListProps {
   scrollable?: boolean;
   className?: string;
   compactEmbed?: boolean;
+  executiveVisual?: boolean;
 }
 
 export function FilterCheckboxList({
@@ -20,11 +21,14 @@ export function FilterCheckboxList({
   scrollable = false,
   className,
   compactEmbed = false,
+  executiveVisual = false,
 }: FilterCheckboxListProps) {
   return (
     <div
       className={joinClasses(
         "space-y-1",
+        executiveVisual &&
+          "rounded-lg border border-primary/10 bg-primary/[0.02] p-2",
         scrollable && "max-h-52 overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch]",
         compactEmbed && scrollable && "max-md:max-h-36",
         className,
@@ -41,7 +45,9 @@ export function FilterCheckboxList({
               "flex w-full cursor-pointer items-center gap-3 rounded-md text-sm text-foreground transition",
               touchRow,
               compactEmbed && "max-md:gap-2 max-md:text-xs",
-              "hover:bg-surface-hover/70",
+              executiveVisual
+                ? "border border-transparent hover:border-primary/10 hover:bg-primary/[0.04]"
+                : "hover:bg-surface-hover/70",
             )}
           >
             <input
