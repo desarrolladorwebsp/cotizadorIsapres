@@ -22,6 +22,8 @@ export interface BeneficiariesFormProps {
   className?: string;
   /** Oculta textos de ayuda del formulario (panel ejecutivo). */
   hideHelperText?: boolean;
+  /** Estilo plano para el panel lateral ejecutivo. */
+  executiveVisual?: boolean;
 }
 
 export function BeneficiariesForm({
@@ -29,6 +31,7 @@ export function BeneficiariesForm({
   onChange,
   className,
   hideHelperText = false,
+  executiveVisual = false,
 }: BeneficiariesFormProps) {
   const [contributorInput, setContributorInput] = useState(
     value.contributorAge !== null ? String(value.contributorAge) : "",
@@ -73,9 +76,21 @@ export function BeneficiariesForm({
   }
 
   return (
-    <section className={joinClasses(ui.surfaceCard, "p-5 sm:p-6", className)}>
-      <header className="mb-6 space-y-1">
-        <h2 className={joinClasses("text-sm font-bold tracking-tight", ui.sectionTitle)}>
+    <section
+      className={joinClasses(
+        executiveVisual ? undefined : ui.surfaceCard,
+        executiveVisual ? "p-0" : "p-5 sm:p-6",
+        className,
+      )}
+    >
+      <header className={joinClasses("space-y-1", executiveVisual ? "mb-4" : "mb-6")}>
+        <h2
+          className={joinClasses(
+            executiveVisual
+              ? "text-xs font-semibold uppercase tracking-wide text-muted"
+              : joinClasses("text-sm font-bold tracking-tight", ui.sectionTitle),
+          )}
+        >
           Beneficiarios
         </h2>
         {!hideHelperText ? (
@@ -99,8 +114,8 @@ export function BeneficiariesForm({
 
           <div
             className={joinClasses(
-              "flex items-center gap-3 rounded-lg px-3 py-2.5",
-              ui.borderHairline,
+              "flex items-center gap-3",
+              !executiveVisual && joinClasses("rounded-lg px-3 py-2.5", ui.borderHairline),
             )}
           >
             <input
@@ -144,7 +159,11 @@ export function BeneficiariesForm({
 
         <motion.div
           layout="position"
-          className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-4"
+          className={joinClasses(
+            executiveVisual
+              ? "rounded-lg bg-surface-hover/50 px-3 py-3"
+              : "rounded-lg border border-primary/20 bg-primary/5 px-4 py-4",
+          )}
         >
           <div className="flex items-end justify-between gap-4">
             <div className="space-y-1">

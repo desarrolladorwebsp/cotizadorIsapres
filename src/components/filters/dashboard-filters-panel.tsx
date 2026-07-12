@@ -94,23 +94,20 @@ export function DashboardFiltersPanel({
   }
 
   const coverageBlockClass = joinClasses(
-    "space-y-3 rounded-lg border p-3",
-    executiveVisual
-      ? "border-primary/15 bg-primary/[0.03]"
-      : "border-border/60 bg-bg-layout/20",
+    "space-y-3",
+    !executiveVisual && "rounded-lg border border-border/60 bg-bg-layout/20 p-3",
   );
   const ambulatoryCoverageBlockClass = joinClasses(
-    "space-y-3 rounded-lg border p-3",
-    executiveVisual
-      ? "border-secondary/25 bg-secondary/[0.04]"
-      : "border-border/60 bg-bg-layout/20",
+    "space-y-3",
+    !executiveVisual && "rounded-lg border border-border/60 bg-bg-layout/20 p-3",
+    executiveVisual && "border-t border-border/40 pt-4",
   );
 
   return (
     <div className={className}>
       <div
         className={joinClasses(
-          executiveVisual ? "space-y-3" : "divide-y divide-border/50",
+          executiveVisual ? "divide-y divide-border/40" : "divide-y divide-border/50",
           compactEmbed && !executiveVisual && "max-md:divide-border/40",
         )}
       >
@@ -352,15 +349,15 @@ export function DashboardFiltersPanel({
           />
         </FilterSection>
 
-        <div className={joinClasses(executiveVisual ? "pt-1" : "py-4", compactEmbed && "max-md:py-3")}>
+        <div className={joinClasses(executiveVisual ? "py-4" : "py-4", compactEmbed && "max-md:py-3")}>
           <button
             type="button"
             onClick={clearFilters}
             className={joinClasses(
-              "inline-flex w-full items-center justify-center gap-1.5 rounded-lg border px-4 text-xs font-semibold transition",
+              "inline-flex w-full items-center justify-center gap-1.5 rounded-lg px-4 text-xs font-semibold transition",
               executiveVisual
-                ? "border-primary/25 bg-white text-primary-dark shadow-sm hover:border-primary/40 hover:bg-primary/[0.04]"
-                : "border-border/80 bg-bg-layout/40 text-muted hover:border-border hover:bg-surface-hover hover:text-foreground",
+                ? "text-muted hover:bg-surface-hover hover:text-foreground"
+                : joinClasses("border border-border/80 bg-bg-layout/40 text-muted hover:border-border hover:bg-surface-hover hover:text-foreground"),
               compactEmbed && "max-md:px-2.5 max-md:text-[11px]",
               touchTarget,
             )}

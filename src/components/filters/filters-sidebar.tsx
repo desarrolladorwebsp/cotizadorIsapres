@@ -108,7 +108,7 @@ export function FiltersSidebar({
           "lg:w-80 lg:max-w-[20rem] lg:shrink-0 lg:translate-x-0 lg:shadow-none",
           filtersSidebarDesktopShell,
           executiveVisual
-            ? "border-primary/20 bg-gradient-to-b from-primary/[0.04] via-white to-white lg:shadow-[inset_-1px_0_0_0_rgba(47,128,237,0.12)]"
+            ? "border-border/60 bg-white"
             : joinClasses("bg-white", ui.border),
           !open && "pointer-events-none lg:pointer-events-auto",
           open ? "lg:flex" : "lg:hidden",
@@ -118,26 +118,20 @@ export function FiltersSidebar({
         <div className="flex h-full min-h-0 w-full flex-col lg:max-h-[inherit]">
           <div
             className={joinClasses(
-              "flex shrink-0 items-center justify-between border-b px-4 py-4 sm:px-6 lg:px-6",
+              "flex shrink-0 items-center justify-between border-b px-4 py-3.5 sm:px-5 lg:px-5",
               executiveVisual
-                ? "border-primary/15 bg-primary/[0.06]"
-                : joinClasses("bg-white", ui.border),
+                ? "border-border/60 bg-white"
+                : joinClasses("bg-white py-4", ui.border),
             )}
           >
             <div className="min-w-0">
               <p
                 className={joinClasses(
-                  "text-sm font-bold tracking-tight",
-                  ui.sectionTitle,
+                  "text-sm font-semibold tracking-tight text-primary-dark",
                 )}
               >
                 Filtros y beneficiarios
               </p>
-              {executiveVisual ? (
-                <p className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.12em] text-primary/70">
-                  Panel comercial
-                </p>
-              ) : null}
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -169,21 +163,23 @@ export function FiltersSidebar({
           <div
             className={joinClasses(
               filtersSidebarScrollBody,
-              "px-4 py-2 sm:px-5",
+              "px-4 sm:px-5",
+              executiveVisual ? "py-0" : "py-2",
             )}
           >
             <div
               className={joinClasses(
-                executiveVisual ? "space-y-3 py-3" : "divide-y divide-border/50",
+                executiveVisual ? "divide-y divide-border/40" : "divide-y divide-border/50",
               )}
             >
               <BeneficiariesForm
                 value={beneficiaries}
                 onChange={onBeneficiariesChange}
                 hideHelperText={hideHelperText}
+                executiveVisual={executiveVisual}
                 className={joinClasses(
                   executiveVisual
-                    ? "!rounded-xl !border !border-primary/15 !bg-white/90 !p-4 !shadow-sm sm:!p-4"
+                    ? "!rounded-none !border-0 !bg-transparent !p-0 !py-4 !shadow-none"
                     : "!rounded-none !border-0 !bg-transparent !p-0 !py-4 !shadow-none sm:!py-5",
                 )}
               />

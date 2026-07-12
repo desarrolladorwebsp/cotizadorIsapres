@@ -16,7 +16,12 @@ import {
   getActiveAmbulatoryClinicIds,
   getActiveHospitalClinicIds,
 } from "@/domain";
-import { createDefaultQuoteCriteria } from "@/lib/quote-criteria-options";
+import { comparePlansByFinalPriceAsc } from "@/lib/plan-sort";
+import {
+  createDefaultQuoteCriteria,
+  SORT_OPTIONS,
+  type QuoteSortKey,
+} from "@/lib/quote-criteria-options";
 import type { HealthPlan } from "@/domain";
 import {
   appShell,
@@ -71,8 +76,37 @@ export function CotizadorWorkspace({
   } = dashboard;
   const [assignPlan, setAssignPlan] = useState<HealthPlan | null>(null);
   const [region, setRegion] = useState(defaultRegion);
+  const [sortKey, setSortKey] = useState<QuoteSortKey>("price_asc");
   const [priceBoundsInitialized, setPriceBoundsInitialized] = useState(false);
   const isExecutive = variant === "executive";
+
+  const displayedPlans = useMemo(() => {
+    const plans = [...filteredPlans];
+
+    if (sortKey === "price_desc") {
+      return plans.sort((a, b) =>
+        -comparePlansByFinalPriceAsc(a, b, beneficiarySummary, ufToClp),
+      );
+    }
+
+    if (sortKey === "coverage") {
+      const coverageScore = (plan: HealthPlan) => {
+        if (plan.coverage.length === 0) return 0;
+        return (
+          plan.coverage.reduce((sum, entry) => sum + entry.percentage, 0) /
+          plan.coverage.length
+        );
+      };
+
+      return plans.sort((a, b) => {
+        const diff = coverageScore(b) - coverageScore(a);
+        if (diff !== 0) return diff;
+        return comparePlansByFinalPriceAsc(a, b, beneficiarySummary, ufToClp);
+      });
+    }
+
+    return plans;
+  }, [filteredPlans, sortKey, beneficiarySummary, ufToClp]);
 
   const handleRegionChange = useCallback(
     (nextRegion: string) => {
@@ -206,98 +240,124 @@ export function CotizadorWorkspace({
 
             <section
               className={joinClasses(
-                "grid gap-5 rounded-xl border bg-white p-4 shadow-card sm:gap-6 sm:p-6",
-                "md:grid-cols-2 md:items-end",
+                "rounded-xl border bg-white p-4 shadow-card sm:p-6",
                 ui.border,
               )}
             >
-              <RegionFilterSelect
-                id="executive-plan-region"
-                value={region}
-                onChange={handleRegionChange}
-              />
+              <div className="grid gap-5 sm:gap-6 md:grid-cols-2 md:items-end">
+                <RegionFilterSelect
+                  id="executive-plan-region"
+                  value={region}
+                  onChange={handleRegionChange}
+                />
 
-              <div className="space-y-2">
-                <label
-                  htmlFor="plan-search"
-                  className="text-xs font-medium text-muted"
-                >
-                  Buscar planes
-                </label>
-                <div className="relative">
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted/60"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    aria-hidden
+                <div className="space-y-2">
+                  <label
+                    htmlFor="plan-search"
+                    className="text-xs font-medium text-muted"
                   >
-                    <circle cx="11" cy="11" r="7" />
-                    <path d="M20 20l-3.5-3.5" strokeLinecap="round" />
-                  </svg>
-                  <input
-                    id="plan-search"
-                    type="search"
-                    value={search}
-                    onChange={(event) =>
-                      handleSearchChange(event.target.value)
-                    }
-                    placeholder="Nombre, código o Isapre..."
-                    className={joinClasses(
-                      "h-12 w-full rounded-lg py-2 pl-10 pr-4 text-base md:h-11 md:text-sm",
-                      ui.input,
-                    )}
-                  />
-                </div>
-              </div>
-            </section>
-
-            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-              <div className="space-y-1">
-                <p className="text-sm text-muted">
-                  <span className="font-bold text-primary-dark">
-                    {filteredPlans.length}
-                  </span>{" "}
-                  planes encontrados
-                  <span className="mx-2 hidden text-border sm:inline">·</span>
-                  <span className="mt-1 block text-foreground/80 sm:mt-0 sm:inline">
-                    Factor total:{" "}
-                    <span className="font-bold tabular-nums text-primary-dark">
-                      {beneficiarySummary.totalFactors.toLocaleString(
-                        "es-CL",
-                        {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        },
-                      )}
-                    </span>
-                  </span>
-                </p>
-                {isExecutive ? (
-                  <p className="inline-flex items-center gap-1.5 text-[11px] font-medium text-primary-dark/80">
-                    <span
-                      className="inline-flex items-center rounded-md border border-primary/20 bg-primary/[0.06] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-dark"
+                    Buscar planes
+                  </label>
+                  <div className="relative">
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted/60"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
                       aria-hidden
                     >
-                      Precio ↑
-                    </span>
-                    Ordenados del más económico al más caro según el precio estimado del grupo.
-                  </p>
+                      <circle cx="11" cy="11" r="7" />
+                      <path d="M20 20l-3.5-3.5" strokeLinecap="round" />
+                    </svg>
+                    <input
+                      id="plan-search"
+                      type="search"
+                      value={search}
+                      onChange={(event) =>
+                        handleSearchChange(event.target.value)
+                      }
+                      placeholder="Nombre, código o Isapre..."
+                      className={joinClasses(
+                        "h-12 w-full rounded-lg py-2 pl-10 pr-4 text-base md:h-11 md:text-sm",
+                        ui.input,
+                      )}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <CompanyAgreementValidationSection
+                variant="inline"
+                source="executive"
+              />
+            </section>
+
+            <section
+              className={joinClasses(
+                "flex flex-col gap-3 rounded-xl border bg-white px-4 py-3 shadow-card sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-5 sm:py-3.5",
+                ui.border,
+              )}
+            >
+              <p className="text-sm text-muted">
+                <span className="font-bold text-primary-dark">
+                  {displayedPlans.length}
+                </span>{" "}
+                planes encontrados
+                <span className="mx-2 hidden text-border sm:inline">·</span>
+                <span className="mt-1 block text-foreground/80 sm:mt-0 sm:inline">
+                  Factor total:{" "}
+                  <span className="font-bold tabular-nums text-primary-dark">
+                    {beneficiarySummary.totalFactors.toLocaleString("es-CL", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </span>
+                </span>
+              </p>
+
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                <label
+                  htmlFor="plan-sort"
+                  className="flex min-w-0 flex-1 items-center gap-2 sm:flex-none"
+                >
+                  <span className="shrink-0 text-xs font-medium text-muted">
+                    Ordenar por
+                  </span>
+                  <select
+                    id="plan-sort"
+                    value={sortKey}
+                    onChange={(event) =>
+                      setSortKey(event.target.value as QuoteSortKey)
+                    }
+                    className={joinClasses(
+                      "h-10 min-w-0 flex-1 rounded-lg px-3 text-sm sm:min-w-[11rem] sm:flex-none",
+                      ui.input,
+                    )}
+                  >
+                    {SORT_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                {!sidebarOpen && isLargeScreen ? (
+                  <button
+                    type="button"
+                    onClick={() => setSidebarOpen(true)}
+                    className={joinClasses(
+                      "h-10 shrink-0 rounded-lg border px-3.5 text-sm font-semibold transition",
+                      ui.border,
+                      "text-primary-dark hover:bg-primary/5",
+                    )}
+                  >
+                    Mostrar filtros
+                  </button>
                 ) : null}
               </div>
-              {!sidebarOpen && isLargeScreen ? (
-                <button
-                  type="button"
-                  onClick={() => setSidebarOpen(true)}
-                  className={joinClasses("text-sm font-semibold", ui.link)}
-                >
-                  Mostrar filtros
-                </button>
-              ) : null}
-            </div>
-
-            <CompanyAgreementValidationSection source="executive" />
+            </section>
 
             {loading ? (
               <div
@@ -317,9 +377,9 @@ export function CotizadorWorkspace({
               >
                 <p className="text-base font-medium text-foreground">{error}</p>
               </div>
-            ) : filteredPlans.length > 0 ? (
+            ) : displayedPlans.length > 0 ? (
               <PlanResultsList
-                plans={filteredPlans}
+                plans={displayedPlans}
                 beneficiarySummary={beneficiarySummary}
                 ufToClp={ufToClp}
                 highlightHospitalClinicIds={getActiveHospitalClinicIds(

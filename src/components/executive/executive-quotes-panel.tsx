@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
   AdminPanel,
   AdminPanelHeader,
@@ -63,6 +64,9 @@ export function ExecutiveQuotesPanel({ onNotify }: ExecutiveQuotesPanelProps) {
   const [statusFilter, setStatusFilter] = useState<QuoteStatus | "all">("all");
   const [executiveFilter, setExecutiveFilter] = useState<string>("all");
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [pendingExecutiveByQuoteId, setPendingExecutiveByQuoteId] = useState<
+    Record<string, string>
+  >({});
 
   const outreachName = isAdmin
     ? null
@@ -169,11 +173,19 @@ export function ExecutiveQuotesPanel({ onNotify }: ExecutiveQuotesPanelProps) {
     setSavingId(quote.id);
     try {
       await updateQuoteLead(quote.id, { executiveAccountId });
+      const executiveName = executives.find(
+        (executive) => executive.id === executiveAccountId,
+      )?.fullName;
       onNotify(
         executiveAccountId
-          ? "Ejecutivo asignado correctamente."
+          ? `Cotización asignada a ${executiveName ?? "el ejecutivo seleccionado"}.`
           : "Cotización sin ejecutivo asignado.",
       );
+      setPendingExecutiveByQuoteId((current) => {
+        const next = { ...current };
+        delete next[quote.id];
+        return next;
+      });
       await loadQuotes();
     } catch (error) {
       onNotify(
@@ -183,6 +195,29 @@ export function ExecutiveQuotesPanel({ onNotify }: ExecutiveQuotesPanelProps) {
     } finally {
       setSavingId(null);
     }
+  }
+
+  function handlePendingExecutiveChange(quoteId: string, executiveAccountId: string) {
+    setPendingExecutiveByQuoteId((current) => ({
+      ...current,
+      [quoteId]: executiveAccountId,
+    }));
+  }
+
+  function cancelPendingExecutiveChange(quoteId: string) {
+    setPendingExecutiveByQuoteId((current) => {
+      const next = { ...current };
+      delete next[quoteId];
+      return next;
+    });
+  }
+
+  function resolveExecutiveLabel(executiveAccountId: string): string {
+    if (!executiveAccountId) return "Sin asignar";
+    return (
+      executives.find((executive) => executive.id === executiveAccountId)?.fullName ??
+      "ejecutivo seleccionado"
+    );
   }
 
   return (
@@ -401,31 +436,78 @@ export function ExecutiveQuotesPanel({ onNotify }: ExecutiveQuotesPanelProps) {
                   </AdminTableCell>
                   {isAdmin ? (
                     <AdminTableCell className="min-w-[11rem]">
-                      <TableCellStack>
-                        <select
-                          value={quote.executiveAccountId ?? ""}
-                          disabled={savingId === quote.id}
-                          onChange={(event) => {
-                            const value = event.target.value;
-                            void handleExecutiveChange(
-                              quote,
-                              value ? value : null,
-                            );
-                          }}
-                          className={joinClasses(
-                            "h-9 w-full min-w-[10rem] rounded-lg px-2 text-sm",
-                            ui.input,
-                          )}
-                          aria-label="Reasignar ejecutivo"
-                        >
-                          <option value="">Sin asignar</option>
-                          {executives.map((executive) => (
-                            <option key={executive.id} value={executive.id}>
-                              {executive.fullName}
-                            </option>
-                          ))}
-                        </select>
-                      </TableCellStack>
+                      {(() => {
+                        const currentExecutiveId = quote.executiveAccountId ?? "";
+                        const selectedExecutiveId =
+                          pendingExecutiveByQuoteId[quote.id] ?? currentExecutiveId;
+                        const hasPendingChange =
+                          selectedExecutiveId !== currentExecutiveId;
+
+                        return (
+                          <TableCellStack className="gap-2">
+                            <select
+                              value={selectedExecutiveId}
+                              disabled={savingId === quote.id}
+                              onChange={(event) => {
+                                handlePendingExecutiveChange(
+                                  quote.id,
+                                  event.target.value,
+                                );
+                              }}
+                              className={joinClasses(
+                                "h-9 w-full min-w-[10rem] rounded-lg px-2 text-sm",
+                                ui.input,
+                                hasPendingChange ? "ring-2 ring-primary/25" : "",
+                              )}
+                              aria-label="Seleccionar ejecutivo"
+                            >
+                              <option value="">Sin asignar</option>
+                              {executives.map((executive) => (
+                                <option key={executive.id} value={executive.id}>
+                                  {executive.fullName}
+                                </option>
+                              ))}
+                            </select>
+
+                            {hasPendingChange ? (
+                              <div className="space-y-2 rounded-lg border border-primary/20 bg-primary/5 p-2.5">
+                                <p className="text-[11px] leading-snug text-muted">
+                                  {selectedExecutiveId
+                                    ? `¿Confirmas asignar esta cotización a ${resolveExecutiveLabel(selectedExecutiveId)}?`
+                                    : "¿Confirmas dejar esta cotización sin ejecutivo asignado?"}
+                                </p>
+                                <div className="flex flex-wrap gap-2">
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="primary"
+                                    disabled={savingId === quote.id}
+                                    onClick={() => {
+                                      void handleExecutiveChange(
+                                        quote,
+                                        selectedExecutiveId || null,
+                                      );
+                                    }}
+                                  >
+                                    Confirmar
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="ghost"
+                                    disabled={savingId === quote.id}
+                                    onClick={() =>
+                                      cancelPendingExecutiveChange(quote.id)
+                                    }
+                                  >
+                                    Cancelar
+                                  </Button>
+                                </div>
+                              </div>
+                            ) : null}
+                          </TableCellStack>
+                        );
+                      })()}
                     </AdminTableCell>
                   ) : null}
                   <AdminTableCell>

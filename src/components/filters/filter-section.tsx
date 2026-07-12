@@ -17,7 +17,7 @@ export interface FilterSectionProps {
   hideDescription?: boolean;
   /** Tarjeta con borde acentuado (panel ejecutivo). */
   executiveVisual?: boolean;
-  /** Acento de borde izquierdo en modo ejecutivo. */
+  /** Acento de borde izquierdo en modo ejecutivo (legacy, sin efecto visual). */
   executiveAccent?: "primary" | "secondary" | "neutral";
 }
 
@@ -31,43 +31,31 @@ export function FilterSection({
   compactEmbed = false,
   hideDescription = false,
   executiveVisual = false,
-  executiveAccent = "neutral",
 }: FilterSectionProps) {
-  const executiveAccentClass =
-    executiveAccent === "primary"
-      ? "border-l-primary"
-      : executiveAccent === "secondary"
-        ? "border-l-secondary"
-        : "border-l-primary/35";
-
   return (
     <section
       className={joinClasses(
-        "min-w-0",
-        executiveVisual
-          ? joinClasses(
-              "rounded-xl border border-primary/15 bg-white/95 px-3.5 py-3.5 shadow-sm",
-              "border-l-[3px]",
-              executiveAccentClass,
-            )
-          : "py-4",
+        "min-w-0 py-4",
         compactEmbed && "max-md:py-3",
         className,
       )}
     >
       <header
         className={joinClasses(
-          "mb-3 space-y-0.5",
+          "mb-2.5 space-y-0.5",
           compactEmbed && "max-md:mb-2",
-          executiveVisual && "mb-2.5",
         )}
       >
         <div className="flex items-center gap-1.5">
           <h2
             className={joinClasses(
-              "text-[13px] font-bold tracking-tight",
-              compactEmbed && "max-md:text-xs",
-              executiveVisual ? "text-primary-dark" : ui.sectionTitle,
+              compactEmbed && "max-md:text-[11px]",
+              executiveVisual
+                ? "text-xs font-semibold uppercase tracking-wide text-muted"
+                : joinClasses(
+                    "text-[13px] font-bold tracking-tight",
+                    ui.sectionTitle,
+                  ),
             )}
           >
             {title}

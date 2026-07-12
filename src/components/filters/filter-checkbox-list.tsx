@@ -26,9 +26,7 @@ export function FilterCheckboxList({
   return (
     <div
       className={joinClasses(
-        "space-y-1",
-        executiveVisual &&
-          "rounded-lg border border-primary/10 bg-primary/[0.02] p-2",
+        "space-y-0.5",
         scrollable && "max-h-52 overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch]",
         compactEmbed && scrollable && "max-md:max-h-36",
         className,
@@ -42,12 +40,9 @@ export function FilterCheckboxList({
             key={option.id}
             htmlFor={inputId}
             className={joinClasses(
-              "flex w-full cursor-pointer items-center gap-3 rounded-md text-sm text-foreground transition",
-              touchRow,
+              "flex w-full cursor-pointer items-center gap-2.5 rounded-md text-sm text-foreground transition",
+              executiveVisual ? "px-1 py-1.5 hover:bg-surface-hover/70" : joinClasses(touchRow, "hover:bg-surface-hover/70"),
               compactEmbed && "max-md:gap-2 max-md:text-xs",
-              executiveVisual
-                ? "border border-transparent hover:border-primary/10 hover:bg-primary/[0.04]"
-                : "hover:bg-surface-hover/70",
             )}
           >
             <input
@@ -62,8 +57,9 @@ export function FilterCheckboxList({
             />
             <span
               className={joinClasses(
-                "min-h-12 flex flex-1 items-center leading-snug md:min-h-0",
-                compactEmbed && "max-md:min-h-9",
+                "flex flex-1 items-center leading-snug",
+                !executiveVisual && "min-h-12 md:min-h-0",
+                compactEmbed && !executiveVisual && "max-md:min-h-9",
               )}
             >
               {option.label}

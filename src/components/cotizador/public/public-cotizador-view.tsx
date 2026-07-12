@@ -76,7 +76,6 @@ import { ContractPlanModal } from "./contract-plan-modal";
 import { EmbedExitLoadingOverlay } from "./embed-exit-loading-overlay";
 import { PublicCotizadorNotice } from "./public-cotizador-notice";
 import { PublicCotizadorHeader } from "./public-cotizador-header";
-import { PublicWhatsAppFab } from "./public-whatsapp-fab";
 import { PublicFiltersSidebar } from "./public-filters-sidebar";
 import { PublicPlanResultsList } from "./public-plan-results-list";
 import {
@@ -1111,8 +1110,6 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
         onClick={() => dashboard.setSidebarOpen(true)}
         compactEmbed={isEmbedded}
       />
-
-      <PublicWhatsAppFab hidden={isEmbedded} />
 
       <PublicCotizadorNotice
         message={recoveryNotice}

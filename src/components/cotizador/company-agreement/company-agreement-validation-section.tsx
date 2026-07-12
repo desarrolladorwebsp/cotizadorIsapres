@@ -190,6 +190,20 @@ export function CompanyAgreementValidationSection({
     return payload?.matches[0] ?? null;
   }
 
+  function handleNewQuery() {
+    setUserRut("");
+    setEmail("");
+    setPhone("");
+    setCompanyRut("");
+    setFieldErrors({});
+    setSubmitError(null);
+    setSubmitting(false);
+    setSubmitted(false);
+    setAgreementMatch(null);
+    setAgreementNotFound(false);
+    if (isInline) setExpanded(true);
+  }
+
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setSubmitError(null);
@@ -362,6 +376,23 @@ export function CompanyAgreementValidationSection({
     );
   }
 
+  function renderNewQueryButton(className?: string) {
+    return (
+      <Button
+        type="button"
+        size="sm"
+        variant="ghost"
+        onClick={handleNewQuery}
+        className={joinClasses(
+          "shrink-0 border border-current/15 bg-white/70 text-xs font-semibold hover:bg-white",
+          className,
+        )}
+      >
+        Hacer otra consulta
+      </Button>
+    );
+  }
+
   const statusMessage =
     submitted ? (
       <div
@@ -372,11 +403,16 @@ export function CompanyAgreementValidationSection({
         )}
         role="status"
       >
-        <p className="font-semibold">Consulta registrada</p>
-        <p className="mt-1 text-xs leading-relaxed text-emerald-900/90">
-          No encontramos un convenio activo para el RUT ingresado, pero recibimos
-          tus datos. Te contactaremos si corresponde un beneficio.
-        </p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <p className="font-semibold">Consulta registrada</p>
+            <p className="mt-1 text-xs leading-relaxed text-emerald-900/90">
+              No encontramos un convenio activo para el RUT ingresado, pero recibimos
+              tus datos. Te contactaremos si corresponde un beneficio.
+            </p>
+          </div>
+          {renderNewQueryButton("text-emerald-900 hover:text-emerald-950")}
+        </div>
       </div>
     ) : agreementMatch ? (
       <div
@@ -387,23 +423,28 @@ export function CompanyAgreementValidationSection({
         )}
         role="status"
       >
-        <p className="font-semibold text-red-700">Convenio vigente confirmado</p>
-        <p className="mt-1 text-xs leading-relaxed text-foreground/90">
-          La empresa{" "}
-          <span className="font-semibold text-foreground">
-            {agreementMatch.companyName}
-          </span>
-          {formatAgreementRut(agreementMatch.companyRutRaw) ? (
-            <>
-              {" "}
-              (RUT {formatAgreementRut(agreementMatch.companyRutRaw)}) cuenta con{" "}
-            </>
-          ) : (
-            " cuenta con "
-          )}
-          {formatDiscountPercent(agreementMatch.discountPercent)}. Puedes
-          continuar cotizando con este beneficio aplicable.
-        </p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <p className="font-semibold text-red-700">Convenio vigente confirmado</p>
+            <p className="mt-1 text-xs leading-relaxed text-foreground/90">
+              La empresa{" "}
+              <span className="font-semibold text-foreground">
+                {agreementMatch.companyName}
+              </span>
+              {formatAgreementRut(agreementMatch.companyRutRaw) ? (
+                <>
+                  {" "}
+                  (RUT {formatAgreementRut(agreementMatch.companyRutRaw)}) cuenta con{" "}
+                </>
+              ) : (
+                " cuenta con "
+              )}
+              {formatDiscountPercent(agreementMatch.discountPercent)}. Puedes
+              continuar cotizando con este beneficio aplicable.
+            </p>
+          </div>
+          {renderNewQueryButton("text-red-700 hover:text-red-800")}
+        </div>
       </div>
     ) : agreementNotFound ? (
       <div
@@ -414,12 +455,17 @@ export function CompanyAgreementValidationSection({
         )}
         role="status"
       >
-        <p className="font-semibold">Convenio no encontrado</p>
-        <p className="mt-1 text-xs leading-relaxed text-amber-900/90">
-          No identificamos un convenio activo para el RUT de empresa ingresado.
-          Puedes continuar cotizando con normalidad o dejarnos tus datos de
-          contacto para una revisión manual.
-        </p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <p className="font-semibold">Convenio no encontrado</p>
+            <p className="mt-1 text-xs leading-relaxed text-amber-900/90">
+              No identificamos un convenio activo para el RUT de empresa ingresado.
+              Puedes continuar cotizando con normalidad o dejarnos tus datos de
+              contacto para una revisión manual.
+            </p>
+          </div>
+          {renderNewQueryButton("text-amber-950 hover:text-amber-900")}
+        </div>
       </div>
     ) : null;
 

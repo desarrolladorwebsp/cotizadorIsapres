@@ -60,7 +60,7 @@ export function PriceFilterSection({
             className={joinClasses(
               "rounded-md px-2 py-0.5 text-[10px] font-bold tabular-nums",
               executiveVisual
-                ? "bg-primary/12 text-primary-dark ring-1 ring-primary/15"
+                ? "bg-surface-hover text-primary-dark"
                 : "bg-primary/8 text-primary-dark",
             )}
           >
