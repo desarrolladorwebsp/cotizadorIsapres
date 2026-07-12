@@ -73,6 +73,11 @@ import type { DashboardFiltersState, HealthPlanSummary } from "@/domain";
 import type { HealthPlan } from "@/types/plan";
 import type { PartnerEntityPublic } from "@/types/partner-entity";
 import { ContractPlanModal } from "./contract-plan-modal";
+import {
+  CompanyAgreementProvider,
+  useCompanyAgreementContext,
+} from "@/components/cotizador/company-agreement";
+import { toCotizacionNotifyConvenio } from "@/lib/company-agreements/cotizacion-notify-convenio";
 import { EmbedExitLoadingOverlay } from "./embed-exit-loading-overlay";
 import { PublicCotizadorNotice } from "./public-cotizador-notice";
 import { PublicCotizadorHeader } from "./public-cotizador-header";
@@ -103,31 +108,34 @@ export function PublicCotizadorView({
 }: PublicCotizadorViewProps) {
   return (
     <PartnerEntityProvider entity={entity}>
-      <Suspense
-        fallback={
-          <div
-            className={
-              embedMode
-                ? "flex flex-col items-center justify-center gap-3 bg-bg-layout px-4 py-12 text-center"
-                : "flex min-h-[320px] flex-col items-center justify-center gap-3 bg-bg-layout px-4 text-center"
-            }
-          >
-            <div className="size-10 motion-safe:animate-spin rounded-full border-2 border-primary/15 border-t-primary" />
-            <p className="text-sm font-semibold text-primary-dark">
-              Buscando el mejor plan para ti…
-            </p>
-            <p className="text-xs text-muted">Cargando cotizador</p>
-          </div>
-        }
-      >
-        <PublicCotizadorViewInner embedMode={embedMode} />
-      </Suspense>
+      <CompanyAgreementProvider>
+        <Suspense
+          fallback={
+            <div
+              className={
+                embedMode
+                  ? "flex flex-col items-center justify-center gap-3 bg-bg-layout px-4 py-12 text-center"
+                  : "flex min-h-[320px] flex-col items-center justify-center gap-3 bg-bg-layout px-4 text-center"
+              }
+            >
+              <div className="size-10 motion-safe:animate-spin rounded-full border-2 border-primary/15 border-t-primary" />
+              <p className="text-sm font-semibold text-primary-dark">
+                Buscando el mejor plan para ti…
+              </p>
+              <p className="text-xs text-muted">Cargando cotizador</p>
+            </div>
+          }
+        >
+          <PublicCotizadorViewInner embedMode={embedMode} />
+        </Suspense>
+      </CompanyAgreementProvider>
     </PartnerEntityProvider>
   );
 }
 
 function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
   const rootRef = useRef<HTMLDivElement>(null);
+  const { validatedAgreement } = useCompanyAgreementContext();
   const searchParams = useSearchParams();
   const isEmbedded =
     embedMode ||
@@ -388,6 +396,7 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
         partnerEntityName: entity?.name ?? null,
         partnerEntityTheme: entity?.theme ?? null,
         partnerEntityLogoUrl: entity?.logoUrl ?? null,
+        convenioEmpresa: toCotizacionNotifyConvenio(validatedAgreement),
       });
     } catch (error) {
       searchNotifySentRef.current = false;
@@ -406,6 +415,7 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
     entity?.name,
     entity?.theme,
     entity?.logoUrl,
+    validatedAgreement,
   ]);
 
   useEffect(() => {

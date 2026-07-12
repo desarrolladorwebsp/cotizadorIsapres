@@ -34,6 +34,8 @@ import type {
 import type { HealthPlanSummary } from "@/domain";
 import type { QuoteCriteria } from "./public-quote-criteria-bar";
 import { notifyCotizacionByEmail } from "@/lib/cotizacion-notify/client";
+import { useCompanyAgreementContext } from "@/components/cotizador/company-agreement";
+import { toCotizacionNotifyConvenio } from "@/lib/company-agreements/cotizacion-notify-convenio";
 import type {
   ParsedCotizadorDeepLink,
   SolicitarModalTab,
@@ -142,6 +144,8 @@ export function ContractPlanModal({
     open,
   );
   const { entity: partnerEntity } = usePartnerEntity();
+  const { validatedAgreement } = useCompanyAgreementContext();
+  const convenioEmpresa = toCotizacionNotifyConvenio(validatedAgreement);
   const [activeTab, setActiveTab] = useState<ModalTabId>("overview");
   const [submitted, setSubmitted] = useState(false);
   const [emailNotifyFailed, setEmailNotifyFailed] = useState(false);
@@ -300,6 +304,9 @@ export function ContractPlanModal({
           quoteReason: "Solicitud desde cotizador público",
           partnerEntitySlug: partnerEntity?.slug ?? deepLink.entidad ?? null,
           partnerEntityName: partnerEntity?.name ?? null,
+          companyAgreementRut: convenioEmpresa?.rutEmpresa ?? null,
+          companyAgreementName: convenioEmpresa?.nombreEmpresa ?? null,
+          companyAgreementDiscount: convenioEmpresa?.descuentoPercent ?? null,
         }),
       });
 
@@ -331,6 +338,7 @@ export function ContractPlanModal({
             rut: rut.trim() || undefined,
             telefono: phone.trim() || undefined,
           },
+          convenioEmpresa,
         });
         setEmailNotifyFailed(false);
         setEmailNotifyError(null);

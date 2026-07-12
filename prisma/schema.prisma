@@ -250,6 +250,9 @@ model Quote {
   notes             String?
   partnerEntitySlug String?           @map("partner_entity_slug")
   partnerEntityName String?           @map("partner_entity_name")
+  companyAgreementRut String?         @map("company_agreement_rut")
+  companyAgreementName String?        @map("company_agreement_name")
+  companyAgreementDiscount Float?     @map("company_agreement_discount")
   executiveAccountId String?          @map("executive_account_id")
   createdAt         DateTime          @default(now()) @map("created_at")
   updatedAt         DateTime          @updatedAt @map("updated_at")

@@ -68,6 +68,12 @@ export const cotizacionNotifySolicitanteSchema = z.object({
   notas: z.string().trim().optional(),
 });
 
+export const cotizacionNotifyConvenioSchema = z.object({
+  rutEmpresa: z.string().trim().min(1),
+  nombreEmpresa: z.string().trim().min(1),
+  descuentoPercent: z.number().finite().optional(),
+});
+
 export const cotizacionNotifyInputSchema = z.object({
   email: z.string().trim().email(),
   region: z.string().trim().min(1),
@@ -81,6 +87,7 @@ export const cotizacionNotifyInputSchema = z.object({
   isapres: z.array(z.string().trim().min(1)).optional(),
   plan: cotizacionNotifyPlanSchema.optional(),
   solicitante: cotizacionNotifySolicitanteSchema.optional(),
+  convenioEmpresa: cotizacionNotifyConvenioSchema.optional(),
   cotizadorUrl: z.string().trim().url(),
   partnerEntitySlug: z.string().trim().min(1).optional(),
   partnerEntityName: z.string().trim().min(1).optional(),
@@ -92,6 +99,9 @@ export type CotizacionNotifyInput = z.infer<typeof cotizacionNotifyInputSchema>;
 export type CotizacionNotifyPlan = z.infer<typeof cotizacionNotifyPlanSchema>;
 export type CotizacionNotifySolicitante = z.infer<
   typeof cotizacionNotifySolicitanteSchema
+>;
+export type CotizacionNotifyConvenio = z.infer<
+  typeof cotizacionNotifyConvenioSchema
 >;
 
 export function parseCotizacionNotifyInput(

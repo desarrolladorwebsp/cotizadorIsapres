@@ -22,6 +22,9 @@ export interface CreateQuoteInput {
   notes?: string | null;
   partnerEntitySlug?: string | null;
   partnerEntityName?: string | null;
+  companyAgreementRut?: string | null;
+  companyAgreementName?: string | null;
+  companyAgreementDiscount?: number | null;
   planName?: string | null;
   planIsapre?: string | null;
 }

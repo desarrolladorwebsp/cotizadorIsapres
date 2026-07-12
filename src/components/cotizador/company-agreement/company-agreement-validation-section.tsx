@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { CompanyAgreementInfoModal } from "@/components/cotizador/company-agreement/company-agreement-info-modal";
@@ -15,6 +15,7 @@ import type {
   CompanyAgreementLookupResult,
   CompanyAgreementRecord,
 } from "@/types/company-agreement";
+import { useOptionalCompanyAgreementContext } from "./company-agreement-context";
 
 function InfoIcon({ className }: { className?: string }) {
   return (
@@ -139,6 +140,24 @@ export function CompanyAgreementValidationSection({
   const [agreementMatch, setAgreementMatch] =
     useState<CompanyAgreementRecord | null>(null);
   const [agreementNotFound, setAgreementNotFound] = useState(false);
+
+  const agreementContext = useOptionalCompanyAgreementContext();
+
+  useEffect(() => {
+    if (!agreementContext) return;
+
+    if (agreementMatch) {
+      agreementContext.setValidatedAgreement({
+        companyRut: agreementMatch.companyRut,
+        companyRutRaw: agreementMatch.companyRutRaw,
+        companyName: agreementMatch.companyName,
+        discountPercent: agreementMatch.discountPercent,
+      });
+      return;
+    }
+
+    agreementContext.setValidatedAgreement(null);
+  }, [agreementMatch, agreementContext]);
 
   const resolvedSource: CompanyAgreementSource = compactEmbed ? "embed" : source;
 

@@ -1,5 +1,6 @@
 import { escapeHtml } from "@/lib/email/escape-html";
 import type { CotizacionNotifyInput } from "@/lib/email/cotizacion-notify-schema";
+import { formatConvenioDiscountLabel } from "@/lib/company-agreements/cotizacion-notify-convenio";
 import {
   buildEmailShell,
   renderEmailButton,
@@ -78,6 +79,47 @@ function buildPlanHighlightLines(
   return lines;
 }
 
+function buildConvenioHighlightLines(
+  data: CotizacionNotifyInput,
+): string[] | null {
+  if (!data.convenioEmpresa) return null;
+
+  const lines = [
+    escapeHtml(data.convenioEmpresa.nombreEmpresa),
+    `RUT empresa: ${escapeHtml(data.convenioEmpresa.rutEmpresa)}`,
+    escapeHtml(
+      formatConvenioDiscountLabel(data.convenioEmpresa.descuentoPercent),
+    ),
+  ];
+
+  lines.push(
+    "Un ejecutivo confirmará la aplicación del beneficio en tu plan.",
+  );
+
+  return lines;
+}
+
+function buildConvenioTableRows(data: CotizacionNotifyInput): string[] {
+  if (!data.convenioEmpresa) return [];
+
+  return [
+    renderTableRow(
+      "Convenio empresa",
+      escapeHtml(data.convenioEmpresa.nombreEmpresa),
+    ),
+    renderTableRow(
+      "RUT empresa (convenio)",
+      escapeHtml(data.convenioEmpresa.rutEmpresa),
+    ),
+    renderTableRow(
+      "Descuento convenio",
+      escapeHtml(
+        formatConvenioDiscountLabel(data.convenioEmpresa.descuentoPercent),
+      ),
+    ),
+  ];
+}
+
 export function buildUserCotizacionSubject(data: CotizacionNotifyInput): string {
   const brand = resolveUserBrand(data);
   if (data.plan?.codigo) {
@@ -91,6 +133,7 @@ export function buildUserCotizacionEmailHtml(
 ): string {
   const brand = resolveUserBrand(data);
   const planHighlight = buildPlanHighlightLines(data);
+  const convenioHighlight = buildConvenioHighlightLines(data);
 
   const rows = [
     renderTableRow("Región", escapeHtml(data.region)),
@@ -107,12 +150,17 @@ export function buildUserCotizacionEmailHtml(
     ? renderHighlightBox(brand, "Plan solicitado", planHighlight)
     : "";
 
+  const convenioSection = convenioHighlight
+    ? renderHighlightBox(brand, "Convenio empresa vigente", convenioHighlight)
+    : "";
+
   const body = `
     <h1 style="margin:0 0 12px;font-size:22px;color:#222;">Tu cotización de Isapre</h1>
     <p style="margin:0 0 20px;font-size:15px;line-height:1.6;color:#444;">
       Recibimos tu solicitud en <strong>${escapeHtml(brand.name)}</strong>. Este es un resumen de los datos que enviaste:
     </p>
     ${planSection}
+    ${convenioSection}
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:1px solid #eee;border-radius:10px;overflow:hidden;">
       ${rows}
     </table>
@@ -133,7 +181,10 @@ export function buildAdminCotizacionSubject(
   const agentLabel = data.partnerEntityName ?? data.partnerEntitySlug;
   if (data.plan?.codigo) {
     const suffix = agentLabel ? ` · ${agentLabel}` : "";
-    return `Solicitud de plan — ${data.plan.codigo} — ${data.plan.isapre} — ${data.email}${suffix}`;
+    const convenioSuffix = data.convenioEmpresa
+      ? ` · convenio ${data.convenioEmpresa.nombreEmpresa}`
+      : "";
+    return `Solicitud de plan — ${data.plan.codigo} — ${data.plan.isapre} — ${data.email}${convenioSuffix}${suffix}`;
   }
   if (data.busqueda?.trim()) {
     return `Nueva cotización — ${data.busqueda.trim()} — ${data.email}`;
@@ -260,6 +311,7 @@ export function buildAdminCotizacionEmailHtml(
       "Slug del agente",
       escapeHtml(data.partnerEntitySlug ?? "cotizadorpremium"),
     ),
+    ...buildConvenioTableRows(data),
     ...buildAdminPlanRows(data),
   ];
 

@@ -33,6 +33,7 @@ import {
 import { getPlanPdfDownloadUrl } from "@/lib/plan-pdf";
 import { resolveCotizadorSourceFromQuote } from "@/lib/partner-entity/source-label";
 import { formatPlanClp, formatQuotedUf } from "@/lib/plan-format";
+import { formatConvenioDiscountLabel } from "@/lib/company-agreements/cotizacion-notify-convenio";
 import {
   QUOTE_STATUS_LABELS,
   QUOTE_STATUS_OPTIONS,
@@ -385,6 +386,17 @@ export function ExecutiveQuotesPanel({ onNotify }: ExecutiveQuotesPanelProps) {
                       {quote.rut ? (
                         <p className="font-mono text-[11px] leading-tight text-muted">
                           RUT {quote.rut}
+                        </p>
+                      ) : null}
+                      {quote.companyAgreementName ? (
+                        <p className="text-[11px] font-medium leading-snug text-emerald-800">
+                          Convenio: {quote.companyAgreementName}
+                          {quote.companyAgreementRut
+                            ? ` · RUT ${quote.companyAgreementRut}`
+                            : ""}
+                          {quote.companyAgreementDiscount != null
+                            ? ` · ${formatConvenioDiscountLabel(quote.companyAgreementDiscount)}`
+                            : ""}
                         </p>
                       ) : null}
                       <p className="text-[11px] leading-tight text-muted">

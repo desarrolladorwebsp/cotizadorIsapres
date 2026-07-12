@@ -4,6 +4,7 @@ import type {
   CotizacionNotifyInput,
   CotizacionNotifyPlan,
   CotizacionNotifySolicitante,
+  CotizacionNotifyConvenio,
 } from "@/lib/email/cotizacion-notify-schema";
 import {
   getActiveCheckboxIds,
@@ -50,6 +51,7 @@ export interface BuildCotizacionNotifyPayloadInput {
   partnerEntityTheme?: PartnerEntityTheme | null;
   partnerEntityLogoUrl?: string | null;
   solicitante?: CotizacionNotifySolicitante;
+  convenioEmpresa?: CotizacionNotifyConvenio;
 }
 
 function resolveRegionLabel(regionValue: string): string {
@@ -159,6 +161,7 @@ export function buildCotizacionNotifyPayload(
     partnerEntityTheme: input.partnerEntityTheme ?? undefined,
     partnerEntityLogoUrl: resolveAbsoluteLogoUrl(input.partnerEntityLogoUrl),
     solicitante: input.solicitante,
+    convenioEmpresa: input.convenioEmpresa,
   };
 
   if (input.plan && input.priceQuote) {
