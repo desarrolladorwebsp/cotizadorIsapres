@@ -141,10 +141,10 @@ def slugify_clinic_id(name: str) -> str:
 
 
 def resolve_clinic_id(clinic_name: str, coverage_type: str) -> str | None:
-    if clinic_name.strip().lower() in SKIP_CLINIC_LABELS:
-        return None
     if LIBRE_ELECCION_PATTERN.search(clinic_name):
         return f"col-libre-eleccion-{coverage_type[:1]}"
+    if clinic_name.strip().lower() in SKIP_CLINIC_LABELS:
+        return None
 
     if clinic_name in CLINIC_NAME_TO_ID:
         return CLINIC_NAME_TO_ID[clinic_name]

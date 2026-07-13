@@ -34,6 +34,30 @@ PRICE_OVERRIDES: dict[str, float] = {
     "13-EFCQ87-26": 1.86,
 }
 
+# Excel vacío en fila; datos tomados del PDF oficial (13-SFC157-26.pdf, pág. 2).
+AMBULATORY_OVERRIDES: dict[str, str] = {
+    "13-SFC157-26": """80%
+Centros Médicos RedSalud(A.3)
+80%
+Integramedica
+80%
+Clínica RedSalud Vitacura
+80%
+Clínica Las Condes(A.3)
+80%
+Clínica Universidad De Los Andes
+80%
+Clínica San Carlos De Apoquindo
+80%
+Clínica Meds (A.3)
+80%
+Clínica Santa María(A.3)
+80%
+Red de Salud UC Christus
+60%
+Clínica Alemana De Santiago(A.3)""",
+}
+
 SKIP_CLINIC_LABELS = {"hospitalario", "ambulatorio"}
 PERCENT_LINE = re.compile(r"^(\d+)%$")
 
@@ -43,6 +67,7 @@ CLINIC_NAME_TO_ID: dict[str, str] = {
     "Centros Médicos RedSalud (A.1)": "cm-redsalud",
     "Centros Médicos RedSalud (A.3)": "cm-redsalud",
     "Centros Médicos RedSalud (A.4)": "cm-redsalud",
+    "Clínica Alemana De Santiago(A.3)": "cl-alemana-santiago",
     "Clínica Alemana de Osorno": "cl-alemana-osorno",
     "Clínica Alemana de Temuco": "cl-alemana-temuco",
     "Clínica Alemana de Valdivia": "cl-alemana-valdivia",
@@ -65,6 +90,11 @@ CLINIC_NAME_TO_ID: dict[str, str] = {
     "Clínica Indisa Maipú": "cl-indisa-maipu",
     "Clínica Indisa Providencia": "cl-indisa-providencia-anexo",
     "Clínica Las Condes": "cl-las-condes",
+    "Clínica Las Condes(A.3)": "cl-las-condes",
+    "Clínica Meds (A.3)": "cl-meds",
+    "Clínica Santa María(A.3)": "cl-santa-maria",
+    "Integramedica": "integramedica",
+    "Clínica Universidad De Los Andes": "cl-univ-andes",
     "Clínica Los Andes Los Ángeles": "cl-los-andes-la",
     "Clínica Los Carrera": "cl-los-carrera",
     "Clínica Meds": "cl-meds",
@@ -199,6 +229,8 @@ def parse_simple_workbook(xlsx_path: Path, zones: list[str]) -> dict[str, dict]:
         coverage: list[dict] = []
         if hospitalario_raw:
             coverage.extend(parse_coverage(hospitalario_raw, "hospitalaria"))
+        if not ambulatorio_raw and code in AMBULATORY_OVERRIDES:
+            ambulatorio_raw = AMBULATORY_OVERRIDES[code]
         if ambulatorio_raw:
             coverage.extend(parse_coverage(ambulatorio_raw, "ambulatoria"))
 

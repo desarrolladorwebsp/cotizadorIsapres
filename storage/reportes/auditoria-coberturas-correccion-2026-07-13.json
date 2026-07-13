@@ -1,0 +1,78 @@
+{
+  "generatedAt": "2026-07-13T00:20:33.000Z",
+  "summary": "Auditoría y corrección de coberturas ambulatorias faltantes en carga masiva de planes",
+  "issuesFoundBeforeFix": {
+    "total": 55,
+    "byIsapre": {
+      "Consalud": 1,
+      "Colmena": 54
+    }
+  },
+  "rootCauses": [
+    {
+      "isapre": "Consalud",
+      "plan": "13-SFC157-26",
+      "cause": "Celda AMBULATORIO vacía en Excel (PLANES REGIONES .xlsx, fila 280). El PDF oficial sí incluye 10 prestadores ambulatorios.",
+      "source": "storage/planes-pdf/consalud/PDF PLANES REGION/13-SFC157-26.pdf (pág. 2)",
+      "fix": "Override AMBULATORY_OVERRIDES en scripts/parse-consalud-excel.py con datos extraídos del PDF"
+    },
+    {
+      "isapre": "Colmena",
+      "plansAffected": 54,
+      "cause": "Bug en resolve_clinic_id: 'Libre Elección' estaba en SKIP_CLINIC_LABELS y se evaluaba antes que LIBRE_ELECCION_PATTERN, descartando toda la cobertura ambulatoria.",
+      "excelEvidence": "Todos los 54 planes tenían columna AMBULATORIO con formato '50%\\nLibre Elección' (o 40-80%)",
+      "fix": "Reordenar checks en scripts/parse-colmena-excel.py: Libre Elección se resuelve antes del skip"
+    }
+  ],
+  "syncResults": {
+    "Consalud": {
+      "plansUpdated": 1,
+      "planCodes": ["13-SFC157-26"]
+    },
+    "Colmena": {
+      "plansUpdated": 54,
+      "planCodes": [
+        "MX2265050", "MX2266050", "MX2266060", "MX2267050", "MX2267060", "MX2267070",
+        "MX2268050", "MX2268060", "MX2268070", "MX2269050", "MX2269060", "MX2269070",
+        "MX22610050", "MX22610060", "MX22610070", "MX2261007A", "MX2261007B", "MX2261007C",
+        "MX2261007D", "PL2264040", "PL2264050", "PL2265060", "PL2265070", "PL2265080",
+        "PL2266050", "PL2266060", "PL2266070", "PL2266080", "PL2267050", "PL2267060",
+        "PL2267070", "PL2267080", "PL2268050", "PL2268060", "PL2268070", "PL2268080",
+        "PL2269050", "PL2269060", "PL2269070", "PL2269080", "PL22610050", "PL22610060",
+        "PL22610070", "PL22610080", "PL2261007A", "PL2261007B", "PL2261008B", "PL2261007C",
+        "PL2261008C", "PL2261007D", "PL2261008D", "PL2261007F", "PL2261007G", "PL2261007I"
+      ]
+    }
+  },
+  "verificationAfterFix": {
+    "plansWithHospitalButNoAmbulatoryInDb": 0,
+    "plan13-SFC157-26": {
+      "hospitalCount": 25,
+      "ambulatoryCount": 10,
+      "ambulatoryProviders": [
+        "80% Centros Médicos RedSalud(A.3)",
+        "80% Integramedica",
+        "80% Clínica RedSalud Vitacura",
+        "80% Clínica Las Condes(A.3)",
+        "80% Clínica Universidad De Los Andes",
+        "80% Clínica San Carlos De Apoquindo",
+        "80% Clínica Meds (A.3)",
+        "80% Clínica Santa María(A.3)",
+        "80% Red de Salud UC Christus",
+        "60% Clínica Alemana De Santiago(A.3)"
+      ]
+    },
+    "otherIsapresChecked": {
+      "Banmédica": 0,
+      "Cruz Blanca": 0,
+      "Esencial": 0,
+      "Nueva Masvida": 0,
+      "Vida Tres": 0
+    }
+  },
+  "filesModified": [
+    "scripts/parse-colmena-excel.py",
+    "scripts/parse-consalud-excel.py",
+    "scripts/audit-plan-coverages.ts"
+  ]
+}
