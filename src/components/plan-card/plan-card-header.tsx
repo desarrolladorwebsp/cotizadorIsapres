@@ -1,4 +1,10 @@
-import { formatPlanClp, formatQuotedUf } from "@/domain";
+import { useMemo } from "react";
+import { useOptionalCompanyAgreementContext } from "@/components/cotizador/company-agreement";
+import { ExecutivePlanAgreementPrices } from "@/components/cotizador/company-agreement/plan-agreement-price";
+import {
+  buildPlanAgreementPriceDisplay,
+  resolveAgreementDiscountPercentForPlan,
+} from "@/lib/company-agreements/plan-price-discount";
 import type { PlanFinalPriceQuote } from "@/domain";
 import {
   formatBasePriceBadgeLabel,
@@ -23,6 +29,16 @@ export function PlanCardHeader({
   priceQuote,
   className,
 }: PlanCardHeaderProps) {
+  const agreement =
+    useOptionalCompanyAgreementContext()?.validatedAgreement ?? null;
+  const agreementPrices = useMemo(() => {
+    const discountPercent = resolveAgreementDiscountPercentForPlan(
+      plan.isapre,
+      agreement,
+    );
+    return buildPlanAgreementPriceDisplay(priceQuote, discountPercent);
+  }, [agreement, plan.isapre, priceQuote]);
+
   const commercialName = resolveCommercialPlanName(plan);
   const planType = resolvePrimaryPlanType(plan);
   const planTypeLabel = PLAN_TYPE_LABELS[planType];
@@ -62,24 +78,7 @@ export function PlanCardHeader({
         </div>
       </div>
 
-      <div
-        className={joinClasses(
-          "flex shrink-0 flex-col border-t pt-4 sm:min-w-[11rem]",
-          "lg:border-t-0 lg:pt-0 lg:items-end lg:text-right",
-          ui.border,
-        )}
-      >
-        <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
-          Desde
-        </p>
-        <p className="mt-0.5 text-[1.75rem] font-bold leading-none tabular-nums tracking-tight text-primary-dark sm:text-3xl">
-          {formatQuotedUf(priceQuote.finalPriceUf)}
-        </p>
-        <p className="mt-2 text-sm font-medium tabular-nums text-muted">
-          {formatPlanClp(priceQuote.finalPriceClp)}{" "}
-          <span className="font-normal text-muted/75">/ mes</span>
-        </p>
-      </div>
+      <ExecutivePlanAgreementPrices prices={agreementPrices} />
     </header>
   );
 }

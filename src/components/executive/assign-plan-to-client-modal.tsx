@@ -10,8 +10,14 @@ import {
   fetchExecutiveClients,
   updateClientAdvisedPlan,
 } from "@/lib/api/admin-client";
+import { useOptionalCompanyAgreementContext } from "@/components/cotizador/company-agreement";
+import { formatAgreementDiscountBadge } from "@/components/cotizador/company-agreement/plan-agreement-price";
+import {
+  buildPlanAgreementPriceDisplay,
+  resolveAgreementDiscountPercentForPlan,
+} from "@/lib/company-agreements/plan-price-discount";
 import { sanitizeRutInput } from "@/lib/auth/rut";
-import { buildPlanFinalPriceQuote } from "@/domain";
+import { buildPlanFinalPriceQuote, formatPlanClp, formatQuotedUf } from "@/domain";
 import { ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type { BeneficiaryGroupSummary } from "@/domain";
@@ -96,6 +102,9 @@ export function AssignPlanToClientModal({
     );
   }, [clients, clientSearch]);
 
+  const agreement =
+    useOptionalCompanyAgreementContext()?.validatedAgreement ?? null;
+
   const priceQuote = useMemo(() => {
     if (!plan) return null;
     return buildPlanFinalPriceQuote(
@@ -105,6 +114,14 @@ export function AssignPlanToClientModal({
       plan.ges_premium_uf,
     );
   }, [plan, beneficiarySummary, ufToClp]);
+
+  const agreementPrices = useMemo(() => {
+    if (!plan || !priceQuote) return null;
+    return buildPlanAgreementPriceDisplay(
+      priceQuote,
+      resolveAgreementDiscountPercentForPlan(plan.isapre, agreement),
+    );
+  }, [agreement, plan, priceQuote]);
 
   if (!plan) return null;
 
@@ -180,13 +197,41 @@ export function AssignPlanToClientModal({
             {plan.isapre} · {plan.plan_name}
           </p>
           <p className="text-sm text-muted">{plan.unique_code}</p>
-          {priceQuote ? (
-            <p className="mt-2 text-sm font-semibold text-primary-dark">
-              {priceQuote.finalPriceUf.toFixed(2)} UF
-              <span className="ml-2 font-normal text-muted">
-                ({priceQuote.finalPriceClp.toLocaleString("es-CL")} CLP aprox.)
-              </span>
-            </p>
+          {agreementPrices ? (
+            <div className="mt-2 space-y-1">
+              {agreementPrices.hasAgreementDiscount ? (
+                <span className="inline-flex rounded-md bg-red-600 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                  {formatAgreementDiscountBadge(agreementPrices.discountPercent)}{" "}
+                  convenio
+                </span>
+              ) : null}
+              {agreementPrices.hasAgreementDiscount ? (
+                <p className="text-xs tabular-nums text-muted line-through">
+                  {formatQuotedUf(agreementPrices.listFinalPriceUf)} ·{" "}
+                  {formatPlanClp(agreementPrices.listFinalPriceClp)}
+                </p>
+              ) : null}
+              <p
+                className={joinClasses(
+                  "text-sm font-semibold",
+                  agreementPrices.hasAgreementDiscount
+                    ? "text-red-700"
+                    : "text-primary-dark",
+                )}
+              >
+                {formatQuotedUf(agreementPrices.displayFinalPriceUf)}
+                <span
+                  className={joinClasses(
+                    "ml-2 font-normal",
+                    agreementPrices.hasAgreementDiscount
+                      ? "text-red-700/75"
+                      : "text-muted",
+                  )}
+                >
+                  ({formatPlanClp(agreementPrices.displayFinalPriceClp)} aprox.)
+                </span>
+              </p>
+            </div>
           ) : null}
         </div>
 

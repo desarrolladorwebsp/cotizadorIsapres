@@ -11,13 +11,17 @@ import { ChatIcon, DownloadIcon } from "@/components/plan-card/icons";
 import { IsapreLogo } from "@/components/plan-card/isapre-logo";
 import {
   buildPlanFinalPriceQuote,
-  formatPlanClp,
-  formatQuotedUf,
   PLAN_TYPE_LABELS,
   resolveCommercialPlanName,
   resolvePrimaryPlanType,
   splitCoverageByType,
 } from "@/domain";
+import { useOptionalCompanyAgreementContext } from "@/components/cotizador/company-agreement";
+import { PublicPlanAgreementPrices } from "@/components/cotizador/company-agreement/plan-agreement-price";
+import {
+  buildPlanAgreementPriceDisplay,
+  resolveAgreementDiscountPercentForPlan,
+} from "@/lib/company-agreements/plan-price-discount";
 import { useInView } from "@/hooks/use-in-view";
 import { usePlanDetail } from "@/hooks/use-plan-detail";
 import {
@@ -35,6 +39,7 @@ import {
   planHasPdf,
 } from "@/lib/plan-pdf";
 import type { CurrencyDisplay } from "./public-results-toolbar";
+import { formatQuotedUf } from "@/domain";
 
 export interface PublicPlanCardProps {
   plan: HealthPlanSummary;
@@ -217,8 +222,15 @@ export function PublicPlanCard({
     [plan.base_price_uf, plan.ges_premium_uf, beneficiarySummary, ufToClp],
   );
 
-  const ufPriceLabel = formatQuotedUf(priceQuote.finalPriceUf);
-  const clpPriceLabel = formatPlanClp(priceQuote.finalPriceClp);
+  const agreement =
+    useOptionalCompanyAgreementContext()?.validatedAgreement ?? null;
+  const agreementPrices = useMemo(() => {
+    const discountPercent = resolveAgreementDiscountPercentForPlan(
+      plan.isapre,
+      agreement,
+    );
+    return buildPlanAgreementPriceDisplay(priceQuote, discountPercent);
+  }, [agreement, plan.isapre, priceQuote]);
 
   return (
     <motion.article
@@ -267,34 +279,10 @@ export function PublicPlanCard({
         </div>
 
         <div className="plan-card-header-actions flex shrink-0 flex-col items-stretch gap-2 sm:items-end sm:gap-2.5">
-          <div className="flex items-center gap-3 sm:gap-4">
-            <div className="text-left sm:text-right">
-              <p className="text-[10px] font-medium text-muted">Desde</p>
-              <p
-                className={joinClasses(
-                  "font-bold tabular-nums text-primary-dark",
-                  currency === "uf"
-                    ? "text-base sm:text-lg"
-                    : "text-sm text-primary-dark/75 sm:text-base",
-                )}
-              >
-                {ufPriceLabel}
-              </p>
-            </div>
-            <div className="text-left sm:text-right">
-              <p className="text-[10px] font-medium text-muted">Desde</p>
-              <p
-                className={joinClasses(
-                  "font-bold tabular-nums text-primary-dark",
-                  currency === "clp"
-                    ? "text-base sm:text-lg"
-                    : "text-sm text-primary-dark/75 sm:text-base",
-                )}
-              >
-                {clpPriceLabel}
-              </p>
-            </div>
-          </div>
+          <PublicPlanAgreementPrices
+            prices={agreementPrices}
+            currency={currency}
+          />
 
           <div className="flex flex-wrap items-center gap-2">
             <PlanCardActionButton

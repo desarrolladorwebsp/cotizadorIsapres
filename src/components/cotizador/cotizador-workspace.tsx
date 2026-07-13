@@ -2,7 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { FiltersFab, FiltersSidebar } from "@/components/filters";
-import { CompanyAgreementValidationSection } from "@/components/cotizador/company-agreement";
+import {
+  CompanyAgreementProvider,
+  CompanyAgreementValidationSection,
+} from "@/components/cotizador/company-agreement";
 import { RegionFilterSelect } from "@/components/filters/region-filter-select";
 import { PlanResultsList } from "@/components/plan-card";
 import { CotizadorHeader, type CotizadorHeaderVariant } from "@/components/cotizador/cotizador-header";
@@ -44,7 +47,15 @@ export interface CotizadorWorkspaceProps {
   onNotify?: (message: string, tone?: "success" | "error") => void;
 }
 
-export function CotizadorWorkspace({
+export function CotizadorWorkspace(props: CotizadorWorkspaceProps) {
+  return (
+    <CompanyAgreementProvider>
+      <CotizadorWorkspaceInner {...props} />
+    </CompanyAgreementProvider>
+  );
+}
+
+function CotizadorWorkspaceInner({
   variant,
   embeddedInExecutiveShell = false,
   onNotify,
