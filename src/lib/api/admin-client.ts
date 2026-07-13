@@ -5,6 +5,7 @@ import type {
 import type { Clinic } from "@/types/clinic";
 import type { HealthPlan } from "@/types/plan";
 import type { PlanPdfReport } from "@/types/plan-pdf-report";
+import type { PlanPdfBatchUploadResponse } from "@/types/plan-pdf-upload";
 import type { QuoteRecord } from "@/types/quote";
 import type { IsapreRecord, UpdateIsapreGesInput } from "@/types/isapre";
 import type {
@@ -132,6 +133,36 @@ export async function fetchIsapres(): Promise<IsapreRecord[]> {
 export async function fetchPlanPdfReport(): Promise<PlanPdfReport> {
   const response = await fetch("/api/admin/plan-pdf-report");
   return parseJsonResponse<PlanPdfReport>(response);
+}
+
+export async function uploadPlanPdfsAdmin(input: {
+  files: File[];
+  uniqueCode?: string;
+  isapreId?: string;
+  allowReplace?: boolean;
+}): Promise<PlanPdfBatchUploadResponse> {
+  const formData = new FormData();
+
+  for (const file of input.files) {
+    formData.append("files", file);
+  }
+
+  if (input.uniqueCode?.trim()) {
+    formData.append("uniqueCode", input.uniqueCode.trim());
+  }
+
+  if (input.isapreId?.trim()) {
+    formData.append("isapreId", input.isapreId.trim());
+  }
+
+  formData.append("allowReplace", input.allowReplace === false ? "false" : "true");
+
+  const response = await fetch("/api/admin/plan-pdf-upload", {
+    method: "POST",
+    body: formData,
+  });
+
+  return parseJsonResponse<PlanPdfBatchUploadResponse>(response);
 }
 
 export async function updateIsapreGes(

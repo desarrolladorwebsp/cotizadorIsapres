@@ -16,7 +16,11 @@ import {
   AdminTableRow,
   AdminToolbar,
 } from "@/components/admin/admin-data-table";
-import { fetchPlanPdfReport } from "@/lib/api/admin-client";
+import { fetchPlanPdfReport, uploadPlanPdfsAdmin } from "@/lib/api/admin-client";
+import {
+  PlanPdfRowUploadButton,
+  PlanPdfUploadSection,
+} from "@/components/admin/plan-pdf-upload-section";
 import {
   executiveStatCardClass,
   type ExecutiveStatTone,
@@ -25,6 +29,7 @@ import { formatQuotedUf } from "@/lib/plan-format";
 import { joinClasses } from "@/lib/utils";
 import type {
   IsaprePdfSummaryRow,
+  MissingPlanPdfRow,
   PlanPdfReport,
 } from "@/types/plan-pdf-report";
 
@@ -66,6 +71,7 @@ export function PlanPdfReportPanel({ onNotify }: PlanPdfReportPanelProps) {
   const [search, setSearch] = useState("");
   const [isapreFilter, setIsapreFilter] = useState<string>("all");
   const [expandedIsapreId, setExpandedIsapreId] = useState<string | null>(null);
+  const [uploadingCode, setUploadingCode] = useState<string | null>(null);
 
   async function loadReport() {
     setLoading(true);
@@ -157,6 +163,47 @@ export function PlanPdfReportPanel({ onNotify }: PlanPdfReportPanelProps) {
   function handleShowAllMissing() {
     setExpandedIsapreId(null);
     setIsapreFilter("all");
+  }
+
+  async function handleRowUpload(
+    row: MissingPlanPdfRow,
+    files: FileList | null,
+  ) {
+    const file = files?.[0];
+    if (!file) return;
+
+    setUploadingCode(row.uniqueCode);
+    try {
+      const response = await uploadPlanPdfsAdmin({
+        files: [file],
+        uniqueCode: row.uniqueCode,
+        isapreId: row.isapreId,
+        allowReplace: true,
+      });
+
+      const success = response.results.find((item) => item.ok);
+      onNotify(
+        success?.ok
+          ? `PDF cargado para ${success.uniqueCode}.`
+          : response.results[0]?.ok === false
+            ? response.results[0].error
+            : "No se pudo cargar el PDF.",
+        success ? "success" : "error",
+      );
+
+      if (response.uploaded > 0) {
+        await loadReport();
+      }
+    } catch (error) {
+      onNotify(
+        error instanceof Error
+          ? error.message
+          : "No se pudo cargar el PDF del plan.",
+        "error",
+      );
+    } finally {
+      setUploadingCode(null);
+    }
   }
 
   return (
@@ -264,6 +311,14 @@ export function PlanPdfReportPanel({ onNotify }: PlanPdfReportPanelProps) {
         </AdminTable>
       </AdminTableCard>
 
+      <PlanPdfUploadSection
+        defaultIsapreId={isapreFilter !== "all" ? isapreFilter : undefined}
+        onNotify={onNotify}
+        onComplete={() => {
+          void loadReport();
+        }}
+      />
+
       <div className="space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -344,6 +399,7 @@ export function PlanPdfReportPanel({ onNotify }: PlanPdfReportPanelProps) {
                 <AdminTableHeaderCell>Coberturas</AdminTableHeaderCell>
                 <AdminTableHeaderCell>Zonas</AdminTableHeaderCell>
                 <AdminTableHeaderCell>TOP</AdminTableHeaderCell>
+                <AdminTableHeaderCell>Acciones</AdminTableHeaderCell>
               </AdminTableRow>
             </AdminTableHead>
             <AdminTableBody>
@@ -360,6 +416,14 @@ export function PlanPdfReportPanel({ onNotify }: PlanPdfReportPanelProps) {
                   <AdminTableCell>{row.coverageCount}</AdminTableCell>
                   <AdminTableCell>{row.zones || "—"}</AdminTableCell>
                   <AdminTableCell>{row.hasTop ? "Sí" : "No"}</AdminTableCell>
+                  <AdminTableCell>
+                    <PlanPdfRowUploadButton
+                      uniqueCode={row.uniqueCode}
+                      isapreId={row.isapreId}
+                      uploading={uploadingCode === row.uniqueCode}
+                      onUpload={(files) => void handleRowUpload(row, files)}
+                    />
+                  </AdminTableCell>
                 </AdminTableRow>
               ))}
             </AdminTableBody>
