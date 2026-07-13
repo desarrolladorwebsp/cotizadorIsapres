@@ -446,7 +446,7 @@ export function CompanyAgreementValidationSection({
     ) : agreementMatch ? (
       <div
         className={joinClasses(
-          "rounded-xl border border-red-200 bg-white px-3 py-3 text-sm shadow-sm",
+          "rounded-xl border border-emerald-300/80 bg-emerald-50 px-3 py-3 text-sm text-emerald-950 shadow-sm",
           isInline && "mb-2",
           compactEmbed && "max-md:text-xs",
         )}
@@ -454,10 +454,12 @@ export function CompanyAgreementValidationSection({
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <p className="font-semibold text-red-700">Convenio vigente confirmado</p>
-            <p className="mt-1 text-xs leading-relaxed text-foreground/90">
+            <p className="font-semibold text-emerald-800">
+              Convenio vigente confirmado
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-emerald-950/90">
               La empresa{" "}
-              <span className="font-semibold text-foreground">
+              <span className="font-semibold text-emerald-950">
                 {agreementMatch.companyName}
               </span>
               {formatAgreementRut(agreementMatch.companyRutRaw) ? (
@@ -475,12 +477,14 @@ export function CompanyAgreementValidationSection({
               Puedes continuar cotizando con este beneficio aplicable.
             </p>
             {agreementMatch.discountPercent != null ? (
-              <p className="mt-2 text-[11px] leading-relaxed text-muted">
+              <p className="mt-2 text-[11px] leading-relaxed text-emerald-900/75">
                 {COMPANY_AGREEMENT_DISCOUNT_DISCLAIMER}
               </p>
             ) : null}
           </div>
-          {renderNewQueryButton("text-red-700 hover:text-red-800")}
+          {renderNewQueryButton(
+            "border-emerald-300/70 text-emerald-900 hover:bg-white hover:text-emerald-950",
+          )}
         </div>
       </div>
     ) : agreementNotFound ? (
