@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { importLibrary, setOptions } from "@googlemaps/js-api-loader";
+import { importLibrary } from "@googlemaps/js-api-loader";
 import { MarkerClusterer } from "@googlemaps/markerclusterer";
+import { ensureGoogleMapsOptions } from "@/lib/maps/google-maps-config";
 import type { UniqueClinicMapLocation } from "@/types/clinic-location";
 
 const DEFAULT_CENTER = { lat: -33.4489, lng: -70.6693 };
@@ -22,8 +23,7 @@ interface GoogleMapsClinicsMapProps {
 }
 
 function getMapsApiKey(): string | null {
-  const key = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY?.trim();
-  return key || null;
+  return ensureGoogleMapsOptions();
 }
 
 function buildInfoWindowContent(location: UniqueClinicMapLocation): string {
@@ -89,8 +89,6 @@ export function GoogleMapsClinicsMap({
     if (!containerRef.current) return;
 
     let cancelled = false;
-
-    setOptions({ key: apiKey, v: "weekly" });
 
     void importLibrary("maps")
       .then(() => {

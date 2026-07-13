@@ -3,8 +3,11 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { FieldGroup, FieldHint, FieldLabel } from "@/components/ui/form-field";
-import { Input } from "@/components/ui/input";
 import { AdminBadge } from "@/components/admin/admin-data-table";
+import {
+  GooglePlacesAddressInput,
+  type GooglePlacesSelection,
+} from "@/components/maps/google-places-address-input";
 import {
   clearClinicLocation,
   updateClinicLocation,
@@ -31,6 +34,8 @@ export function ClinicLocationModalContent({
   onClose,
 }: ClinicLocationModalContentProps) {
   const [address, setAddress] = useState(clinic.location?.address ?? "");
+  const [selectedPlace, setSelectedPlace] =
+    useState<GooglePlacesSelection | null>(null);
   const [saving, setSaving] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,6 +43,7 @@ export function ClinicLocationModalContent({
 
   useEffect(() => {
     setAddress(clinic.location?.address ?? "");
+    setSelectedPlace(null);
     setError(null);
     setConfirmed(null);
   }, [clinic]);
@@ -45,17 +51,19 @@ export function ClinicLocationModalContent({
   const current = confirmed ?? clinic.location ?? null;
 
   async function handleSave() {
-    const trimmed = address.trim();
-    if (trimmed.length < 5) {
-      setError("Ingresa una dirección más específica (calle, número y comuna).");
+    if (!selectedPlace) {
+      setError(
+        "Selecciona una dirección de la lista sugerida por Google Maps. No se aceptan direcciones escritas a mano.",
+      );
       return;
     }
 
     setSaving(true);
     setError(null);
     try {
-      const result = await updateClinicLocation(clinic.id, trimmed);
+      const result = await updateClinicLocation(clinic.id, selectedPlace);
       setConfirmed(result.location ?? null);
+      setSelectedPlace(null);
       onNotify("Dirección validada y actualizada en el mapa.");
       await onSaved();
     } catch (err) {
@@ -81,6 +89,7 @@ export function ClinicLocationModalContent({
       await clearClinicLocation(clinic.id);
       setConfirmed(null);
       setAddress("");
+      setSelectedPlace(null);
       onNotify("Ubicación eliminada.");
       await onSaved();
       onClose();
@@ -141,20 +150,30 @@ export function ClinicLocationModalContent({
 
       <FieldGroup>
         <FieldLabel htmlFor="clinic-address">Nueva dirección</FieldLabel>
-        <Input
+        <GooglePlacesAddressInput
           id="clinic-address"
           value={address}
-          onChange={(event) => {
-            setAddress(event.target.value);
-            setError(null);
-          }}
+          onValueChange={setAddress}
+          onPlaceSelect={setSelectedPlace}
           placeholder="Ej: Av. Providencia 2653, Providencia, Santiago"
           className={joinClasses("h-11", ui.input)}
+          disabled={saving || clearing}
         />
         <FieldHint>
-          Se valida contra un mapa real. Si la dirección no existe en Chile o es
-          incorrecta, no se guardará.
+          Escribe y elige una dirección de las sugerencias de Google Maps. Solo
+          se guardan ubicaciones reales verificadas en Chile.
         </FieldHint>
+        {selectedPlace ? (
+          <p className="text-xs font-medium text-emerald-800" role="status">
+            Dirección verificada: {selectedPlace.lat.toFixed(5)},{" "}
+            {selectedPlace.lng.toFixed(5)}
+          </p>
+        ) : address.trim() ? (
+          <p className="text-xs text-amber-800" role="status">
+            Debes seleccionar una opción de la lista de Google Maps para
+            continuar.
+          </p>
+        ) : null}
       </FieldGroup>
 
       {error ? (
@@ -187,7 +206,7 @@ export function ClinicLocationModalContent({
           <Button
             type="button"
             onClick={() => void handleSave()}
-            disabled={saving || clearing}
+            disabled={saving || clearing || !selectedPlace}
           >
             {saving ? "Validando…" : "Validar y guardar"}
           </Button>

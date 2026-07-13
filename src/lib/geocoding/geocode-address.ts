@@ -41,7 +41,7 @@ interface NominatimHit {
   address?: Record<string, string>;
 }
 
-function isWithinChile(lat: number, lng: number): boolean {
+export function isWithinChile(lat: number, lng: number): boolean {
   return (
     lat >= CHILE_BBOX.minLat &&
     lat <= CHILE_BBOX.maxLat &&

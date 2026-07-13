@@ -379,16 +379,23 @@ export interface UpdateClinicLocationResult extends Clinic {
   queried: string;
 }
 
+export interface UpdateClinicLocationPayload {
+  address: string;
+  lat: number;
+  lng: number;
+  placeId?: string;
+}
+
 export async function updateClinicLocation(
   clinicId: string,
-  address: string,
+  payload: UpdateClinicLocationPayload,
 ): Promise<UpdateClinicLocationResult> {
   const response = await fetch(
     `/api/clinics/${encodeURIComponent(clinicId)}/location`,
     {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ address }),
+      body: JSON.stringify(payload),
     },
   );
   return parseJsonResponse<UpdateClinicLocationResult>(response);
