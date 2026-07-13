@@ -1,19 +1,7 @@
+import { DEFAULT_TRUSTED_PARTNER_ORIGINS } from "@/lib/security/trusted-public-origins";
+
 const PROD_APP_ORIGIN = "https://cotizadorpremium.cl";
 const DEV_APP_ORIGIN = "http://localhost:3001";
-
-/** Sitios aliados autorizados a embeber el cotizador por defecto. */
-const DEFAULT_PARTNER_WEBSITES = [
-  "https://cotizadorpremium.cl",
-  "https://www.cotizadorpremium.cl",
-  "https://cotizaloantes.cl",
-  "https://www.cotizaloantes.cl",
-  "https://desdetu7.cl",
-  "https://www.desdetu7.cl",
-  "https://isaprepremium.cl",
-  "https://www.isaprepremium.cl",
-  "https://isaprespremium.cl",
-  "https://www.isaprespremium.cl",
-] as const;
 
 function normalizeFrameOrigin(value: string): string | null {
   const trimmed = value.trim();
@@ -49,7 +37,7 @@ function collectDefaultFrameAncestors(): string[] {
   values.add(PROD_APP_ORIGIN);
   values.add("https://www.cotizadorpremium.cl");
 
-  for (const website of DEFAULT_PARTNER_WEBSITES) {
+  for (const website of DEFAULT_TRUSTED_PARTNER_ORIGINS) {
     const origin = normalizeFrameOrigin(website);
     if (origin && origin !== "'self'") values.add(origin);
   }
