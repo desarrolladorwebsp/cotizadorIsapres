@@ -3,7 +3,10 @@ import { existsSync } from "node:fs";
 import { config } from "dotenv";
 import * as XLSX from "xlsx";
 import { isValidRut, formatRut } from "../src/lib/auth/rut";
-import { COLMENA_HOLDING_AGREEMENT_ISAPRE_ID } from "../src/lib/company-agreements/constants";
+import {
+  COLMENA_HOLDING_AGREEMENT_ISAPRE_ID,
+  resolveCompanyAgreementDiscountPercent,
+} from "../src/lib/company-agreements/constants";
 import {
   normalizeCompanyAgreementName,
   normalizeCompanyAgreementRut,
@@ -19,7 +22,6 @@ const DEFAULT_FILE = path.join(
   "convenios",
   "colmena-holding-filiales.xls",
 );
-const DEFAULT_DISCOUNT_PERCENT = 10;
 const DEFAULT_ISAPRE_ID = COLMENA_HOLDING_AGREEMENT_ISAPRE_ID;
 
 type CellValue = string | number | boolean | null | undefined;
@@ -36,7 +38,7 @@ interface ParsedAgreement {
 function parseCliArgs(argv: string[]) {
   let filePath: string | undefined;
   let isapreId = DEFAULT_ISAPRE_ID;
-  let discountPercent = DEFAULT_DISCOUNT_PERCENT;
+  let discountPercent: number | undefined;
 
   for (const arg of argv) {
     if (arg.startsWith("--isapre=")) {
@@ -59,7 +61,8 @@ function parseCliArgs(argv: string[]) {
   return {
     filePath: path.resolve(filePath ?? DEFAULT_FILE),
     isapreId,
-    discountPercent,
+    discountPercent:
+      discountPercent ?? resolveCompanyAgreementDiscountPercent(isapreId),
   };
 }
 
@@ -109,8 +112,8 @@ function findHeaderRow(rows: CellValue[][]): {
     const rutCol = findPreferredColumn(headers, ["rut filial"], ["rut"]);
     const nameCol = findPreferredColumn(
       headers,
-      ["nombre filial"],
-      ["razon social", "razon", "empresa", "nombre", "holding"],
+      ["nombre filial", "razon social"],
+      ["razon social", "razon", "empresa", "nombre"],
     );
     const discountCol = findColumn(headers, [
       "descuento",

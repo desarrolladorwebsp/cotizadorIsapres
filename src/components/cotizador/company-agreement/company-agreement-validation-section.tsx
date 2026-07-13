@@ -119,7 +119,7 @@ const FIELD_PLACEHOLDERS: Record<FieldKey, string> = {
 };
 
 const INLINE_TITLE =
-  "¿Tu empresa tiene convenio? Obtén hasta un 10% de descuento";
+  "¿Tu empresa tiene convenio? Obtén descuento en tu plan (6% Consalud · 10% Colmena)";
 
 const inlineFieldClass = joinClasses(
   "h-9 w-full min-w-0 rounded-lg border-0 bg-white px-2.5 text-sm shadow-sm ring-1 ring-border/80 placeholder:text-muted/70 focus:ring-2 focus:ring-primary/40",
