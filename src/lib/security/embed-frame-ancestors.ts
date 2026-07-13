@@ -1,4 +1,4 @@
-import { DEFAULT_TRUSTED_PARTNER_ORIGINS } from "@/lib/security/trusted-public-origins";
+import { DEFAULT_TRUSTED_PARTNER_ORIGINS } from "./trusted-partner-origins.constants";
 
 const PROD_APP_ORIGIN = "https://cotizadorpremium.cl";
 const DEV_APP_ORIGIN = "http://localhost:3001";

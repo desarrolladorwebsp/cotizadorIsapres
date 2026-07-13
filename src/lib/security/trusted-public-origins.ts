@@ -5,21 +5,9 @@ import {
   PROD_APP_BASE_URL,
   resolveAppBaseUrl,
 } from "@/lib/platform/routing";
+import { DEFAULT_TRUSTED_PARTNER_ORIGINS } from "@/lib/security/trusted-partner-origins.constants";
 
-/** Orígenes de socios y despliegues conocidos (con y sin www). */
-export const DEFAULT_TRUSTED_PARTNER_ORIGINS = [
-  "https://cotizadorpremium.cl",
-  "https://www.cotizadorpremium.cl",
-  "https://cotizador.cotizaloantes.cl",
-  "https://cotizaloantes.cl",
-  "https://www.cotizaloantes.cl",
-  "https://desdetu7.cl",
-  "https://www.desdetu7.cl",
-  "https://isaprepremium.cl",
-  "https://www.isaprepremium.cl",
-  "https://isaprespremium.cl",
-  "https://www.isaprespremium.cl",
-] as const;
+export { DEFAULT_TRUSTED_PARTNER_ORIGINS };
 
 export function normalizePublicOrigin(value: string): string | null {
   try {
