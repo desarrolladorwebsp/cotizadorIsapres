@@ -1,5 +1,5 @@
 import { Prisma } from "@prisma/client";
-import { prisma } from "@/lib/prisma";
+import { getPrismaClient, prisma } from "@/lib/prisma";
 import {
   normalizeCompanyAgreementName,
   normalizeCompanyAgreementRut,
@@ -13,7 +13,8 @@ import type {
 const AGREEMENT_LOOKUP_LIMIT = 10;
 
 function hasCompanyAgreementDelegate(): boolean {
-  return "companyAgreement" in prisma && Boolean(prisma.companyAgreement);
+  const client = getPrismaClient();
+  return Boolean(client.companyAgreement);
 }
 
 function toAgreementRecord(row: {

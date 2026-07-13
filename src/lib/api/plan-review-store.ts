@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { getPrismaClient, prisma } from "@/lib/prisma";
 import type { PublicPlanReview } from "@/types/plan-review";
 
 const DEFAULT_PUBLISHED_REVIEWS_LIMIT = 12;
@@ -6,7 +6,7 @@ const DEFAULT_PUBLISHED_REVIEWS_LIMIT = 12;
 export async function readPublishedPlanReviews(
   limit = DEFAULT_PUBLISHED_REVIEWS_LIMIT,
 ): Promise<PublicPlanReview[]> {
-  if (!("planReview" in prisma) || !prisma.planReview) {
+  if (!getPrismaClient().planReview) {
     console.warn(
       "readPublishedPlanReviews: prisma.planReview no disponible. Ejecuta `npx prisma generate` y reinicia el servidor.",
     );

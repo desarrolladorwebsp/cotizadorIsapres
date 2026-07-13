@@ -51,8 +51,8 @@ const BENEFIT_ITEMS = [
     text: "Algunas empresas mantienen convenios que permiten acceder a condiciones preferentes para sus trabajadores y cargas.",
   },
   {
-    title: "Descuentos por convenio",
-    text: "Según la empresa, la isapre y el convenio vigente (por ejemplo 6% en Consalud o 10% en Colmena), puedes obtener beneficios que reducen el costo de tu plan de salud.",
+    title: "Descuentos de hasta un 10%",
+    text: "Según la empresa y el convenio vigente, puedes obtener beneficios que reducen el costo de tu plan de salud.",
   },
   {
     title: "Validación sin compromiso",
