@@ -653,13 +653,7 @@ export function CompanyAgreementValidationSection({
           </AnimatePresence>
 
           {(submitted || agreementMatch || agreementNotFound) && !expanded ? (
-            <p className="mt-1.5 text-[11px] font-medium text-red-700">
-              {agreementMatch
-                ? "Convenio vigente confirmado para esta empresa."
-                : submitted
-                  ? "Consulta registrada. Te contactaremos si corresponde."
-                  : "No se encontró convenio para el RUT ingresado."}
-            </p>
+            <div className="mt-2">{statusMessage}</div>
           ) : null}
         </div>
 
@@ -756,13 +750,7 @@ export function CompanyAgreementValidationSection({
             </AnimatePresence>
 
             {(submitted || agreementMatch || agreementNotFound) && !expanded ? (
-              <p className="mt-2 text-xs font-medium text-red-700">
-                {agreementMatch
-                  ? "Convenio vigente confirmado para esta empresa."
-                  : submitted
-                    ? "Consulta registrada. Te contactaremos si corresponde."
-                    : "No se encontró convenio para el RUT ingresado."}
-              </p>
+              <div className="mt-2">{statusMessage}</div>
             ) : null}
           </div>
         </div>
