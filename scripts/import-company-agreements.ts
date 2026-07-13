@@ -3,6 +3,7 @@ import { existsSync } from "node:fs";
 import { config } from "dotenv";
 import * as XLSX from "xlsx";
 import { isValidRut, formatRut } from "../src/lib/auth/rut";
+import { COLMENA_HOLDING_AGREEMENT_ISAPRE_ID } from "../src/lib/company-agreements/constants";
 import {
   normalizeCompanyAgreementName,
   normalizeCompanyAgreementRut,
@@ -16,9 +17,10 @@ const DEFAULT_FILE = path.join(
   process.cwd(),
   "storage",
   "convenios",
-  "Holding Excel Servlet.xls",
+  "colmena-holding-filiales.xls",
 );
 const DEFAULT_DISCOUNT_PERCENT = 10;
+const DEFAULT_ISAPRE_ID = COLMENA_HOLDING_AGREEMENT_ISAPRE_ID;
 
 type CellValue = string | number | boolean | null | undefined;
 
@@ -28,6 +30,37 @@ interface ParsedAgreement {
   companyName: string;
   normalizedName: string;
   discountPercent: number | null;
+  active: boolean;
+}
+
+function parseCliArgs(argv: string[]) {
+  let filePath: string | undefined;
+  let isapreId = DEFAULT_ISAPRE_ID;
+  let discountPercent = DEFAULT_DISCOUNT_PERCENT;
+
+  for (const arg of argv) {
+    if (arg.startsWith("--isapre=")) {
+      isapreId = arg.slice("--isapre=".length).trim() || DEFAULT_ISAPRE_ID;
+      continue;
+    }
+    if (arg.startsWith("--discount=")) {
+      const parsed = Number(arg.slice("--discount=".length));
+      if (!Number.isFinite(parsed) || parsed <= 0 || parsed > 100) {
+        throw new Error("El parámetro --discount debe ser un número entre 1 y 100.");
+      }
+      discountPercent = parsed;
+      continue;
+    }
+    if (!arg.startsWith("-")) {
+      filePath = arg;
+    }
+  }
+
+  return {
+    filePath: path.resolve(filePath ?? DEFAULT_FILE),
+    isapreId,
+    discountPercent,
+  };
 }
 
 function normalizeHeader(value: CellValue): string {
@@ -96,7 +129,10 @@ function findHeaderRow(rows: CellValue[][]): {
   );
 }
 
-function parseWorkbook(filePath: string): ParsedAgreement[] {
+function parseWorkbook(
+  filePath: string,
+  defaultDiscountPercent: number,
+): ParsedAgreement[] {
   const workbook = XLSX.readFile(filePath, { cellDates: false });
   const parsed = new Map<string, ParsedAgreement>();
 
@@ -133,8 +169,9 @@ function parseWorkbook(filePath: string): ParsedAgreement[] {
         discountPercent:
           columns.discountCol >= 0
             ? parseAgreementDiscountPercent(row[columns.discountCol]) ??
-              DEFAULT_DISCOUNT_PERCENT
-            : DEFAULT_DISCOUNT_PERCENT,
+              defaultDiscountPercent
+            : defaultDiscountPercent,
+        active: true,
       });
     }
   }
@@ -145,44 +182,64 @@ function parseWorkbook(filePath: string): ParsedAgreement[] {
 }
 
 async function main() {
-  const filePath = path.resolve(process.argv[2] ?? DEFAULT_FILE);
+  const { filePath, isapreId, discountPercent } = parseCliArgs(
+    process.argv.slice(2),
+  );
 
   if (!existsSync(filePath)) {
     throw new Error(`Archivo no encontrado: ${filePath}`);
   }
 
-  const agreements = parseWorkbook(filePath);
+  const isapre = await prisma.isapre.findUnique({
+    where: { id: isapreId },
+    select: { id: true, name: true },
+  });
+  if (!isapre) {
+    throw new Error(
+      `Isapre no encontrada: ${isapreId}. Verifica el catálogo antes de importar.`,
+    );
+  }
+
+  const agreements = parseWorkbook(filePath, discountPercent);
   if (agreements.length === 0) {
     throw new Error("No se encontraron convenios válidos en el Excel.");
   }
 
   const sourceFile = path.basename(filePath);
+  const activeCount = agreements.filter((agreement) => agreement.active).length;
 
   for (const agreement of agreements) {
     await prisma.companyAgreement.upsert({
       where: { companyRut: agreement.companyRut },
       create: {
-        ...agreement,
+        companyRut: agreement.companyRut,
+        companyRutRaw: agreement.companyRutRaw,
+        companyName: agreement.companyName,
+        normalizedName: agreement.normalizedName,
+        discountPercent: agreement.discountPercent,
+        isapreId,
         sourceFile,
-        active: true,
+        active: agreement.active,
       },
       update: {
         companyRutRaw: agreement.companyRutRaw,
         companyName: agreement.companyName,
         normalizedName: agreement.normalizedName,
         discountPercent: agreement.discountPercent,
+        isapreId,
         sourceFile,
-        active: true,
+        active: agreement.active,
       },
     });
   }
 
   console.log(
-    `Convenios importados: ${agreements.length} desde ${path.relative(
+    `Convenios importados: ${agreements.length} (${activeCount} activos) desde ${path.relative(
       process.cwd(),
       filePath,
     )}`,
   );
+  console.log(`Isapre: ${isapre.name} (${isapre.id}) · Descuento: ${discountPercent}%`);
 }
 
 main()

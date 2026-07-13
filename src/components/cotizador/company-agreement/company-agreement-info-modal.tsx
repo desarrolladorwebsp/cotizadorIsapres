@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 import { accent, safeWidth, touchTarget, ui } from "@/lib/ui-tokens";
+import { COMPANY_AGREEMENT_DISCOUNT_DISCLAIMER } from "@/lib/company-agreements/constants";
 import { joinClasses } from "@/lib/utils";
 
 function CloseIcon() {
@@ -173,7 +174,8 @@ export function CompanyAgreementInfoModal({
 
               <p className="rounded-lg bg-primary/8 px-3 py-2.5 text-[11px] leading-relaxed text-primary-dark">
                 El beneficio depende del convenio vigente de tu empresa. Nuestro
-                equipo puede validarlo con la información que nos compartas.
+                equipo puede validarlo con la información que nos compartas.{" "}
+                {COMPANY_AGREEMENT_DISCOUNT_DISCLAIMER}
               </p>
             </div>
 

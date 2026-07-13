@@ -8,6 +8,7 @@ import {
   hasCompanyAgreementInquiryData,
   validateCompanyAgreementFields,
 } from "@/lib/email/company-agreement-schema";
+import { COMPANY_AGREEMENT_DISCOUNT_DISCLAIMER } from "@/lib/company-agreements/constants";
 import { sanitizeRutInput } from "@/lib/auth/rut";
 import { safeWidth, touchTarget, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
@@ -82,6 +83,13 @@ function formatAgreementRut(value: string | null | undefined): string | null {
   return value.trim();
 }
 
+function formatIsapreBenefitLabel(
+  isapreName: string | null | undefined,
+): string | null {
+  if (!isapreName?.trim()) return null;
+  return `Beneficio aplicable a planes ${isapreName.trim()}.`;
+}
+
 export type CompanyAgreementSource = "public" | "executive" | "embed";
 export type CompanyAgreementVariant = "standalone" | "inline";
 
@@ -152,6 +160,8 @@ export function CompanyAgreementValidationSection({
         companyRutRaw: agreementMatch.companyRutRaw,
         companyName: agreementMatch.companyName,
         discountPercent: agreementMatch.discountPercent,
+        isapreId: agreementMatch.isapreId,
+        isapreName: agreementMatch.isapreName,
       });
       return;
     }
@@ -458,9 +468,17 @@ export function CompanyAgreementValidationSection({
               ) : (
                 " cuenta con "
               )}
-              {formatDiscountPercent(agreementMatch.discountPercent)}. Puedes
-              continuar cotizando con este beneficio aplicable.
+              {formatDiscountPercent(agreementMatch.discountPercent)}
+              {formatIsapreBenefitLabel(agreementMatch.isapreName)
+                ? ` ${formatIsapreBenefitLabel(agreementMatch.isapreName)}`
+                : ""}{" "}
+              Puedes continuar cotizando con este beneficio aplicable.
             </p>
+            {agreementMatch.discountPercent != null ? (
+              <p className="mt-2 text-[11px] leading-relaxed text-muted">
+                {COMPANY_AGREEMENT_DISCOUNT_DISCLAIMER}
+              </p>
+            ) : null}
           </div>
           {renderNewQueryButton("text-red-700 hover:text-red-800")}
         </div>

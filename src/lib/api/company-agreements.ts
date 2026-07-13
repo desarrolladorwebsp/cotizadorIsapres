@@ -4,6 +4,7 @@ import {
   normalizeCompanyAgreementName,
   normalizeCompanyAgreementRut,
 } from "@/lib/company-agreements/normalize";
+import { resolveIsapreNameFromId } from "@/lib/isapre-catalog";
 import type {
   CompanyAgreementLookupResult,
   CompanyAgreementRecord,
@@ -21,6 +22,8 @@ function toAgreementRecord(row: {
   companyRutRaw: string | null;
   companyName: string;
   discountPercent: number | null;
+  isapreId: string | null;
+  isapre?: { name: string } | null;
 }): CompanyAgreementRecord {
   return {
     id: row.id,
@@ -28,6 +31,10 @@ function toAgreementRecord(row: {
     companyRutRaw: row.companyRutRaw,
     companyName: row.companyName,
     discountPercent: row.discountPercent,
+    isapreId: row.isapreId,
+    isapreName:
+      row.isapre?.name ??
+      (row.isapreId ? resolveIsapreNameFromId(row.isapreId) : null),
   };
 }
 
@@ -70,6 +77,8 @@ export async function lookupCompanyAgreements(input: {
         companyRutRaw: true,
         companyName: true,
         discountPercent: true,
+        isapreId: true,
+        isapre: { select: { name: true } },
       },
       orderBy: { companyName: "asc" },
       take: AGREEMENT_LOOKUP_LIMIT,

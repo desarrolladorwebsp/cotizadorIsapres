@@ -1,5 +1,6 @@
 import { escapeHtml } from "@/lib/email/escape-html";
 import type { CotizacionNotifyInput } from "@/lib/email/cotizacion-notify-schema";
+import { COMPANY_AGREEMENT_DISCOUNT_DISCLAIMER } from "@/lib/company-agreements/constants";
 import { formatConvenioDiscountLabel } from "@/lib/company-agreements/cotizacion-notify-convenio";
 import {
   buildEmailShell,
@@ -92,9 +93,13 @@ function buildConvenioHighlightLines(
     ),
   ];
 
-  lines.push(
-    "Un ejecutivo confirmará la aplicación del beneficio en tu plan.",
-  );
+  if (data.convenioEmpresa.isapreName) {
+    lines.push(
+      `Isapre convenio: ${escapeHtml(data.convenioEmpresa.isapreName)}`,
+    );
+  }
+
+  lines.push(escapeHtml(COMPANY_AGREEMENT_DISCOUNT_DISCLAIMER));
 
   return lines;
 }
@@ -116,6 +121,18 @@ function buildConvenioTableRows(data: CotizacionNotifyInput): string[] {
       escapeHtml(
         formatConvenioDiscountLabel(data.convenioEmpresa.descuentoPercent),
       ),
+    ),
+    ...(data.convenioEmpresa.isapreName
+      ? [
+          renderTableRow(
+            "Isapre convenio",
+            escapeHtml(data.convenioEmpresa.isapreName),
+          ),
+        ]
+      : []),
+    renderTableRow(
+      "Confirmación ejecutivo",
+      escapeHtml(COMPANY_AGREEMENT_DISCOUNT_DISCLAIMER),
     ),
   ];
 }

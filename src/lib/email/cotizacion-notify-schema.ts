@@ -72,6 +72,8 @@ export const cotizacionNotifyConvenioSchema = z.object({
   rutEmpresa: z.string().trim().min(1),
   nombreEmpresa: z.string().trim().min(1),
   descuentoPercent: z.number().finite().optional(),
+  isapreId: z.string().trim().min(1).optional(),
+  isapreName: z.string().trim().min(1).optional(),
 });
 
 export const cotizacionNotifyInputSchema = z.object({

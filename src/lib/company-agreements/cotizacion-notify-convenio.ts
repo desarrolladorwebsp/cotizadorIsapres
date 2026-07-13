@@ -13,6 +13,8 @@ export function toCotizacionNotifyConvenio(
     rutEmpresa,
     nombreEmpresa: agreement.companyName.trim(),
     descuentoPercent: agreement.discountPercent ?? undefined,
+    isapreId: agreement.isapreId ?? undefined,
+    isapreName: agreement.isapreName ?? undefined,
   };
 }
 

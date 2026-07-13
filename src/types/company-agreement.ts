@@ -4,6 +4,8 @@ export interface CompanyAgreementRecord {
   companyRutRaw: string | null;
   companyName: string;
   discountPercent: number | null;
+  isapreId: string | null;
+  isapreName: string | null;
 }
 
 export interface CompanyAgreementLookupResult {
@@ -16,4 +18,6 @@ export interface ValidatedCompanyAgreement {
   companyRutRaw: string | null;
   companyName: string;
   discountPercent: number | null;
+  isapreId: string | null;
+  isapreName: string | null;
 }
