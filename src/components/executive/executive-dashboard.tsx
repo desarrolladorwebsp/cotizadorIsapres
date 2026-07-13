@@ -6,6 +6,7 @@ import { CotizadorWorkspace } from "@/components/cotizador/cotizador-workspace";
 import { ExecutiveToastStack } from "@/components/executive/executive-toast";
 import { useExecutiveToast } from "@/hooks/use-executive-toast";
 import { ClinicsPanel } from "@/components/admin/clinics-panel";
+import { CompanyAgreementsPanel } from "@/components/admin/company-agreements-panel";
 import { GesPanel } from "@/components/admin/ges-panel";
 import { PlanPdfReportPanel } from "@/components/admin/plan-pdf-report-panel";
 import { UsersPanel } from "@/components/admin/users-panel";
@@ -167,6 +168,10 @@ export function ExecutiveDashboard() {
 
         {section === "reportes-pdf" && isAdmin ? (
           <PlanPdfReportPanel onNotify={notify} />
+        ) : null}
+
+        {section === "convenios" && isAdmin ? (
+          <CompanyAgreementsPanel onNotify={notify} />
         ) : null}
       </ExecutiveShell>
 

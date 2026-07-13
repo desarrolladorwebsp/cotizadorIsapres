@@ -21,3 +21,39 @@ export interface ValidatedCompanyAgreement {
   isapreId: string | null;
   isapreName: string | null;
 }
+
+export interface CompanyAgreementAdminListItem extends CompanyAgreementRecord {
+  sourceFile: string | null;
+  active: boolean;
+  updatedAt: string;
+}
+
+export interface CompanyAgreementAdminListResult {
+  items: CompanyAgreementAdminListItem[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+  totals: {
+    all: number;
+    active: number;
+    inactive: number;
+  };
+  byIsapre: Array<{
+    isapreId: string;
+    isapreName: string;
+    total: number;
+    active: number;
+  }>;
+}
+
+export interface CompanyAgreementImportResult {
+  ok: true;
+  isapreId: string;
+  isapreName: string;
+  sourceFile: string;
+  discountPercent: number;
+  imported: number;
+  created: number;
+  updated: number;
+}

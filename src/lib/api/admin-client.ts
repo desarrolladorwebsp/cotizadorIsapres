@@ -3,6 +3,10 @@ import type {
   UploadPlanPdfRequest,
 } from "@/lib/plan-pdf-storage/types";
 import type { Clinic } from "@/types/clinic";
+import type {
+  CompanyAgreementAdminListResult,
+  CompanyAgreementImportResult,
+} from "@/types/company-agreement";
 import type { HealthPlan } from "@/types/plan";
 import type { PlanPdfReport } from "@/types/plan-pdf-report";
 import type { PlanPdfBatchUploadResponse } from "@/types/plan-pdf-upload";
@@ -163,6 +167,52 @@ export async function uploadPlanPdfsAdmin(input: {
   });
 
   return parseJsonResponse<PlanPdfBatchUploadResponse>(response);
+}
+
+export async function fetchCompanyAgreementsAdmin(input?: {
+  q?: string;
+  isapreId?: string;
+  active?: boolean;
+  page?: number;
+  pageSize?: number;
+}): Promise<CompanyAgreementAdminListResult> {
+  const params = new URLSearchParams();
+  if (input?.q?.trim()) params.set("q", input.q.trim());
+  if (input?.isapreId?.trim()) params.set("isapreId", input.isapreId.trim());
+  if (typeof input?.active === "boolean") {
+    params.set("active", input.active ? "true" : "false");
+  }
+  if (input?.page) params.set("page", String(input.page));
+  if (input?.pageSize) params.set("pageSize", String(input.pageSize));
+
+  const query = params.toString();
+  const response = await fetch(
+    `/api/admin/company-agreements${query ? `?${query}` : ""}`,
+  );
+  return parseJsonResponse<CompanyAgreementAdminListResult>(response);
+}
+
+export async function importCompanyAgreementsAdmin(input: {
+  file: File;
+  isapreId: string;
+  discountPercent?: number;
+}): Promise<CompanyAgreementImportResult> {
+  const formData = new FormData();
+  formData.append("file", input.file);
+  formData.append("isapreId", input.isapreId.trim());
+  if (
+    typeof input.discountPercent === "number" &&
+    Number.isFinite(input.discountPercent)
+  ) {
+    formData.append("discountPercent", String(input.discountPercent));
+  }
+
+  const response = await fetch("/api/admin/company-agreements/import", {
+    method: "POST",
+    body: formData,
+  });
+
+  return parseJsonResponse<CompanyAgreementImportResult>(response);
 }
 
 export async function updateIsapreGes(

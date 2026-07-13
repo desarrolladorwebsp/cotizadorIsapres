@@ -48,6 +48,11 @@ const SECTION_LABELS: Record<
     shortLabel: "PDFs",
     adminOnly: true,
   },
+  convenios: {
+    label: "Convenios",
+    shortLabel: "Convenios",
+    adminOnly: true,
+  },
 };
 
 export interface ExecutiveShellProps {
