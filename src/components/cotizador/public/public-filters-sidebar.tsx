@@ -65,7 +65,7 @@ export function PublicFiltersSidebar({
     error: clinicOptionsError,
   } = usePlanClinicOptions(showClinicFilter);
 
-  useScrollLock(open && !isLargeScreen && !compactEmbed);
+  useScrollLock(open && !isLargeScreen);
 
   return (
     <>
@@ -93,11 +93,11 @@ export function PublicFiltersSidebar({
         animate={{ x: isLargeScreen ? 0 : open ? 0 : "-100%" }}
         transition={{ type: "spring", stiffness: 320, damping: 32 }}
         className={joinClasses(
-          "fixed inset-y-0 left-0 z-50 flex w-full max-w-full flex-col border-r bg-white shadow-xl",
+          "fixed inset-y-0 left-0 z-50 flex w-full max-w-full flex-col overflow-hidden border-r bg-white shadow-xl",
           compactEmbed
-            ? "max-md:max-w-[17rem] lg:static lg:z-20 lg:h-auto lg:max-h-none lg:w-52 lg:max-w-[13rem] lg:shrink-0 lg:translate-x-0 lg:shadow-none"
+            ? "max-md:max-w-[min(100%,20rem)] lg:static lg:z-20 lg:h-auto lg:max-h-none lg:w-52 lg:max-w-[13rem] lg:shrink-0 lg:translate-x-0 lg:overflow-visible lg:shadow-none"
             : joinClasses(
-                "lg:w-72 lg:max-w-[18rem] lg:shrink-0 lg:translate-x-0 lg:shadow-none",
+                "lg:w-72 lg:max-w-[18rem] lg:shrink-0 lg:translate-x-0 lg:overflow-visible lg:shadow-none",
                 filtersSidebarDesktopShell,
               ),
           ui.border,
@@ -105,12 +105,7 @@ export function PublicFiltersSidebar({
           open ? "lg:flex" : "lg:hidden",
         )}
       >
-        <div
-          className={joinClasses(
-            "flex h-full flex-col",
-            !compactEmbed && "min-h-0 lg:max-h-[inherit]",
-          )}
-        >
+        <div className="flex h-full min-h-0 w-full flex-col lg:max-h-[inherit]">
           <div
             className={joinClasses(
               "flex shrink-0 items-center justify-between border-b px-4 py-4",

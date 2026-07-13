@@ -29,9 +29,9 @@ export function FiltersFab({
           onClick={onClick}
           aria-label="Abrir filtros y beneficiarios"
           className={joinClasses(
-            "fixed bottom-5 left-5 z-40 inline-flex min-h-12 min-w-12 items-center justify-center gap-2 rounded-full px-5 shadow-[0_8px_28px_-6px_var(--primary)] lg:hidden",
+            "fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] left-[max(1.25rem,env(safe-area-inset-left))] z-40 inline-flex min-h-12 min-w-12 items-center justify-center gap-2 rounded-full px-5 shadow-[0_8px_28px_-6px_var(--primary)] lg:hidden",
             compactEmbed &&
-              "max-md:bottom-4 max-md:left-4 max-md:min-h-10 max-md:min-w-10 max-md:px-3.5",
+              "max-md:bottom-[max(1rem,env(safe-area-inset-bottom))] max-md:left-[max(1rem,env(safe-area-inset-left))] max-md:min-h-10 max-md:min-w-10 max-md:px-3.5",
             ui.cta,
           )}
         >

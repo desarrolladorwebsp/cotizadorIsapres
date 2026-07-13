@@ -18,6 +18,9 @@ function getAppShellScrollElements(): HTMLElement[] {
   return Array.from(
     document.querySelectorAll<HTMLElement>(".app-shell-scroll"),
   ).filter((element) => {
+    if (element.closest('[role="dialog"], [data-embed-overlay]')) {
+      return false;
+    }
     const { overflowY } = window.getComputedStyle(element);
     return overflowY === "auto" || overflowY === "scroll";
   });

@@ -104,7 +104,7 @@ export function FiltersSidebar({
         }}
         transition={{ type: "spring", stiffness: 320, damping: 32 }}
         className={joinClasses(
-          "fixed inset-y-0 left-0 z-50 flex w-full max-w-full flex-col border-r shadow-xl",
+          "fixed inset-y-0 left-0 z-50 flex w-full max-w-full flex-col overflow-hidden border-r shadow-xl",
           "lg:w-80 lg:max-w-[20rem] lg:shrink-0 lg:translate-x-0 lg:shadow-none",
           filtersSidebarDesktopShell,
           executiveVisual

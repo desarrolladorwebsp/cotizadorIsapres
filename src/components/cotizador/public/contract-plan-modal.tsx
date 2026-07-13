@@ -394,7 +394,7 @@ export function ContractPlanModal({
             exit={{ opacity: 0, y: 24 }}
             className={joinClasses(
               safeWidth,
-              "relative z-10 flex max-h-[96dvh] w-full max-w-full flex-col overflow-hidden overscroll-none rounded-t-2xl border bg-white shadow-2xl sm:max-h-[92dvh] sm:max-w-6xl sm:rounded-2xl",
+              "relative z-10 flex min-h-0 w-full max-w-full max-h-[min(96dvh,100svh)] flex-col overflow-hidden overscroll-none rounded-t-2xl border bg-white shadow-2xl sm:max-h-[92dvh] sm:max-w-6xl sm:rounded-2xl",
               ui.border,
             )}
           >
@@ -403,7 +403,7 @@ export function ContractPlanModal({
               aria-hidden
             />
 
-            <div className="flex shrink-0 items-center justify-between border-b px-4 py-3 pt-4 sm:px-6">
+            <div className="flex shrink-0 items-center justify-between border-b px-4 py-2.5 pt-3 sm:px-6 sm:py-3 sm:pt-4">
               <div className="flex items-center gap-3">
                 <IsapreLogo isapre={summary.isapre} size="md" />
                 <div>
@@ -428,7 +428,7 @@ export function ContractPlanModal({
               </button>
             </div>
 
-            <div className="flex shrink-0 items-center justify-center gap-2 border-b bg-secondary-muted px-4 py-2.5 text-center text-sm text-primary-dark sm:px-6">
+            <div className="flex shrink-0 items-center justify-center gap-2 border-b bg-secondary-muted px-3 py-2 text-center text-xs text-primary-dark sm:px-6 sm:py-2.5 sm:text-sm">
               <span
                 className={joinClasses(
                   "hidden size-6 shrink-0 items-center justify-center rounded-full sm:inline-flex",
@@ -445,7 +445,7 @@ export function ContractPlanModal({
                   : "Conoce las coberturas y características principales del plan."}
             </div>
 
-            <div className="grid shrink-0 gap-4 border-b px-4 py-4 sm:grid-cols-[1fr_auto] sm:items-center sm:px-6">
+            <div className="grid shrink-0 gap-3 border-b px-4 py-3 sm:grid-cols-[1fr_auto] sm:items-center sm:gap-4 sm:px-6 sm:py-4">
               <div className="min-w-0 space-y-2">
                 <div className="flex flex-wrap items-center gap-2">
                   <span
@@ -542,7 +542,7 @@ export function ContractPlanModal({
               })}
             </div>
 
-            <div className="min-h-0 flex-1 overflow-x-clip overflow-y-auto overscroll-y-contain">
+            <div className="min-h-0 flex-1 overflow-x-clip overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch]">
               {submitted ? (
                 <div className="space-y-4 px-6 py-12 text-center">
                   <div

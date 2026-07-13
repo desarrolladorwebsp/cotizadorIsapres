@@ -105,8 +105,8 @@ async function main() {
 
   const summary = {
     generatedAt: new Date().toISOString(),
-    parsedIssues: parsedIssues.length,
-    dbIssues: dbIssues.length,
+    parsedIssuesCount: parsedIssues.length,
+    dbIssuesCount: dbIssues.length,
     parsedByIsapre: Object.fromEntries(
       Object.entries(
         parsedIssues.reduce<Record<string, number>>((acc, row) => {

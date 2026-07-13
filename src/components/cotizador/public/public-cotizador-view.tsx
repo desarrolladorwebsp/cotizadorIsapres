@@ -879,7 +879,7 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
           isEmbedded ? "w-full max-w-none" : safeWidth,
           isEmbedded
             ? "px-2 py-2 sm:px-3 sm:py-2 max-md:px-1.5 max-md:py-1"
-            : "px-3 py-5 sm:px-4 sm:py-6 lg:px-6",
+            : "px-3 py-5 pb-24 sm:px-4 sm:py-6 sm:pb-24 lg:px-6 lg:pb-6",
         )}
       >
         <div className={contentShell}>

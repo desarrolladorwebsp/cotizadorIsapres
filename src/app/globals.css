@@ -298,9 +298,9 @@ html[data-cotizador-embed="true"] body {
   height: auto !important;
   min-height: 0 !important;
   max-height: fit-content !important;
-  overflow-x: auto;
+  overflow-x: clip;
   overflow-y: visible !important;
-  overscroll-behavior-x: contain;
+  overscroll-behavior-x: none;
   overscroll-behavior-y: none;
 }
 
@@ -314,9 +314,9 @@ html[data-cotizador-embed="true"] body {
     height: auto !important;
     min-height: 0 !important;
     max-height: fit-content !important;
-    overflow-x: auto;
+    overflow-x: clip;
     overflow-y: visible !important;
-    overscroll-behavior-x: contain;
+    overscroll-behavior-x: none;
     overscroll-behavior-y: none;
   }
 }
