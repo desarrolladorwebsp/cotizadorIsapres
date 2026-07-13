@@ -6,13 +6,22 @@ import type {
   UniqueClinicMapLocation,
 } from "@/types/clinic-location";
 import { locationKeyFromRecord } from "@/types/clinic-location";
+import {
+  isVirtualClinicId,
+  resolveClinicLocationJsonKey,
+} from "@/lib/clinic-location-aliases";
 
 const clinicLocations = clinicLocationsAsset as {
   locations: Record<string, ClinicLocationRecord>;
 };
 
 export function getClinicLocation(clinicId: string): ClinicLocationRecord | null {
-  return clinicLocations.locations[clinicId] ?? null;
+  if (isVirtualClinicId(clinicId)) return null;
+
+  const jsonKey = resolveClinicLocationJsonKey(clinicId);
+  if (!jsonKey) return null;
+
+  return clinicLocations.locations[jsonKey] ?? clinicLocations.locations[clinicId] ?? null;
 }
 
 /**

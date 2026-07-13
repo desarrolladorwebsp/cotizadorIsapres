@@ -1,0 +1,1258 @@
+{
+  "generatedAt": "2026-07-13T13:40:56.368Z",
+  "mode": "apply",
+  "totalClinics": 179,
+  "applied": 171,
+  "skippedHasDb": 0,
+  "skippedVirtual": 5,
+  "skippedNoSource": 3,
+  "skippedInvalid": 0,
+  "skippedExcelMismatch": 0,
+  "rows": [
+    {
+      "clinicId": "cm-andes-salud-ancud",
+      "clinicName": "Centro Médico Andes Salud Ancud",
+      "action": "skipped_no_source",
+      "reason": "Sin ubicación en asset ni alias verificado"
+    },
+    {
+      "clinicId": "cm-andes-salud-la",
+      "clinicName": "Centro Médico Andes Salud Los Ángeles",
+      "action": "skipped_no_source",
+      "reason": "Sin ubicación en asset ni alias verificado"
+    },
+    {
+      "clinicId": "centro-medico-andes-salud-talca",
+      "clinicName": "Centro Médico Andes Salud Talca",
+      "action": "applied",
+      "jsonKey": "centro-medico-andes-salud-talca",
+      "address": "1 Sur 1205, Talca"
+    },
+    {
+      "clinicId": "cm-andes-salud-talca",
+      "clinicName": "Centro Médico Andes Salud Talca",
+      "action": "applied",
+      "jsonKey": "centro-medico-andes-salud-talca",
+      "address": "1 Sur 1205, Talca"
+    },
+    {
+      "clinicId": "centro-medico-redsalud-arauco",
+      "clinicName": "Centro Médico RedSalud Arauco",
+      "action": "skipped_no_source",
+      "reason": "Sin ubicación en asset ni alias verificado"
+    },
+    {
+      "clinicId": "cl-centromed",
+      "clinicName": "Centromed",
+      "action": "applied",
+      "jsonKey": "cl-centromed",
+      "address": "4 Poniente 377, Viña del Mar"
+    },
+    {
+      "clinicId": "centromed",
+      "clinicName": "Centromed",
+      "action": "applied",
+      "jsonKey": "centromed",
+      "address": "4 Poniente 377, Viña del Mar"
+    },
+    {
+      "clinicId": "cl-centros-medicos",
+      "clinicName": "Centros Médicos",
+      "action": "applied",
+      "jsonKey": "cl-centros-medicos",
+      "address": "Av. Libertador Bernardo O'Higgins 1620, Santiago"
+    },
+    {
+      "clinicId": "centros-medicos-clinica-santa-maria",
+      "clinicName": "Centros Médicos Clínica Santa María",
+      "action": "applied",
+      "jsonKey": "cm-santa-maria",
+      "address": "Av. Santa María 0500, Providencia, Santiago"
+    },
+    {
+      "clinicId": "cm-santa-maria",
+      "clinicName": "Centros Médicos Clínica Santa María",
+      "action": "applied",
+      "jsonKey": "cm-santa-maria",
+      "address": "Av. Santa María 0500, Providencia, Santiago"
+    },
+    {
+      "clinicId": "cl-centros-medicos-davila",
+      "clinicName": "Centros Médicos Dávila",
+      "action": "applied",
+      "jsonKey": "cl-centros-medicos-davila",
+      "address": "Av. Recoleta 464, Recoleta, Santiago"
+    },
+    {
+      "clinicId": "cm-red-davila",
+      "clinicName": "Centros Médicos Red Dávila",
+      "action": "applied",
+      "jsonKey": "cm-red-davila",
+      "address": "Av. Recoleta 464, Recoleta, Santiago"
+    },
+    {
+      "clinicId": "centros-medicos-red-uc-christus",
+      "clinicName": "Centros Médicos Red UC Christus",
+      "action": "applied",
+      "jsonKey": "centros-medicos-red-uc-christus",
+      "address": "Marcoleta 367, Santiago Centro"
+    },
+    {
+      "clinicId": "red-uc-christus",
+      "clinicName": "Centros Médicos Red UC Christus",
+      "action": "applied",
+      "jsonKey": "red-uc-christus",
+      "address": "Marcoleta 367, Santiago Centro"
+    },
+    {
+      "clinicId": "cm-redsalud",
+      "clinicName": "Centros Médicos RedSalud",
+      "action": "applied",
+      "jsonKey": "cm-redsalud",
+      "address": "Av. Libertador Bernardo O'Higgins 4850, Estación Central, Santiago"
+    },
+    {
+      "clinicId": "cl-centros-medicos-santa-maria",
+      "clinicName": "Centros Médicos Santa María",
+      "action": "applied",
+      "jsonKey": "cl-centros-medicos-santa-maria",
+      "address": "Av. Santa María 0500, Providencia, Santiago"
+    },
+    {
+      "clinicId": "cl-clinica-davila-clinica-bupa-stgo",
+      "clinicName": "Clinica Dávila Clínica Bupa Stgo",
+      "action": "applied",
+      "jsonKey": "cl-clinica-davila-clinica-bupa-stgo",
+      "address": "Av. Recoleta 464, Recoleta, Santiago"
+    },
+    {
+      "clinicId": "cl-clinica",
+      "clinicName": "Clínica",
+      "action": "applied",
+      "jsonKey": "cl-clinica",
+      "address": "Clínica Las Condes, 450, Estoril, Las Condes, Santiago, Provincia de Santiago, Región Metropolitana de Santiago, 8320000, Chile"
+    },
+    {
+      "clinicId": "cl-adventista-los-angeles",
+      "clinicName": "Clínica Adventista Los Ángeles",
+      "action": "applied",
+      "jsonKey": "cl-adventista-los-angeles",
+      "address": "Manuel Rodríguez 645, Los Ángeles"
+    },
+    {
+      "clinicId": "cl-alemana-santiago-a3",
+      "clinicName": "Clínica Alemana",
+      "action": "applied",
+      "jsonKey": "cl-alemana-santiago-a3",
+      "address": "Av. Vitacura 5951, Vitacura, Santiago"
+    },
+    {
+      "clinicId": "clinica-alemana",
+      "clinicName": "Clínica Alemana",
+      "action": "applied",
+      "jsonKey": "clinica-alemana",
+      "address": "Av. Vitacura 5951, Vitacura, Santiago"
+    },
+    {
+      "clinicId": "cl-alemana-santiago",
+      "clinicName": "Clínica Alemana",
+      "action": "applied",
+      "jsonKey": "cl-alemana-santiago",
+      "address": "Av. Vitacura 5951, Vitacura, Santiago"
+    },
+    {
+      "clinicId": "cl-alemana-osorno",
+      "clinicName": "Clínica Alemana de Osorno",
+      "action": "applied",
+      "jsonKey": "cl-alemana-osorno",
+      "address": "Av. Zenteno 1530, Osorno"
+    },
+    {
+      "clinicId": "clinica-alemana-de-osorno",
+      "clinicName": "Clínica Alemana de Osorno",
+      "action": "applied",
+      "jsonKey": "clinica-alemana-de-osorno",
+      "address": "Av. Zenteno 1530, Osorno"
+    },
+    {
+      "clinicId": "cl-alemana-santiago-a",
+      "clinicName": "Clínica Alemana de Santiago(A.)",
+      "action": "applied",
+      "jsonKey": "cl-alemana-santiago-a",
+      "address": "Av. Vitacura 5951, Vitacura, Santiago"
+    },
+    {
+      "clinicId": "cl-alemana-santiago-a2",
+      "clinicName": "Clínica Alemana de Santiago(A.2)",
+      "action": "applied",
+      "jsonKey": "cl-alemana-santiago-a2",
+      "address": "Av. Vitacura 5951, Vitacura, Santiago"
+    },
+    {
+      "clinicId": "clinica-alemana-de-temuco",
+      "clinicName": "Clínica Alemana de Temuco",
+      "action": "applied",
+      "jsonKey": "clinica-alemana-de-temuco",
+      "address": "Senador Estébanez 645, Temuco"
+    },
+    {
+      "clinicId": "cl-alemana-temuco",
+      "clinicName": "Clínica Alemana de Temuco",
+      "action": "applied",
+      "jsonKey": "cl-alemana-temuco",
+      "address": "Senador Estébanez 645, Temuco"
+    },
+    {
+      "clinicId": "cl-alemana-valdivia",
+      "clinicName": "Clínica Alemana de Valdivia",
+      "action": "applied",
+      "jsonKey": "cl-alemana-valdivia",
+      "address": "Beauchef 765, Valdivia"
+    },
+    {
+      "clinicId": "clinica-alemana-de-valdivia",
+      "clinicName": "Clínica Alemana de Valdivia",
+      "action": "applied",
+      "jsonKey": "clinica-alemana-de-valdivia",
+      "address": "Beauchef 765, Valdivia"
+    },
+    {
+      "clinicId": "cl-andes-salud-chillan",
+      "clinicName": "Clínica Andes Salud Chillán",
+      "action": "applied",
+      "jsonKey": "cl-andes-salud-chillan",
+      "address": "Pedro Aguirre Cerda 35, Chillán"
+    },
+    {
+      "clinicId": "clinica-andes-salud-concepcion",
+      "clinicName": "Clínica Andes Salud Concepción",
+      "action": "applied",
+      "jsonKey": "clinica-andes-salud-concepcion",
+      "address": "Av. Pedro de Valdivia 745, Concepción"
+    },
+    {
+      "clinicId": "cl-andes-salud-concepcion",
+      "clinicName": "Clínica Andes Salud Concepción",
+      "action": "applied",
+      "jsonKey": "cl-andes-salud-concepcion",
+      "address": "Av. Pedro de Valdivia 745, Concepción"
+    },
+    {
+      "clinicId": "cl-andes-salud-el-loa",
+      "clinicName": "Clínica Andes Salud El Loa",
+      "action": "applied",
+      "jsonKey": "cl-andes-salud-el-loa",
+      "address": "Av. Balmaceda 2355, Calama"
+    },
+    {
+      "clinicId": "clinica-andes-salud-el-loa",
+      "clinicName": "Clínica Andes Salud El Loa",
+      "action": "applied",
+      "jsonKey": "cl-andes-salud-el-loa",
+      "address": "Av. Balmaceda 2355, Calama"
+    },
+    {
+      "clinicId": "cl-andes-salud-puerto-montt",
+      "clinicName": "Clínica Andes Salud Puerto Montt",
+      "action": "applied",
+      "jsonKey": "cl-andes-salud-puerto-montt",
+      "address": "Av. Diego Portales 500, Puerto Montt"
+    },
+    {
+      "clinicId": "clinica-andes-salud-puerto-montt",
+      "clinicName": "Clínica Andes Salud Puerto Montt",
+      "action": "applied",
+      "jsonKey": "clinica-andes-salud-puerto-montt",
+      "address": "Av. Diego Portales 500, Puerto Montt"
+    },
+    {
+      "clinicId": "cl-atacama",
+      "clinicName": "Clínica Atacama",
+      "action": "applied",
+      "jsonKey": "cl-atacama",
+      "address": "Av. Copayapu 2500, Copiapó"
+    },
+    {
+      "clinicId": "clinica-atacama-achs-salud",
+      "clinicName": "Clínica Atacama Achs Salud",
+      "action": "applied",
+      "jsonKey": "cl-clinica-atacama-achs-salud",
+      "address": "Av. Copayapu 2500, Copiapó"
+    },
+    {
+      "clinicId": "cl-clinica-atacama-achs-salud",
+      "clinicName": "Clínica Atacama Achs Salud",
+      "action": "applied",
+      "jsonKey": "cl-clinica-atacama-achs-salud",
+      "address": "Av. Copayapu 2500, Copiapó"
+    },
+    {
+      "clinicId": "cl-atacama-achs",
+      "clinicName": "Clínica Atacama Achs Salud",
+      "action": "applied",
+      "jsonKey": "cl-atacama-achs",
+      "address": "Av. Copayapu 2500, Copiapó"
+    },
+    {
+      "clinicId": "cl-clinica-bupa-santiago-integramedica",
+      "clinicName": "Clínica BUPA Santiago Integramédica",
+      "action": "applied",
+      "jsonKey": "cl-clinica-bupa-santiago-integramedica",
+      "address": "Av. El Bosque Norte 200, Las Condes, Santiago"
+    },
+    {
+      "clinicId": "clinica-biobio",
+      "clinicName": "Clínica Biobío",
+      "action": "applied",
+      "jsonKey": "clinica-biobio",
+      "address": "Av. San Martín 285, Concepción"
+    },
+    {
+      "clinicId": "cl-biobio",
+      "clinicName": "Clínica Biobío",
+      "action": "applied",
+      "jsonKey": "cl-biobio",
+      "address": "Av. San Martín 285, Concepción"
+    },
+    {
+      "clinicId": "cl-clinica-biobio-hospital-clinico-del-sur",
+      "clinicName": "Clínica Biobío Hospital Clínico del Sur",
+      "action": "applied",
+      "jsonKey": "cl-clinica-biobio-hospital-clinico-del-sur",
+      "address": "Av. San Martín 285, Concepción"
+    },
+    {
+      "clinicId": "cl-bupa-antofagasta",
+      "clinicName": "Clínica Bupa Antofagasta",
+      "action": "applied",
+      "jsonKey": "cl-bupa-antofagasta",
+      "address": "Av. Angamos 745, Antofagasta"
+    },
+    {
+      "clinicId": "clinica-bupa-antofagasta",
+      "clinicName": "Clínica Bupa Antofagasta",
+      "action": "applied",
+      "jsonKey": "clinica-bupa-antofagasta",
+      "address": "Av. Angamos 745, Antofagasta"
+    },
+    {
+      "clinicId": "cl-clinica-bupa-antofagasta-clinica-atacama",
+      "clinicName": "Clínica Bupa Antofagasta Clínica Atacama",
+      "action": "applied",
+      "jsonKey": "cl-clinica-bupa-antofagasta-clinica-atacama",
+      "address": "Av. Angamos 745, Antofagasta"
+    },
+    {
+      "clinicId": "cl-bupa-renaca",
+      "clinicName": "Clínica Bupa Reñaca",
+      "action": "applied",
+      "jsonKey": "cl-bupa-renaca",
+      "address": "Av. Borgoño 14444, Viña del Mar"
+    },
+    {
+      "clinicId": "clinica-bupa-renaca",
+      "clinicName": "Clínica Bupa Reñaca",
+      "action": "applied",
+      "jsonKey": "clinica-bupa-renaca",
+      "address": "Av. Borgoño 14444, Viña del Mar"
+    },
+    {
+      "clinicId": "cl-bupa-santiago",
+      "clinicName": "Clínica Bupa Santiago",
+      "action": "applied",
+      "jsonKey": "cl-bupa-santiago",
+      "address": "Av. El Bosque Norte 200, Las Condes, Santiago"
+    },
+    {
+      "clinicId": "cl-ciudad-del-mar",
+      "clinicName": "Clínica Ciudad del Mar",
+      "action": "applied",
+      "jsonKey": "cl-ciudad-del-mar",
+      "address": "Av. Borgoño 14750, Reñaca, Viña del Mar"
+    },
+    {
+      "clinicId": "clinica-ciudad-del-mar",
+      "clinicName": "Clínica Ciudad del Mar",
+      "action": "applied",
+      "jsonKey": "clinica-ciudad-del-mar",
+      "address": "Av. Borgoño 14750, Reñaca, Viña del Mar"
+    },
+    {
+      "clinicId": "cl-clinica-ciudad-del-mar-clinica-bupa-renaca",
+      "clinicName": "Clínica Ciudad del Mar Clínica BUPA Reñaca",
+      "action": "applied",
+      "jsonKey": "cl-clinica-ciudad-del-mar-clinica-bupa-renaca",
+      "address": "Av. Borgoño 14444, Viña del Mar"
+    },
+    {
+      "clinicId": "cl-cordillera",
+      "clinicName": "Clínica Cordillera",
+      "action": "applied",
+      "jsonKey": "cl-cordillera",
+      "address": "Av. Alejandro Fleming 7889, Las Condes, Santiago"
+    },
+    {
+      "clinicId": "clinica-cordillera",
+      "clinicName": "Clínica Cordillera",
+      "action": "applied",
+      "jsonKey": "cl-cordillera",
+      "address": "Av. Alejandro Fleming 7889, Las Condes, Santiago"
+    },
+    {
+      "clinicId": "cl-cumbres-del-norte",
+      "clinicName": "Clínica Cumbres del Norte",
+      "action": "applied",
+      "jsonKey": "cl-cumbres-del-norte",
+      "address": "José de San Martín 2447, Antofagasta"
+    },
+    {
+      "clinicId": "clinica-curico-achs-salud",
+      "clinicName": "Clínica Curicó Achs Salud",
+      "action": "applied",
+      "jsonKey": "clinica-curico-achs-salud",
+      "address": "Villota 355, Curicó"
+    },
+    {
+      "clinicId": "cl-davila",
+      "clinicName": "Clínica Dávila",
+      "action": "applied",
+      "jsonKey": "cl-davila",
+      "address": "Av. Recoleta 464, Recoleta, Santiago"
+    },
+    {
+      "clinicId": "cl-clinica-davila-clinica-bupa-santiago",
+      "clinicName": "Clínica Dávila Clínica BUPA Santiago",
+      "action": "applied",
+      "jsonKey": "cl-clinica-davila-clinica-bupa-santiago",
+      "address": "Av. Recoleta 464, Recoleta, Santiago"
+    },
+    {
+      "clinicId": "cl-clinica-davila-integramedica",
+      "clinicName": "Clínica Dávila Integramédica",
+      "action": "applied",
+      "jsonKey": "cl-clinica-davila-integramedica",
+      "address": "Av. Recoleta 464, Recoleta, Santiago"
+    },
+    {
+      "clinicId": "cl-davila-vespucio",
+      "clinicName": "Clínica Dávila Vespucio",
+      "action": "applied",
+      "jsonKey": "cl-davila-vespucio",
+      "address": "Av. Vespucio Norte 3455, Huechuraba, Santiago"
+    },
+    {
+      "clinicId": "clinica-davila-vespucio",
+      "clinicName": "Clínica Dávila Vespucio+",
+      "action": "applied",
+      "jsonKey": "clinica-davila-vespucio",
+      "address": "Av. Vespucio Norte 3455, Huechuraba, Santiago"
+    },
+    {
+      "clinicId": "cl-davila-a3",
+      "clinicName": "Clínica Dávila(A.3)",
+      "action": "applied",
+      "jsonKey": "cl-davila-a3",
+      "address": "Av. Recoleta 464, Recoleta, Santiago"
+    },
+    {
+      "clinicId": "cl-fleming-arica",
+      "clinicName": "Clínica Fleming Arica",
+      "action": "applied",
+      "jsonKey": "cl-fleming-arica",
+      "address": "Av. Diego Portales 2296, Arica"
+    },
+    {
+      "clinicId": "cl-hospital-del-profesor",
+      "clinicName": "Clínica Hospital del Profesor",
+      "action": "applied",
+      "jsonKey": "cl-hospital-del-profesor",
+      "address": "Av. Libertador Bernardo O'Higgins 4860, Estación Central, Santiago"
+    },
+    {
+      "clinicId": "clinica-indisa",
+      "clinicName": "Clínica Indisa",
+      "action": "applied",
+      "jsonKey": "cl-indisa-providencia-anexo",
+      "address": "Av. Santa María 1810, Providencia, Santiago"
+    },
+    {
+      "clinicId": "cl-indisa-providencia-anexo",
+      "clinicName": "Clínica Indisa",
+      "action": "applied",
+      "jsonKey": "cl-indisa-providencia-anexo",
+      "address": "Av. Santa María 1810, Providencia, Santiago"
+    },
+    {
+      "clinicId": "cl-indisa-maipu",
+      "clinicName": "Clínica Indisa Maipú",
+      "action": "applied",
+      "jsonKey": "cl-indisa-maipu",
+      "address": "Av. Pajaritos 3999, Maipú, Santiago"
+    },
+    {
+      "clinicId": "clinica-isamedica",
+      "clinicName": "Clínica Isamédica",
+      "action": "applied",
+      "jsonKey": "clinica-isamedica",
+      "address": "Carretera Frei Montalva 884, Rancagua"
+    },
+    {
+      "clinicId": "cl-juan-pablo-ii",
+      "clinicName": "Clínica Juan Pablo II",
+      "action": "applied",
+      "jsonKey": "cl-juan-pablo-ii",
+      "address": "Av. Santa Rosa 1234, Santiago Centro"
+    },
+    {
+      "clinicId": "cl-la-portad",
+      "clinicName": "Clínica La Portad",
+      "action": "applied",
+      "jsonKey": "cl-la-portad",
+      "address": "Av. Balmaceda 2648, Antofagasta"
+    },
+    {
+      "clinicId": "cl-clinica-la-portada-clinica-tarapaca",
+      "clinicName": "Clínica La Portada Clínica  Tarapacá",
+      "action": "applied",
+      "jsonKey": "cl-clinica-la-portada-clinica-tarapaca",
+      "address": "Barros Arana 1550, Iquique"
+    },
+    {
+      "clinicId": "cl-las-amapolas",
+      "clinicName": "Clínica Las Amapolas",
+      "action": "applied",
+      "jsonKey": "cl-las-amapolas",
+      "address": "Av. Vicente Méndez 75, Chillán"
+    },
+    {
+      "clinicId": "cl-las-condes",
+      "clinicName": "Clínica Las Condes",
+      "action": "applied",
+      "jsonKey": "cl-las-condes",
+      "address": "Av. Lo Fontecilla 441, Las Condes, Santiago"
+    },
+    {
+      "clinicId": "clinica-lircay-achs-salud",
+      "clinicName": "Clínica Lircay Achs Salud",
+      "action": "applied",
+      "jsonKey": "centro-medico-andes-salud-talca",
+      "address": "1 Sur 1205, Talca"
+    },
+    {
+      "clinicId": "cl-andes-salud-talca",
+      "clinicName": "Clínica Lircay Achs Salud",
+      "action": "applied",
+      "jsonKey": "cl-andes-salud-talca",
+      "address": "1 Sur 1205, Talca"
+    },
+    {
+      "clinicId": "clinica-los-andes-achs-salud",
+      "clinicName": "Clínica Los Andes Achs Salud",
+      "action": "applied",
+      "jsonKey": "clinica-los-andes-achs-salud",
+      "address": "Av. Alemania 821, Los Ángeles"
+    },
+    {
+      "clinicId": "cl-los-andes-la",
+      "clinicName": "Clínica Los Andes Los Ángeles",
+      "action": "applied",
+      "jsonKey": "cl-los-andes-la",
+      "address": "Genaro Reyes 581, Los Ángeles"
+    },
+    {
+      "clinicId": "clinica-los-carrera",
+      "clinicName": "Clínica Los Carrera",
+      "action": "applied",
+      "jsonKey": "clinica-los-carrera",
+      "address": "Caupolicán 958, Quilpué"
+    },
+    {
+      "clinicId": "cl-clinica-los-carrera-clinica-davila",
+      "clinicName": "Clínica Los Carrera Clínica Dávila",
+      "action": "applied",
+      "jsonKey": "cl-clinica-los-carrera-clinica-davila",
+      "address": "Av. Recoleta 464, Recoleta, Santiago"
+    },
+    {
+      "clinicId": "cl-clinica-los-carrera-inter",
+      "clinicName": "Clínica Los Carrera Inter",
+      "action": "applied",
+      "jsonKey": "cl-clinica-los-carrera-inter",
+      "address": "Av. O'Higgins 1234, Chillán"
+    },
+    {
+      "clinicId": "clinica-los-carrera-interclinica",
+      "clinicName": "Clínica Los Carrera InterClínica",
+      "action": "applied",
+      "jsonKey": "clinica-los-carrera-interclinica",
+      "address": "Av. O'Higgins 1234, Chillán"
+    },
+    {
+      "clinicId": "cl-los-carrera",
+      "clinicName": "Clínica Los Carrera InterClínica",
+      "action": "applied",
+      "jsonKey": "cl-los-carrera",
+      "address": "Caupolicán 958, Quilpué"
+    },
+    {
+      "clinicId": "cl-los-leones",
+      "clinicName": "Clínica Los Leones",
+      "action": "applied",
+      "jsonKey": "cl-los-leones",
+      "address": "Av. Los Leones 1100, Providencia, Santiago"
+    },
+    {
+      "clinicId": "clinica-los-leones",
+      "clinicName": "Clínica Los Leones",
+      "action": "applied",
+      "jsonKey": "clinica-los-leones",
+      "address": "Av. Los Leones 1100, Providencia, Santiago"
+    },
+    {
+      "clinicId": "cl-meds",
+      "clinicName": "Clínica Meds",
+      "action": "applied",
+      "jsonKey": "cl-meds",
+      "address": "Av. Santa María 640, Providencia, Santiago"
+    },
+    {
+      "clinicId": "cl-portada-achs",
+      "clinicName": "Clínica Portada Achs Salud",
+      "action": "applied",
+      "jsonKey": "cl-portada-achs",
+      "address": "Av. Balmaceda 2648, Antofagasta"
+    },
+    {
+      "clinicId": "clinica-portada-achs-salud",
+      "clinicName": "Clínica Portada Achs Salud",
+      "action": "applied",
+      "jsonKey": "cl-portada-achs",
+      "address": "Av. Balmaceda 2648, Antofagasta"
+    },
+    {
+      "clinicId": "cl-la-portada",
+      "clinicName": "Clínica Portada Achs Salud",
+      "action": "applied",
+      "jsonKey": "cl-la-portada",
+      "address": "Av. Balmaceda 2648, Antofagasta"
+    },
+    {
+      "clinicId": "clinica-puerto-montt-achs-salud",
+      "clinicName": "Clínica Puerto Montt Achs Salud",
+      "action": "applied",
+      "jsonKey": "clinica-puerto-montt-achs-salud",
+      "address": "Av. Diego Portales 500, Puerto Montt"
+    },
+    {
+      "clinicId": "cl-puerto-montt",
+      "clinicName": "Clínica Puerto Montt Achs Salud",
+      "action": "applied",
+      "jsonKey": "cl-puerto-montt",
+      "address": "Av. Diego Portales 500, Puerto Montt"
+    },
+    {
+      "clinicId": "cl-puerto-varas",
+      "clinicName": "Clínica Puerto Varas",
+      "action": "applied",
+      "jsonKey": "cl-puerto-varas",
+      "address": "Dr. Félix Raimann 300, Puerto Varas"
+    },
+    {
+      "clinicId": "clinica-puerto-varas",
+      "clinicName": "Clínica Puerto Varas",
+      "action": "applied",
+      "jsonKey": "clinica-puerto-varas",
+      "address": "Dr. Félix Raimann 300, Puerto Varas"
+    },
+    {
+      "clinicId": "cl-clinica-rcr-atacama-clinica-bupa-antofagasta",
+      "clinicName": "Clínica RCR Atacama Clínica Bupa Antofagasta",
+      "action": "applied",
+      "jsonKey": "cl-clinica-rcr-atacama-clinica-bupa-antofagasta",
+      "address": "Av. Angamos 745, Antofagasta"
+    },
+    {
+      "clinicId": "cl-redsalud-elqui",
+      "clinicName": "Clínica RedSalud Elqui",
+      "action": "applied",
+      "jsonKey": "cl-redsalud-elqui",
+      "address": "Av. El Santo 1477, La Serena"
+    },
+    {
+      "clinicId": "clinica-redsalud-elqui",
+      "clinicName": "Clínica RedSalud Elqui",
+      "action": "applied",
+      "jsonKey": "cl-redsalud-elqui",
+      "address": "Av. El Santo 1477, La Serena"
+    },
+    {
+      "clinicId": "clinica-redsalud-iquique",
+      "clinicName": "Clínica RedSalud Iquique",
+      "action": "applied",
+      "jsonKey": "cl-redsalud-iquique",
+      "address": "Av. Arturo Prat 3050, Iquique"
+    },
+    {
+      "clinicId": "cl-redsalud-iquique",
+      "clinicName": "Clínica RedSalud Iquique",
+      "action": "applied",
+      "jsonKey": "cl-redsalud-iquique",
+      "address": "Av. Arturo Prat 3050, Iquique"
+    },
+    {
+      "clinicId": "clinica-redsalud-magallanes",
+      "clinicName": "Clínica RedSalud Magallanes",
+      "action": "applied",
+      "jsonKey": "clinica-redsalud-magallanes",
+      "address": "Av. Bulnes 299, Punta Arenas"
+    },
+    {
+      "clinicId": "cl-redsalud-magallanes",
+      "clinicName": "Clínica RedSalud Magallanes",
+      "action": "applied",
+      "jsonKey": "cl-redsalud-magallanes",
+      "address": "Av. Bulnes 299, Punta Arenas"
+    },
+    {
+      "clinicId": "cl-redsalud-mayor",
+      "clinicName": "Clínica RedSalud Mayor Temuco",
+      "action": "applied",
+      "jsonKey": "cl-redsalud-mayor",
+      "address": "Av. Gabriela Mistral 1955, Temuco"
+    },
+    {
+      "clinicId": "clinica-redsalud-mayor-temuco",
+      "clinicName": "Clínica RedSalud Mayor Temuco",
+      "action": "applied",
+      "jsonKey": "clinica-redsalud-mayor-temuco",
+      "address": "Av. Gabriela Mistral 1955, Temuco"
+    },
+    {
+      "clinicId": "cl-redsalud-providencia",
+      "clinicName": "Clínica RedSalud Providencia",
+      "action": "applied",
+      "jsonKey": "cl-redsalud-providencia",
+      "address": "Av. Salvador 100, Providencia, Santiago"
+    },
+    {
+      "clinicId": "cl-redsalud-providencia-avansalud",
+      "clinicName": "Clínica RedSalud Providencia (Ex Avansalud)",
+      "action": "applied",
+      "jsonKey": "cl-redsalud-providencia-avansalud",
+      "address": "Av. Salvador 100, Providencia, Santiago"
+    },
+    {
+      "clinicId": "cl-clinica-redsalud-providencia-ex-avansalud",
+      "clinicName": "Clínica RedSalud Providencia (Ex Avansalud)",
+      "action": "applied",
+      "jsonKey": "cl-clinica-redsalud-providencia-ex-avansalud",
+      "address": "Av. Salvador 100, Providencia, Santiago"
+    },
+    {
+      "clinicId": "clinica-redsalud-providencia",
+      "clinicName": "Clínica RedSalud Providencia+",
+      "action": "applied",
+      "jsonKey": "clinica-redsalud-providencia",
+      "address": "Av. Salvador 100, Providencia, Santiago"
+    },
+    {
+      "clinicId": "clinica-redsalud-rancagua",
+      "clinicName": "Clínica RedSalud Rancagua",
+      "action": "applied",
+      "jsonKey": "cl-redsalud-rancagua",
+      "address": "Av. Libertador Bernardo O'Higgins 306, Rancagua"
+    },
+    {
+      "clinicId": "cl-redsalud-rancagua",
+      "clinicName": "Clínica RedSalud Rancagua",
+      "action": "applied",
+      "jsonKey": "cl-redsalud-rancagua",
+      "address": "Av. Libertador Bernardo O'Higgins 306, Rancagua"
+    },
+    {
+      "clinicId": "cl-redsalud-santiago",
+      "clinicName": "Clínica RedSalud Santiago",
+      "action": "applied",
+      "jsonKey": "cl-redsalud-santiago",
+      "address": "Av. Libertador Bernardo O'Higgins 4850, Estación Central, Santiago"
+    },
+    {
+      "clinicId": "cl-clinica-redsalud-santiago-ex-bicentenario",
+      "clinicName": "Clínica RedSalud Santiago (Ex Bicentenario)",
+      "action": "applied",
+      "jsonKey": "cl-clinica-redsalud-santiago-ex-bicentenario",
+      "address": "Av. Libertador Bernardo O'Higgins 4850, Estación Central, Santiago"
+    },
+    {
+      "clinicId": "cl-redsalud-santiago-bicentenario",
+      "clinicName": "Clínica RedSalud Santiago (Ex Bicentenario)",
+      "action": "applied",
+      "jsonKey": "cl-redsalud-santiago-bicentenario",
+      "address": "Av. Libertador Bernardo O'Higgins 4850, Estación Central, Santiago"
+    },
+    {
+      "clinicId": "cl-redsalud-valparaiso",
+      "clinicName": "Clínica RedSalud Valparaíso",
+      "action": "applied",
+      "jsonKey": "cl-redsalud-valparaiso",
+      "address": "Av. Brasil 1786, Valparaíso"
+    },
+    {
+      "clinicId": "clinica-redsalud-valparaiso",
+      "clinicName": "Clínica RedSalud Valparaíso",
+      "action": "applied",
+      "jsonKey": "clinica-redsalud-valparaiso",
+      "address": "Av. Brasil 1786, Valparaíso"
+    },
+    {
+      "clinicId": "cl-redsalud-vitacura",
+      "clinicName": "Clínica RedSalud Vitacura",
+      "action": "applied",
+      "jsonKey": "cl-redsalud-vitacura",
+      "address": "Av. Vitacura 5250, Vitacura, Santiago"
+    },
+    {
+      "clinicId": "cl-clinica-regional-la-portada",
+      "clinicName": "Clínica Regional La Portada",
+      "action": "applied",
+      "jsonKey": "cl-clinica-regional-la-portada",
+      "address": "Av. Balmaceda 2648, Antofagasta"
+    },
+    {
+      "clinicId": "cl-regional-la-portada",
+      "clinicName": "Clínica Regional La Portada",
+      "action": "applied",
+      "jsonKey": "cl-regional-la-portada",
+      "address": "Av. Balmaceda 2648, Antofagasta"
+    },
+    {
+      "clinicId": "clinica-renaca",
+      "clinicName": "Clínica Reñaca",
+      "action": "applied",
+      "jsonKey": "clinica-renaca",
+      "address": "Av. Borgoño 14444, Viña del Mar"
+    },
+    {
+      "clinicId": "cl-clinica-renaca",
+      "clinicName": "Clínica Reñaca",
+      "action": "applied",
+      "jsonKey": "cl-clinica-renaca",
+      "address": "Av. Borgoño 14444, Viña del Mar"
+    },
+    {
+      "clinicId": "cl-rio-blanco",
+      "clinicName": "Clínica Río Blanco",
+      "action": "applied",
+      "jsonKey": "cl-rio-blanco",
+      "address": "Caletera Ruta 60 km 777, Los Andes"
+    },
+    {
+      "clinicId": "cl-san-antonio",
+      "clinicName": "Clínica San Antonio",
+      "action": "applied",
+      "jsonKey": "cl-san-antonio",
+      "address": "Av. Barros Luco 105, San Antonio"
+    },
+    {
+      "clinicId": "clinica-san-carlos-de-apoquindo",
+      "clinicName": "Clínica San Carlos De Apoquindo",
+      "action": "applied",
+      "jsonKey": "cl-san-carlos",
+      "address": "San Carlos de Apoquindo 2200, Las Condes, Santiago"
+    },
+    {
+      "clinicId": "cl-san-carlos",
+      "clinicName": "Clínica San Carlos de Apoquindo",
+      "action": "applied",
+      "jsonKey": "cl-san-carlos",
+      "address": "San Carlos de Apoquindo 2200, Las Condes, Santiago"
+    },
+    {
+      "clinicId": "cl-clinica-san-jose",
+      "clinicName": "Clínica San José",
+      "action": "applied",
+      "jsonKey": "cl-clinica-san-jose",
+      "address": "Av. Dr. Juan Noé 1370, Arica"
+    },
+    {
+      "clinicId": "cl-san-jose-arica",
+      "clinicName": "Clínica San José",
+      "action": "applied",
+      "jsonKey": "cl-san-jose-arica",
+      "address": "Av. Dr. Juan Noé 1370, Arica"
+    },
+    {
+      "clinicId": "cl-clinica-san-jose-inter",
+      "clinicName": "Clínica San José Inter",
+      "action": "applied",
+      "jsonKey": "cl-clinica-san-jose-inter",
+      "address": "Av. Dr. Juan Noé 1370, Arica"
+    },
+    {
+      "clinicId": "cl-san-jose-interclinica",
+      "clinicName": "Clínica San José InterClínica",
+      "action": "applied",
+      "jsonKey": "cl-san-jose-interclinica",
+      "address": "Av. Dr. Juan Noé 1370, Arica"
+    },
+    {
+      "clinicId": "clinica-san-jose-interclinica",
+      "clinicName": "Clínica San José InterClínica",
+      "action": "applied",
+      "jsonKey": "cl-san-jose-interclinica",
+      "address": "Av. Dr. Juan Noé 1370, Arica"
+    },
+    {
+      "clinicId": "sanatorio-aleman",
+      "clinicName": "Clínica Sanatorio Alemán",
+      "action": "applied",
+      "jsonKey": "sanatorio-aleman",
+      "address": "Av. Pedro de Valdivia 801, Concepción"
+    },
+    {
+      "clinicId": "clinica-sanatorio-aleman",
+      "clinicName": "Clínica Sanatorio Alemán",
+      "action": "applied",
+      "jsonKey": "clinica-sanatorio-aleman",
+      "address": "Av. Pedro de Valdivia 801, Concepción"
+    },
+    {
+      "clinicId": "cl-santa-maria",
+      "clinicName": "Clínica Santa María",
+      "action": "applied",
+      "jsonKey": "cl-santa-maria",
+      "address": "Av. Santa María 0500, Providencia, Santiago"
+    },
+    {
+      "clinicId": "cl-sierra-bella",
+      "clinicName": "Clínica Sierra Bella",
+      "action": "applied",
+      "jsonKey": "cl-sierra-bella",
+      "address": "Sierra Bella 1181, Santiago"
+    },
+    {
+      "clinicId": "cl-clinica-tarapaca-clinica-la-portada",
+      "clinicName": "Clínica Tarapacá Clínica La Portada",
+      "action": "applied",
+      "jsonKey": "cl-clinica-tarapaca-clinica-la-portada",
+      "address": "Barros Arana 1550, Iquique"
+    },
+    {
+      "clinicId": "cl-tarapaca",
+      "clinicName": "Clínica Tarapacá Inter",
+      "action": "applied",
+      "jsonKey": "cl-tarapaca",
+      "address": "Barros Arana 1550, Iquique"
+    },
+    {
+      "clinicId": "clinica-tarapaca-interclinica",
+      "clinicName": "Clínica Tarapacá InterClínica",
+      "action": "applied",
+      "jsonKey": "clinica-tarapaca-interclinica",
+      "address": "Barros Arana 1550, Iquique"
+    },
+    {
+      "clinicId": "cl-tarapaca-interclinica",
+      "clinicName": "Clínica Tarapacá InterClínica",
+      "action": "applied",
+      "jsonKey": "cl-tarapaca-interclinica",
+      "address": "Barros Arana 1550, Iquique"
+    },
+    {
+      "clinicId": "hosp-clinico-uc",
+      "clinicName": "Clínica UC",
+      "action": "applied",
+      "jsonKey": "hosp-clinico-uc",
+      "address": "Marcoleta 367, Santiago Centro"
+    },
+    {
+      "clinicId": "cl-uc",
+      "clinicName": "Clínica UC",
+      "action": "applied",
+      "jsonKey": "cl-uc",
+      "address": "Av. Raúl Bitrán 1305, La Serena"
+    },
+    {
+      "clinicId": "cl-clinica-universidad-de",
+      "clinicName": "Clínica Universidad de",
+      "action": "applied",
+      "jsonKey": "cl-clinica-universidad-de",
+      "address": "Av. Angamos 0610, Antofagasta"
+    },
+    {
+      "clinicId": "clinica-universidad-de-los-andes",
+      "clinicName": "Clínica Universidad de Los Andes",
+      "action": "applied",
+      "jsonKey": "clinica-universidad-de-los-andes",
+      "address": "San Carlos de Apoquindo 2200, Las Condes, Santiago"
+    },
+    {
+      "clinicId": "cl-univ-andes",
+      "clinicName": "Clínica Universidad de Los Andes",
+      "action": "applied",
+      "jsonKey": "cl-univ-andes",
+      "address": "San Carlos de Apoquindo 2200, Las Condes, Santiago"
+    },
+    {
+      "clinicId": "cl-clinica-universidad-de-los-andes-clinica-uc-san-carlos",
+      "clinicName": "Clínica Universidad de Los Andes Clínica UC San Carlos",
+      "action": "applied",
+      "jsonKey": "cl-clinica-universidad-de-los-andes-clinica-uc-san-carlos",
+      "address": "San Carlos de Apoquindo 2200, Las Condes, Santiago"
+    },
+    {
+      "clinicId": "cl-clinica-universidad-de-los-andes-clinica-uc-san-carlos-clinica-las-condes",
+      "clinicName": "Clínica Universidad de Los Andes Clínica UC San Carlos Clínica Las Condes",
+      "action": "applied",
+      "jsonKey": "cl-clinica-universidad-de-los-andes-clinica-uc-san-carlos-clinica-las-condes",
+      "address": "Av. Lo Fontecilla 441, Las Condes, Santiago"
+    },
+    {
+      "clinicId": "clinica-del-sur-achs-salud",
+      "clinicName": "Clínica del Sur Achs Salud",
+      "action": "applied",
+      "jsonKey": "cl-biobio",
+      "address": "Av. San Martín 285, Concepción"
+    },
+    {
+      "clinicId": "hosp-clinico-del-sur",
+      "clinicName": "Clínica del Sur Achs Salud",
+      "action": "applied",
+      "jsonKey": "hosp-clinico-del-sur",
+      "address": "Av. San Martín 285, Concepción"
+    },
+    {
+      "clinicId": "falp",
+      "clinicName": "Fundación Arturo López Pérez",
+      "action": "applied",
+      "jsonKey": "falp",
+      "address": "Av. José Manuel Infante 805, Providencia, Santiago"
+    },
+    {
+      "clinicId": "hospital-clinico-fusat",
+      "clinicName": "Hospital Clínico Fusat",
+      "action": "applied",
+      "jsonKey": "hospital-clinico-fusat",
+      "address": "Carretera Frei Montalva 1002, Rancagua"
+    },
+    {
+      "clinicId": "hosp-clinico-fusat",
+      "clinicName": "Hospital Clínico Fusat",
+      "action": "applied",
+      "jsonKey": "hosp-clinico-fusat",
+      "address": "Carretera Frei Montalva 1002, Rancagua"
+    },
+    {
+      "clinicId": "hospital-clinico-uc",
+      "clinicName": "Hospital Clínico UC",
+      "action": "applied",
+      "jsonKey": "hospital-clinico-uc",
+      "address": "Marcoleta 367, Santiago Centro"
+    },
+    {
+      "clinicId": "cl-hospital-clinico-uc-christus-clinica-santa-maria",
+      "clinicName": "Hospital Clínico UC Christus Clínica Santa María",
+      "action": "applied",
+      "jsonKey": "cl-hospital-clinico-uc-christus-clinica-santa-maria",
+      "address": "Av. Santa María 0500, Providencia, Santiago"
+    },
+    {
+      "clinicId": "hosp-clinico-uc-a2",
+      "clinicName": "Hospital Clínico Universidad Católica(A.2)",
+      "action": "applied",
+      "jsonKey": "hosp-clinico-uc-a2",
+      "address": "Marcoleta 367, Santiago Centro"
+    },
+    {
+      "clinicId": "hosp-clinico-uch",
+      "clinicName": "Hospital Clínico Universidad de Chile",
+      "action": "applied",
+      "jsonKey": "hosp-clinico-uch",
+      "address": "Santos Dumont 999, Independencia, Santiago"
+    },
+    {
+      "clinicId": "hosp-clinico-uch-a3",
+      "clinicName": "Hospital Clínico Universidad de Chile (A.3)",
+      "action": "applied",
+      "jsonKey": "hosp-clinico-uch-a3",
+      "address": "Santos Dumont 999, Independencia, Santiago"
+    },
+    {
+      "clinicId": "hosp-clinico-uch-a4",
+      "clinicName": "Hospital Clínico Universidad de Chile (A.4)",
+      "action": "applied",
+      "jsonKey": "hosp-clinico-uch-a4",
+      "address": "Santos Dumont 999, Independencia, Santiago"
+    },
+    {
+      "clinicId": "hosp-clinico-uch-a2",
+      "clinicName": "Hospital Clínico Universidad de Chile(A.2)",
+      "action": "applied",
+      "jsonKey": "hosp-clinico-uch-a2",
+      "address": "Santos Dumont 999, Independencia, Santiago"
+    },
+    {
+      "clinicId": "hospital-clinico-vina-del-mar",
+      "clinicName": "Hospital Clínico Viña del Mar",
+      "action": "applied",
+      "jsonKey": "hospital-clinico-vina-del-mar",
+      "address": "Av. 3 Norte 1445, Viña del Mar"
+    },
+    {
+      "clinicId": "hosp-vina-del-mar",
+      "clinicName": "Hospital Clínico Viña del Mar",
+      "action": "applied",
+      "jsonKey": "hosp-vina-del-mar",
+      "address": "Av. 3 Norte 1445, Viña del Mar"
+    },
+    {
+      "clinicId": "cl-hospital-clinico-vina-del-mar-clinica-los-leones",
+      "clinicName": "Hospital Clínico Viña del Mar Clínica Los Leones",
+      "action": "applied",
+      "jsonKey": "cl-hospital-clinico-vina-del-mar-clinica-los-leones",
+      "address": "Av. Los Leones 1100, Providencia, Santiago"
+    },
+    {
+      "clinicId": "hosp-clinico-fach",
+      "clinicName": "Hospital Clínico de La Fach",
+      "action": "applied",
+      "jsonKey": "hosp-clinico-fach",
+      "address": "Av. La Paz 1003, Independencia, Santiago"
+    },
+    {
+      "clinicId": "hosp-militar-santiago",
+      "clinicName": "Hospital Militar de Santiago",
+      "action": "applied",
+      "jsonKey": "hosp-militar-santiago",
+      "address": "Av. Castillo Velasco 9100, La Reina, Santiago"
+    },
+    {
+      "clinicId": "hosp-militar-norte",
+      "clinicName": "Hospital Militar del Norte",
+      "action": "applied",
+      "jsonKey": "hosp-militar-norte",
+      "address": "General Borgoño 957, Antofagasta"
+    },
+    {
+      "clinicId": "hosp-naval-nef",
+      "clinicName": "Hospital Naval Almirante Nef",
+      "action": "applied",
+      "jsonKey": "hosp-naval-nef",
+      "address": "Av. Alessandri 785, Viña del Mar"
+    },
+    {
+      "clinicId": "hosp-parroquial-san-bernardo",
+      "clinicName": "Hospital Parroquial de San Bernardo",
+      "action": "applied",
+      "jsonKey": "hosp-parroquial-san-bernardo",
+      "address": "Av. Portales 3499, San Bernardo"
+    },
+    {
+      "clinicId": "hosp-ffaa-guzman",
+      "clinicName": "Hospital de Las FFAA Cirujano Guzmán",
+      "action": "applied",
+      "jsonKey": "hosp-ffaa-guzman",
+      "address": "Av. Las Salinas 3125, Viña del Mar"
+    },
+    {
+      "clinicId": "integramedica",
+      "clinicName": "Integramédica",
+      "action": "applied",
+      "jsonKey": "integramedica",
+      "address": "Av. Apoquindo 3039, Las Condes, Santiago"
+    },
+    {
+      "clinicId": "cl-integramedica-clinica-los-leones",
+      "clinicName": "Integramédica Clínica Los Leones",
+      "action": "applied",
+      "jsonKey": "cl-integramedica-clinica-los-leones",
+      "address": "Av. Los Leones 1100, Providencia, Santiago"
+    },
+    {
+      "clinicId": "col-libre-eleccion-a",
+      "clinicName": "Libre Elección",
+      "action": "skipped_virtual",
+      "reason": "Prestador virtual (Libre Elección)"
+    },
+    {
+      "clinicId": "mv-libre-eleccion-h",
+      "clinicName": "Libre Elección",
+      "action": "skipped_virtual",
+      "reason": "Prestador virtual (Libre Elección)"
+    },
+    {
+      "clinicId": "vt-libre-eleccion-h",
+      "clinicName": "Libre Elección",
+      "action": "skipped_virtual",
+      "reason": "Prestador virtual (Libre Elección)"
+    },
+    {
+      "clinicId": "mv-libre-eleccion-a",
+      "clinicName": "Libre Elección",
+      "action": "skipped_virtual",
+      "reason": "Prestador virtual (Libre Elección)"
+    },
+    {
+      "clinicId": "vt-libre-eleccion-a",
+      "clinicName": "Libre Elección",
+      "action": "skipped_virtual",
+      "reason": "Prestador virtual (Libre Elección)"
+    },
+    {
+      "clinicId": "cl-lircay-de-talca-clinica-los-andes-de-los-angeles",
+      "clinicName": "Lircay de Talca Clínica Los Andes de Los Ángeles",
+      "action": "applied",
+      "jsonKey": "cl-lircay-de-talca-clinica-los-andes-de-los-angeles",
+      "address": "1 Sur 1205, Talca"
+    },
+    {
+      "clinicId": "cl-lircay-de-talca-los-andes-de-los-angeles-clinica-alemana-de-osorno",
+      "clinicName": "Lircay de Talca Los Andes de Los Ángeles Clínica Alemana de Osorno",
+      "action": "applied",
+      "jsonKey": "cl-lircay-de-talca-los-andes-de-los-angeles-clinica-alemana-de-osorno",
+      "address": "Av. Zenteno 1530, Osorno"
+    },
+    {
+      "clinicId": "cl-los-andes",
+      "clinicName": "Los Andes",
+      "action": "applied",
+      "jsonKey": "cl-los-andes",
+      "address": "Av. Argentina 447, Los Andes"
+    },
+    {
+      "clinicId": "cl-red-cm-uc-christus-e",
+      "clinicName": "Red CM UC Christus (e)",
+      "action": "applied",
+      "jsonKey": "cl-red-cm-uc-christus-e",
+      "address": "Marcoleta 367, Santiago Centro"
+    },
+    {
+      "clinicId": "cl-red-uc-christus",
+      "clinicName": "Red UC Christus",
+      "action": "applied",
+      "jsonKey": "cl-red-uc-christus",
+      "address": "Marcoleta 367, Santiago Centro"
+    },
+    {
+      "clinicId": "red-uc-christus-a4",
+      "clinicName": "Red de Salud UC Christus (A.4)",
+      "action": "applied",
+      "jsonKey": "red-uc-christus-a4",
+      "address": "Marcoleta 367, Santiago Centro"
+    },
+    {
+      "clinicId": "red-uc-christus-a3",
+      "clinicName": "Red de Salud UC Christus(A.3)",
+      "action": "applied",
+      "jsonKey": "red-uc-christus-a3",
+      "address": "Marcoleta 367, Santiago Centro"
+    },
+    {
+      "clinicId": "vidaintegra",
+      "clinicName": "Vidaintegra",
+      "action": "applied",
+      "jsonKey": "vidaintegra",
+      "address": "Bandera 101, Santiago Centro"
+    }
+  ]
+}

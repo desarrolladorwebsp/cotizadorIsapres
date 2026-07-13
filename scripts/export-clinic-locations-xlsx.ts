@@ -3,6 +3,10 @@ import path from "node:path";
 import { config } from "dotenv";
 import * as XLSX from "xlsx";
 import { getClinicZoneIds, getZoneLabel } from "../src/lib/clinic-admin";
+import {
+  isVirtualClinicId,
+  resolveClinicLocationJsonKey,
+} from "../src/lib/clinic-location-aliases";
 
 config({ path: path.join(process.cwd(), ".env.local") });
 
@@ -92,7 +96,10 @@ async function main() {
 
   const rows = clinics
     .map((clinic) => {
-      const fallback = locations[clinic.id];
+      const jsonKey = resolveClinicLocationJsonKey(clinic.id);
+      const fallback = isVirtualClinicId(clinic.id, clinic.name)
+        ? undefined
+        : locations[jsonKey] ?? locations[clinic.id];
       const address = clinic.address ?? fallback?.address ?? "";
       const lat = clinic.lat ?? fallback?.lat ?? "";
       const lng = clinic.lng ?? fallback?.lng ?? "";

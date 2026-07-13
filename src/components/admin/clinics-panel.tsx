@@ -30,8 +30,7 @@ import {
   deleteClinic,
   updateClinic,
 } from "@/lib/api/admin-client";
-import {
-  clinicMatchesZoneFilter,
+import { resolveClinicLocation } from "@/lib/clinic-locations";
   countCoverageEntries,
   getClinicZoneIds,
   getPlansForClinic,
@@ -246,6 +245,8 @@ export function ClinicsPanel({
               const zoneIds = getClinicZoneIds(clinic);
               const linkedPlans = getPlansForClinic(plans, clinic.id);
               const coverageCount = countCoverageEntries(plans, clinic.id);
+              const resolvedLocation = resolveClinicLocation(clinic);
+              const locationSource = clinic.location?.source ?? resolvedLocation?.source;
 
               return (
                 <AdminTableRow
@@ -261,10 +262,21 @@ export function ClinicsPanel({
                     </code>
                   </AdminTableCell>
                   <AdminTableCell>
-                    {clinic.location ? (
-                      <span className="block max-w-[18rem] truncate text-sm text-foreground">
-                        {clinic.location.address}
-                      </span>
+                    {resolvedLocation ? (
+                      <div className="max-w-[18rem]">
+                        <span className="block truncate text-sm text-foreground">
+                          {resolvedLocation.address}
+                        </span>
+                        {!clinic.location ? (
+                          <span className="mt-0.5 block text-[10px] text-muted">
+                            Referencia (pendiente en BD)
+                          </span>
+                        ) : locationSource ? (
+                          <span className="mt-0.5 block text-[10px] text-muted">
+                            Fuente: {locationSource}
+                          </span>
+                        ) : null}
+                      </div>
                     ) : (
                       <span className="text-xs text-amber-600">
                         Sin dirección
