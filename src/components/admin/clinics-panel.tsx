@@ -31,6 +31,8 @@ import {
   updateClinic,
 } from "@/lib/api/admin-client";
 import { resolveClinicLocation } from "@/lib/clinic-locations";
+import {
+  clinicMatchesZoneFilter,
   countCoverageEntries,
   getClinicZoneIds,
   getPlansForClinic,

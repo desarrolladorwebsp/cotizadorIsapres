@@ -28,7 +28,7 @@ export function isVirtualClinicId(clinicId: string, clinicName?: string): boolea
   return false;
 }
 
-export function resolveClinicLocationJsonKey(clinicId: string): string | null {
+export function resolveClinicLocationJsonKey(clinicId: string): string {
   if (CLINIC_LOCATION_JSON_ALIASES[clinicId]) {
     return CLINIC_LOCATION_JSON_ALIASES[clinicId];
   }
