@@ -1,3 +1,4 @@
+import { resolveCanonicalClinicId } from "@/lib/clinic-canonical-ids";
 import type { CoverageEntry, HealthPlan } from "@/types/plan";
 
 function isOptionalPdfField(value: unknown): boolean {
@@ -119,7 +120,7 @@ export function normalizePlan(payload: HealthPlan): HealthPlan {
     pdf_public_id: payload.pdf_public_id?.trim() || null,
     coverage: dedupeCoverageEntries(
       payload.coverage.map((entry) => ({
-        clinic_id: entry.clinic_id.trim(),
+        clinic_id: resolveCanonicalClinicId(entry.clinic_id.trim()),
         clinic_name: entry.clinic_name.trim(),
         percentage: entry.percentage,
         type: entry.type,

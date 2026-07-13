@@ -10,6 +10,7 @@ import {
   findHealthPlanByCode,
 } from "@/lib/api/plan-query";
 import { prisma } from "@/lib/prisma";
+import { resolveCanonicalClinicId } from "@/lib/clinic-canonical-ids";
 import { resolveClinicZoneIds } from "@/lib/clinic-zones";
 import type { Clinic } from "@/types/clinic";
 import type { HealthPlan } from "@/types/plan";
@@ -24,7 +25,8 @@ async function upsertClinicsForCoverage(
   const uniqueClinics = new Map<string, string>();
 
   for (const entry of coverage) {
-    uniqueClinics.set(entry.clinic_id, entry.clinic_name);
+    const clinicId = resolveCanonicalClinicId(entry.clinic_id);
+    uniqueClinics.set(clinicId, entry.clinic_name);
   }
 
   for (const [id, name] of uniqueClinics) {
@@ -39,7 +41,7 @@ async function upsertClinicsForCoverage(
 
 function mapCoverageCreateInput(coverage: HealthPlan["coverage"]) {
   return coverage.map((entry) => ({
-    clinicId: entry.clinic_id,
+    clinicId: resolveCanonicalClinicId(entry.clinic_id),
     clinicName: entry.clinic_name,
     percentage: entry.percentage,
     type: entry.type,

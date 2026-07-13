@@ -31,7 +31,7 @@
     "export-clinic-zones": "tsx scripts/export-clinic-zones-report.ts",
     "audit-plan-coverages": "tsx scripts/audit-plan-coverages.ts",
     "audit-mobile-views": "node scripts/audit-mobile-views.mjs",
-    "backfill-clinic-locations": "tsx scripts/backfill-clinic-locations.ts",
+    "merge-clinic-duplicates": "tsx scripts/merge-clinic-duplicates.ts",
     "export-clinic-locations": "tsx scripts/export-clinic-locations-xlsx.ts",
     "build-clinic-locations": "node scripts/build-clinic-locations.mjs",
     "generate-favicons": "python3 scripts/generate-favicons.py",

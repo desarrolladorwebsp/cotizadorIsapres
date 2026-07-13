@@ -15,6 +15,7 @@ export const CLINIC_LOCATION_JSON_ALIASES: Record<string, string> = {
   "clinica-indisa": "cl-indisa-providencia-anexo",
   "clinica-portada-achs-salud": "cl-portada-achs",
   "clinica-lircay-achs-salud": "centro-medico-andes-salud-talca",
+  "cl-andes-salud-talca": "centro-medico-andes-salud-talca",
   "clinica-del-sur-achs-salud": "cl-biobio",
   "centros-medicos-clinica-santa-maria": "cm-santa-maria",
   "cm-andes-salud-talca": "centro-medico-andes-salud-talca",
