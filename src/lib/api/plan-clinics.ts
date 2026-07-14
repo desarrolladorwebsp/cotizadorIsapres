@@ -11,7 +11,10 @@ let clinicsCache: { items: PlanCatalogClinicOption[]; loadedAt: number } | null 
   null;
 let clinicsInflight: Promise<PlanCatalogClinicOption[]> | null = null;
 
-/** Clínicas presentes en el catálogo (consulta SQL directa, sin cargar todos los planes). */
+/**
+ * Clínicas del catálogo canónico (tabla clinics) que aparecen en coberturas.
+ * Usa el nombre oficial de la clínica — no los alias sucios de import (A.3, etc.).
+ */
 export async function readPlanCatalogClinics(): Promise<PlanCatalogClinicOption[]> {
   const now = Date.now();
 
@@ -25,10 +28,14 @@ export async function readPlanCatalogClinics(): Promise<PlanCatalogClinicOption[
 
   clinicsInflight = prisma
     .$queryRaw<Array<{ clinic_id: string; clinic_name: string }>>`
-      SELECT DISTINCT clinic_id, clinic_name
-      FROM coverage_entries
-      WHERE clinic_id IS NOT NULL AND clinic_name IS NOT NULL
-      ORDER BY clinic_name ASC
+      SELECT c.id AS clinic_id, c.name AS clinic_name
+      FROM clinics c
+      WHERE EXISTS (
+        SELECT 1
+        FROM coverage_entries ce
+        WHERE ce.clinic_id = c.id
+      )
+      ORDER BY c.name ASC
     `
     .then((rows) =>
       rows
