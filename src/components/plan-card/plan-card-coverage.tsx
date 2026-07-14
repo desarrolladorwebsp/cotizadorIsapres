@@ -21,8 +21,10 @@ export function PlanCardCoverage({
         title="Cobertura hospitalaria"
         icon={<HospitalCoverageIcon />}
         entries={hospitalaria}
-        barClassName="bg-primary"
+        barClassName="bg-coverage-gradient"
         percentClassName="text-primary-dark"
+        headerClassName="text-primary-dark"
+        badgeClassName="bg-primary/15 text-primary-dark ring-1 ring-primary/25"
         showDivider
         highlightClinicIds={highlightHospitalClinicIds}
       />
@@ -32,6 +34,8 @@ export function PlanCardCoverage({
         entries={ambulatoria}
         barClassName="bg-secondary"
         percentClassName="text-secondary"
+        headerClassName="text-secondary"
+        badgeClassName="bg-secondary-muted text-secondary ring-1 ring-secondary/30"
         highlightClinicIds={highlightAmbulatoryClinicIds}
       />
     </div>

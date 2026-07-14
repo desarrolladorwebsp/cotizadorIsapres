@@ -36,6 +36,7 @@ export function BeneficiariesForm({
   const [contributorInput, setContributorInput] = useState(
     value.contributorAge !== null ? String(value.contributorAge) : "",
   );
+  const [justConfirmed, setJustConfirmed] = useState(false);
 
   const summary = useMemo(
     () => buildBeneficiaryGroupSummary(value),
@@ -47,23 +48,39 @@ export function BeneficiariesForm({
     [value.dependents],
   );
 
+  const parsedDraftAge = parseBeneficiaryAge(contributorInput);
+  const canConfirmAge = parsedDraftAge !== null && parsedDraftAge <= 120;
+  const isAgeCommitted =
+    value.contributorAge !== null &&
+    contributorInput.trim() === String(value.contributorAge);
+  const ageActionLabel =
+    value.contributorAge !== null && !isAgeCommitted ? "Actualizar" : "Agregar";
+
   useEffect(() => {
     setContributorInput(
       value.contributorAge !== null ? String(value.contributorAge) : "",
     );
   }, [value.contributorAge]);
 
+  useEffect(() => {
+    if (!justConfirmed) return;
+    const timer = window.setTimeout(() => setJustConfirmed(false), 1600);
+    return () => window.clearTimeout(timer);
+  }, [justConfirmed]);
+
   function emit(next: FamilyBeneficiariesState) {
     onChange(next, buildBeneficiaryGroupSummary(next));
   }
 
-  function handleContributorInputChange(raw: string) {
-    setContributorInput(raw);
+  function confirmContributorAge() {
+    if (!canConfirmAge || parsedDraftAge === null) return;
+    setContributorInput(String(parsedDraftAge));
     emit({
       ...value,
-      contributorAge: parseBeneficiaryAge(raw),
+      contributorAge: parsedDraftAge,
       dependents: confirmedDependents,
     });
+    setJustConfirmed(true);
   }
 
   function handleDependentsChange(
@@ -87,7 +104,7 @@ export function BeneficiariesForm({
         <h2
           className={joinClasses(
             executiveVisual
-              ? "text-xs font-semibold uppercase tracking-wide text-muted"
+              ? "rounded-lg border-l-[3px] border-l-primary bg-primary/12 px-2.5 py-2 text-xs font-bold uppercase tracking-wide text-primary-dark shadow-sm ring-1 ring-primary/15"
               : joinClasses("text-sm font-bold tracking-tight", ui.sectionTitle),
           )}
         >
@@ -105,16 +122,36 @@ export function BeneficiariesForm({
           <div className="flex items-center justify-between gap-2">
             <label
               htmlFor="contributor-age"
-              className="text-xs font-medium uppercase tracking-wide text-muted"
+              className="text-xs font-medium uppercase tracking-wide text-primary-dark/80"
             >
               Cotizante principal
             </label>
-            <span className="text-[10px] text-muted/80">Obligatorio · 1</span>
+            <div className="flex items-center gap-2">
+              {isAgeCommitted || justConfirmed ? (
+                <span
+                  className="inline-flex items-center gap-1 text-[10px] font-semibold text-primary-dark"
+                  aria-live="polite"
+                >
+                  <svg viewBox="0 0 16 16" fill="none" className="size-3" aria-hidden>
+                    <path
+                      d="M3.5 8.5 6.5 11.5 12.5 4.5"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  Agregado
+                </span>
+              ) : (
+                <span className="text-[10px] text-muted/80">Obligatorio · 1</span>
+              )}
+            </div>
           </div>
 
           <div
             className={joinClasses(
-              "flex items-center gap-3",
+              "flex items-center gap-2",
               !executiveVisual && joinClasses("rounded-lg px-3 py-2.5", ui.borderHairline),
             )}
           >
@@ -126,21 +163,63 @@ export function BeneficiariesForm({
               inputMode="numeric"
               placeholder="Edad"
               value={contributorInput}
-              onChange={(event) =>
-                handleContributorInputChange(event.target.value)
-              }
+              onChange={(event) => {
+                setJustConfirmed(false);
+                setContributorInput(event.target.value);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  confirmContributorAge();
+                }
+              }}
               className={joinClasses(
                 "h-12 w-full min-w-0 flex-1 rounded-lg px-3 text-base tabular-nums md:h-10 md:text-sm",
                 ui.input,
+                isAgeCommitted && "ring-2 ring-primary/30",
               )}
             />
+            <button
+              type="button"
+              onClick={confirmContributorAge}
+              disabled={!canConfirmAge || isAgeCommitted}
+              aria-label={`${ageActionLabel} edad del cotizante`}
+              className={joinClasses(
+                touchTarget,
+                "h-12 shrink-0 rounded-lg px-3 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-45 md:h-10",
+                isAgeCommitted
+                  ? "bg-primary/10 text-primary-dark"
+                  : canConfirmAge
+                    ? ui.cta
+                    : joinClasses(ui.border, "bg-white text-muted"),
+              )}
+            >
+              {isAgeCommitted ? (
+                <svg viewBox="0 0 16 16" fill="none" className="size-4" aria-hidden>
+                  <path
+                    d="M3.5 8.5 6.5 11.5 12.5 4.5"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              ) : (
+                ageActionLabel
+              )}
+            </button>
             <FactorBadge factor={summary.contributor.factor} />
           </div>
+          {!hideHelperText ? (
+            <p className="text-[11px] text-muted">
+              Escribe la edad y pulsa Agregar para recalcular los precios de los planes.
+            </p>
+          ) : null}
         </div>
 
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-2">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted">
+            <p className="text-xs font-medium uppercase tracking-wide text-primary-dark/80">
               Cargas familiares
             </p>
             <span className="text-[10px] font-medium text-primary-dark/80">
@@ -176,8 +255,7 @@ export function BeneficiariesForm({
                 </span>{" "}
                 {summary.beneficiaryCount === 1
                   ? "beneficiario"
-                  : "beneficiarios"}{" "}
-                (prima GES)
+                  : "beneficiarios"}
               </p>
               {confirmedDependents.length > 0 ? (
                 <p className="text-[11px] leading-snug text-muted">
@@ -187,9 +265,6 @@ export function BeneficiariesForm({
                     .join(" · ")}
                 </p>
               ) : null}
-              <p className="text-[11px] leading-snug text-muted">
-                Menores de 2 años: factor 0 (Circular N°343)
-              </p>
             </div>
             <div className="text-right">
               <p className="text-[10px] font-bold uppercase tracking-wide text-primary-dark/70">

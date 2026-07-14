@@ -103,7 +103,7 @@ export function ExecutivePlanAgreementPrices({
       )}
     >
       <div className="flex items-center gap-2 lg:justify-end">
-        <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary-dark/70">
           {discounted ? "Total con convenio" : "Desde"}
         </p>
         {discounted ? (
@@ -121,7 +121,7 @@ export function ExecutivePlanAgreementPrices({
 
       <p
         className={joinClasses(
-          "mt-0.5 text-[1.75rem] font-bold leading-none tabular-nums tracking-tight sm:text-3xl",
+          "mt-0.5 text-[1.75rem] font-extrabold leading-none tabular-nums tracking-tight sm:text-3xl",
           discounted ? "text-red-700" : "text-primary-dark",
         )}
       >
@@ -136,15 +136,15 @@ export function ExecutivePlanAgreementPrices({
 
       <p
         className={joinClasses(
-          "mt-2 text-sm font-medium tabular-nums",
-          discounted ? "text-red-700" : "text-muted",
+          "mt-2 text-sm font-semibold tabular-nums",
+          discounted ? "text-red-700" : "text-primary-dark/80",
         )}
       >
         {formatPlanClp(prices.displayFinalPriceClp)}{" "}
         <span
           className={joinClasses(
             "font-normal",
-            discounted ? "text-red-700/75" : "text-muted/75",
+            discounted ? "text-red-700/75" : "text-primary-dark/55",
           )}
         >
           / mes

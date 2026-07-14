@@ -108,7 +108,7 @@ export function FiltersSidebar({
           "lg:w-80 lg:max-w-[20rem] lg:shrink-0 lg:translate-x-0 lg:shadow-none",
           filtersSidebarDesktopShell,
           executiveVisual
-            ? "border-border/60 bg-white"
+            ? "border-border/60 bg-white lg:shadow-[8px_0_28px_-16px_rgb(10_47_92/0.12)]"
             : joinClasses("bg-white", ui.border),
           !open && "pointer-events-none lg:pointer-events-auto",
           open ? "lg:flex" : "lg:hidden",
@@ -120,14 +120,14 @@ export function FiltersSidebar({
             className={joinClasses(
               "flex shrink-0 items-center justify-between border-b px-4 py-3.5 sm:px-5 lg:px-5",
               executiveVisual
-                ? "border-border/60 bg-white"
+                ? "border-primary/20 bg-primary/10"
                 : joinClasses("bg-white py-4", ui.border),
             )}
           >
             <div className="min-w-0">
               <p
                 className={joinClasses(
-                  "text-sm font-semibold tracking-tight text-primary-dark",
+                  "text-sm font-bold tracking-tight text-primary-dark",
                 )}
               >
                 Filtros y beneficiarios

@@ -1,0 +1,137 @@
+/*
+ * Tema visual intensificado — solo cotizador ejecutivo:
+ * [data-premium-surface] [data-executive-cotizador]
+ *
+ * No afecta la barra de navegación superior (hermana del workspace)
+ * ni el cotizador público / widget / embed.
+ */
+
+[data-premium-surface] [data-executive-cotizador] {
+  /* Azul premium más saturado, sin exagerar */
+  --primary: #1a6fd9;
+  --primary-hover: #1557b5;
+  --primary-dark: #0a2f5c;
+  --primary-foreground: #ffffff;
+
+  --secondary: #0d9ec4;
+  --secondary-muted: #d4f1fa;
+
+  --accent-cyan: #08b4d4;
+  --text-secondary: #355576;
+
+  --bg-layout: #eef5fc;
+  --background: #ffffff;
+  --foreground: #0a2f5c;
+  --muted: #5f7590;
+  --border: #c9dced;
+  --surface-hover: #d8eefb;
+
+  --accent-warning: #f0a018;
+  --accent-warning-foreground: #3a2800;
+  --accent-danger: #e11d48;
+  --accent-success: #159a4a;
+  --warning-muted: #fff6db;
+  --danger-muted: #ffe8ee;
+  --success-muted: #e6f8ee;
+
+  --gradient-coverage: linear-gradient(
+    90deg,
+    #1a6fd9 0%,
+    #08b4d4 100%
+  );
+
+  --shadow-card: 0 6px 28px -10px rgb(10 47 92 / 0.12);
+  --shadow-card-hover: 0 14px 36px -12px rgb(26 111 217 / 0.22);
+  --shadow-cta: 0 10px 30px -8px rgb(21 154 74 / 0.42);
+
+  --plan-card-surface: #ffffff;
+  --plan-card-header-bg: color-mix(in srgb, var(--secondary-muted) 72%, white);
+  --plan-card-coverage-bg: color-mix(in srgb, var(--bg-layout) 55%, white);
+  --plan-card-border: color-mix(in srgb, var(--border) 70%, var(--foreground) 30%);
+  --plan-card-ring: rgb(10 47 92 / 0.06);
+  --shadow-plan-card:
+    0 1px 3px rgb(10 47 92 / 0.06),
+    0 4px 14px -4px rgb(26 111 217 / 0.12),
+    0 14px 32px -10px rgb(26 111 217 / 0.14);
+  --shadow-plan-card-hover:
+    0 0 0 1.5px var(--primary),
+    0 6px 18px -4px rgb(26 111 217 / 0.18),
+    0 20px 44px -12px rgb(26 111 217 / 0.22);
+
+  --criteria-surface: #e8f3ff;
+  --criteria-ring: #bdd4ec;
+
+  /* Fondo con degradado sutil */
+  background-color: var(--bg-layout);
+  background-image:
+    radial-gradient(ellipse 70% 45% at 8% 0%, rgb(26 111 217 / 0.1), transparent 55%),
+    radial-gradient(ellipse 55% 40% at 96% 8%, rgb(8 180 212 / 0.09), transparent 50%),
+    linear-gradient(180deg, #f5f9fd 0%, var(--bg-layout) 38%, #eaf2fa 100%);
+}
+
+/* Panel de filtros: más profundidad */
+[data-premium-surface] [data-executive-cotizador] [data-executive-filters="true"] {
+  background: color-mix(in srgb, white 94%, var(--secondary-muted));
+  border-color: color-mix(in srgb, var(--border) 75%, var(--primary) 25%);
+  box-shadow:
+    1px 0 0 color-mix(in srgb, var(--border) 80%, transparent),
+    8px 0 28px -16px rgb(10 47 92 / 0.12);
+}
+
+[data-premium-surface] [data-executive-cotizador] [data-executive-filters="true"] > div > div:first-child {
+  background: color-mix(in srgb, white 88%, var(--secondary-muted));
+  border-bottom-color: color-mix(in srgb, var(--border) 70%, var(--primary) 30%);
+}
+
+/* Barras de cobertura: track más contrastado */
+[data-premium-surface] [data-executive-cotizador] .bg-slate-200\/90 {
+  background-color: color-mix(in srgb, var(--border) 65%, #94a3b8 35%);
+}
+
+/* Iconos de acción rápida: color por rol (chat / pdf / seguros) */
+[data-premium-surface] [data-executive-cotizador] [data-executive-quick-action="chat"] {
+  border-color: color-mix(in srgb, var(--primary) 55%, transparent);
+  background: color-mix(in srgb, var(--primary) 16%, white);
+  color: var(--primary);
+  box-shadow: 0 3px 10px -3px rgb(26 111 217 / 0.4);
+}
+
+[data-premium-surface] [data-executive-cotizador] [data-executive-quick-action="download"] {
+  border-color: color-mix(in srgb, var(--secondary) 55%, transparent);
+  background: color-mix(in srgb, var(--secondary-muted) 85%, white);
+  color: var(--secondary);
+  box-shadow: 0 3px 10px -3px rgb(13 158 196 / 0.4);
+}
+
+[data-premium-surface] [data-executive-cotizador] [data-executive-quick-action="shield"] {
+  border-color: color-mix(in srgb, var(--accent-success) 55%, transparent);
+  background: color-mix(in srgb, var(--success-muted) 90%, white);
+  color: #0f7a3d;
+  box-shadow: 0 3px 10px -3px rgb(21 154 74 / 0.4);
+}
+
+[data-premium-surface] [data-executive-cotizador] [data-executive-quick-action]:hover {
+  filter: brightness(0.97);
+  transform: translateY(-1px);
+}
+
+/* CTA Asignar a cliente */
+[data-premium-surface] [data-executive-cotizador] [data-executive-assign-cta] {
+  background-color: #129a48;
+  border-color: #0f8640;
+  color: #ffffff;
+  box-shadow: 0 8px 24px -6px rgb(18 154 72 / 0.45);
+}
+
+[data-premium-surface] [data-executive-cotizador] [data-executive-assign-cta]:hover {
+  background-color: #0f8640;
+  filter: brightness(1.03);
+}
+
+[data-premium-surface] [data-executive-cotizador] [data-executive-assign-cta][data-selected="true"] {
+  background-color: #ffffff;
+  border-color: #129a48;
+  border-width: 2px;
+  color: #0b5c30;
+  box-shadow: none;
+}

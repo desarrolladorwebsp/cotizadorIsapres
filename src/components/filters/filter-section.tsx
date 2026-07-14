@@ -17,9 +17,21 @@ export interface FilterSectionProps {
   hideDescription?: boolean;
   /** Tarjeta con borde acentuado (panel ejecutivo). */
   executiveVisual?: boolean;
-  /** Acento de borde izquierdo en modo ejecutivo (legacy, sin efecto visual). */
+  /** Acento de color en cabecera del filtro (panel ejecutivo). */
   executiveAccent?: "primary" | "secondary" | "neutral";
 }
+
+const executiveHeaderAccentClass: Record<
+  NonNullable<FilterSectionProps["executiveAccent"]>,
+  string
+> = {
+  primary:
+    "border-l-[3px] border-l-primary bg-primary/12 text-primary-dark shadow-sm ring-1 ring-primary/15",
+  secondary:
+    "border-l-[3px] border-l-secondary bg-secondary-muted text-secondary shadow-sm ring-1 ring-secondary/20",
+  neutral:
+    "border-l-[3px] border-l-primary-dark/35 bg-primary-dark/[0.06] text-primary-dark shadow-sm ring-1 ring-primary-dark/10",
+};
 
 export function FilterSection({
   title,
@@ -31,6 +43,7 @@ export function FilterSection({
   compactEmbed = false,
   hideDescription = false,
   executiveVisual = false,
+  executiveAccent = "primary",
 }: FilterSectionProps) {
   return (
     <section
@@ -44,6 +57,11 @@ export function FilterSection({
         className={joinClasses(
           "mb-2.5 space-y-0.5",
           compactEmbed && "max-md:mb-2",
+          executiveVisual &&
+            joinClasses(
+              "mb-3 rounded-lg px-2.5 py-2",
+              executiveHeaderAccentClass[executiveAccent],
+            ),
         )}
       >
         <div className="flex items-center gap-1.5">
@@ -51,7 +69,7 @@ export function FilterSection({
             className={joinClasses(
               compactEmbed && "max-md:text-[11px]",
               executiveVisual
-                ? "text-xs font-semibold uppercase tracking-wide text-muted"
+                ? "text-xs font-bold uppercase tracking-wide"
                 : joinClasses(
                     "text-[13px] font-bold tracking-tight",
                     ui.sectionTitle,
@@ -69,7 +87,8 @@ export function FilterSection({
         {description && !hideDescription ? (
           <p
             className={joinClasses(
-              "text-[11px] leading-relaxed text-muted",
+              "text-[11px] leading-relaxed",
+              executiveVisual ? "text-current/70" : "text-muted",
               compactEmbed && "max-md:hidden",
             )}
           >

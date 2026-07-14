@@ -1,9 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { buildBeneficiaryGroupSummary, parseBeneficiaryAge } from "@/domain";
 import { DependentLoadsEditor } from "@/components/beneficiaries/dependent-loads-editor";
-import { formatMonthlyIncomeForDisplay } from "@/lib/deep-link/income";
+import { ConfirmableFieldInput } from "@/components/cotizador/confirmable-field-input";
+import {
+  formatMonthlyIncomeForDisplay,
+  normalizeIncomeDigits,
+} from "@/lib/deep-link/income";
 import { getMissingQuoteCriteriaFields } from "@/lib/quote-criteria-validation";
 import {
   CONTRIBUTOR_TYPE_OPTIONS,
@@ -53,6 +58,13 @@ const compactFieldClass =
 
 const labelClass = "text-xs font-semibold text-muted";
 
+function isValidIncomeDraft(raw: string): boolean {
+  const digits = normalizeIncomeDigits(raw);
+  if (!digits) return false;
+  const value = Number(digits);
+  return Number.isFinite(value) && value > 0;
+}
+
 export function PublicQuoteCriteriaBar({
   criteria,
   onCriteriaChange,
@@ -70,6 +82,7 @@ export function PublicQuoteCriteriaBar({
       ? String(beneficiaries.contributorAge)
       : "",
   );
+  const [incomeInput, setIncomeInput] = useState(criteria.monthlyIncome);
   const [loadsOpen, setLoadsOpen] = useState(showPreloadedDependents);
   const popoverRef = useRef<HTMLDivElement>(null);
 
@@ -80,6 +93,10 @@ export function PublicQuoteCriteriaBar({
         : "",
     );
   }, [beneficiaries.contributorAge]);
+
+  useEffect(() => {
+    setIncomeInput(criteria.monthlyIncome);
+  }, [criteria.monthlyIncome]);
 
   useEffect(() => {
     if (showPreloadedDependents && getConfirmedDependents(beneficiaries).length > 0) {
@@ -108,11 +125,18 @@ export function PublicQuoteCriteriaBar({
     [onBeneficiariesChange],
   );
 
-  function updateAge(raw: string) {
-    setAgeInput(raw);
+  const parsedAgeDraft = parseBeneficiaryAge(ageInput);
+  const canConfirmAge =
+    parsedAgeDraft !== null &&
+    parsedAgeDraft >= 18 &&
+    parsedAgeDraft <= 120;
+
+  function confirmAge() {
+    if (!canConfirmAge || parsedAgeDraft === null) return;
+    setAgeInput(String(parsedAgeDraft));
     emitBeneficiaries({
       ...beneficiaries,
-      contributorAge: parseBeneficiaryAge(raw),
+      contributorAge: parsedAgeDraft,
       dependents: getConfirmedDependents(beneficiaries),
     });
   }
@@ -121,15 +145,17 @@ export function PublicQuoteCriteriaBar({
     onCriteriaChange({ contributorType: value });
   }
 
-  function updateIncome(raw: string) {
-    onCriteriaChange({ monthlyIncome: raw });
-  }
+  const canConfirmIncome = isValidIncomeDraft(incomeInput);
+  const committedIncomeDisplay = criteria.monthlyIncome.trim()
+    ? formatMonthlyIncomeForDisplay(criteria.monthlyIncome) || criteria.monthlyIncome
+    : "";
 
-  function commitIncomeFormat() {
-    const formatted = formatMonthlyIncomeForDisplay(criteria.monthlyIncome);
-    if (formatted !== criteria.monthlyIncome) {
-      onCriteriaChange({ monthlyIncome: formatted });
-    }
+  function confirmIncome() {
+    if (!canConfirmIncome) return;
+    const formatted = formatMonthlyIncomeForDisplay(incomeInput);
+    if (!formatted) return;
+    setIncomeInput(formatted);
+    onCriteriaChange({ monthlyIncome: formatted });
   }
 
   function emitDependents(nextDependents: FamilyBeneficiariesState["dependents"]) {
@@ -139,15 +165,65 @@ export function PublicQuoteCriteriaBar({
     });
   }
 
+  /** Confirma borradores válidos pendientes antes de buscar. */
+  function commitPendingDrafts() {
+    const ageNeedsCommit =
+      canConfirmAge &&
+      parsedAgeDraft !== null &&
+      parsedAgeDraft !== beneficiaries.contributorAge;
+
+    if (ageNeedsCommit) {
+      emitBeneficiaries({
+        ...beneficiaries,
+        contributorAge: parsedAgeDraft,
+        dependents: getConfirmedDependents(beneficiaries),
+      });
+      setAgeInput(String(parsedAgeDraft));
+    }
+
+    const formattedIncome = canConfirmIncome
+      ? formatMonthlyIncomeForDisplay(incomeInput)
+      : "";
+    const incomeNeedsCommit =
+      Boolean(formattedIncome) &&
+      formattedIncome !==
+        (formatMonthlyIncomeForDisplay(criteria.monthlyIncome) ||
+          criteria.monthlyIncome.trim());
+
+    if (incomeNeedsCommit && formattedIncome) {
+      setIncomeInput(formattedIncome);
+      onCriteriaChange({ monthlyIncome: formattedIncome });
+    }
+
+    return {
+      nextAge: ageNeedsCommit ? parsedAgeDraft : beneficiaries.contributorAge,
+      nextIncome: incomeNeedsCommit ? formattedIncome : criteria.monthlyIncome,
+    };
+  }
+
   const confirmedDependents = getConfirmedDependents(beneficiaries);
   const loadsCount = confirmedDependents.length;
 
   function handleSearchClick() {
-    commitIncomeFormat();
+    let nextAge = beneficiaries.contributorAge;
+    let nextIncome = criteria.monthlyIncome;
+
+    flushSync(() => {
+      const committed = commitPendingDrafts();
+      nextAge = committed.nextAge;
+      nextIncome = committed.nextIncome;
+    });
 
     const missing = getMissingQuoteCriteriaFields({
-      criteria,
-      beneficiaries,
+      criteria: {
+        ...criteria,
+        monthlyIncome: nextIncome,
+      },
+      beneficiaries: {
+        ...beneficiaries,
+        contributorAge: nextAge,
+        dependents: confirmedDependents,
+      },
     });
 
     if (missing.length > 0) {
@@ -178,40 +254,33 @@ export function PublicQuoteCriteriaBar({
             ? "max-md:gap-y-2.5 sm:grid sm:grid-cols-2 sm:items-end"
             : joinClasses(
                 "md:grid md:items-end md:gap-2 lg:gap-3 xl:gap-4",
-                "md:grid-cols-[minmax(3.25rem,4rem)_minmax(0,0.85fr)_minmax(0,1.1fr)_minmax(0,1fr)_auto_auto]",
+                "md:grid-cols-[minmax(0,8.5rem)_minmax(0,0.85fr)_minmax(0,11rem)_minmax(0,1fr)_auto_auto]",
               ),
         )}
       >
         {/* Edad */}
-        <div
-          className={joinClasses(
-            safeWidth,
-            "min-w-0 space-y-1.5",
-            compactEmbed && "max-md:col-span-2 max-md:space-y-1",
-          )}
-        >
-          <label
-            htmlFor="qc-age"
-            className={joinClasses(labelClass, compactEmbed && "max-md:text-[11px]")}
-          >
-            Edad
-          </label>
-          <input
-            id="qc-age"
-            type="number"
-            min={18}
-            max={120}
-            inputMode="numeric"
-            placeholder="35"
-            value={ageInput}
-            onChange={(event) => updateAge(event.target.value)}
-            className={joinClasses(
-              fieldClass,
-              compactEmbed && compactFieldClass,
-              "text-center tabular-nums md:px-1.5 lg:px-2",
-            )}
-          />
-        </div>
+        <ConfirmableFieldInput
+          id="qc-age"
+          label="Edad"
+          value={ageInput}
+          committedValue={
+            beneficiaries.contributorAge !== null
+              ? String(beneficiaries.contributorAge)
+              : ""
+          }
+          onChange={setAgeInput}
+          onConfirm={confirmAge}
+          canConfirm={canConfirmAge}
+          type="number"
+          min={18}
+          max={120}
+          inputMode="numeric"
+          placeholder="35"
+          compact={compactEmbed}
+          className={joinClasses(safeWidth, compactEmbed && "max-md:col-span-2")}
+          inputClassName="text-center tabular-nums md:px-1.5 lg:px-2"
+          confirmLabel="Agregar edad al cálculo"
+        />
 
         {/* Tipo de cotizante */}
         <div
@@ -247,30 +316,26 @@ export function PublicQuoteCriteriaBar({
         </div>
 
         {/* Renta imponible */}
-        <div
-          className={joinClasses(
-            safeWidth,
-            "min-w-0 space-y-1.5",
-            compactEmbed && "max-md:space-y-1",
-          )}
-        >
-          <label
-            htmlFor="qc-income"
-            className={joinClasses(labelClass, compactEmbed && "max-md:text-[11px]")}
-          >
-            Renta imponible
-          </label>
-          <input
-            id="qc-income"
-            type="text"
-            inputMode="numeric"
-            placeholder="Ej: $1.200.000"
-            value={criteria.monthlyIncome}
-            onChange={(event) => updateIncome(event.target.value)}
-            onBlur={commitIncomeFormat}
-            className={joinClasses(fieldClass, compactEmbed && compactFieldClass)}
-          />
-        </div>
+        <ConfirmableFieldInput
+          id="qc-income"
+          label="Renta imponible"
+          value={incomeInput}
+          committedValue={committedIncomeDisplay}
+          onChange={setIncomeInput}
+          onConfirm={confirmIncome}
+          canConfirm={canConfirmIncome}
+          type="text"
+          inputMode="numeric"
+          placeholder="Ej: $1.200.000"
+          compact={compactEmbed}
+          className={safeWidth}
+          confirmLabel="Agregar renta imponible"
+          onBlur={() => {
+            if (!incomeInput.trim()) return;
+            const formatted = formatMonthlyIncomeForDisplay(incomeInput);
+            if (formatted) setIncomeInput(formatted);
+          }}
+        />
 
         {/* Cargas médicas */}
         <div

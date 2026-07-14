@@ -213,6 +213,7 @@ function CotizadorWorkspaceInner({
 
   return (
     <div
+      data-executive-cotizador={embeddedInExecutiveShell ? "true" : undefined}
       className={joinClasses(
         embeddedInExecutiveShell ? "flex min-h-0 flex-1 flex-col" : appShellRoot,
         !embeddedInExecutiveShell && ui.canvas,

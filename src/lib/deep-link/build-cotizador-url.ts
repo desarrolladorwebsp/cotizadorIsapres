@@ -616,7 +616,7 @@ export function getDeepLinkDocumentation(baseUrl = "https://cotizador.cotizaloan
         type: "integer",
         description: "Cobertura hospitalaria mínima (%).",
         example: "70",
-        allowed_values: [40, 50, 60, 70, 80, 100],
+        allowed_values: [40, 50, 60, 70, 80, 90, 100],
       },
       {
         name: DEEP_LINK_PARAMS.coberturaA,
@@ -624,7 +624,7 @@ export function getDeepLinkDocumentation(baseUrl = "https://cotizador.cotizaloan
         type: "integer",
         description: "Cobertura ambulatoria mínima (%).",
         example: "60",
-        allowed_values: [40, 50, 60, 70, 80, 100],
+        allowed_values: [40, 50, 60, 70, 80, 90, 100],
       },
       {
         name: DEEP_LINK_PARAMS.orden,
