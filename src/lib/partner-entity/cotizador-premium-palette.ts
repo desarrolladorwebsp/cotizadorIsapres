@@ -26,3 +26,7 @@ export const COTIZADOR_PREMIUM_PALETTE = {
 
 export const COTIZADOR_PREMIUM_LOGO_PATH =
   "/images/logo-cotizador-premium.jpeg";
+
+/** Isotipo / icono oficial (favicon, header ejecutivo, app icons). */
+export const COTIZADOR_PREMIUM_ICON_PATH =
+  "/images/icono-logo-cotizador-premium.png";

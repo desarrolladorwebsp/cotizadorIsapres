@@ -4,8 +4,8 @@
   "description": "Plataforma inteligente de cotizaciones para planes de Isapre.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#F8FBFD",
-  "theme_color": "#0077B6",
+  "theme_color": "#0D6DEE",
+  "background_color": "#F0F4F8",
   "icons": [
     {
       "src": "/android-chrome-192x192.png",

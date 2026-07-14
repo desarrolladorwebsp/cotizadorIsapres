@@ -22,7 +22,7 @@ export function StaffAccessLayout({ children }: StaffAccessLayoutProps) {
         <header className={`${landing.header} border-b border-border/60`}>
           <div className={`${landing.headerInner} py-3.5`}>
             <Link href="/" className="flex items-center gap-3">
-              <LandingLogo size="md" />
+              <LandingLogo size="md" variant="icon" transparent />
               <div className="min-w-0">
                 <p className="text-sm font-semibold tracking-tight text-foreground sm:text-base">
                   Cotizador Premium

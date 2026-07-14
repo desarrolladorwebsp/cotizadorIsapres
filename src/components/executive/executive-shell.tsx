@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { UserMenu } from "@/components/auth/user-menu";
 import {
   ExecutiveMenuIcon,
@@ -20,7 +20,6 @@ import {
   horizontalScrollRail,
   safeWidth,
   touchTarget,
-  ui,
 } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 
@@ -53,6 +52,93 @@ const SECTION_LABELS: Record<
     shortLabel: "Convenios",
     adminOnly: true,
   },
+};
+
+function NavIcon({ children }: { children: ReactNode }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      className="premium-executive-tab-icon"
+      aria-hidden
+    >
+      {children}
+    </svg>
+  );
+}
+
+const SECTION_ICONS: Record<StaffSection, ReactNode> = {
+  inicio: (
+    <NavIcon>
+      <path d="M4 10.5L12 4l8 6.5V20a1 1 0 01-1 1h-5v-6H10v6H5a1 1 0 01-1-1v-9.5z" strokeLinecap="round" strokeLinejoin="round" />
+    </NavIcon>
+  ),
+  cotizador: (
+    <NavIcon>
+      <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" strokeLinecap="round" />
+      <rect x="9" y="3" width="6" height="4" rx="1" />
+      <path d="M9 12h6M9 16h4" strokeLinecap="round" />
+    </NavIcon>
+  ),
+  clientes: (
+    <NavIcon>
+      <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" strokeLinecap="round" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" strokeLinecap="round" />
+    </NavIcon>
+  ),
+  cotizaciones: (
+    <NavIcon>
+      <path d="M8 6h8M8 10h8M8 14h5" strokeLinecap="round" />
+      <rect x="4" y="3" width="16" height="18" rx="2" />
+    </NavIcon>
+  ),
+  mapa: (
+    <NavIcon>
+      <path d="M12 21s7-5.2 7-11a7 7 0 10-14 0c0 5.8 7 11 7 11z" strokeLinejoin="round" />
+      <circle cx="12" cy="10" r="2.2" />
+    </NavIcon>
+  ),
+  prospectos: (
+    <NavIcon>
+      <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" strokeLinecap="round" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M19 8v6M22 11h-6" strokeLinecap="round" />
+    </NavIcon>
+  ),
+  usuarios: (
+    <NavIcon>
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 21a8 8 0 0116 0" strokeLinecap="round" />
+    </NavIcon>
+  ),
+  clinicas: (
+    <NavIcon>
+      <path d="M4 21V5a2 2 0 012-2h8a2 2 0 012 2v16M10 21v-6h4v6M14 21h6v-9a2 2 0 00-2-2h-4" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M9 8h2M10 7v2" strokeLinecap="round" />
+    </NavIcon>
+  ),
+  ges: (
+    <NavIcon>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 8v8M8 12h8" strokeLinecap="round" />
+    </NavIcon>
+  ),
+  "reportes-pdf": (
+    <NavIcon>
+      <path d="M7 3h7l5 5v13a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1z" strokeLinejoin="round" />
+      <path d="M14 3v5h5M9 13h6M9 17h4" strokeLinecap="round" />
+    </NavIcon>
+  ),
+  convenios: (
+    <NavIcon>
+      <path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2" strokeLinecap="round" />
+      <rect x="4" y="7" width="16" height="14" rx="2" />
+      <path d="M9 12h6M9 16h4" strokeLinecap="round" />
+    </NavIcon>
+  ),
 };
 
 export interface ExecutiveShellProps {
@@ -92,79 +178,75 @@ export function ExecutiveShell({
     [activeSection, navItems],
   );
 
+  const userSubtitle = isAdmin ? "Administrador" : "Ejecutivo comercial";
+
   return (
-    <div className={joinClasses(appShellRoot, ui.canvas, "min-h-screen")}>
-      <header
-        className={joinClasses(
-          "sticky top-0 z-30 shrink-0 border-b bg-white shadow-sm",
-          ui.border,
-        )}
-      >
-        <div className="mx-auto flex max-w-7xl items-center gap-2 px-3 py-2.5 sm:gap-3 sm:px-6 sm:py-3 lg:px-8">
+    <div className={joinClasses(appShellRoot, "min-h-screen bg-bg-layout")}>
+      <header className="premium-executive-header sticky top-0 z-30 shrink-0">
+        <div className="mx-auto flex max-w-7xl items-center gap-2 px-3 py-3 sm:gap-3 sm:px-6 sm:py-3.5 lg:px-8">
+          <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3">
+            <LandingLogo
+              size="lg"
+              transparent
+              variant="icon"
+              className="premium-executive-logo"
+            />
+            <div className="min-w-0">
+              <p className="premium-executive-header-title truncate text-sm sm:text-base">
+                {panelTitle}
+              </p>
+              <p className="premium-executive-header-subtitle truncate text-[11px] sm:text-xs lg:hidden">
+                {activeSectionLabel}
+              </p>
+              <p className="premium-executive-header-subtitle hidden truncate text-xs lg:block">
+                Cotizador Premium · {panelSubtitle}
+              </p>
+            </div>
+          </div>
+
+          <div className="hidden shrink-0 items-center gap-1.5 sm:gap-2.5 lg:flex">
+            <Link
+              href="/"
+              className={joinClasses(
+                "premium-executive-header-cta px-3 text-sm sm:px-4",
+                touchTarget,
+              )}
+            >
+              Cotizador público
+            </Link>
+
+            {staffUser ? (
+              <UserMenu
+                fullName={staffUser.fullName}
+                subtitle={userSubtitle}
+                compact
+                onDark
+              />
+            ) : null}
+          </div>
+
           <button
             type="button"
             onClick={() => setMobileNavOpen(true)}
             className={joinClasses(
-              "inline-flex shrink-0 rounded-xl text-muted transition lg:hidden",
+              "premium-executive-menu-btn inline-flex shrink-0 rounded-md lg:hidden",
               touchTarget,
-              ui.borderHairline,
-              ui.hoverSurface,
             )}
             aria-label="Abrir menú de navegación"
             aria-expanded={mobileNavOpen}
           >
             <ExecutiveMenuIcon />
           </button>
-
-          <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3">
-            <LandingLogo size="sm" />
-            <div className="min-w-0">
-              <p className="truncate text-sm font-bold text-primary-dark sm:text-base">
-                {panelTitle}
-              </p>
-              <p className="truncate text-[11px] text-muted sm:text-xs lg:hidden">
-                {activeSectionLabel}
-              </p>
-              <p className="hidden truncate text-xs text-muted lg:block">
-                Cotizador Premium · {panelSubtitle}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-            <Link
-              href="/"
-              className={joinClasses(
-                "hidden rounded-lg px-3 text-sm font-semibold sm:inline-flex sm:px-4",
-                touchTarget,
-                ui.ctaOutline,
-              )}
-            >
-              <span className="hidden md:inline">Cotizador público</span>
-              <span className="md:hidden">Público</span>
-            </Link>
-
-            {staffUser ? (
-              <UserMenu
-                fullName={staffUser.fullName}
-                subtitle={isAdmin ? "Administrador" : "Ejecutivo comercial"}
-                compact
-              />
-            ) : null}
-          </div>
         </div>
 
         <nav
-          className={joinClasses(
-            "premium-executive-tabs hidden border-t bg-white px-4 sm:px-6 lg:block lg:px-8",
-            ui.border,
-          )}
+          className="premium-executive-tabs hidden border-t px-4 sm:px-6 lg:block lg:px-8"
           aria-label="Secciones del panel"
         >
           <div
             className={joinClasses(
               horizontalScrollRail,
-              "mx-auto flex max-w-7xl gap-1 py-2",
+              "mx-auto flex max-w-7xl gap-1.5 py-2.5",
             )}
           >
             {navItems.map((item) => {
@@ -176,18 +258,14 @@ export function ExecutiveShell({
                   type="button"
                   onClick={() => onSectionChange(item.id)}
                   className={joinClasses(
-                    "shrink-0 rounded-lg px-4 py-2.5 text-sm font-semibold transition",
+                    "premium-executive-tab shrink-0 px-3.5 py-2 text-sm",
                     touchTarget,
-                    isActive
-                      ? joinClasses(
-                          "premium-executive-tab-active bg-primary text-primary-foreground shadow-[0_4px_14px_-6px_var(--primary)]",
-                        )
-                      : "text-muted hover:bg-primary/5 hover:text-primary-dark",
-                    item.adminOnly ? "border border-transparent" : "",
+                    isActive && "premium-executive-tab-active",
                   )}
                   aria-current={isActive ? "page" : undefined}
                 >
-                  {item.label}
+                  {SECTION_ICONS[item.id]}
+                  <span>{item.label}</span>
                 </button>
               );
             })}
@@ -202,6 +280,9 @@ export function ExecutiveShell({
         activeSection={activeSection}
         onSectionChange={onSectionChange}
         panelTitle={panelTitle}
+        sectionIcons={SECTION_ICONS}
+        userFullName={staffUser?.fullName}
+        userSubtitle={staffUser ? userSubtitle : null}
       />
 
       {isFullBleed ? (

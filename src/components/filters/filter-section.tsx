@@ -26,11 +26,11 @@ const executiveHeaderAccentClass: Record<
   string
 > = {
   primary:
-    "border-l-[3px] border-l-primary bg-primary/12 text-primary-dark shadow-sm ring-1 ring-primary/15",
+    "border-l-[3px] border-l-[color:var(--dash-royal,#0d6dee)] bg-[color:color-mix(in_srgb,var(--dash-royal,#0d6dee)_10%,white)] text-[color:var(--dash-navy,#092558)] shadow-sm ring-1 ring-[color:color-mix(in_srgb,var(--dash-royal,#0d6dee)_18%,transparent)]",
   secondary:
-    "border-l-[3px] border-l-secondary bg-secondary-muted text-secondary shadow-sm ring-1 ring-secondary/20",
+    "border-l-[3px] border-l-[color:var(--dash-cyan,#1ac9ea)] bg-[color:color-mix(in_srgb,var(--dash-cyan,#1ac9ea)_12%,white)] text-[color:var(--dash-navy,#092558)] shadow-sm ring-1 ring-[color:color-mix(in_srgb,var(--dash-cyan,#1ac9ea)_22%,transparent)]",
   neutral:
-    "border-l-[3px] border-l-primary-dark/35 bg-primary-dark/[0.06] text-primary-dark shadow-sm ring-1 ring-primary-dark/10",
+    "border-l-[3px] border-l-[color:color-mix(in_srgb,var(--dash-navy,#092558)_40%,transparent)] bg-[color:color-mix(in_srgb,var(--dash-navy,#092558)_6%,white)] text-[color:var(--dash-navy,#092558)] shadow-sm ring-1 ring-[color:color-mix(in_srgb,var(--dash-navy,#092558)_12%,transparent)]",
 };
 
 export function FilterSection({

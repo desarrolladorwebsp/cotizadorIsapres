@@ -108,7 +108,7 @@ export function FiltersSidebar({
           "lg:w-80 lg:max-w-[20rem] lg:shrink-0 lg:translate-x-0 lg:shadow-none",
           filtersSidebarDesktopShell,
           executiveVisual
-            ? "border-border/60 bg-white lg:shadow-[8px_0_28px_-16px_rgb(10_47_92/0.12)]"
+            ? "border-[color:color-mix(in_srgb,var(--dash-navy)_25%,var(--border))] bg-white lg:shadow-[8px_0_28px_-16px_rgb(9_37_88/0.14)]"
             : joinClasses("bg-white", ui.border),
           !open && "pointer-events-none lg:pointer-events-auto",
           open ? "lg:flex" : "lg:hidden",
@@ -120,14 +120,15 @@ export function FiltersSidebar({
             className={joinClasses(
               "flex shrink-0 items-center justify-between border-b px-4 py-3.5 sm:px-5 lg:px-5",
               executiveVisual
-                ? "border-primary/20 bg-primary/10"
+                ? "border-[color:color-mix(in_srgb,var(--dash-cyan)_35%,transparent)] bg-[color:var(--dash-navy)]"
                 : joinClasses("bg-white py-4", ui.border),
             )}
           >
             <div className="min-w-0">
               <p
                 className={joinClasses(
-                  "text-sm font-bold tracking-tight text-primary-dark",
+                  "text-sm font-bold tracking-tight",
+                  executiveVisual ? "text-white" : "text-primary-dark",
                 )}
               >
                 Filtros y beneficiarios
@@ -138,9 +139,11 @@ export function FiltersSidebar({
                 type="button"
                 onClick={onClose}
                 className={joinClasses(
-                  "inline-flex rounded-lg text-muted transition lg:hidden",
+                  "inline-flex rounded-md transition lg:hidden",
                   touchTarget,
-                  ui.hoverSurface,
+                  executiveVisual
+                    ? "text-white/80 hover:bg-white/10 hover:text-white"
+                    : joinClasses("text-muted", ui.hoverSurface),
                 )}
                 aria-label="Cerrar filtros"
               >
@@ -150,9 +153,11 @@ export function FiltersSidebar({
                 type="button"
                 onClick={onClose}
                 className={joinClasses(
-                  "hidden rounded-lg px-3 text-xs font-medium text-muted transition lg:inline-flex",
+                  "hidden rounded-md px-3 text-xs font-medium transition lg:inline-flex",
                   touchTarget,
-                  ui.hoverSurface,
+                  executiveVisual
+                    ? "text-white/80 hover:bg-white/10 hover:text-white"
+                    : joinClasses("text-muted", ui.hoverSurface),
                 )}
               >
                 Ocultar

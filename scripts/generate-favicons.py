@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Genera favicons y assets PWA desde el logo principal de Cotizador Premium."""
+"""Genera favicons y assets PWA desde el icono oficial de Cotizador Premium."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from pathlib import Path
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = ROOT / "public" / "images" / "logo-cotizador-premium.jpeg"
+SOURCE = ROOT / "public" / "images" / "icono-logo-cotizador-premium.png"
 PUBLIC = ROOT / "public"
 APP = ROOT / "src" / "app"
 
@@ -55,7 +55,7 @@ def save_ico(image: Image.Image, path: Path) -> None:
 
 def main() -> None:
     if not SOURCE.exists():
-        raise FileNotFoundError(f"No se encontró el logo: {SOURCE}")
+        raise FileNotFoundError(f"No se encontró el icono: {SOURCE}")
 
     logo = load_square_logo()
     PUBLIC.mkdir(parents=True, exist_ok=True)
@@ -73,7 +73,7 @@ def main() -> None:
     save_png(logo, APP / "apple-icon.png", 180)
     shutil.copy2(PUBLIC / "favicon.ico", APP / "favicon.ico")
 
-    print("\nFavicons generados en public/ y src/app/")
+    print("\nFavicons generados desde icono-logo-cotizador-premium.png")
 
 
 if __name__ == "__main__":

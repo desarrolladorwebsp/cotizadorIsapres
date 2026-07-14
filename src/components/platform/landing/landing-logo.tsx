@@ -1,9 +1,19 @@
 import Image from "next/image";
-import { COTIZADOR_PREMIUM_LOGO_PATH } from "@/lib/partner-entity/cotizador-premium-palette";
+import {
+  COTIZADOR_PREMIUM_ICON_PATH,
+  COTIZADOR_PREMIUM_LOGO_PATH,
+} from "@/lib/partner-entity/cotizador-premium-palette";
 
 interface LandingLogoProps {
   size?: "sm" | "md" | "lg";
   className?: string;
+  /** Sin fondo ni sombra (p. ej. header navy del panel ejecutivo). */
+  transparent?: boolean;
+  /**
+   * `logo` = wordmark completo (landing).
+   * `icon` = isotipo oficial (CEO / panel / favicon-related UI).
+   */
+  variant?: "logo" | "icon";
 }
 
 const SIZE = {
@@ -12,19 +22,30 @@ const SIZE = {
   lg: { box: "h-14 w-14", image: 56, sizes: "56px" },
 } as const;
 
-export function LandingLogo({ size = "md", className = "" }: LandingLogoProps) {
+export function LandingLogo({
+  size = "md",
+  className = "",
+  transparent = false,
+  variant = "logo",
+}: LandingLogoProps) {
   const config = SIZE[size];
+  const src =
+    variant === "icon" ? COTIZADOR_PREMIUM_ICON_PATH : COTIZADOR_PREMIUM_LOGO_PATH;
 
   return (
     <span
-      className={`relative inline-flex shrink-0 overflow-hidden rounded-xl bg-background shadow-sm ${config.box} ${className}`}
+      className={`relative inline-flex shrink-0 ${
+        transparent
+          ? "overflow-visible bg-transparent shadow-none"
+          : "overflow-hidden rounded-xl bg-background shadow-sm"
+      } ${config.box} ${className}`}
     >
       <Image
-        src={COTIZADOR_PREMIUM_LOGO_PATH}
+        src={src}
         alt="Cotizador Premium"
         width={config.image}
         height={config.image}
-        className="h-full w-full object-contain p-0.5"
+        className={`h-full w-full object-contain ${transparent ? "p-0" : "p-0.5"}`}
         sizes={config.sizes}
         priority
       />

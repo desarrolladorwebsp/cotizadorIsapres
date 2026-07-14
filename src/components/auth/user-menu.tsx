@@ -12,6 +12,8 @@ export interface UserMenuProps {
   loginPath?: string;
   /** Vista compacta para cabeceras móviles del panel ejecutivo. */
   compact?: boolean;
+  /** Texto claro sobre header navy del panel ejecutivo. */
+  onDark?: boolean;
 }
 
 function getInitials(fullName: string): string {
@@ -26,6 +28,7 @@ export function UserMenu({
   subtitle,
   loginPath = STAFF_LOGIN_PATH,
   compact = false,
+  onDark = false,
 }: UserMenuProps) {
   const [loading, setLoading] = useState(false);
 
@@ -39,22 +42,35 @@ export function UserMenu({
       className={joinClasses(
         "ml-auto flex items-center",
         compact ? "gap-1.5" : "gap-2 sm:gap-3",
+        onDark && "premium-executive-user-on-dark",
       )}
     >
       <div className="hidden text-right sm:block">
-        <p className="text-sm font-medium tracking-tight text-foreground">
+        <p
+          className={joinClasses(
+            "premium-user-name text-sm font-semibold tracking-tight",
+            onDark ? "" : "text-foreground font-medium",
+          )}
+        >
           {fullName}
         </p>
-        <p className="text-xs text-muted">{subtitle}</p>
+        <p
+          className={joinClasses(
+            "premium-user-subtitle text-xs",
+            onDark ? "" : "text-muted",
+          )}
+        >
+          {subtitle}
+        </p>
       </div>
 
       <div
         className={joinClasses(
-          "rounded-full text-xs font-semibold text-muted",
+          "premium-user-avatar rounded-full text-xs font-bold",
           compact
             ? "flex size-9 items-center justify-center"
             : joinClasses(touchTarget, "md:size-10"),
-          ui.borderHairline,
+          !onDark && joinClasses("text-muted", ui.borderHairline),
         )}
         aria-hidden
       >
@@ -66,12 +82,14 @@ export function UserMenu({
         onClick={() => void handleLogout()}
         disabled={loading}
         className={joinClasses(
-          "rounded-lg font-semibold text-muted transition",
-          compact
-            ? "px-2.5 py-2 text-[11px]"
-            : "px-3 py-2 text-xs",
-          ui.borderHairline,
-          ui.hoverSurface,
+          "premium-user-logout font-semibold transition",
+          compact ? "px-2.5 py-2 text-[11px]" : "px-3 py-2 text-xs",
+          !onDark &&
+            joinClasses(
+              "rounded-lg text-muted",
+              ui.borderHairline,
+              ui.hoverSurface,
+            ),
           "disabled:cursor-not-allowed disabled:opacity-60",
         )}
       >
