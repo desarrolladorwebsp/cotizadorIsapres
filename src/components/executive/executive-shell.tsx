@@ -187,8 +187,7 @@ export function ExecutiveShell({
           <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3">
             <LandingLogo
               size="lg"
-              transparent
-              variant="icon"
+              variant="logo"
               className="premium-executive-logo"
             />
             <div className="min-w-0">

@@ -10,8 +10,8 @@ interface LandingLogoProps {
   /** Sin fondo ni sombra (p. ej. header navy del panel ejecutivo). */
   transparent?: boolean;
   /**
-   * `logo` = wordmark completo (landing).
-   * `icon` = isotipo oficial (CEO / panel / favicon-related UI).
+   * `logo` = logo oficial de página (`logo-cotizador-premium.png`).
+   * `icon` = isotipo para favicon / header compacto (`icono-logo-cotizador-premium.png`).
    */
   variant?: "logo" | "icon";
 }

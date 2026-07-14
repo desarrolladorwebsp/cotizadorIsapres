@@ -7,7 +7,7 @@ const embedFrameAncestors = resolveEmbedFrameAncestorsDirective();
 const nextConfig: NextConfig = {
   serverExternalPackages: ["@prisma/client", "prisma"],
   outputFileTracingIncludes: {
-    "/api/**/*": ["./public/images/logo-cotizador-premium.jpeg"],
+    "/api/**/*": ["./public/images/logo-cotizador-premium.png"],
   },
   async headers() {
     return [

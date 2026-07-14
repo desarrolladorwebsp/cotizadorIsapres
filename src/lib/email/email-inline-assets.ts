@@ -4,7 +4,7 @@ import type { Attachment } from "resend";
 
 export const PREMIUM_EMAIL_LOGO_CID = "cotizador-premium-logo";
 
-const PREMIUM_LOGO_FILENAME = "logo-cotizador-premium.jpeg";
+const PREMIUM_LOGO_FILENAME = "logo-cotizador-premium.png";
 
 /** Ruta fija del logo para tracing en build/serverless. */
 const PREMIUM_LOGO_PATH = path.join(
@@ -21,7 +21,7 @@ export function buildPremiumLogoInlineAttachment(): Attachment | null {
   return {
     content: readFileSync(PREMIUM_LOGO_PATH),
     filename: PREMIUM_LOGO_FILENAME,
-    contentType: "image/jpeg",
+    contentType: "image/png",
     contentId: PREMIUM_EMAIL_LOGO_CID,
   };
 }
