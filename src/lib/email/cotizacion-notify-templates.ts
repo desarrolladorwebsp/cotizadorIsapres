@@ -70,8 +70,24 @@ function buildPlanHighlightLines(
   const lines = [
     `${escapeHtml(data.plan.codigo)} · ${escapeHtml(data.plan.isapre)}`,
     escapeHtml(data.plan.nombre),
-    `${escapeHtml(data.plan.precioUf)} · ${escapeHtml(data.plan.precioClp)}`,
   ];
+
+  if (
+    data.plan.descuentoConvenioPercent != null &&
+    data.plan.precioConConvenioUf &&
+    data.plan.precioListaUf
+  ) {
+    lines.push(
+      `Precio lista: ${escapeHtml(data.plan.precioListaUf)} · ${escapeHtml(data.plan.precioListaClp ?? "")}`,
+    );
+    lines.push(
+      `Total con convenio (−${escapeHtml(String(data.plan.descuentoConvenioPercent))}%): ${escapeHtml(data.plan.precioConConvenioUf)} · ${escapeHtml(data.plan.precioConConvenioClp ?? "")}`,
+    );
+  } else {
+    lines.push(
+      `${escapeHtml(data.plan.precioUf)} · ${escapeHtml(data.plan.precioClp)}`,
+    );
+  }
 
   if (data.plan.tipoPlan) {
     lines.push(`Tipo: ${escapeHtml(data.plan.tipoPlan)}`);
@@ -99,6 +115,18 @@ function buildConvenioHighlightLines(
     );
   }
 
+  if (
+    data.convenioEmpresa.descuentoAplicadoAlPlan &&
+    data.convenioEmpresa.precioConDescuentoUf
+  ) {
+    lines.push(
+      `Precio lista del plan: ${escapeHtml(data.convenioEmpresa.precioListaUf ?? "—")}`,
+    );
+    lines.push(
+      `Total referencial con descuento: ${escapeHtml(data.convenioEmpresa.precioConDescuentoUf)} · ${escapeHtml(data.convenioEmpresa.precioConDescuentoClp ?? "")}`,
+    );
+  }
+
   lines.push(escapeHtml(COMPANY_AGREEMENT_DISCOUNT_DISCLAIMER));
 
   return lines;
@@ -113,8 +141,8 @@ function buildConvenioTableRows(data: CotizacionNotifyInput): string[] {
       escapeHtml(data.convenioEmpresa.nombreEmpresa),
     ),
     renderTableRow(
-      "RUT empresa (convenio)",
-      escapeHtml(data.convenioEmpresa.rutEmpresa),
+      "RUT empresa (validar)",
+      `<strong style="color:#b91c1c;">${escapeHtml(data.convenioEmpresa.rutEmpresa)}</strong>`,
     ),
     renderTableRow(
       "Descuento convenio",
@@ -127,6 +155,36 @@ function buildConvenioTableRows(data: CotizacionNotifyInput): string[] {
           renderTableRow(
             "Isapre convenio",
             escapeHtml(data.convenioEmpresa.isapreName),
+          ),
+        ]
+      : []),
+    renderTableRow(
+      "Descuento aplicado al plan solicitado",
+      escapeHtml(
+        data.convenioEmpresa.descuentoAplicadoAlPlan === true
+          ? "Sí (precio referencial con descuento)"
+          : data.convenioEmpresa.descuentoAplicadoAlPlan === false
+            ? "No (el plan no pertenece a la isapre del convenio)"
+            : "—",
+      ),
+    ),
+    ...(data.convenioEmpresa.precioListaUf
+      ? [
+          renderTableRow(
+            "Precio lista del plan",
+            escapeHtml(
+              `${data.convenioEmpresa.precioListaUf} · ${data.convenioEmpresa.precioListaClp ?? ""}`,
+            ),
+          ),
+        ]
+      : []),
+    ...(data.convenioEmpresa.precioConDescuentoUf
+      ? [
+          renderTableRow(
+            "Total con descuento (referencial)",
+            `<strong style="color:#b91c1c;">${escapeHtml(
+              `${data.convenioEmpresa.precioConDescuentoUf} · ${data.convenioEmpresa.precioConDescuentoClp ?? ""}`,
+            )}</strong>`,
           ),
         ]
       : []),
@@ -220,6 +278,46 @@ function buildAdminPlanRows(data: CotizacionNotifyInput): string[] {
     renderTableRow("Tipo de plan", escapeHtml(data.plan.tipoPlan ?? "—")),
     renderTableRow("Precio final UF", escapeHtml(data.plan.precioUf)),
     renderTableRow("Precio final CLP", escapeHtml(data.plan.precioClp)),
+    ...(data.plan.precioListaUf
+      ? [
+          renderTableRow(
+            "Precio lista UF",
+            escapeHtml(data.plan.precioListaUf),
+          ),
+        ]
+      : []),
+    ...(data.plan.precioListaClp
+      ? [
+          renderTableRow(
+            "Precio lista CLP",
+            escapeHtml(data.plan.precioListaClp),
+          ),
+        ]
+      : []),
+    ...(data.plan.precioConConvenioUf
+      ? [
+          renderTableRow(
+            "Total con convenio UF",
+            `<strong style="color:#b91c1c;">${escapeHtml(data.plan.precioConConvenioUf)}</strong>`,
+          ),
+        ]
+      : []),
+    ...(data.plan.precioConConvenioClp
+      ? [
+          renderTableRow(
+            "Total con convenio CLP",
+            `<strong style="color:#b91c1c;">${escapeHtml(data.plan.precioConConvenioClp)}</strong>`,
+          ),
+        ]
+      : []),
+    ...(data.plan.descuentoConvenioPercent != null
+      ? [
+          renderTableRow(
+            "% descuento convenio",
+            escapeHtml(`${data.plan.descuentoConvenioPercent}%`),
+          ),
+        ]
+      : []),
     renderTableRow("Precio base UF", escapeHtml(data.plan.precioBaseUf ?? "—")),
     renderTableRow("GES por beneficiario", escapeHtml(data.plan.gesPremiumUf ?? "—")),
     renderTableRow("Plan TOP", escapeHtml(formatBoolean(data.plan.tieneTop))),
@@ -302,6 +400,15 @@ export function buildAdminCotizacionEmailHtml(
       ]
     : [];
 
+  const convenioHighlight = buildConvenioHighlightLines(data);
+  const convenioSection = convenioHighlight
+    ? renderHighlightBox(
+        brand,
+        "⚠ Convenio empresa — validar RUT",
+        convenioHighlight,
+      )
+    : "";
+
   const rows = [
     renderTableRow("Correo del usuario", escapeHtml(data.email)),
     ...solicitanteRows,
@@ -335,6 +442,7 @@ export function buildAdminCotizacionEmailHtml(
   const body = `
     <h1 style="margin:0 0 8px;font-size:22px;color:#222;">Nueva cotización recibida</h1>
     <p style="margin:0 0 20px;font-size:14px;color:#666;">${escapeHtml(timestamp)} (America/Santiago)</p>
+    ${convenioSection}
     ${planBlock}
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:1px solid #eee;border-radius:10px;overflow:hidden;">
       ${rows.join("")}

@@ -36,7 +36,9 @@ export function PublicPlanAgreementPrices({
 
       <div className="flex items-center gap-3 sm:gap-4">
         <div className="text-left sm:text-right">
-          <p className="text-[10px] font-medium text-muted">Desde</p>
+          <p className="text-[10px] font-medium text-muted">
+            {discounted ? "Total con convenio" : "Desde"}
+          </p>
           {discounted ? (
             <p className="text-[10px] tabular-nums text-muted line-through">
               {formatQuotedUf(prices.listFinalPriceUf)}
@@ -56,7 +58,9 @@ export function PublicPlanAgreementPrices({
           </p>
         </div>
         <div className="text-left sm:text-right">
-          <p className="text-[10px] font-medium text-muted">Desde</p>
+          <p className="text-[10px] font-medium text-muted">
+            {discounted ? "Total / mes" : "Desde"}
+          </p>
           {discounted ? (
             <p className="text-[10px] tabular-nums text-muted line-through">
               {formatPlanClp(prices.listFinalPriceClp)}
@@ -100,7 +104,7 @@ export function ExecutivePlanAgreementPrices({
     >
       <div className="flex items-center gap-2 lg:justify-end">
         <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
-          Desde
+          {discounted ? "Total con convenio" : "Desde"}
         </p>
         {discounted ? (
           <span className="inline-flex items-center rounded-md bg-red-600 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">

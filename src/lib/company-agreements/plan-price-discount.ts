@@ -67,9 +67,9 @@ export function resolveAgreementDiscountPercentForPlan(
 }
 
 /**
- * Aplica el descuento referencial del convenio sobre el componente de riesgo
- * (base × factor). La prima GES no se descuenta.
- * No modifica la cotización base: solo produce valores de visualización.
+ * Aplica el descuento referencial del convenio sobre el precio final
+ * mostrado del plan (UF/CLP). Es referencial: no altera el cálculo base
+ * ni el valor persistido sin descuento.
  */
 export function buildPlanAgreementPriceDisplay(
   quote: PlanFinalPriceQuote,
@@ -94,8 +94,8 @@ export function buildPlanAgreementPriceDisplay(
   }
 
   const factor = Math.max(0, 1 - discountPercent / 100);
-  const discountedRiskUf = quote.riskComponentUf * factor;
-  const displayFinalPriceUf = discountedRiskUf + quote.gesTotalUf;
+  const displayFinalPriceUf =
+    Math.round(quote.finalPriceUf * factor * 1_000_000) / 1_000_000;
   const displayFinalPriceClp = calculateFinalPlanPriceClp(
     displayFinalPriceUf,
     quote.ufToClp,

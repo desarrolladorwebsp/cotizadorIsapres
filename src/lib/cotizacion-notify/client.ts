@@ -33,6 +33,11 @@ import type {
 } from "@/domain";
 import type { DashboardFiltersState } from "@/types/filters";
 import type { PartnerEntityTheme } from "@/types/partner-entity";
+import type { PlanAgreementPriceDisplay } from "@/lib/company-agreements/plan-price-discount";
+import {
+  buildPlanAgreementPriceDisplay,
+  resolveAgreementDiscountPercentForPlan,
+} from "@/lib/company-agreements/plan-price-discount";
 
 export interface BuildCotizacionNotifyPayloadInput {
   email: string;
@@ -44,7 +49,11 @@ export interface BuildCotizacionNotifyPayloadInput {
   currency: CurrencyDisplay;
   deepLink?: ParsedCotizadorDeepLink;
   plan?: HealthPlanSummary;
+  /** Cotización base sin descuento (se usa para lista y persistencia). */
   priceQuote?: PlanFinalPriceQuote;
+  /** Cotización a mostrar/e-mail; si no viene, se deriva del convenio. */
+  displayPriceQuote?: PlanFinalPriceQuote;
+  agreementPrices?: PlanAgreementPriceDisplay | null;
   cotizadorUrl?: string;
   partnerEntitySlug?: string | null;
   partnerEntityName?: string | null;
@@ -108,8 +117,16 @@ function buildPlanPayload(
   plan: HealthPlanSummary,
   priceQuote: PlanFinalPriceQuote,
   beneficiarySummary: BeneficiaryGroupSummary,
+  agreementPrices?: PlanAgreementPriceDisplay | null,
 ): CotizacionNotifyPlan {
   const planType = resolvePrimaryPlanType(plan);
+  const hasDiscount = Boolean(agreementPrices?.hasAgreementDiscount);
+  const displayUf = hasDiscount
+    ? agreementPrices!.displayFinalPriceUf
+    : priceQuote.finalPriceUf;
+  const displayClp = hasDiscount
+    ? agreementPrices!.displayFinalPriceClp
+    : priceQuote.finalPriceClp;
 
   return {
     codigo: plan.unique_code,
@@ -117,8 +134,21 @@ function buildPlanPayload(
     nombre: resolveCommercialPlanName(plan),
     isapre: plan.isapre,
     tipoPlan: PLAN_TYPE_LABELS[planType],
-    precioUf: formatQuotedUf(priceQuote.finalPriceUf),
-    precioClp: formatPlanClp(priceQuote.finalPriceClp),
+    precioUf: formatQuotedUf(displayUf),
+    precioClp: formatPlanClp(displayClp),
+    precioListaUf: formatQuotedUf(priceQuote.finalPriceUf),
+    precioListaClp: formatPlanClp(priceQuote.finalPriceClp),
+    ...(hasDiscount
+      ? {
+          precioConConvenioUf: formatQuotedUf(
+            agreementPrices!.displayFinalPriceUf,
+          ),
+          precioConConvenioClp: formatPlanClp(
+            agreementPrices!.displayFinalPriceClp,
+          ),
+          descuentoConvenioPercent: agreementPrices!.discountPercent,
+        }
+      : {}),
     precioBaseUf: formatPlanUf(plan.base_price_uf),
     gesPremiumUf: formatPlanUf(plan.ges_premium_uf),
     tieneTop: plan.has_top,
@@ -136,12 +166,69 @@ function buildPlanPayload(
   };
 }
 
+function enrichConvenioForNotify(
+  convenio: CotizacionNotifyConvenio | undefined,
+  plan: HealthPlanSummary | undefined,
+  priceQuote: PlanFinalPriceQuote | undefined,
+  agreementPrices: PlanAgreementPriceDisplay | null | undefined,
+): CotizacionNotifyConvenio | undefined {
+  if (!convenio) return undefined;
+
+  const derived =
+    agreementPrices ??
+    (plan && priceQuote
+      ? buildPlanAgreementPriceDisplay(
+          priceQuote,
+          resolveAgreementDiscountPercentForPlan(plan.isapre, {
+            discountPercent: convenio.descuentoPercent ?? null,
+            isapreId: convenio.isapreId ?? null,
+            isapreName: convenio.isapreName ?? null,
+          }),
+        )
+      : null);
+
+  if (!derived?.hasAgreementDiscount) {
+    return {
+      ...convenio,
+      descuentoAplicadoAlPlan: false,
+      precioListaUf: priceQuote
+        ? formatQuotedUf(priceQuote.finalPriceUf)
+        : undefined,
+      precioListaClp: priceQuote
+        ? formatPlanClp(priceQuote.finalPriceClp)
+        : undefined,
+    };
+  }
+
+  return {
+    ...convenio,
+    descuentoAplicadoAlPlan: true,
+    precioListaUf: formatQuotedUf(derived.listFinalPriceUf),
+    precioListaClp: formatPlanClp(derived.listFinalPriceClp),
+    precioConDescuentoUf: formatQuotedUf(derived.displayFinalPriceUf),
+    precioConDescuentoClp: formatPlanClp(derived.displayFinalPriceClp),
+  };
+}
+
 export function buildCotizacionNotifyPayload(
   input: BuildCotizacionNotifyPayloadInput,
 ): CotizacionNotifyInput {
   const cargas = input.beneficiarySummary.dependents
     .map((dependent) => dependent.age)
     .filter((age): age is number => age !== null);
+
+  const agreementPrices =
+    input.agreementPrices ??
+    (input.plan && input.priceQuote && input.convenioEmpresa
+      ? buildPlanAgreementPriceDisplay(
+          input.priceQuote,
+          resolveAgreementDiscountPercentForPlan(input.plan.isapre, {
+            discountPercent: input.convenioEmpresa.descuentoPercent ?? null,
+            isapreId: input.convenioEmpresa.isapreId ?? null,
+            isapreName: input.convenioEmpresa.isapreName ?? null,
+          }),
+        )
+      : null);
 
   const payload: CotizacionNotifyInput = {
     email: input.email.trim(),
@@ -161,7 +248,12 @@ export function buildCotizacionNotifyPayload(
     partnerEntityTheme: input.partnerEntityTheme ?? undefined,
     partnerEntityLogoUrl: resolveAbsoluteLogoUrl(input.partnerEntityLogoUrl),
     solicitante: input.solicitante,
-    convenioEmpresa: input.convenioEmpresa,
+    convenioEmpresa: enrichConvenioForNotify(
+      input.convenioEmpresa,
+      input.plan,
+      input.priceQuote,
+      agreementPrices,
+    ),
   };
 
   if (input.plan && input.priceQuote) {
@@ -169,6 +261,7 @@ export function buildCotizacionNotifyPayload(
       input.plan,
       input.priceQuote,
       input.beneficiarySummary,
+      agreementPrices,
     );
   }
 

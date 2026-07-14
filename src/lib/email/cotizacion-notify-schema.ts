@@ -48,6 +48,11 @@ export const cotizacionNotifyPlanSchema = z.object({
   tipoPlan: z.string().trim().min(1).optional(),
   precioUf: z.string().trim().min(1),
   precioClp: z.string().trim().min(1),
+  precioListaUf: z.string().trim().min(1).optional(),
+  precioListaClp: z.string().trim().min(1).optional(),
+  precioConConvenioUf: z.string().trim().min(1).optional(),
+  precioConConvenioClp: z.string().trim().min(1).optional(),
+  descuentoConvenioPercent: z.number().finite().optional(),
   precioBaseUf: z.string().trim().min(1).optional(),
   gesPremiumUf: z.string().trim().min(1).optional(),
   tieneTop: z.boolean().optional(),
@@ -74,6 +79,12 @@ export const cotizacionNotifyConvenioSchema = z.object({
   descuentoPercent: z.number().finite().optional(),
   isapreId: z.string().trim().min(1).optional(),
   isapreName: z.string().trim().min(1).optional(),
+  /** Precio referencial del plan con descuento, si el plan solicitado aplica. */
+  precioConDescuentoUf: z.string().trim().min(1).optional(),
+  precioConDescuentoClp: z.string().trim().min(1).optional(),
+  precioListaUf: z.string().trim().min(1).optional(),
+  precioListaClp: z.string().trim().min(1).optional(),
+  descuentoAplicadoAlPlan: z.boolean().optional(),
 });
 
 export const cotizacionNotifyInputSchema = z.object({
