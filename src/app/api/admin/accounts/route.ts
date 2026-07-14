@@ -53,17 +53,7 @@ export async function POST(request: Request) {
 
     const rutRaw = payload.rut?.trim();
 
-    if (payload.realm === "executive") {
-      if (!rutRaw) {
-        return NextResponse.json(
-          { error: "El RUT es obligatorio para invitar ejecutivos." },
-          { status: 400 },
-        );
-      }
-      if (!isValidRut(rutRaw)) {
-        return NextResponse.json({ error: "El RUT no es válido." }, { status: 400 });
-      }
-    } else if (rutRaw && !isValidRut(rutRaw)) {
+    if (rutRaw && !isValidRut(rutRaw)) {
       return NextResponse.json({ error: "El RUT no es válido." }, { status: 400 });
     }
 

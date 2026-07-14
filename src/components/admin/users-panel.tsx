@@ -29,7 +29,6 @@ import {
   resendPendingStaffInvite,
   updateStaffAccount,
 } from "@/lib/api/admin-client";
-import { sanitizeRutInput } from "@/lib/auth/rut";
 import { ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type {
@@ -87,26 +86,6 @@ function getAccountStatus(account: StaffAccountRecord): {
   return { label: "Activo", tone: "success" };
 }
 
-function RutFieldInfoIcon() {
-  return (
-    <span
-      className="inline-flex size-4 items-center justify-center rounded-full text-muted"
-      title="Formato: 25684045-6 (sin puntos, guion solo antes del dígito verificador)"
-      aria-label="Formato: 25684045-6 (sin puntos, guion solo antes del dígito verificador)"
-    >
-      <svg viewBox="0 0 24 24" fill="none" className="size-3.5" aria-hidden>
-        <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.6" />
-        <path
-          d="M12 10v5M12 8h.01"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-        />
-      </svg>
-    </span>
-  );
-}
-
 export function UsersPanel({
   onNotify,
   executivesOnly = false,
@@ -123,9 +102,8 @@ export function UsersPanel({
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState<{
     email: string;
-    rut: string;
     realm: StaffRealm;
-  }>({ email: "", rut: "", realm: "executive" });
+  }>({ email: "", realm: "executive" });
 
   async function loadAccounts() {
     setLoading(true);
@@ -209,7 +187,7 @@ export function UsersPanel({
   }, [directoryRows, search]);
 
   function openModal() {
-    setDraft({ email: "", rut: "", realm: "executive" });
+    setDraft({ email: "", realm: "executive" });
     setModalOpen(true);
   }
 
@@ -229,7 +207,6 @@ export function UsersPanel({
       const result = await createStaffAccount({
         realm: draft.realm,
         email: draft.email.trim(),
-        rut: draft.realm === "executive" ? draft.rut.trim() : undefined,
       });
 
       setPendingInvites((current) => {
@@ -549,7 +526,7 @@ export function UsersPanel({
         <AdminFormModal
           open={modalOpen}
           title={executivesOnly ? "Invitar ejecutivo" : "Invitar usuario"}
-        description="Se enviará un correo con un enlace único para activar la cuenta y crear la contraseña."
+        description="Se enviará un correo con un enlace único. La persona activará la cuenta, ingresará su RUT y creará su contraseña."
         onClose={() => setModalOpen(false)}
         size="md"
       >
@@ -591,33 +568,6 @@ export function UsersPanel({
               }
             />
           </label>
-
-          {draft.realm === "executive" ? (
-            <label className="block space-y-2">
-              <span className="inline-flex items-center gap-1.5 text-sm font-medium">
-                RUT
-                <RutFieldInfoIcon />
-              </span>
-              <Input
-                required
-                value={draft.rut}
-                onChange={(event) =>
-                  setDraft((current) => ({
-                    ...current,
-                    rut: sanitizeRutInput(event.target.value),
-                  }))
-                }
-                placeholder="25684045-6"
-                inputMode="text"
-                autoComplete="off"
-                spellCheck={false}
-              />
-              <p className="text-xs text-muted">
-                Sin puntos; usa un guion antes del dígito verificador (ej. 25684045-6).
-                Deberá coincidir al activar la cuenta desde el enlace del correo.
-              </p>
-            </label>
-          ) : null}
 
           <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
             <Button type="button" variant="ghost" onClick={() => setModalOpen(false)}>

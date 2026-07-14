@@ -62,10 +62,6 @@ export async function createStaffInvite(input: {
   const email = normalizeEmail(input.email);
   const rut = input.rut?.trim() ? formatRut(input.rut) : null;
 
-  if (input.realm === "executive" && !rut) {
-    throw new ApiError("El RUT es obligatorio para invitar ejecutivos.", 400, "INVALID_RUT");
-  }
-
   if (rut && !isValidRut(rut)) {
     throw new ApiError("El RUT indicado no es válido.", 400, "INVALID_RUT");
   }

@@ -22,7 +22,7 @@ export interface StaffAccountRecord {
 export interface CreateStaffAccountInput {
   realm: StaffRealm;
   email: string;
-  /** Obligatorio al invitar ejecutivos. */
+  /** Opcional en la invitación; la persona lo ingresa al activar la cuenta. */
   rut?: string;
   fullName?: string;
   phone?: string;
