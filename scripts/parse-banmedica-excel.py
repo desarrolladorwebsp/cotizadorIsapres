@@ -13,8 +13,8 @@ from pathlib import Path
 import openpyxl
 
 CLINIC_NAME_TO_ID = {
-    "Centros Médicos Clínica Santa María": "cl-santa-maria",
-    "Centros Médicos Dávila": "cm-davila",
+    "Centros Médicos Clínica Santa María": "cm-santa-maria",
+    "Centros Médicos Dávila": "cm-red-davila",
     "Centros Médicos Red Dávila": "cm-red-davila",
     "Centros Médicos Red UC Christus": "red-uc-christus",
     "Clínica Alemana": "cl-alemana-santiago",

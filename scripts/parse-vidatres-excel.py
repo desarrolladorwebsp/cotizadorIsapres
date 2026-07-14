@@ -25,14 +25,14 @@ COVERAGE_BLOCK_PATTERN = re.compile(r"(\d+)%\s*(?:SIN TOPE)?", re.IGNORECASE)
 LIBRE_ELECCION_PATTERN = re.compile(r"libre\s*elecci[oó]n", re.IGNORECASE)
 
 CLINIC_ALIASES: dict[str, str] = {
+    "centros medicos red davila": "cm-red-davila",
     "clinica davila": "cl-davila",
     "clinica davila vespucio": "cl-davila-vespucio",
     "clinica vespucio": "cl-davila-vespucio",
-    "centros medicos red davila": "cm-red-davila",
     "clinica indisa": "cl-indisa-providencia-anexo",
     "clinica indisa providencia": "cl-indisa-providencia-anexo",
     "clinica santa maria": "cl-santa-maria",
-    "centros medicos clinica santa maria": "cl-santa-maria",
+    "centros medicos clinica santa maria": "cm-santa-maria",
     "hospital clinico uc": "hosp-clinico-uc",
     "clinica uc": "hosp-clinico-uc",
     "clinica redsalud santiago": "cl-redsalud-santiago",

@@ -55,7 +55,8 @@ const CLINIC_ZONE_MAP: Record<string, readonly ZoneId[]> = {
   "cl-santa-maria": RM_ORIENTE,
   "cl-univ-andes": RM_ORIENTE,
   "cl-los-leones": RM_ORIENTE,
-  "cl-los-carrera": RM_ORIENTE,
+  "cl-los-carrera": VALPARAISO,
+  "cl-los-carrera-interclinica": VALPARAISO,
   "cl-cordillera": RM_ORIENTE,
   "cl-uc": RM_ORIENTE,
   "hospital-clinico-uc": RM_CENTRO,
@@ -63,7 +64,7 @@ const CLINIC_ZONE_MAP: Record<string, readonly ZoneId[]> = {
   "clinica-los-leones": RM_ORIENTE,
   "clinica-redsalud-providencia": RM_ORIENTE,
   "clinica-alemana": RM_ORIENTE,
-  "clinica-los-carrera-interclinica": RM_ORIENTE,
+  "clinica-los-carrera-interclinica": VALPARAISO,
   falp: RM_ORIENTE,
 
   // RM Centro
@@ -177,7 +178,7 @@ const CLINIC_ZONE_MAP: Record<string, readonly ZoneId[]> = {
   "hosp-ffaa-guzman": BIOBIO,
   "hosp-militar-norte": NORTE,
   "hosp-naval-nef": VALPARAISO,
-  "clinica-los-andes-achs-salud": VALPARAISO,
+  "clinica-los-andes-achs-salud": BIOBIO,
   "cl-lircay-de-talca-clinica-los-andes-de-los-angeles": BIOBIO,
   "cm-andes-salud-la": BIOBIO,
   "cm-andes-salud-ancud": BIOBIO,

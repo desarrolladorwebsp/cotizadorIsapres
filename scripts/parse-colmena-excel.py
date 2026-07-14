@@ -54,7 +54,7 @@ PERCENT_LINE = re.compile(r"^(\d+)%$")
 LIBRE_ELECCION_PATTERN = re.compile(r"libre\s*elecci[oó]n", re.IGNORECASE)
 
 CLINIC_NAME_TO_ID: dict[str, str] = {
-    "Centros Médicos Clínica Santa María": "cl-santa-maria",
+    "Centros Médicos Clínica Santa María": "cm-santa-maria",
     "Centros Médicos Red Dávila": "cm-red-davila",
     "Centros Médicos Red UC Christus": "red-uc-christus",
     "Centros Médicos RedSalud": "cm-redsalud",
