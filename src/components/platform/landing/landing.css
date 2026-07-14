@@ -111,10 +111,15 @@
 }
 
 [data-landing] .landing-hero-family-frame {
+  background: #0b2545;
   box-shadow:
     0 0 0 1px rgb(255 255 255 / 0.55),
     0 32px 64px -24px rgb(17 24 39 / 0.28),
     0 16px 40px -20px rgb(0 119 182 / 0.2);
+}
+
+[data-landing] .landing-hero-video {
+  background: #0b2545;
 }
 
 [data-landing] .landing-hero-family-glow {

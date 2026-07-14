@@ -1,5 +1,8 @@
-/** Imagen principal de la Landing — reemplazar el archivo en public sin cambiar la ruta. */
+/** Imagen de respaldo / poster del Hero (si el video no carga o reduce motion). */
 export const LANDING_FAMILY_HERO_IMAGE = "/images/landing/hero/familia-protegida.jpg";
+
+/** Video principal del Hero (vertical 9:16). */
+export const LANDING_FAMILY_HERO_VIDEO = "/videos/video-hero.mp4";
 
 export const LANDING_FAMILY_HERO_ALT =
   "Familia relajada en casa, transmitiendo tranquilidad y protección de salud";
