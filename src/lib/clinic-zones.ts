@@ -29,6 +29,8 @@ const CLINIC_ZONE_MAP: Record<string, readonly ZoneId[]> = {
   vidaintegra: RM,
   "cm-redsalud": RM,
   "cm-santa-maria": RM_ORIENTE,
+  "cl-centros-medicos-santa-maria": RM_ORIENTE,
+  "cl-hospital-clinico-uc-christus-clinica-santa-maria": RM_ORIENTE,
   "cm-davila": RM_ORIENTE,
   "cm-red-davila": RM_ORIENTE,
   centromed: VALPARAISO,
@@ -159,7 +161,6 @@ const CLINIC_ZONE_MAP: Record<string, readonly ZoneId[]> = {
 
   // Centros médicos / redes adicionales
   "cl-centros-medicos-davila": RM_ORIENTE,
-  "cl-centros-medicos-santa-maria": RM_ORIENTE,
   "cl-red-cm-uc-christus-e": RM_ORIENTE,
 
   // RM — prestadores faltantes

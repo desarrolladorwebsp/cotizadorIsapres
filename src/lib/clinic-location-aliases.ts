@@ -17,7 +17,12 @@ export const CLINIC_LOCATION_JSON_ALIASES: Record<string, string> = {
   "clinica-lircay-achs-salud": "centro-medico-andes-salud-talca",
   "cl-andes-salud-talca": "centro-medico-andes-salud-talca",
   "clinica-del-sur-achs-salud": "cl-biobio",
-  "centros-medicos-clinica-santa-maria": "cm-santa-maria",
+  "centros-medicos-clinica-santa-maria": "cl-santa-maria",
+  "cm-santa-maria": "cl-santa-maria",
+  "cl-centros-medicos-santa-maria": "cl-santa-maria",
+  "cl-clinica-santa-maria": "cl-santa-maria",
+  "cl-hospital-clinico-uc-christus-clinica-santa-maria": "cl-santa-maria",
+  "hospital-clinico-uc-christus-clinica-santa-maria": "cl-santa-maria",
   "cm-andes-salud-talca": "centro-medico-andes-salud-talca",
 };
 

@@ -2,8 +2,9 @@ import { readFile } from "fs/promises";
 import path from "path";
 import { config } from "dotenv";
 import { PrismaClient } from "@prisma/client";
+import { resolveCanonicalClinicId } from "../src/lib/clinic-canonical-ids";
 import { resolveIsapreIdFromName } from "../src/lib/isapre-catalog";
-import { dedupeCoverageEntries } from "../src/lib/api/plan-validation";
+import { dedupeCoverageEntries, normalizePlan } from "../src/lib/api/plan-validation";
 import { resolveClinicZoneIds } from "../src/lib/clinic-zones";
 import { resolvePlanZoneIds } from "../src/lib/plan-zones";
 import type { HealthPlan } from "../src/types/plan";
@@ -17,7 +18,8 @@ async function ensureClinics(plans: HealthPlan[]) {
 
   for (const plan of plans) {
     for (const entry of plan.coverage) {
-      clinicMap.set(entry.clinic_id, entry.clinic_name);
+      const clinicId = resolveCanonicalClinicId(entry.clinic_id);
+      clinicMap.set(clinicId, entry.clinic_name);
     }
   }
 
@@ -39,11 +41,11 @@ async function syncPlans(plans: HealthPlan[]) {
   let skipped = 0;
 
   for (const rawPlan of plans) {
-    const plan: HealthPlan = {
+    const plan: HealthPlan = normalizePlan({
       ...rawPlan,
       zones: rawPlan.zones ?? [],
       coverage: dedupeCoverageEntries(rawPlan.coverage),
-    };
+    });
 
     const resolvedZones = resolvePlanZoneIds(plan);
 

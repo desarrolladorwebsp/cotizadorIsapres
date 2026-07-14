@@ -47,7 +47,7 @@ CLINIC_ALIASES: dict[str, str] = {
     "clinica meds": "cl-meds",
     "clinica med": "cl-meds",
     "clinica santa maria": "cl-santa-maria",
-    "clinica santa maria": "cl-santa-maria",
+    "hospital clinico uc christus clinica santa maria": "cl-santa-maria",
     "hospital clinico uc": "hosp-clinico-uc",
     "hospital clinico universidad catolica": "hosp-clinico-uc",
     "clinica uc": "hosp-clinico-uc",
