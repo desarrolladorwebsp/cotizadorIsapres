@@ -15,6 +15,8 @@ import { formatAgreementDiscountBadge } from "@/components/cotizador/company-agr
 import {
   buildPlanAgreementPriceDisplay,
   resolveAgreementDiscountPercentForPlan,
+  resolveAgreementPlanMapping,
+  buildPlanAgreementPriceDisplayWithMapping,
 } from "@/lib/company-agreements/plan-price-discount";
 import { sanitizeRutInput } from "@/lib/auth/rut";
 import { buildPlanFinalPriceQuote, formatPlanClp, formatQuotedUf } from "@/domain";
@@ -105,7 +107,12 @@ export function AssignPlanToClientModal({
   const agreement =
     useOptionalCompanyAgreementContext()?.validatedAgreement ?? null;
 
-  const priceQuote = useMemo(() => {
+  const agreementMapping = useMemo(() => {
+    if (!plan) return null;
+    return resolveAgreementPlanMapping(plan.unique_code, plan.isapre, agreement);
+  }, [plan, agreement]);
+
+  const standardQuote = useMemo(() => {
     if (!plan) return null;
     return buildPlanFinalPriceQuote(
       plan.base_price_uf,
@@ -115,13 +122,28 @@ export function AssignPlanToClientModal({
     );
   }, [plan, beneficiarySummary, ufToClp]);
 
+  const convenioQuote = useMemo(() => {
+    if (!plan || !agreementMapping) return null;
+    return buildPlanFinalPriceQuote(
+      agreementMapping.price,
+      beneficiarySummary,
+      ufToClp,
+      plan.ges_premium_uf,
+    );
+  }, [plan, agreementMapping, beneficiarySummary, ufToClp]);
+
+  const priceQuote = convenioQuote ?? standardQuote;
+
   const agreementPrices = useMemo(() => {
-    if (!plan || !priceQuote) return null;
+    if (!plan || !standardQuote) return null;
+    if (agreementMapping && convenioQuote) {
+      return buildPlanAgreementPriceDisplayWithMapping(standardQuote, convenioQuote);
+    }
     return buildPlanAgreementPriceDisplay(
-      priceQuote,
+      standardQuote,
       resolveAgreementDiscountPercentForPlan(plan.isapre, agreement),
     );
-  }, [agreement, plan, priceQuote]);
+  }, [agreement, plan, agreementMapping, standardQuote, convenioQuote]);
 
   if (!plan) return null;
 
@@ -196,7 +218,17 @@ export function AssignPlanToClientModal({
           <p className="mt-1 text-base font-bold text-foreground">
             {plan.isapre} · {plan.plan_name}
           </p>
-          <p className="text-sm text-muted">{plan.unique_code}</p>
+          <p className="flex flex-wrap items-center gap-2 font-mono text-sm text-muted">
+            <span>{plan.unique_code}</span>
+            {agreementMapping && (
+              <span
+                className="inline-flex shrink-0 items-center gap-1 rounded-md border border-red-200 bg-red-50 px-1.5 py-0.5 text-[9px] font-bold leading-none tracking-wide text-red-700 shadow-sm"
+                title="Código del plan en convenio"
+              >
+                Convenio: {agreementMapping.code}
+              </span>
+            )}
+          </p>
           {agreementPrices ? (
             <div className="mt-2 space-y-1">
               {agreementPrices.hasAgreementDiscount ? (

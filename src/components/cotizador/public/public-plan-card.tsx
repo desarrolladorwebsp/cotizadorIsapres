@@ -21,6 +21,8 @@ import { PublicPlanAgreementPrices } from "@/components/cotizador/company-agreem
 import {
   buildPlanAgreementPriceDisplay,
   resolveAgreementDiscountPercentForPlan,
+  resolveAgreementPlanMapping,
+  buildPlanAgreementPriceDisplayWithMapping,
 } from "@/lib/company-agreements/plan-price-discount";
 import { useInView } from "@/hooks/use-in-view";
 import { usePlanDetail } from "@/hooks/use-plan-detail";
@@ -211,7 +213,14 @@ export function PublicPlanCard({
   const planTypeLabel = PLAN_TYPE_LABELS[planType];
   const commercialName = resolveCommercialPlanName(plan).toUpperCase();
 
-  const priceQuote = useMemo(
+  const agreement =
+    useOptionalCompanyAgreementContext()?.validatedAgreement ?? null;
+
+  const agreementMapping = useMemo(() => {
+    return resolveAgreementPlanMapping(plan.unique_code, plan.isapre, agreement);
+  }, [plan.unique_code, plan.isapre, agreement]);
+
+  const standardQuote = useMemo(
     () =>
       buildPlanFinalPriceQuote(
         plan.base_price_uf,
@@ -222,15 +231,28 @@ export function PublicPlanCard({
     [plan.base_price_uf, plan.ges_premium_uf, beneficiarySummary, ufToClp],
   );
 
-  const agreement =
-    useOptionalCompanyAgreementContext()?.validatedAgreement ?? null;
+  const convenioQuote = useMemo(() => {
+    if (!agreementMapping) return null;
+    return buildPlanFinalPriceQuote(
+      agreementMapping.price,
+      beneficiarySummary,
+      ufToClp,
+      plan.ges_premium_uf,
+    );
+  }, [agreementMapping, plan.ges_premium_uf, beneficiarySummary, ufToClp]);
+
+  const priceQuote = convenioQuote ?? standardQuote;
+
   const agreementPrices = useMemo(() => {
+    if (agreementMapping && convenioQuote) {
+      return buildPlanAgreementPriceDisplayWithMapping(standardQuote, convenioQuote);
+    }
     const discountPercent = resolveAgreementDiscountPercentForPlan(
       plan.isapre,
       agreement,
     );
-    return buildPlanAgreementPriceDisplay(priceQuote, discountPercent);
-  }, [agreement, plan.isapre, priceQuote]);
+    return buildPlanAgreementPriceDisplay(standardQuote, discountPercent);
+  }, [agreement, plan.isapre, agreementMapping, standardQuote, convenioQuote]);
 
   return (
     <motion.article
@@ -264,10 +286,18 @@ export function PublicPlanCard({
               <span className={planMetaStyles.code} title="Código del plan">
                 {plan.unique_code}
               </span>
+              {agreementMapping && (
+                <span
+                  className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-2.5 py-1 font-mono text-[10px] font-bold leading-tight tracking-wide text-red-700 shadow-sm"
+                  title="Código del plan en convenio"
+                >
+                  Convenio: {agreementMapping.code}
+                </span>
+              )}
               <span className={planMetaStyles.base} title="Precio base en UF">
                 <span className="font-normal text-primary-dark/70">Base</span>
                 <span className="font-bold tabular-nums">
-                  {formatQuotedUf(plan.base_price_uf).replace("UF ", "")} UF
+                  {formatQuotedUf(priceQuote.basePriceUf).replace("UF ", "")} UF
                 </span>
               </span>
               <span className={planTypeMetaStyle[planType]}>{planTypeLabel}</span>

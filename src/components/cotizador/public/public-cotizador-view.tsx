@@ -525,8 +525,9 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
       plans,
       dashboard.beneficiarySummary,
       dashboard.ufToClp,
+      validatedAgreement,
     );
-  }, [plans, dashboard.beneficiarySummary, dashboard.ufToClp]);
+  }, [plans, dashboard.beneficiarySummary, dashboard.ufToClp, validatedAgreement]);
 
   const defaultPriceBounds = useMemo(
     () => ({

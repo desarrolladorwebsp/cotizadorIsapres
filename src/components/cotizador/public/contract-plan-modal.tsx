@@ -41,6 +41,8 @@ import { toCotizacionNotifyConvenio } from "@/lib/company-agreements/cotizacion-
 import {
   buildPlanAgreementPriceDisplay,
   resolveAgreementDiscountPercentForPlan,
+  resolveAgreementPlanMapping,
+  buildPlanAgreementPriceDisplayWithMapping,
 } from "@/lib/company-agreements/plan-price-discount";
 import type {
   ParsedCotizadorDeepLink,
@@ -214,7 +216,16 @@ export function ContractPlanModal({
     };
   }, [open, onClose]);
 
-  const priceQuote = useMemo(() => {
+  const agreementMapping = useMemo(() => {
+    if (!planSummary) return null;
+    return resolveAgreementPlanMapping(
+      planSummary.unique_code,
+      planSummary.isapre,
+      validatedAgreement,
+    );
+  }, [planSummary, validatedAgreement]);
+
+  const standardQuote = useMemo(() => {
     if (!planSummary) return null;
     return buildPlanFinalPriceQuote(
       planSummary.base_price_uf,
@@ -224,14 +235,29 @@ export function ContractPlanModal({
     );
   }, [planSummary, beneficiarySummary, ufToClp]);
 
+  const convenioQuote = useMemo(() => {
+    if (!planSummary || !agreementMapping) return null;
+    return buildPlanFinalPriceQuote(
+      agreementMapping.price,
+      beneficiarySummary,
+      ufToClp,
+      planSummary.ges_premium_uf,
+    );
+  }, [planSummary, agreementMapping, beneficiarySummary, ufToClp]);
+
+  const priceQuote = convenioQuote ?? standardQuote;
+
   const agreementPrices = useMemo(() => {
-    if (!planSummary || !priceQuote) return null;
+    if (!planSummary || !standardQuote) return null;
+    if (agreementMapping && convenioQuote) {
+      return buildPlanAgreementPriceDisplayWithMapping(standardQuote, convenioQuote);
+    }
     const discountPercent = resolveAgreementDiscountPercentForPlan(
       planSummary.isapre,
       validatedAgreement,
     );
-    return buildPlanAgreementPriceDisplay(priceQuote, discountPercent);
-  }, [planSummary, priceQuote, validatedAgreement]);
+    return buildPlanAgreementPriceDisplay(standardQuote, discountPercent);
+  }, [validatedAgreement, planSummary, agreementMapping, standardQuote, convenioQuote]);
 
   const displayPriceQuote = useMemo(() => {
     if (!priceQuote || !agreementPrices) return priceQuote;
@@ -490,8 +516,16 @@ export function ContractPlanModal({
                 >
                   {commercialName}
                 </h2>
-                <p className="font-mono text-xs text-muted">
-                  {summary.unique_code}
+                <p className="flex flex-wrap items-center gap-2 font-mono text-xs text-muted">
+                  <span>{summary.unique_code}</span>
+                  {agreementMapping && (
+                    <span
+                      className="inline-flex shrink-0 items-center gap-1 rounded-md border border-red-200 bg-red-50 px-1.5 py-0.5 text-[9px] font-bold leading-none tracking-wide text-red-700 shadow-sm"
+                      title="Código del plan en convenio"
+                    >
+                      Convenio: {agreementMapping.code}
+                    </span>
+                  )}
                 </p>
               </div>
 

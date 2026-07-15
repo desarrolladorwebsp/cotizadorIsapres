@@ -4,6 +4,8 @@ import { ExecutivePlanAgreementPrices } from "@/components/cotizador/company-agr
 import {
   buildPlanAgreementPriceDisplay,
   resolveAgreementDiscountPercentForPlan,
+  resolveAgreementPlanMapping,
+  buildPlanAgreementPriceDisplayWithMapping,
 } from "@/lib/company-agreements/plan-price-discount";
 import type { PlanFinalPriceQuote } from "@/domain";
 import {
@@ -31,18 +33,51 @@ export function PlanCardHeader({
 }: PlanCardHeaderProps) {
   const agreement =
     useOptionalCompanyAgreementContext()?.validatedAgreement ?? null;
+
+  const agreementMapping = useMemo(() => {
+    return resolveAgreementPlanMapping(plan.unique_code, plan.isapre, agreement);
+  }, [plan.unique_code, plan.isapre, agreement]);
+
   const agreementPrices = useMemo(() => {
+    if (agreementMapping && priceQuote) {
+      const basePriceUf = agreementMapping.price;
+      const groupTotalFactor = priceQuote.groupTotalFactor;
+      const beneficiaryCount = priceQuote.beneficiaryCount;
+      const gesPremiumUfPerPerson = priceQuote.gesPremiumUfPerPerson;
+      const gesTotalUf = priceQuote.gesTotalUf;
+      const ufToClp = priceQuote.ufToClp;
+
+      const riskComponentUf = groupTotalFactor * basePriceUf;
+      const finalPriceUf = riskComponentUf + gesTotalUf;
+      const finalPriceClp = Math.round(finalPriceUf * ufToClp);
+
+      const convenioQuote: PlanFinalPriceQuote = {
+        basePriceUf,
+        groupTotalFactor,
+        beneficiaryCount,
+        gesPremiumUfPerPerson,
+        gesTotalUf,
+        riskComponentUf,
+        finalPriceUf,
+        finalPriceClp,
+        ufToClp,
+      };
+
+      return buildPlanAgreementPriceDisplayWithMapping(priceQuote, convenioQuote);
+    }
+
     const discountPercent = resolveAgreementDiscountPercentForPlan(
       plan.isapre,
       agreement,
     );
     return buildPlanAgreementPriceDisplay(priceQuote, discountPercent);
-  }, [agreement, plan.isapre, priceQuote]);
+  }, [agreement, plan.isapre, agreementMapping, priceQuote]);
 
   const commercialName = resolveCommercialPlanName(plan);
   const planType = resolvePrimaryPlanType(plan);
   const planTypeLabel = PLAN_TYPE_LABELS[planType];
-  const basePriceLabel = formatBasePriceBadgeLabel(plan.base_price_uf);
+  const activeBasePrice = agreementMapping ? agreementMapping.price : plan.base_price_uf;
+  const basePriceLabel = formatBasePriceBadgeLabel(activeBasePrice);
 
   return (
     <header
@@ -69,6 +104,15 @@ export function PlanCardHeader({
               {plan.unique_code}
             </span>
 
+            {agreementMapping && (
+              <span
+                className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-red-50 px-1.5 py-0.5 font-mono text-[10px] font-bold leading-none tracking-tight text-red-700 shadow-sm"
+                title="Código del plan en convenio"
+              >
+                Convenio: {agreementMapping.code}
+              </span>
+            )}
+
             <span className="hidden h-3.5 w-px bg-border sm:inline" aria-hidden />
 
             <PlanMetaBadge label={basePriceLabel} tone="base" />
@@ -82,3 +126,4 @@ export function PlanCardHeader({
     </header>
   );
 }
+

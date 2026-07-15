@@ -2,6 +2,7 @@ import { calculateFinalPlanPriceClp } from "@/lib/plan-final-price";
 import type { PlanFinalPriceQuote } from "@/lib/plan-final-price";
 import { resolveIsapreIdFromName } from "@/lib/isapre-catalog";
 import type { ValidatedCompanyAgreement } from "@/types/company-agreement";
+import { AGREEMENT_PLAN_MAPPINGS } from "./data/agreement-plan-mappings";
 
 export interface PlanAgreementPriceDisplay {
   /** Precio de lista (sin descuento de convenio). */
@@ -100,6 +101,52 @@ export function buildPlanAgreementPriceDisplay(
     displayFinalPriceUf,
     quote.ufToClp,
   );
+
+  return {
+    listFinalPriceUf,
+    listFinalPriceClp,
+    displayFinalPriceUf,
+    displayFinalPriceClp,
+    hasAgreementDiscount: true,
+    discountPercent,
+  };
+}
+
+export function resolveAgreementPlanMapping(
+  planCode: string,
+  planIsapre: string,
+  agreement: Pick<ValidatedCompanyAgreement, "isapreId" | "isapreName"> | null | undefined,
+) {
+  if (!agreement) return null;
+
+  const planIsapreId = resolveIsapreIdFromName(planIsapre.trim());
+  const isapreMatch =
+    (agreement.isapreId && planIsapreId === agreement.isapreId) ||
+    (agreement.isapreName &&
+      planIsapre.trim().localeCompare(agreement.isapreName.trim(), "es", { sensitivity: "accent" }) === 0);
+
+  if (!isapreMatch) return null;
+
+  const mappingsForIsapre = AGREEMENT_PLAN_MAPPINGS[planIsapreId];
+  if (!mappingsForIsapre) return null;
+
+  const cleanCode = planCode.trim();
+  return mappingsForIsapre[cleanCode] || null;
+}
+
+export function buildPlanAgreementPriceDisplayWithMapping(
+  standardQuote: PlanFinalPriceQuote,
+  convenioQuote: PlanFinalPriceQuote,
+): PlanAgreementPriceDisplay {
+  const listFinalPriceUf = standardQuote.finalPriceUf;
+  const listFinalPriceClp = standardQuote.finalPriceClp;
+  const displayFinalPriceUf = convenioQuote.finalPriceUf;
+  const displayFinalPriceClp = convenioQuote.finalPriceClp;
+
+  const discountPercent =
+    standardQuote.basePriceUf > 0
+      ? ((standardQuote.basePriceUf - convenioQuote.basePriceUf) / standardQuote.basePriceUf) * 100
+      : 0;
 
   return {
     listFinalPriceUf,

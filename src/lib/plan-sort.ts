@@ -1,6 +1,8 @@
 import { buildPlanFinalPriceQuote } from "@/domain";
 import type { BeneficiaryGroupSummary } from "@/types/beneficiary";
 import type { HealthPlan, HealthPlanSummary } from "@/types/plan";
+import { resolveAgreementPlanMapping } from "@/lib/company-agreements/plan-price-discount";
+import type { ValidatedCompanyAgreement } from "@/types/company-agreement";
 
 type PlanWithBasePrice = {
   base_price_uf: number;
@@ -13,6 +15,7 @@ type PlanWithFinalPrice = {
   ges_premium_uf?: number;
   plan_name: string;
   unique_code: string;
+  isapre?: string;
 };
 
 function comparePlanNames(a: PlanWithBasePrice, b: PlanWithBasePrice): number {
@@ -41,22 +44,30 @@ export function comparePlansByFinalPriceAsc(
   b: PlanWithFinalPrice,
   beneficiarySummary: BeneficiaryGroupSummary,
   ufToClp: number,
+  agreement?: ValidatedCompanyAgreement | null,
 ): number {
+  // If there is an active agreement, check if the plans have mapped base prices
+  const mappingA = a.isapre ? resolveAgreementPlanMapping(a.unique_code, a.isapre, agreement) : null;
+  const mappingB = b.isapre ? resolveAgreementPlanMapping(b.unique_code, b.isapre, agreement) : null;
+
+  const basePriceA = mappingA ? mappingA.price : a.base_price_uf;
+  const basePriceB = mappingB ? mappingB.price : b.base_price_uf;
+
   const priceA = buildPlanFinalPriceQuote(
-    a.base_price_uf,
+    basePriceA,
     beneficiarySummary,
     ufToClp,
     a.ges_premium_uf,
   ).finalPriceUf;
   const priceB = buildPlanFinalPriceQuote(
-    b.base_price_uf,
+    basePriceB,
     beneficiarySummary,
     ufToClp,
     b.ges_premium_uf,
   ).finalPriceUf;
   const diff = priceA - priceB;
   if (Math.abs(diff) > 1e-9) return diff;
-  const baseDiff = a.base_price_uf - b.base_price_uf;
+  const baseDiff = basePriceA - basePriceB;
   if (Math.abs(baseDiff) > 1e-9) return baseDiff;
   return comparePlanNames(a, b);
 }
@@ -65,9 +76,10 @@ export function sortPlansByFinalPriceAsc<T extends PlanWithFinalPrice>(
   plans: T[],
   beneficiarySummary: BeneficiaryGroupSummary,
   ufToClp: number,
+  agreement?: ValidatedCompanyAgreement | null,
 ): T[] {
   return [...plans].sort((a, b) =>
-    comparePlansByFinalPriceAsc(a, b, beneficiarySummary, ufToClp),
+    comparePlansByFinalPriceAsc(a, b, beneficiarySummary, ufToClp, agreement),
   );
 }
 
@@ -76,14 +88,17 @@ export function sortHealthPlansByFinalPriceAsc(
   plans: HealthPlan[],
   beneficiarySummary: BeneficiaryGroupSummary,
   ufToClp: number,
+  agreement?: ValidatedCompanyAgreement | null,
 ): HealthPlan[] {
-  return sortPlansByFinalPriceAsc(plans, beneficiarySummary, ufToClp);
+  return sortPlansByFinalPriceAsc(plans, beneficiarySummary, ufToClp, agreement);
 }
 
 export function sortHealthPlanSummariesByFinalPriceAsc(
   plans: HealthPlanSummary[],
   beneficiarySummary: BeneficiaryGroupSummary,
   ufToClp: number,
+  agreement?: ValidatedCompanyAgreement | null,
 ): HealthPlanSummary[] {
-  return sortPlansByFinalPriceAsc(plans, beneficiarySummary, ufToClp);
+  return sortPlansByFinalPriceAsc(plans, beneficiarySummary, ufToClp, agreement);
 }
+
