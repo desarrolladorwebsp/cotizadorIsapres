@@ -170,6 +170,8 @@ export function CompanyAgreementValidationSection({
   }, [agreementMatch, agreementContext]);
 
   const resolvedSource: CompanyAgreementSource = compactEmbed ? "embed" : source;
+  /** Público/widget: mensajes genéricos, sin filtrar % real, isapre ni razón social. */
+  const restrictAgreementDetails = resolvedSource !== "executive";
 
   const handleRutChange = useCallback(
     (field: "userRut" | "companyRut", value: string) => {
@@ -457,30 +459,40 @@ export function CompanyAgreementValidationSection({
             <p className="font-semibold text-emerald-800">
               Convenio vigente confirmado
             </p>
-            <p className="mt-1 text-xs leading-relaxed text-emerald-950/90">
-              La empresa{" "}
-              <span className="font-semibold text-emerald-950">
-                {agreementMatch.companyName}
-              </span>
-              {formatAgreementRut(agreementMatch.companyRutRaw) ? (
-                <>
-                  {" "}
-                  (RUT {formatAgreementRut(agreementMatch.companyRutRaw)}) cuenta con{" "}
-                </>
-              ) : (
-                " cuenta con "
-              )}
-              {formatDiscountPercent(agreementMatch.discountPercent)}
-              {formatIsapreBenefitLabel(agreementMatch.isapreName)
-                ? ` ${formatIsapreBenefitLabel(agreementMatch.isapreName)}`
-                : ""}{" "}
-              Puedes continuar cotizando con este beneficio aplicable.
-            </p>
-            {agreementMatch.discountPercent != null ? (
-              <p className="mt-2 text-[11px] leading-relaxed text-emerald-900/75">
-                {COMPANY_AGREEMENT_DISCOUNT_DISCLAIMER}
+            {restrictAgreementDetails ? (
+              <p className="mt-1 text-xs leading-relaxed text-emerald-950/90">
+                Tu empresa pertenece a un convenio. Puedes acceder a hasta un 10%
+                de descuento. Para aplicar el beneficio, consulta con nuestros
+                asesores: selecciona un plan y un asesor se comunicará contigo.
               </p>
-            ) : null}
+            ) : (
+              <>
+                <p className="mt-1 text-xs leading-relaxed text-emerald-950/90">
+                  La empresa{" "}
+                  <span className="font-semibold text-emerald-950">
+                    {agreementMatch.companyName}
+                  </span>
+                  {formatAgreementRut(agreementMatch.companyRutRaw) ? (
+                    <>
+                      {" "}
+                      (RUT {formatAgreementRut(agreementMatch.companyRutRaw)}) cuenta con{" "}
+                    </>
+                  ) : (
+                    " cuenta con "
+                  )}
+                  {formatDiscountPercent(agreementMatch.discountPercent)}
+                  {formatIsapreBenefitLabel(agreementMatch.isapreName)
+                    ? ` ${formatIsapreBenefitLabel(agreementMatch.isapreName)}`
+                    : ""}{" "}
+                  Puedes continuar cotizando con este beneficio aplicable.
+                </p>
+                {agreementMatch.discountPercent != null ? (
+                  <p className="mt-2 text-[11px] leading-relaxed text-emerald-900/75">
+                    {COMPANY_AGREEMENT_DISCOUNT_DISCLAIMER}
+                  </p>
+                ) : null}
+              </>
+            )}
           </div>
           {renderNewQueryButton(
             "border-emerald-300/70 text-emerald-900 hover:bg-white hover:text-emerald-950",

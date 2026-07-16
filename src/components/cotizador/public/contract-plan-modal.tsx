@@ -36,7 +36,6 @@ import type { HealthPlanSummary } from "@/domain";
 import type { QuoteCriteria } from "./public-quote-criteria-bar";
 import { notifyCotizacionByEmail } from "@/lib/cotizacion-notify/client";
 import { useCompanyAgreementContext } from "@/components/cotizador/company-agreement";
-import { formatAgreementDiscountBadge } from "@/components/cotizador/company-agreement/plan-agreement-price";
 import { toCotizacionNotifyConvenio } from "@/lib/company-agreements/cotizacion-notify-convenio";
 import {
   buildPlanAgreementPriceDisplay,
@@ -245,8 +244,7 @@ export function ContractPlanModal({
     );
   }, [planSummary, agreementMapping, beneficiarySummary, ufToClp]);
 
-  const priceQuote = convenioQuote ?? standardQuote;
-
+  /** Precios con convenio (solo para notify/API interno; no se muestran en UI pública). */
   const agreementPrices = useMemo(() => {
     if (!planSummary || !standardQuote) return null;
     if (agreementMapping && convenioQuote) {
@@ -259,27 +257,26 @@ export function ContractPlanModal({
     return buildPlanAgreementPriceDisplay(standardQuote, discountPercent);
   }, [validatedAgreement, planSummary, agreementMapping, standardQuote, convenioQuote]);
 
-  const displayPriceQuote = useMemo(() => {
-    if (!priceQuote || !agreementPrices) return priceQuote;
-    if (!agreementPrices.hasAgreementDiscount) return priceQuote;
-    return {
-      ...priceQuote,
-      finalPriceUf: agreementPrices.displayFinalPriceUf,
-      finalPriceClp: agreementPrices.displayFinalPriceClp,
-    };
-  }, [agreementPrices, priceQuote]);
+  /** UI pública: siempre precio de lista, sin % ni tachado de convenio. */
+  const uiPrices = useMemo(() => {
+    if (!standardQuote) return null;
+    return buildPlanAgreementPriceDisplay(standardQuote, null);
+  }, [standardQuote]);
+
+  const priceQuote = standardQuote;
+  const notifyPriceQuote = convenioQuote ?? standardQuote;
 
   const chartHighlightAge = useMemo(
     () => resolveChartHighlightAge(beneficiarySummary.contributor.age),
     [beneficiarySummary.contributor.age],
   );
 
-  if (!planSummary || !priceQuote || !agreementPrices || !displayPriceQuote) {
+  if (!planSummary || !priceQuote || !uiPrices || !agreementPrices || !notifyPriceQuote) {
     return null;
   }
 
   const summary = planSummary;
-  const quote = priceQuote;
+  const quote = notifyPriceQuote;
 
   const planType = resolvePrimaryPlanType(summary);
   const planTypeLabel = PLAN_TYPE_LABELS[planType];
@@ -518,82 +515,41 @@ export function ContractPlanModal({
                 </h2>
                 <p className="flex flex-wrap items-center gap-2 font-mono text-xs text-muted">
                   <span>{summary.unique_code}</span>
-                  {agreementMapping && (
-                    <span
-                      className="inline-flex shrink-0 items-center gap-1 rounded-md border border-red-200 bg-red-50 px-1.5 py-0.5 text-[9px] font-bold leading-none tracking-wide text-red-700 shadow-sm"
-                      title="Código del plan en convenio"
-                    >
-                      Convenio: {agreementMapping.code}
-                    </span>
-                  )}
                 </p>
               </div>
 
               <div
                 className={joinClasses(
                   "rounded-xl border px-4 py-3 text-right sm:min-w-52",
-                  agreementPrices.hasAgreementDiscount
-                    ? "border-red-200 bg-red-50"
-                    : joinClasses(
-                        "bg-primary/5",
-                        accent.borderPrimary,
-                        accent.ringPrimary,
-                      ),
+                  "bg-primary/5",
+                  accent.borderPrimary,
+                  accent.ringPrimary,
                 )}
               >
                 <div className="flex items-center justify-end gap-2">
                   <p className="text-[10px] font-bold uppercase tracking-wide text-muted">
                     Precio estimado
                   </p>
-                  {agreementPrices.hasAgreementDiscount ? (
-                    <span className="inline-flex rounded-md bg-red-600 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
-                      {formatAgreementDiscountBadge(
-                        agreementPrices.discountPercent,
-                      )}{" "}
-                      convenio
-                    </span>
-                  ) : null}
                 </div>
-                {agreementPrices.hasAgreementDiscount ? (
-                  <p className="mt-1 text-xs tabular-nums text-muted line-through">
-                    {formatPlanClp(agreementPrices.listFinalPriceClp)} /mes
-                  </p>
-                ) : null}
                 <p
                   className={joinClasses(
                     "mt-1 text-xl font-bold sm:text-2xl",
-                    agreementPrices.hasAgreementDiscount
-                      ? "text-red-700"
-                      : accent.valuePrimary,
+                    accent.valuePrimary,
                   )}
                 >
-                  Desde {formatPlanClp(agreementPrices.displayFinalPriceClp)}
-                  <span
-                    className={joinClasses(
-                      "text-sm font-semibold",
-                      agreementPrices.hasAgreementDiscount
-                        ? "text-red-700/75"
-                        : "text-muted",
-                    )}
-                  >
+                  Desde {formatPlanClp(uiPrices.displayFinalPriceClp)}
+                  <span className="text-sm font-semibold text-muted">
                     {" "}
                     /mes
                   </span>
                 </p>
-                {agreementPrices.hasAgreementDiscount ? (
-                  <p className="mt-0.5 text-[11px] tabular-nums text-muted line-through">
-                    {formatQuotedUf(agreementPrices.listFinalPriceUf)}
-                  </p>
-                ) : null}
                 <p
                   className={joinClasses(
                     "mt-0.5 text-xs font-semibold",
-                    agreementPrices.hasAgreementDiscount
-                      ? "text-red-700"
-                      : accent.valueSecondary,
+                    accent.valueSecondary,
                   )}
                 >
-                  {formatQuotedUf(agreementPrices.displayFinalPriceUf)}
+                  {formatQuotedUf(uiPrices.displayFinalPriceUf)}
                 </p>
               </div>
             </div>
@@ -769,49 +725,20 @@ export function ContractPlanModal({
                       <p className="mt-2 text-sm font-bold text-primary-dark">
                         {commercialName}
                       </p>
-                      {agreementPrices.hasAgreementDiscount ? (
-                        <p className="mt-2 text-xs tabular-nums text-muted line-through">
-                          {formatPlanClp(agreementPrices.listFinalPriceClp)} /mes
-                        </p>
-                      ) : null}
-                      <p
-                        className={joinClasses(
-                          "mt-2 text-lg font-bold",
-                          agreementPrices.hasAgreementDiscount
-                            ? "text-red-700"
-                            : "text-foreground",
-                        )}
-                      >
-                        {formatPlanClp(agreementPrices.displayFinalPriceClp)}
-                        <span
-                          className={joinClasses(
-                            "text-xs font-medium",
-                            agreementPrices.hasAgreementDiscount
-                              ? "text-red-700/75"
-                              : "text-muted",
-                          )}
-                        >
+                      <p className="mt-2 text-lg font-bold text-foreground">
+                        {formatPlanClp(uiPrices.displayFinalPriceClp)}
+                        <span className="text-xs font-medium text-muted">
                           {" "}
                           /mes
                         </span>
                       </p>
-                      {agreementPrices.hasAgreementDiscount ? (
-                        <span className="mt-1 inline-flex rounded-md bg-red-600 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
-                          {formatAgreementDiscountBadge(
-                            agreementPrices.discountPercent,
-                          )}{" "}
-                          convenio
-                        </span>
-                      ) : null}
                       <p
                         className={joinClasses(
                           "mt-1 text-xs font-semibold",
-                          agreementPrices.hasAgreementDiscount
-                            ? "text-red-700"
-                            : accent.valueSecondary,
+                          accent.valueSecondary,
                         )}
                       >
-                        {formatQuotedUf(agreementPrices.displayFinalPriceUf)}
+                        {formatQuotedUf(uiPrices.displayFinalPriceUf)}
                       </p>
                     </div>
                   </aside>
