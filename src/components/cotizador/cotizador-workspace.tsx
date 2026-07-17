@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { FiltersFab, FiltersSidebar } from "@/components/filters";
 import {
   CompanyAgreementProvider,
@@ -13,6 +14,7 @@ import { CotizadorNav } from "@/components/cotizador/cotizador-nav";
 import { AssignPlanToClientModal } from "@/components/executive/assign-plan-to-client-modal";
 import { useCotizadorDashboard } from "@/hooks/use-cotizador-dashboard";
 import { usePlansCatalog } from "@/hooks/use-plans-catalog";
+import { fetchExecutiveClients } from "@/lib/api/admin-client";
 import {
   applyRegionToDashboardFilters,
   createDefaultDashboardFilters,
@@ -30,6 +32,7 @@ import {
   type QuoteSortKey,
 } from "@/lib/quote-criteria-options";
 import type { HealthPlan } from "@/domain";
+import type { UserRecord } from "@/types/user";
 import {
   appShell,
   appShellRoot,
@@ -95,7 +98,94 @@ function CotizadorWorkspaceInner({
   const [sortKey, setSortKey] = useState<QuoteSortKey>("price_asc");
   const [visibleCount, setVisibleCount] = useState(INITIAL_PLANS_PAGE_SIZE);
   const [priceBoundsInitialized, setPriceBoundsInitialized] = useState(false);
+  const [clients, setClients] = useState<UserRecord[]>([]);
+  const [activeClientId, setActiveClientId] = useState("");
+  const [clientSearch, setClientSearch] = useState("");
+  const [clientPickerOpen, setClientPickerOpen] = useState(false);
   const isExecutive = variant === "executive";
+  const searchParams = useSearchParams();
+  const clientPickerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isExecutive) return;
+
+    let cancelled = false;
+    void fetchExecutiveClients()
+      .then((rows) => {
+        if (!cancelled) setClients(rows);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          onNotify?.(
+            "No se pudieron cargar los clientes para WhatsApp.",
+            "error",
+          );
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isExecutive, onNotify]);
+
+  useEffect(() => {
+    if (!isExecutive) return;
+    const fromUrl = searchParams.get("clientId")?.trim();
+    if (fromUrl) setActiveClientId(fromUrl);
+  }, [isExecutive, searchParams]);
+
+  useEffect(() => {
+    if (!clientPickerOpen) return;
+
+    function handlePointerDown(event: MouseEvent) {
+      const target = event.target as Node;
+      if (
+        clientPickerRef.current &&
+        !clientPickerRef.current.contains(target)
+      ) {
+        setClientPickerOpen(false);
+        setClientSearch("");
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, [clientPickerOpen]);
+
+  const activeClientRecord = useMemo(() => {
+    if (!activeClientId) return null;
+    return clients.find((client) => client.id === activeClientId) ?? null;
+  }, [activeClientId, clients]);
+
+  const activeClient = useMemo(() => {
+    if (!activeClientRecord) return null;
+    return {
+      fullName: activeClientRecord.fullName,
+      phone: activeClientRecord.phone,
+    };
+  }, [activeClientRecord]);
+
+  const filteredClients = useMemo(() => {
+    const query = clientSearch.trim().toLowerCase();
+    if (!query) return clients;
+    return clients.filter((client) =>
+      [client.fullName, client.email, client.phone, client.rut]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(query)),
+    );
+  }, [clients, clientSearch]);
+
+  function selectActiveClient(clientId: string) {
+    setActiveClientId(clientId);
+    setClientPickerOpen(false);
+    setClientSearch("");
+  }
+
+  function clearActiveClient() {
+    setActiveClientId("");
+    setClientPickerOpen(false);
+    setClientSearch("");
+  }
 
   const displayedPlans = useMemo(() => {
     const plans = [...filteredPlans];
@@ -374,6 +464,117 @@ function CotizadorWorkspaceInner({
               </p>
 
               <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                {isExecutive ? (
+                  <div
+                    ref={clientPickerRef}
+                    className="relative min-w-0 flex-1 sm:max-w-xs sm:flex-none"
+                  >
+                    <label
+                      htmlFor="active-client-search"
+                      className="mb-1 block text-xs font-medium text-muted"
+                    >
+                      Cliente activo
+                    </label>
+                    <div className="relative">
+                      <input
+                        id="active-client-search"
+                        type="search"
+                        autoComplete="off"
+                        value={
+                          clientPickerOpen
+                            ? clientSearch
+                            : (activeClientRecord?.fullName ?? "")
+                        }
+                        placeholder="Buscar cliente…"
+                        onFocus={() => {
+                          setClientPickerOpen(true);
+                          setClientSearch("");
+                        }}
+                        onChange={(event) => {
+                          setClientPickerOpen(true);
+                          setClientSearch(event.target.value);
+                        }}
+                        className={joinClasses(
+                          "h-10 w-full rounded-lg py-2 pl-3 pr-16 text-sm",
+                          ui.input,
+                        )}
+                        aria-expanded={clientPickerOpen}
+                        aria-controls="active-client-results"
+                        aria-autocomplete="list"
+                      />
+                      {activeClientId ? (
+                        <button
+                          type="button"
+                          onClick={clearActiveClient}
+                          className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-md px-2 py-1 text-[11px] font-semibold text-muted hover:bg-surface-hover hover:text-foreground"
+                        >
+                          Quitar
+                        </button>
+                      ) : null}
+                    </div>
+
+                    {clientPickerOpen ? (
+                      <div
+                        id="active-client-results"
+                        role="listbox"
+                        className={joinClasses(
+                          "absolute left-0 right-0 z-30 mt-1 max-h-56 overflow-y-auto rounded-xl border bg-white p-1.5 shadow-lg",
+                          ui.border,
+                        )}
+                      >
+                        <button
+                          type="button"
+                          role="option"
+                          aria-selected={!activeClientId}
+                          onClick={clearActiveClient}
+                          className={joinClasses(
+                            "w-full rounded-lg px-3 py-2 text-left text-sm transition",
+                            !activeClientId
+                              ? "bg-primary/10 font-semibold text-primary-dark"
+                              : "text-muted hover:bg-surface-hover",
+                          )}
+                        >
+                          Sin cliente (copiar mensaje)
+                        </button>
+                        {filteredClients.length === 0 ? (
+                          <p className="px-3 py-2 text-sm text-muted">
+                            Sin coincidencias
+                          </p>
+                        ) : (
+                          filteredClients.map((client) => {
+                            const selected = client.id === activeClientId;
+                            return (
+                              <button
+                                key={client.id}
+                                type="button"
+                                role="option"
+                                aria-selected={selected}
+                                onClick={() => selectActiveClient(client.id)}
+                                className={joinClasses(
+                                  "w-full rounded-lg px-3 py-2 text-left transition",
+                                  selected
+                                    ? "bg-primary/10 ring-1 ring-primary/25"
+                                    : "hover:bg-surface-hover",
+                                )}
+                              >
+                                <span className="block text-sm font-medium text-foreground">
+                                  {client.fullName}
+                                </span>
+                                <span className="mt-0.5 block text-[11px] text-muted">
+                                  {[client.email, client.phone]
+                                    .filter(Boolean)
+                                    .join(" · ") || "Sin contacto"}
+                                  {!client.phone ? " · sin teléfono" : ""}
+                                </span>
+                              </button>
+                            );
+                          })
+                        )}
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+
                 <label
                   htmlFor="plan-sort"
                   className="flex min-w-0 flex-1 items-center gap-2 sm:flex-none"
@@ -446,6 +647,8 @@ function CotizadorWorkspaceInner({
                   highlightAmbulatoryClinicIds={getActiveAmbulatoryClinicIds(
                     dashboardFilters,
                   )}
+                  activeClient={isExecutive ? activeClient : null}
+                  onNotify={isExecutive ? notify : undefined}
                   onAssignPlan={
                     isExecutive ? (plan) => setAssignPlan(plan) : undefined
                   }
@@ -505,6 +708,7 @@ function CotizadorWorkspaceInner({
           onClose={() => setAssignPlan(null)}
           onAssigned={() => undefined}
           onNotify={notify}
+          initialClientId={activeClientId || null}
         />
       ) : null}
       </div>

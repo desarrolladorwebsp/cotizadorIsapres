@@ -151,7 +151,21 @@ function redirectToCotizadorWithAgent(
   redirectUrl.search = request.nextUrl.search;
   redirectUrl.searchParams.set(AGENT_QUERY_PARAM, agent);
   redirectUrl.searchParams.delete(PARTNER_ENTITY_QUERY_PARAM);
-  return setPartnerEntityCookie(NextResponse.redirect(redirectUrl), agent);
+  return setPartnerEntityCookie(
+    NextResponse.redirect(redirectUrl, 308),
+    agent,
+  );
+}
+
+/** `/` → `/cotizador` permanente, conservando query string. */
+function redirectRootToCotizador(request: NextRequest): NextResponse {
+  const redirectUrl = new URL("/cotizador", request.url);
+  redirectUrl.search = request.nextUrl.search;
+  const response = NextResponse.redirect(redirectUrl, 308);
+  if (!request.cookies.get(PARTNER_ENTITY_COOKIE)?.value) {
+    setPartnerEntityCookie(response, DEFAULT_PARTNER_ENTITY_SLUG);
+  }
+  return response;
 }
 
 function redirectToLogin(request: NextRequest, nextPath: string): NextResponse {
@@ -168,11 +182,7 @@ export async function middleware(request: NextRequest) {
     if (agent) {
       return redirectToCotizadorWithAgent(request, agent);
     }
-    const response = forwardRequest(request);
-    if (!request.cookies.get(PARTNER_ENTITY_COOKIE)?.value) {
-      setPartnerEntityCookie(response, DEFAULT_PARTNER_ENTITY_SLUG);
-    }
-    return response;
+    return redirectRootToCotizador(request);
   }
 
   if (pathname === "/cotizador") {

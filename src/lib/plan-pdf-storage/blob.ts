@@ -45,6 +45,21 @@ export async function resolveBlobPlanPdfDownloadUrl(
   }
 }
 
+/** URL de visualización (sin forzar descarga) para embeber en iframe. */
+export async function resolveBlobPlanPdfViewUrl(
+  storageKey: string,
+): Promise<string | null> {
+  try {
+    const metadata = await head(
+      normalizeBlobPathname(storageKey),
+      blobCommandOptions(),
+    );
+    return metadata.url;
+  } catch {
+    return null;
+  }
+}
+
 export async function readBlobPlanPdf(storageKey: string): Promise<Buffer> {
   const pathname = normalizeBlobPathname(storageKey);
 

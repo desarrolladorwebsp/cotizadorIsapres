@@ -2,7 +2,6 @@ import {
   buildPlanPdfStorageKey,
   normalizePlanPdfStorageKey,
 } from "@/lib/plan-pdf-storage/paths";
-import { isVercelBlobUrl } from "@/lib/plan-pdf-storage/blob";
 
 export { buildPlanPdfFileName, ensurePdfExtension } from "@/lib/pdf-filename";
 
@@ -45,9 +44,8 @@ export function planHasPdf(input: PlanPdfLinkInput): boolean {
 }
 
 /**
- * Enlace de descarga del PDF.
- * - Blob: URL directa guardada en pdf_url (o API que resuelve desde pdf_public_id).
- * - Local: API /api/plans/{code}/pdf
+ * Enlace de descarga del PDF (siempre vía API, sin `inline`).
+ * La API responde con attachment / redirect a getDownloadUrl de Blob.
  */
 export function getPlanPdfDownloadUrl(input: PlanPdfLinkInput): string | null {
   const { pdfUrl, pdfPublicId, uniqueCode } = normalizePlanPdfInput(input);
@@ -55,9 +53,18 @@ export function getPlanPdfDownloadUrl(input: PlanPdfLinkInput): string | null {
   if (!pdfPublicId && !pdfUrl) return null;
   if (!uniqueCode) return null;
 
-  if (pdfUrl && (isVercelBlobUrl(pdfUrl) || pdfUrl.startsWith("http"))) {
-    return pdfUrl;
-  }
-
   return `/api/plans/${encodeURIComponent(uniqueCode)}/pdf`;
+}
+
+/**
+ * URL same-origin para embeber el PDF en iframe (`?inline=1`).
+ * La API streamea bytes con Content-Disposition: inline (sin redirect a Blob).
+ */
+export function getPlanPdfInlineUrl(input: PlanPdfLinkInput): string | null {
+  const { pdfUrl, pdfPublicId, uniqueCode } = normalizePlanPdfInput(input);
+
+  if (!pdfPublicId && !pdfUrl) return null;
+  if (!uniqueCode) return null;
+
+  return `/api/plans/${encodeURIComponent(uniqueCode)}/pdf?inline=1`;
 }

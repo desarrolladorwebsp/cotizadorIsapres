@@ -188,7 +188,7 @@ export function PoliticaPrivacidadView() {
               </p>
               <p className="mt-5 text-sm premium-text-secondary">
                 <Link
-                  href="/"
+                  href="/index"
                   className="inline-flex items-center font-semibold text-primary transition-opacity hover:opacity-80"
                 >
                   ← Volver al inicio

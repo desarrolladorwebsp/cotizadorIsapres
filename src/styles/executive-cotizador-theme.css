@@ -141,26 +141,36 @@
   background-color: color-mix(in srgb, var(--border) 65%, #94a3b8 35%);
 }
 
-/* Iconos de acción rápida */
+/* Iconos de acción rápida — colores distintos de la paleta premium */
 [data-premium-surface] [data-executive-cotizador] [data-executive-quick-action="chat"] {
   border-color: color-mix(in srgb, var(--dash-royal) 55%, transparent);
   background: color-mix(in srgb, var(--dash-royal) 14%, white);
   color: var(--dash-royal);
-  box-shadow: 0 3px 10px -3px rgb(13 109 238 / 0.4);
+  box-shadow: 0 3px 10px -3px rgb(13 109 238 / 0.45);
 }
 
+/* PDF — cyan */
 [data-premium-surface] [data-executive-cotizador] [data-executive-quick-action="download"] {
-  border-color: color-mix(in srgb, var(--dash-cyan) 55%, transparent);
-  background: color-mix(in srgb, var(--dash-cyan) 14%, white);
+  border-color: color-mix(in srgb, var(--dash-cyan) 60%, transparent);
+  background: color-mix(in srgb, var(--dash-cyan) 16%, white);
   color: #0a8fad;
-  box-shadow: 0 3px 10px -3px rgb(26 201 234 / 0.4);
+  box-shadow: 0 3px 12px -3px rgb(26 201 234 / 0.5);
 }
 
+/* Seguros — ámbar */
 [data-premium-surface] [data-executive-cotizador] [data-executive-quick-action="shield"] {
-  border-color: color-mix(in srgb, var(--accent-success) 55%, transparent);
-  background: color-mix(in srgb, var(--success-muted) 90%, white);
-  color: #0f7a3d;
-  box-shadow: 0 3px 10px -3px rgb(21 154 74 / 0.4);
+  border-color: color-mix(in srgb, var(--accent-warning) 65%, transparent);
+  background: color-mix(in srgb, var(--warning-muted) 92%, white);
+  color: #b45309;
+  box-shadow: 0 3px 12px -3px rgb(245 158 11 / 0.5);
+}
+
+/* WhatsApp — verde marca */
+[data-premium-surface] [data-executive-cotizador] [data-executive-quick-action="whatsapp"] {
+  border-color: color-mix(in srgb, #25d366 60%, transparent);
+  background: color-mix(in srgb, #25d366 16%, white);
+  color: #128c7e;
+  box-shadow: 0 3px 12px -3px rgb(37 211 102 / 0.5);
 }
 
 [data-premium-surface] [data-executive-cotizador] [data-executive-quick-action]:hover {
@@ -168,23 +178,15 @@
   transform: translateY(-1px);
 }
 
-/* CTA Asignar a cliente */
+/* Asignar — azul royal */
 [data-premium-surface] [data-executive-cotizador] [data-executive-assign-cta] {
-  background-color: #129a48;
-  border-color: #0f8640;
-  color: #ffffff;
-  box-shadow: 0 8px 24px -6px rgb(18 154 72 / 0.45);
+  border-color: color-mix(in srgb, var(--dash-royal) 55%, transparent);
+  background: color-mix(in srgb, var(--dash-royal) 12%, white);
+  color: var(--dash-royal);
+  box-shadow: 0 3px 12px -3px rgb(13 109 238 / 0.5);
 }
 
 [data-premium-surface] [data-executive-cotizador] [data-executive-assign-cta]:hover {
-  background-color: #0f8640;
-  filter: brightness(1.03);
-}
-
-[data-premium-surface] [data-executive-cotizador] [data-executive-assign-cta][data-selected="true"] {
-  background-color: #ffffff;
-  border-color: #129a48;
-  border-width: 2px;
-  color: #0b5c30;
-  box-shadow: none;
+  filter: brightness(0.97);
+  transform: translateY(-1px);
 }

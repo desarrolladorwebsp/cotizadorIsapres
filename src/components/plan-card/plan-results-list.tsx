@@ -5,7 +5,7 @@ import { motionGpu } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type { BeneficiaryGroupSummary } from "@/domain";
 import type { HealthPlan } from "@/domain";
-import { PlanCard } from "./PlanCard";
+import { PlanCard, type PlanCardActiveClient } from "./PlanCard";
 
 export interface PlanResultsListProps {
   plans: HealthPlan[];
@@ -14,6 +14,8 @@ export interface PlanResultsListProps {
   onAssignPlan?: (plan: HealthPlan) => void;
   highlightHospitalClinicIds?: string[];
   highlightAmbulatoryClinicIds?: string[];
+  activeClient?: PlanCardActiveClient | null;
+  onNotify?: (message: string, tone?: "success" | "error") => void;
 }
 
 const ANIMATED_LIST_LIMIT = 24;
@@ -52,21 +54,29 @@ export function PlanResultsList({
   onAssignPlan,
   highlightHospitalClinicIds = [],
   highlightAmbulatoryClinicIds = [],
+  activeClient = null,
+  onNotify,
 }: PlanResultsListProps) {
   const shouldAnimate = plans.length <= ANIMATED_LIST_LIMIT;
   const listClassName = "flex flex-col gap-4 sm:gap-5 xl:gap-6";
+
+  const sharedProps = {
+    beneficiarySummary,
+    ufToClp,
+    highlightHospitalClinicIds,
+    highlightAmbulatoryClinicIds,
+    activeClient,
+    onNotify,
+    selectLabel: onAssignPlan ? "Asignar" : undefined,
+    selectVariant: onAssignPlan ? ("success" as const) : undefined,
+  };
 
   const cards = plans.map((plan) => (
     <PlanCard
       key={plan.unique_code}
       plan={plan}
-      beneficiarySummary={beneficiarySummary}
-      ufToClp={ufToClp}
-      highlightHospitalClinicIds={highlightHospitalClinicIds}
-      highlightAmbulatoryClinicIds={highlightAmbulatoryClinicIds}
+      {...sharedProps}
       onSelect={onAssignPlan ? () => onAssignPlan(plan) : undefined}
-      selectLabel={onAssignPlan ? "Asignar a cliente" : undefined}
-      selectVariant={onAssignPlan ? "success" : undefined}
     />
   ));
 
@@ -91,13 +101,8 @@ export function PlanResultsList({
         >
           <PlanCard
             plan={plan}
-            beneficiarySummary={beneficiarySummary}
-            ufToClp={ufToClp}
-            highlightHospitalClinicIds={highlightHospitalClinicIds}
-            highlightAmbulatoryClinicIds={highlightAmbulatoryClinicIds}
+            {...sharedProps}
             onSelect={onAssignPlan ? () => onAssignPlan(plan) : undefined}
-            selectLabel={onAssignPlan ? "Asignar a cliente" : undefined}
-            selectVariant={onAssignPlan ? "success" : undefined}
           />
         </motion.div>
       ))}

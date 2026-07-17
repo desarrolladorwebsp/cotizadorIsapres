@@ -26,6 +26,27 @@ export function DownloadIcon() {
   );
 }
 
+/** Icono de archivo/documento (detalle PDF del plan). */
+export function FileIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="size-4" aria-hidden>
+      <path
+        d="M7 4h7l4 4v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+      <path d="M14 4v4h4" stroke="currentColor" strokeWidth="1.6" />
+      <path
+        d="M9 13h6M9 16h4"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 export function ShieldIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" className="size-4" aria-hidden>

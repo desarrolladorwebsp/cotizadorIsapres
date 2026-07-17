@@ -122,3 +122,41 @@ export function buildStaffActivationEmailHtml(input: {
     `Acceso al cotizador virtual · ${escapeHtml(brand.name)}`,
   );
 }
+
+export function buildPasswordResetEmailSubject(): string {
+  return "Restablece tu contraseña — Cotizador Premium";
+}
+
+export function buildPasswordResetEmailHtml(input: {
+  email: string;
+  resetUrl: string;
+  expiresInMinutes: number;
+}): string {
+  const brand = resolvePremiumBrand();
+
+  const body = `
+    <h1 style="margin:0 0 12px;font-size:22px;color:#222;">Restablecer contraseña</h1>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#444;">
+      Recibimos una solicitud para restablecer la contraseña de la cuenta
+      <strong>${escapeHtml(input.email)}</strong> en Cotizador Premium.
+    </p>
+    <p style="margin:0 0 20px;text-align:center;">
+      <a href="${escapeHtml(input.resetUrl)}" style="display:inline-block;background:${brand.primary};color:${brand.primaryForeground};text-decoration:none;font-weight:700;font-size:15px;padding:12px 22px;border-radius:999px;">
+        Restablecer contraseña
+      </a>
+    </p>
+    <p style="margin:0 0 12px;font-size:13px;line-height:1.6;color:#666;">
+      El enlace expira en <strong>${input.expiresInMinutes} minutos</strong> y solo se puede usar una vez.
+      Si no solicitaste este cambio, ignora este correo; tu contraseña no se modificará.
+    </p>
+    <p style="margin:0;font-size:13px;line-height:1.6;color:#666;">
+      Este es un mensaje automático; no respondas a este correo.
+    </p>`;
+
+  return buildEmailShell(
+    brand,
+    "Restablecer contraseña",
+    body,
+    `Acceso al cotizador virtual · ${escapeHtml(brand.name)}`,
+  );
+}

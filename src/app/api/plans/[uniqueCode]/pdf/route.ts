@@ -23,8 +23,75 @@ interface RouteContext {
   params: Promise<{ uniqueCode: string }>;
 }
 
-export async function GET(_request: Request, context: RouteContext) {
+function wantsInline(request: Request): boolean {
+  const value = new URL(request.url).searchParams.get("inline");
+  return value === "1" || value === "true";
+}
+
+function buildPdfResponse(
+  fileBuffer: Buffer,
+  fileName: string,
+  inline: boolean,
+): NextResponse {
+  const disposition = inline
+    ? `inline; filename="${fileName}"`
+    : `attachment; filename="${fileName}"`;
+
+  return new NextResponse(new Uint8Array(fileBuffer), {
+    status: 200,
+    headers: {
+      "Content-Type": "application/pdf",
+      "Content-Length": String(fileBuffer.byteLength),
+      "Content-Disposition": disposition,
+      "Cache-Control": "private, max-age=3600",
+      "X-Content-Type-Options": "nosniff",
+    },
+  });
+}
+
+async function fetchPdfBufferFromUrl(url: string): Promise<Buffer | null> {
   try {
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    return Buffer.from(await response.arrayBuffer());
+  } catch {
+    return null;
+  }
+}
+
+async function resolveStorageKeyForPlan(plan: {
+  isapre: string;
+  unique_code: string;
+  pdf_public_id: string | null;
+}): Promise<string | null> {
+  const candidateKeys = collectPlanPdfCleanupKeys(
+    plan.isapre,
+    plan.unique_code,
+    plan.pdf_public_id,
+  );
+
+  for (const key of candidateKeys) {
+    if (await planPdfFileExistsAsync(key)) {
+      return key;
+    }
+  }
+
+  const fallbackKey = resolveStoredPlanPdfStorageKey(
+    plan.pdf_public_id,
+    plan.isapre,
+    plan.unique_code,
+  );
+
+  if (fallbackKey && (await planPdfFileExistsAsync(fallbackKey))) {
+    return fallbackKey;
+  }
+
+  return null;
+}
+
+export async function GET(request: Request, context: RouteContext) {
+  try {
+    const inline = wantsInline(request);
     const { uniqueCode } = await context.params;
     const decodedCode = decodeURIComponent(uniqueCode);
     const plan = await readPlanByCode(decodedCode);
@@ -36,12 +103,28 @@ export async function GET(_request: Request, context: RouteContext) {
       );
     }
 
+    const fileName = buildPlanPdfFileName(plan.unique_code);
     const directUrl = plan.pdf_url?.trim();
+
+    // Blob URL directa en BD.
     if (directUrl && isVercelBlobUrl(directUrl)) {
+      if (inline) {
+        // No redirigir: el redirect a Blob rompe el embed en iframe.
+        const buffer = await fetchPdfBufferFromUrl(directUrl);
+        if (!buffer) {
+          return NextResponse.json(
+            { error: "No se pudo cargar el PDF del plan." },
+            { status: 502 },
+          );
+        }
+        return buildPdfResponse(buffer, fileName, true);
+      }
+
       return NextResponse.redirect(getDownloadUrl(directUrl), 307);
     }
 
-    if (useVercelBlobStorage()) {
+    // Blob por storage key: descarga puede redirigir a attachment URL.
+    if (!inline && useVercelBlobStorage()) {
       const candidateKeys = collectPlanPdfCleanupKeys(
         plan.isapre,
         plan.unique_code,
@@ -49,9 +132,9 @@ export async function GET(_request: Request, context: RouteContext) {
       );
 
       for (const key of candidateKeys) {
-        const blobDownloadUrl = await resolveBlobPlanPdfDownloadUrl(key);
-        if (blobDownloadUrl) {
-          return NextResponse.redirect(blobDownloadUrl, 307);
+        const blobUrl = await resolveBlobPlanPdfDownloadUrl(key);
+        if (blobUrl) {
+          return NextResponse.redirect(blobUrl, 307);
         }
       }
 
@@ -62,38 +145,15 @@ export async function GET(_request: Request, context: RouteContext) {
       );
 
       if (fallbackKey) {
-        const blobDownloadUrl = await resolveBlobPlanPdfDownloadUrl(fallbackKey);
-        if (blobDownloadUrl) {
-          return NextResponse.redirect(blobDownloadUrl, 307);
+        const blobUrl = await resolveBlobPlanPdfDownloadUrl(fallbackKey);
+        if (blobUrl) {
+          return NextResponse.redirect(blobUrl, 307);
         }
       }
     }
 
-    const candidateKeys = collectPlanPdfCleanupKeys(
-      plan.isapre,
-      plan.unique_code,
-      plan.pdf_public_id,
-    );
-
-    let storageKey: string | null = null;
-    for (const key of candidateKeys) {
-      if (await planPdfFileExistsAsync(key)) {
-        storageKey = key;
-        break;
-      }
-    }
-
-    if (!storageKey) {
-      storageKey = resolveStoredPlanPdfStorageKey(
-        plan.pdf_public_id,
-        plan.isapre,
-        plan.unique_code,
-      );
-
-      if (storageKey && !(await planPdfFileExistsAsync(storageKey))) {
-        storageKey = null;
-      }
-    }
+    // Inline (o fallback local): streamear bytes same-origin.
+    const storageKey = await resolveStorageKeyForPlan(plan);
 
     if (!storageKey) {
       return NextResponse.json(
@@ -103,17 +163,7 @@ export async function GET(_request: Request, context: RouteContext) {
     }
 
     const fileBuffer = await readPlanPdfFile(storageKey);
-    const fileName = buildPlanPdfFileName(plan.unique_code);
-
-    return new NextResponse(new Uint8Array(fileBuffer), {
-      status: 200,
-      headers: {
-        "Content-Type": "application/pdf",
-        "Content-Length": String(fileBuffer.byteLength),
-        "Content-Disposition": `attachment; filename="${fileName}"`,
-        "Cache-Control": "private, max-age=3600",
-      },
-    });
+    return buildPdfResponse(fileBuffer, fileName, inline);
   } catch (error) {
     console.error("GET /api/plans/[uniqueCode]/pdf", error);
     const { body, status } = apiErrorResponse(error);

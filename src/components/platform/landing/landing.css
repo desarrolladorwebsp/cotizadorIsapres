@@ -4,24 +4,24 @@
  */
 
 [data-landing] {
-  /* Paleta Cotizador Premium — logo oficial (navy + cyan/azul) */
-  --primary: #0077b6;
-  --primary-hover: #005f92;
-  --primary-dark: #0b2545;
+  /* Paleta Cotizador Premium — alinear con cotizador-premium-palette.ts */
+  --primary: #0d6dee;
+  --primary-hover: #1289f8;
+  --primary-dark: #092558;
   --primary-foreground: #ffffff;
 
-  --secondary: #48cae4;
-  --secondary-muted: #e8f6fb;
+  --secondary: #1ac9ea;
+  --secondary-muted: #e6f9fd;
 
-  --accent-cyan: #48cae4;
-  --text-secondary: #6b8494;
+  --accent-cyan: #1ac9ea;
+  --text-secondary: #5a7390;
 
-  --bg-layout: #f8fbfd;
+  --bg-layout: #f5f9fc;
   --background: #ffffff;
-  --foreground: #0b2545;
-  --muted: #8d99ae;
-  --border: #d7e6ef;
-  --surface-hover: #edf6fa;
+  --foreground: #092558;
+  --muted: #7a8fa5;
+  --border: #d0e2f0;
+  --surface-hover: #eaf3fa;
 
   --accent-warning: #f59e0b;
   --accent-warning-foreground: #3d2e00;
@@ -37,9 +37,9 @@
     var(--secondary) 100%
   );
 
-  --shadow-card: 0 4px 24px -8px rgb(11 37 69 / 0.07);
-  --shadow-card-hover: 0 12px 32px -10px rgb(0 119 182 / 0.18);
-  --shadow-cta: 0 8px 28px -8px rgb(0 119 182 / 0.35);
+  --shadow-card: 0 4px 24px -8px rgb(9 37 88 / 0.07);
+  --shadow-card-hover: 0 12px 32px -10px rgb(13 109 238 / 0.18);
+  --shadow-cta: 0 8px 28px -8px rgb(13 109 238 / 0.35);
 
   /* Decoración landing */
   --landing-mesh-primary: color-mix(in srgb, var(--primary) 10%, transparent);
@@ -49,7 +49,7 @@
   --landing-glass-border: rgb(229 231 235 / 0.95);
   --landing-hero-glow: 0 0 100px -24px
     color-mix(in srgb, var(--primary) 36%, transparent);
-  --landing-card-glow: 0 24px 64px -16px rgb(0 119 182 / 0.14);
+  --landing-card-glow: 0 24px 64px -16px rgb(13 109 238 / 0.14);
 
   /* Fondo ambiental — imagen de familia */
   --landing-backdrop-wash: rgb(250 250 250 / 0.78);
@@ -69,8 +69,8 @@
       105deg,
       rgb(250 250 250 / 0.97) 0%,
       rgb(250 250 250 / 0.88) 38%,
-      rgb(232 246 251 / 0.55) 58%,
-      rgb(11 37 69 / 0.08) 100%
+      rgb(230 249 253 / 0.55) 58%,
+      rgb(9 37 88 / 0.08) 100%
     ),
     linear-gradient(
       to bottom,
@@ -111,15 +111,15 @@
 }
 
 [data-landing] .landing-hero-family-frame {
-  background: #0b2545;
+  background: #092558;
   box-shadow:
     0 0 0 1px rgb(255 255 255 / 0.55),
     0 32px 64px -24px rgb(17 24 39 / 0.28),
-    0 16px 40px -20px rgb(0 119 182 / 0.2);
+    0 16px 40px -20px rgb(13 109 238 / 0.2);
 }
 
 [data-landing] .landing-hero-video {
-  background: #0b2545;
+  background: #092558;
 }
 
 [data-landing] .landing-hero-family-glow {
@@ -139,8 +139,8 @@
 
 [data-landing] .landing-grid-pattern {
   background-image:
-    linear-gradient(rgb(11 37 69 / 0.022) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(11 37 69 / 0.022) 1px, transparent 1px);
+    linear-gradient(rgb(9 37 88 / 0.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(9 37 88 / 0.022) 1px, transparent 1px);
   background-size: 72px 72px;
   mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, black 20%, transparent 75%);
 }
@@ -183,8 +183,8 @@
 [data-landing] .landing-hero-showcase {
   box-shadow:
     0 0 0 1px var(--border),
-    0 32px 64px -28px rgb(0 119 182 / 0.2),
-    0 12px 28px -16px rgb(11 37 69 / 0.1);
+    0 32px 64px -28px rgb(13 109 238 / 0.2),
+    0 12px 28px -16px rgb(9 37 88 / 0.1);
 }
 
 [data-landing] .landing-hero-browser {
@@ -255,7 +255,7 @@
 
 [data-landing] .landing-partner-card:hover .landing-partner-logo-wrap {
   transform: scale(1.04);
-  box-shadow: 0 8px 24px -8px rgb(0 119 182 / 0.14);
+  box-shadow: 0 8px 24px -8px rgb(13 109 238 / 0.14);
 }
 
 [data-landing] .landing-footer-mesh {
@@ -318,7 +318,7 @@
     linear-gradient(
       180deg,
       rgb(255 255 255 / 0.94) 0%,
-      rgb(248 251 253 / 0.88) 45%,
+      rgb(245 249 252 / 0.88) 45%,
       rgb(255 255 255 / 0.94) 100%
     );
 }
@@ -332,8 +332,8 @@
     linear-gradient(
       105deg,
       rgb(255 255 255 / 0.96) 0%,
-      rgb(248 251 253 / 0.9) 42%,
-      rgb(232 246 251 / 0.82) 100%
+      rgb(245 249 252 / 0.9) 42%,
+      rgb(230 249 253 / 0.82) 100%
     );
 }
 
@@ -354,7 +354,7 @@
     linear-gradient(
       180deg,
       rgb(255 255 255 / 0.93) 0%,
-      rgb(248 251 253 / 0.86) 50%,
+      rgb(245 249 252 / 0.86) 50%,
       rgb(255 255 255 / 0.95) 100%
     );
 }
@@ -378,5 +378,5 @@
 
 [data-landing] .landing-isapre-page-hero {
   background:
-    linear-gradient(180deg, rgb(255 255 255 / 0.96) 0%, rgb(248 251 253 / 0.92) 100%);
+    linear-gradient(180deg, rgb(255 255 255 / 0.96) 0%, rgb(245 249 252 / 0.92) 100%);
 }

@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { EMBED_DOCUMENT_HEADER } from "@/lib/embed/is-embed-request";
+import { COTIZADOR_PREMIUM_PALETTE } from "@/lib/partner-entity/cotizador-premium-palette";
 import { buildRootMetadata } from "@/lib/seo/build-page-metadata";
 import "./globals.css";
 
@@ -19,7 +20,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = buildRootMetadata();
 
 export const viewport: Viewport = {
-  themeColor: "#0077B6",
+  themeColor: COTIZADOR_PREMIUM_PALETTE.primary,
   width: "device-width",
   initialScale: 1,
 };

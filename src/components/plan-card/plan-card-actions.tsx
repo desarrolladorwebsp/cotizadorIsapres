@@ -1,37 +1,49 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { IconUserPlus, IconWhatsApp } from "@/components/executive/executive-icons";
 import { touchTarget, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
-import { ChatIcon, DownloadIcon, ShieldIcon } from "./icons";
+import { FileIcon, ShieldIcon } from "./icons";
 
 export interface PlanCardActionsProps {
   selected: boolean;
   onSelect: () => void;
-  onChat?: () => void;
   onDownloadPdf?: () => void;
   onAddInsurance?: () => void;
+  onWhatsApp?: () => void;
   selectLabel?: string;
   selectVariant?: "primary" | "success";
+  /** Nombre del cliente activo (solo CTA ejecutivo compacto). */
+  assignClientName?: string | null;
 }
 
-type QuickActionTone = "chat" | "download" | "shield";
+type QuickActionTone = "download" | "shield" | "whatsapp" | "assign";
 
 const quickActionToneClass: Record<QuickActionTone, string> = {
-  chat: "border-primary/45 bg-primary/15 text-primary hover:border-primary hover:bg-primary/25 hover:shadow-[0_4px_12px_-4px_rgb(26,111,217/0.45)]",
+  /* PDF — cyan de marca */
   download:
-    "border-secondary/50 bg-secondary-muted text-secondary hover:border-secondary hover:bg-secondary/20 hover:shadow-[0_4px_12px_-4px_rgb(13,158,196/0.45)]",
+    "border-[#1AC9EA]/55 bg-[#E6F9FD] text-[#0A8FAD] hover:border-[#1AC9EA] hover:bg-[#1AC9EA]/20 hover:shadow-[0_4px_12px_-4px_rgb(26,201,234/0.5)]",
+  /* Seguros — ámbar / amarillo */
   shield:
-    "border-emerald-500/45 bg-emerald-50 text-emerald-700 hover:border-emerald-600 hover:bg-emerald-100 hover:shadow-[0_4px_12px_-4px_rgb(16,185,129/0.45)]",
+    "border-amber-400/60 bg-amber-50 text-amber-700 hover:border-amber-500 hover:bg-amber-100 hover:shadow-[0_4px_12px_-4px_rgb(245,158,11/0.5)]",
+  /* WhatsApp — verde marca */
+  whatsapp:
+    "border-[#25D366]/55 bg-[#25D366]/15 text-[#128C7E] hover:border-[#25D366] hover:bg-[#25D366]/25 hover:shadow-[0_4px_12px_-4px_rgb(37,211,102/0.5)]",
+  /* Asignar — azul royal */
+  assign:
+    "border-[#0D6DEE]/50 bg-[#0D6DEE]/10 text-[#0D6DEE] hover:border-[#0D6DEE] hover:bg-[#0D6DEE]/18 hover:shadow-[0_4px_12px_-4px_rgb(13,109,238/0.5)]",
 };
 
 function QuickActionButton({
   label,
+  shortLabel,
   onClick,
   tone,
   children,
 }: {
   label: string;
+  shortLabel: string;
   onClick?: () => void;
   tone: QuickActionTone;
   children: React.ReactNode;
@@ -40,15 +52,20 @@ function QuickActionButton({
     <button
       type="button"
       aria-label={label}
+      title={label}
       onClick={onClick}
-      data-executive-quick-action={tone}
+      data-executive-quick-action={tone === "assign" ? undefined : tone}
+      data-executive-assign-cta={tone === "assign" ? "true" : undefined}
       className={joinClasses(
         touchTarget,
-        "rounded-full border transition active:scale-[0.98] md:size-10",
+        "h-auto min-h-12 min-w-[3.25rem] flex-col gap-0.5 rounded-xl border px-2 py-1.5 transition active:scale-[0.98] md:min-h-11 md:min-w-[3.5rem]",
         quickActionToneClass[tone],
       )}
     >
       {children}
+      <span className="text-[9px] font-bold uppercase leading-none tracking-wide">
+        {shortLabel}
+      </span>
     </button>
   );
 }
@@ -56,12 +73,18 @@ function QuickActionButton({
 export function PlanCardActions({
   selected,
   onSelect,
-  onChat,
   onDownloadPdf,
   onAddInsurance,
+  onWhatsApp,
   selectLabel,
   selectVariant = "primary",
+  assignClientName = null,
 }: PlanCardActionsProps) {
+  const isAssignCta = selectVariant === "success";
+  const assignAria = assignClientName
+    ? `Asignar plan a ${assignClientName}`
+    : "Asignar plan a cliente";
+
   return (
     <footer
       className={joinClasses(
@@ -70,51 +93,66 @@ export function PlanCardActions({
       )}
     >
       <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center md:w-auto md:justify-end">
-        <div className="flex items-center justify-center gap-2.5 sm:justify-start">
-          <QuickActionButton label="Chat del plan" onClick={onChat} tone="chat">
-            <ChatIcon />
-          </QuickActionButton>
+        <div className="flex items-center justify-center gap-2 sm:justify-start">
           <QuickActionButton
-            label="Descargar PDF"
+            label="Ver detalle del plan (PDF)"
+            shortLabel="PDF"
             onClick={onDownloadPdf}
             tone="download"
           >
-            <DownloadIcon />
+            <FileIcon />
           </QuickActionButton>
           <QuickActionButton
             label="Agregar seguros"
+            shortLabel="Seguros"
             onClick={onAddInsurance}
             tone="shield"
           >
             <ShieldIcon />
           </QuickActionButton>
+          {onWhatsApp ? (
+            <QuickActionButton
+              label="Compartir por WhatsApp"
+              shortLabel="WhatsApp"
+              onClick={onWhatsApp}
+              tone="whatsapp"
+            >
+              <IconWhatsApp className="size-4" />
+            </QuickActionButton>
+          ) : null}
+          {isAssignCta ? (
+            <QuickActionButton
+              label={assignAria}
+              shortLabel="Asignar"
+              onClick={onSelect}
+              tone="assign"
+            >
+              <IconUserPlus className="size-4" />
+            </QuickActionButton>
+          ) : null}
         </div>
 
-        <motion.button
-          type="button"
-          onClick={onSelect}
-          whileTap={{ scale: 0.98 }}
-          data-executive-assign-cta={selectVariant === "success" ? "true" : undefined}
-          data-selected={selected ? "true" : undefined}
-          className={joinClasses(
-            touchTarget,
-            "w-full rounded-full px-6 text-sm font-bold tracking-tight shadow-md md:min-w-[11.5rem] md:w-auto",
-            selected
-              ? selectVariant === "success"
-                ? "border-2 border-emerald-600 bg-white text-emerald-900"
-                : "border-2 border-primary bg-white text-primary-dark"
-              : selectVariant === "success"
-                ? "border border-emerald-300 bg-emerald-600 text-white shadow-[0_8px_24px_-6px_rgb(5,150,105)] hover:bg-emerald-700"
+        {!isAssignCta ? (
+          <motion.button
+            type="button"
+            onClick={onSelect}
+            whileTap={{ scale: 0.98 }}
+            className={joinClasses(
+              touchTarget,
+              "w-full rounded-full px-6 text-sm font-bold tracking-tight shadow-md md:min-w-[11.5rem] md:w-auto",
+              selected
+                ? "border-2 border-primary bg-white text-primary-dark"
                 : joinClasses(
                     ui.cta,
                     "shadow-[0_6px_20px_-6px_var(--primary)] hover:shadow-[0_8px_24px_-4px_var(--primary)]",
                   ),
-          )}
-        >
-          {selected
-            ? "Plan seleccionado"
-            : (selectLabel ?? "Seleccionar plan")}
-        </motion.button>
+            )}
+          >
+            {selected
+              ? "Plan seleccionado"
+              : (selectLabel ?? "Seleccionar plan")}
+          </motion.button>
+        ) : null}
       </div>
     </footer>
   );

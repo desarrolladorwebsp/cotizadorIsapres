@@ -1,9 +1,12 @@
 "use client";
 
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { LandingLogo } from "@/components/platform/landing/landing-logo";
 import {
   AUTH_REALM,
+  PASSWORD_RESET_REQUEST_PATH,
   STAFF_DEFAULT_HOME,
   getChangePasswordPath,
   type AuthRealm,
@@ -42,6 +45,9 @@ export function LoginForm({
   subtitle = "Ingresa con tu cuenta de administrador o ejecutivo comercial.",
   redirectTo,
 }: LoginFormProps) {
+  const searchParams = useSearchParams();
+  const passwordResetSuccess = searchParams.get("passwordReset") === "1";
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -107,6 +113,15 @@ export function LoginForm({
         </p>
       </div>
 
+      {passwordResetSuccess ? (
+        <p
+          className="mb-4 rounded-xl border border-primary/20 bg-primary/5 px-3 py-2.5 text-sm text-foreground"
+          role="status"
+        >
+          Contraseña actualizada, inicia sesión.
+        </p>
+      ) : null}
+
       <form className="space-y-4" onSubmit={handleSubmit}>
         <label className="block space-y-1.5">
           <span className="text-xs font-semibold uppercase tracking-wide text-muted">
@@ -124,9 +139,17 @@ export function LoginForm({
         </label>
 
         <label className="block space-y-1.5">
-          <span className="text-xs font-semibold uppercase tracking-wide text-muted">
-            Contraseña
-          </span>
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted">
+              Contraseña
+            </span>
+            <Link
+              href={PASSWORD_RESET_REQUEST_PATH}
+              className="text-xs font-medium text-primary underline-offset-2 hover:underline"
+            >
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </div>
           <input
             type="password"
             name="password"

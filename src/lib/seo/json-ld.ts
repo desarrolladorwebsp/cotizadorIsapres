@@ -13,9 +13,10 @@ function absoluteUrl(path: string): string {
   return `${base}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
-/** JSON-LD para la home: Organization + WebSite + WebApplication. */
+/** JSON-LD de la landing marketing (`/index`): Organization + WebSite + WebApplication. */
 export function buildLandingPageJsonLd() {
   const siteUrl = resolveAppBaseUrl();
+  const landingUrl = absoluteUrl("/index");
   const logoUrl = absoluteUrl("/icon-512.png");
   const cotizadorUrl = absoluteUrl("/cotizador");
 
@@ -62,6 +63,15 @@ export function buildLandingPageJsonLd() {
           },
           "query-input": "required name=search_term_string",
         },
+      },
+      {
+        "@type": "WebPage",
+        "@id": `${landingUrl}#webpage`,
+        url: landingUrl,
+        name: SITE_NAME,
+        description: DEFAULT_DESCRIPTION,
+        isPartOf: { "@id": `${siteUrl}/#website` },
+        about: { "@id": `${siteUrl}/#organization` },
       },
       {
         "@type": "WebApplication",

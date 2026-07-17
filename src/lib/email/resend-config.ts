@@ -11,6 +11,11 @@ export const DEFAULT_EQUIPO_FROM_EMAIL =
 /** Buzón que recibe alertas de cotizaciones y solicitudes de plan. */
 export const DEFAULT_COTIZACION_NOTIFY_EMAIL = "cotizaciones@cotizadorpremium.cl";
 
+/** Copia (CC) por defecto del aviso interno de cotización. */
+export const DEFAULT_COTIZACION_NOTIFY_CC_EMAILS = [
+  "premiumisapres@gmail.com",
+] as const;
+
 /** @deprecated Usar COTIZACION_NOTIFY_EMAIL. Mantenido por compatibilidad. */
 export const DEFAULT_EQUIPO_NOTIFY_EMAIL = "equipo@cotizadorpremium.cl";
 
@@ -54,6 +59,36 @@ export function getCotizacionNotifyEmail(): string {
     extractEmailAddress(getCotizacionFromEmail()) ||
     DEFAULT_COTIZACION_NOTIFY_EMAIL
   );
+}
+
+function isLikelyEmailAddress(value: string): boolean {
+  const at = value.indexOf("@");
+  return at > 0 && at < value.length - 1 && !value.includes(" ");
+}
+
+/**
+ * Destinos CC del aviso interno de cotización.
+ * Env `COTIZACION_NOTIFY_CC`: lista separada por coma.
+ * Fallback: premiumisapres@gmail.com. Excluye el TO principal si coincide.
+ */
+export function getCotizacionNotifyCcEmails(): string[] {
+  const raw = process.env.COTIZACION_NOTIFY_CC?.trim();
+  const candidates = raw
+    ? raw.split(",").map((part) => part.trim().toLowerCase())
+    : [...DEFAULT_COTIZACION_NOTIFY_CC_EMAILS];
+
+  const primary = getCotizacionNotifyEmail().trim().toLowerCase();
+  const seen = new Set<string>();
+  const emails: string[] = [];
+
+  for (const email of candidates) {
+    if (!email || !isLikelyEmailAddress(email) || email === primary) continue;
+    if (seen.has(email)) continue;
+    seen.add(email);
+    emails.push(email);
+  }
+
+  return emails;
 }
 
 /** @deprecated Usar getCotizacionNotifyEmail para alertas de cotización. */

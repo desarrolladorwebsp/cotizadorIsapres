@@ -207,10 +207,26 @@ model StaffAccount {
   updatedAt             DateTime            @updatedAt @map("updated_at")
   assignedQuotes        Quote[]
   assignedClients       User[]              @relation("AssignedClients")
+  passwordResetTokens   PasswordResetToken[]
 
   @@index([role])
   @@index([subscriptionStatus])
   @@map("staff_accounts")
+}
+
+/// Token de recuperación de contraseña (staff). Solo se guarda el hash SHA-256.
+model PasswordResetToken {
+  id             String       @id @default(cuid())
+  tokenHash      String       @unique @map("token_hash")
+  staffAccountId String       @map("staff_account_id")
+  staffAccount   StaffAccount @relation(fields: [staffAccountId], references: [id], onDelete: Cascade)
+  expiresAt      DateTime     @map("expires_at")
+  usedAt         DateTime?    @map("used_at")
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  @@index([staffAccountId])
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
 }
 
 /// Invitación por correo para crear cuenta admin o ejecutivo (enlace único).

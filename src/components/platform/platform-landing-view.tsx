@@ -35,7 +35,7 @@ export function PlatformLandingView({
       <LandingPageBackdrop />
       <header className={`${landing.header} landing-header-over-backdrop`}>
         <div className={landing.headerInner}>
-          <Link href="/" className="flex items-center gap-3">
+          <Link href="/index" className="flex items-center gap-3">
             <LandingLogo size="lg" />
             <div className="min-w-0">
               <p className="text-base font-semibold tracking-tight text-foreground">

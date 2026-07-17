@@ -12,9 +12,10 @@ export const PLATFORM_AGENT_WEBSITE = "https://cotizadorpremium.cl";
 export const PLATFORM_AGENT_LOGO_URL = COTIZADOR_PREMIUM_LOGO_PATH;
 
 /**
- * Tema de marca Cotizador Premium — paleta del logo oficial (navy + cyan/azul).
+ * Tema de marca Cotizador Premium — ver `cotizador-premium-palette.ts`.
  * Fuente de verdad en código para seed/fallback; en producción se persiste en
- * `partner_entities.theme` y puede editarse sin redeploy.
+ * `partner_entities.theme`. Si la DB queda desfasada: `npx prisma db seed`
+ * (upsert del theme) o actualizar el agente en admin.
  */
 export const COTIZADOR_PREMIUM_THEME: PartnerEntityTheme = {
   primary: COTIZADOR_PREMIUM_PALETTE.primary,
@@ -41,11 +42,11 @@ export function buildCotizadorPremiumPartnerRecord(): Omit<
     embedKey: PLATFORM_AGENT_KEY,
     name: "Cotizador Premium",
     logoUrl: PLATFORM_AGENT_LOGO_URL,
-    websiteUrl: PLATFORM_AGENT_WEBSITE,
+    websiteUrl: "/index",
     whatsappNumber: "56965822864",
     whatsappMessage:
       "Hola, quiero cotizar un plan de salud con Cotizador Premium",
-    exitLabel: "Volver a Cotizador Premium",
+    exitLabel: "Ver la página inicial",
     brandKey: "premium",
     theme: COTIZADOR_PREMIUM_THEME,
   };

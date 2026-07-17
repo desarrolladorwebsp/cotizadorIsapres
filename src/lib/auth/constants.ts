@@ -28,8 +28,25 @@ export const LOGIN_LOCKOUT = {
 
 export const PASSWORD_MIN_LENGTH = 8;
 
+/**
+ * TTL del enlace de recuperación de contraseña (staff).
+ * Corto a propósito: reduce la ventana de abuso si el correo se filtra.
+ */
+export const PASSWORD_RESET_TTL_MINUTES = 45;
+
+/** Rate limit de solicitudes de reset (espíritu LOGIN_LOCKOUT). */
+export const PASSWORD_RESET_RATE_LIMIT = {
+  maxAttempts: 5,
+  windowMinutes: 15,
+} as const;
+
 /** Login único para todo el staff. */
 export const STAFF_LOGIN_PATH = "/cotizador/acceso";
+
+export const PASSWORD_RESET_REQUEST_PATH =
+  "/cotizador/acceso/recuperar-contrasena";
+export const PASSWORD_RESET_PATH =
+  "/cotizador/acceso/restablecer-contrasena";
 
 export const ADMIN_LOGIN_PATH = STAFF_LOGIN_PATH;
 export const EXECUTIVE_LOGIN_PATH = STAFF_LOGIN_PATH;

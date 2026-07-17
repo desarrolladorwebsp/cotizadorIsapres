@@ -31,6 +31,7 @@ export {
 export {
   isVercelBlobUrl,
   resolveBlobPlanPdfDownloadUrl,
+  resolveBlobPlanPdfViewUrl,
 } from "@/lib/plan-pdf-storage/blob";
 export type {
   PlanPdfUploadResult,

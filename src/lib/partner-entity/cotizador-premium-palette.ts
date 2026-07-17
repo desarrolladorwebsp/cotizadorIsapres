@@ -1,27 +1,34 @@
 /**
- * Paleta extraída del logo oficial Cotizador Premium.
- * Navy + gradiente cyan → azul del isotipo.
+ * Paleta oficial Cotizador Premium (fuente de verdad en código).
+ * Navy + cyan + azules vivos; tokens derivados se mantienen en la misma familia.
+ *
+ * Si el theme en DB (`partner_entities.theme` para slug `cotizadorpremium`)
+ * queda desfasado: re-ejecutar seed (`npx prisma db seed`) o actualizar el
+ * theme del agente en admin — el seed hace upsert del theme desde
+ * `COTIZADOR_PREMIUM_THEME` / esta paleta.
  */
 export const COTIZADOR_PREMIUM_PALETTE = {
-  /** Azul principal del arco del logo — CTAs y acentos */
-  primary: "#0077B6",
-  primaryHover: "#005F92",
-  /** Navy del monograma y tipografía PREMIUM */
-  primaryDark: "#0B2545",
+  /** Azul royal — CTAs y acentos principales */
+  primary: "#0D6DEE",
+  /** Azul vivo — hover / lift sobre primary */
+  primaryHover: "#1289F8",
+  /** Navy — tipografía y contraste fuerte */
+  primaryDark: "#092558",
   primaryForeground: "#FFFFFF",
-  /** Cyan claro del gradiente del logo */
-  secondary: "#48CAE4",
-  secondaryMuted: "#E8F6FB",
-  /** Gris del wordmark COTIZADOR */
-  muted: "#8D99AE",
-  textSecondary: "#6B8494",
-  bgLayout: "#F8FBFD",
+  /** Cyan de marca */
+  secondary: "#1AC9EA",
+  /** Lavado cyan claro (fondos suaves / chips) */
+  secondaryMuted: "#E6F9FD",
+  /** Gris azulado derivado del navy */
+  muted: "#7A8FA5",
+  textSecondary: "#5A7390",
+  bgLayout: "#F5F9FC",
   background: "#FFFFFF",
-  foreground: "#0B2545",
-  border: "#D7E6EF",
-  surfaceHover: "#EDF6FA",
-  criteriaSurface: "#EDF6FA",
-  criteriaRing: "#C5E4F2",
+  foreground: "#092558",
+  border: "#D0E2F0",
+  surfaceHover: "#EAF3FA",
+  criteriaSurface: "#EAF3FA",
+  criteriaRing: "#BDDCF0",
 } as const;
 
 export const COTIZADOR_PREMIUM_LOGO_PATH =

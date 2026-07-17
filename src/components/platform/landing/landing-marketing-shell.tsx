@@ -24,7 +24,7 @@ export function LandingMarketingShell({
 
       <header className={`${landing.header} landing-header-over-backdrop`}>
         <div className={landing.headerInner}>
-          <Link href="/" className="flex items-center gap-3">
+          <Link href="/index" className="flex items-center gap-3">
             <LandingLogo size="lg" />
             <div className="min-w-0">
               <p className="text-base font-semibold tracking-tight text-foreground">
@@ -34,7 +34,7 @@ export function LandingMarketingShell({
             </div>
           </Link>
           <nav aria-label="Navegación principal" className="flex items-center gap-1.5 sm:gap-2">
-            <Link href="/#cotizar" className={landing.navLink}>
+            <Link href="/index#cotizar" className={landing.navLink}>
               Cotizar
             </Link>
             <Link href="/cotizador/acceso" className={landing.navCta}>

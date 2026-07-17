@@ -2,16 +2,27 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
+import { useOptionalCompanyAgreementContext } from "@/components/cotizador/company-agreement";
 import { splitCoverageByType } from "@/domain";
 import { buildPlanFinalPriceQuote } from "@/domain";
-import { getPlanPdfDownloadUrl, planHasPdf } from "@/lib/plan-pdf";
-import { planCard, ui } from "@/lib/ui-tokens";
+import {
+  buildPlanWhatsAppMessage,
+  copyTextToClipboard,
+} from "@/lib/executive/build-plan-whatsapp-message";
+import { buildWhatsAppUrl } from "@/lib/partner-entity/theme";
+import { planCard } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type { BeneficiaryGroupSummary } from "@/domain";
 import type { HealthPlan } from "@/domain";
 import { PlanCardActions } from "./plan-card-actions";
 import { PlanCardCoverage } from "./plan-card-coverage";
 import { PlanCardHeader } from "./plan-card-header";
+import { PlanDetailModal } from "@/components/executive/plan-detail-modal";
+
+export interface PlanCardActiveClient {
+  fullName: string;
+  phone: string | null;
+}
 
 export interface PlanCardProps {
   plan: HealthPlan;
@@ -21,9 +32,11 @@ export interface PlanCardProps {
   className?: string;
   onSelectedChange?: (selected: boolean) => void;
   onSelect?: () => void;
-  onChat?: () => void;
   onDownloadPdf?: () => void;
   onAddInsurance?: () => void;
+  /** Cliente activo del workspace ejecutivo (WhatsApp / copiar). */
+  activeClient?: PlanCardActiveClient | null;
+  onNotify?: (message: string, tone?: "success" | "error") => void;
   selectLabel?: string;
   selectVariant?: "primary" | "success";
   highlightHospitalClinicIds?: string[];
@@ -38,9 +51,10 @@ export function PlanCard({
   className,
   onSelectedChange,
   onSelect,
-  onChat,
   onDownloadPdf,
   onAddInsurance,
+  activeClient = null,
+  onNotify,
   selectLabel,
   selectVariant,
   highlightHospitalClinicIds = [],
@@ -48,6 +62,9 @@ export function PlanCard({
 }: PlanCardProps) {
   const [isSelected, setIsSelected] = useState(selected);
   const [isHovered, setIsHovered] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const validatedAgreement =
+    useOptionalCompanyAgreementContext()?.validatedAgreement ?? null;
 
   useEffect(() => {
     setIsSelected(selected);
@@ -87,15 +104,38 @@ export function PlanCard({
       return;
     }
 
-    if (!planHasPdf(plan)) {
-      window.alert(
-        "El PDF de este plan estará disponible pronto. Aún no se ha cargado desde administración.",
-      );
+    // Cotizador ejecutivo: abrir modal de detalle (tabs + PDF).
+    setDetailOpen(true);
+  }
+
+  async function handleWhatsApp() {
+    const message = buildPlanWhatsAppMessage({
+      plan,
+      beneficiarySummary,
+      ufToClp: ufToClp ?? priceQuote.ufToClp,
+      highlightHospitalClinicIds,
+      highlightAmbulatoryClinicIds,
+      clientFullName: activeClient?.fullName,
+      validatedAgreement,
+    });
+
+    const phone = activeClient?.phone?.trim() || null;
+    if (phone) {
+      window.open(buildWhatsAppUrl(phone, message), "_blank", "noopener,noreferrer");
+      onNotify?.("Abriendo WhatsApp con el resumen del plan.");
       return;
     }
 
-    const url = getPlanPdfDownloadUrl(plan);
-    if (url) window.open(url, "_blank", "noopener,noreferrer");
+    const copied = await copyTextToClipboard(message);
+    if (copied) {
+      onNotify?.("Mensaje copiado");
+      return;
+    }
+
+    onNotify?.(
+      "No se pudo copiar el mensaje. Revisa permisos del portapapeles.",
+      "error",
+    );
   }
 
   return (
@@ -135,11 +175,23 @@ export function PlanCard({
       <PlanCardActions
         selected={isSelected}
         onSelect={handleSelect}
-        onChat={onChat}
         onDownloadPdf={handleDownloadPdf}
         onAddInsurance={onAddInsurance}
+        onWhatsApp={onNotify ? handleWhatsApp : undefined}
         selectLabel={selectLabel}
         selectVariant={selectVariant}
+        assignClientName={activeClient?.fullName ?? null}
+      />
+
+      <PlanDetailModal
+        open={detailOpen}
+        plan={plan}
+        beneficiarySummary={beneficiarySummary}
+        priceQuote={priceQuote}
+        highlightHospitalClinicIds={highlightHospitalClinicIds}
+        highlightAmbulatoryClinicIds={highlightAmbulatoryClinicIds}
+        initialTab="coverages"
+        onClose={() => setDetailOpen(false)}
       />
     </motion.article>
   );

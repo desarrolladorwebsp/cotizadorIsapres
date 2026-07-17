@@ -10,15 +10,15 @@ export async function buildSitemapEntries(): Promise<MetadataRoute.Sitemap> {
 
   const entries: MetadataRoute.Sitemap = [
     {
-      url: baseUrl,
-      lastModified: now,
-      changeFrequency: "weekly",
-      priority: 1,
-    },
-    {
       url: `${baseUrl}/cotizador`,
       lastModified: now,
       changeFrequency: "daily",
+      priority: 1,
+    },
+    {
+      url: `${baseUrl}/index`,
+      lastModified: now,
+      changeFrequency: "weekly",
       priority: 0.9,
     },
   ];

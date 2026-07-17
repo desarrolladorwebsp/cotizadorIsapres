@@ -36,6 +36,8 @@ export interface AssignPlanToClientModalProps {
   onClose: () => void;
   onAssigned: (client: UserRecord) => void;
   onNotify: (message: string, tone?: "success" | "error") => void;
+  /** Cliente activo del cotizador: se preselecciona al abrir. */
+  initialClientId?: string | null;
 }
 
 const EMPTY_NEW_CLIENT = {
@@ -55,6 +57,7 @@ export function AssignPlanToClientModal({
   onClose,
   onAssigned,
   onNotify,
+  initialClientId = null,
 }: AssignPlanToClientModalProps) {
   const [mode, setMode] = useState<AssignMode>("existing");
   const [clients, setClients] = useState<UserRecord[]>([]);
@@ -69,7 +72,7 @@ export function AssignPlanToClientModal({
     if (!open) return;
     setMode("existing");
     setClientSearch("");
-    setSelectedClientId(null);
+    setSelectedClientId(initialClientId?.trim() || null);
     setNotes("");
     setNewClient(EMPTY_NEW_CLIENT);
 
@@ -79,7 +82,13 @@ export function AssignPlanToClientModal({
     void (async () => {
       try {
         const rows = await fetchExecutiveClients();
-        if (!cancelled) setClients(rows);
+        if (cancelled) return;
+        setClients(rows);
+
+        const preferredId = initialClientId?.trim() || null;
+        if (preferredId && rows.some((row) => row.id === preferredId)) {
+          setSelectedClientId(preferredId);
+        }
       } catch {
         if (!cancelled) {
           onNotify("No se pudieron cargar tus clientes.", "error");
@@ -92,17 +101,27 @@ export function AssignPlanToClientModal({
     return () => {
       cancelled = true;
     };
-  }, [open, onNotify]);
+  }, [open, onNotify, initialClientId]);
 
   const filteredClients = useMemo(() => {
     const query = clientSearch.trim().toLowerCase();
-    if (!query) return clients;
-    return clients.filter((client) =>
-      [client.fullName, client.email, client.phone, client.rut]
-        .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(query)),
-    );
-  }, [clients, clientSearch]);
+    const base = !query
+      ? clients
+      : clients.filter((client) =>
+          [client.fullName, client.email, client.phone, client.rut]
+            .filter(Boolean)
+            .some((value) => String(value).toLowerCase().includes(query)),
+        );
+
+    if (!selectedClientId) return base;
+
+    const selected = base.find((client) => client.id === selectedClientId);
+    if (!selected) return base;
+    return [
+      selected,
+      ...base.filter((client) => client.id !== selectedClientId),
+    ];
+  }, [clients, clientSearch, selectedClientId]);
 
   const agreement =
     useOptionalCompanyAgreementContext()?.validatedAgreement ?? null;
@@ -296,6 +315,13 @@ export function AssignPlanToClientModal({
 
         {mode === "existing" ? (
           <div className="space-y-3">
+            {selectedClientId &&
+            clients.some((client) => client.id === selectedClientId) ? (
+              <p className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-xs text-primary-dark">
+                Cliente activo del cotizador preseleccionado. Puedes cambiarlo o
+                usar <strong>Nuevo cliente</strong>.
+              </p>
+            ) : null}
             <Input
               value={clientSearch}
               onChange={(event) => setClientSearch(event.target.value)}

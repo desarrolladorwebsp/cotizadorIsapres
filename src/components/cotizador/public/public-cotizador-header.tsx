@@ -3,8 +3,13 @@
 import Image from "next/image";
 import { useUfValue } from "@/hooks/use-uf-value";
 import { usePartnerEntity } from "@/components/partner/partner-entity-provider";
+import { PLATFORM_AGENT_KEY } from "@/lib/partner-entity/platform-agent";
 import { publicCotizadorShell, touchTarget, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
+
+function isExternalUrl(url: string): boolean {
+  return /^https?:\/\//i.test(url);
+}
 
 function ExitIcon() {
   return (
@@ -35,11 +40,17 @@ export function PublicCotizadorHeader({ embedMode = false }: PublicCotizadorHead
     maximumFractionDigits: 0,
   });
 
-  const logoHref = isBranded ? entity!.websiteUrl : "/";
+  const isPlatformAgent = isBranded && entity!.slug === PLATFORM_AGENT_KEY;
+  const exitHref = isPlatformAgent ? "/index" : entity!.websiteUrl;
+  const exitLabel = isPlatformAgent
+    ? "Ver la página inicial"
+    : entity!.exitLabel;
+  const logoHref = isBranded ? exitHref : "/";
   const logoAlt = isBranded ? entity!.name : "Cotizador Virtual";
   const logoSrc = isBranded
     ? entity!.logoUrl
     : "/images/logo-cotizalo-antes.png";
+  const logoOpensExternal = isBranded && isExternalUrl(logoHref);
 
   const logoImage = (
     <Image
@@ -73,7 +84,7 @@ export function PublicCotizadorHeader({ embedMode = false }: PublicCotizadorHead
         ) : (
           <a
             href={logoHref}
-            {...(isBranded
+            {...(logoOpensExternal
               ? { target: "_blank", rel: "noopener noreferrer" }
               : {})}
             className="flex min-w-0 shrink items-center rounded-lg transition hover:opacity-90 focus-visible:outline-offset-4"
@@ -102,7 +113,7 @@ export function PublicCotizadorHeader({ embedMode = false }: PublicCotizadorHead
 
           {isBranded && !embedMode ? (
             <a
-              href={entity!.websiteUrl}
+              href={exitHref}
               className={joinClasses(
                 touchTarget,
                 "inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-bold sm:px-4 sm:text-sm",
@@ -110,8 +121,8 @@ export function PublicCotizadorHeader({ embedMode = false }: PublicCotizadorHead
               )}
             >
               <ExitIcon />
-              <span className="hidden sm:inline">{entity!.exitLabel}</span>
-              <span className="sm:hidden">Salir</span>
+              <span className="hidden sm:inline">{exitLabel}</span>
+              <span className="sm:hidden">Inicio</span>
             </a>
           ) : null}
         </div>

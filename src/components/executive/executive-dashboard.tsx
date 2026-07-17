@@ -8,7 +8,7 @@ import { useExecutiveToast } from "@/hooks/use-executive-toast";
 import { ClinicsPanel } from "@/components/admin/clinics-panel";
 import { CompanyAgreementsPanel } from "@/components/admin/company-agreements-panel";
 import { GesPanel } from "@/components/admin/ges-panel";
-import { PlanPdfReportPanel } from "@/components/admin/plan-pdf-report-panel";
+import { PlansAndPdfsAdminView } from "@/components/admin/plans-and-pdfs-admin-view";
 import { UsersPanel } from "@/components/admin/users-panel";
 import { ExecutiveAdminProspectsView } from "@/components/executive/admin/executive-admin-prospects-view";
 import { ExecutiveClientsPanel } from "@/components/executive/executive-clients-panel";
@@ -95,7 +95,7 @@ export function ExecutiveDashboard() {
   }, [notify]);
 
   useEffect(() => {
-    if (section === "clinicas" && isAdmin) {
+    if ((section === "clinicas" || section === "reportes-pdf") && isAdmin) {
       void loadCatalog();
       return;
     }
@@ -167,7 +167,13 @@ export function ExecutiveDashboard() {
         ) : null}
 
         {section === "reportes-pdf" && isAdmin ? (
-          <PlanPdfReportPanel onNotify={notify} />
+          <PlansAndPdfsAdminView
+            plans={plans}
+            clinics={clinics}
+            loading={loadingCatalog}
+            onRefresh={loadCatalog}
+            onNotify={notify}
+          />
         ) : null}
 
         {section === "convenios" && isAdmin ? (

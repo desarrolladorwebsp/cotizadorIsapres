@@ -140,39 +140,40 @@
 }
 
 [data-brand="premium"] {
-  --primary: #0077b6;
-  --primary-hover: #005f92;
-  --primary-dark: #0b2545;
+  /* Alinear con cotizador-premium-palette.ts */
+  --primary: #0d6dee;
+  --primary-hover: #1289f8;
+  --primary-dark: #092558;
   --primary-foreground: #ffffff;
 
-  --secondary: #48cae4;
-  --secondary-muted: #e8f6fb;
+  --secondary: #1ac9ea;
+  --secondary-muted: #e6f9fd;
 
-  --bg-layout: #f8fbfd;
-  --foreground: #0b2545;
-  --muted: #8d99ae;
-  --border: #d7e6ef;
-  --surface-hover: #edf6fa;
+  --bg-layout: #f5f9fc;
+  --foreground: #092558;
+  --muted: #7a8fa5;
+  --border: #d0e2f0;
+  --surface-hover: #eaf3fa;
 
-  --shadow-card: 0 4px 24px -8px rgb(11 37 69 / 0.07);
-  --shadow-card-hover: 0 12px 32px -10px rgb(0 119 182 / 0.18);
-  --shadow-cta: 0 8px 28px -8px rgb(0 119 182 / 0.35);
+  --shadow-card: 0 4px 24px -8px rgb(9 37 88 / 0.07);
+  --shadow-card-hover: 0 12px 32px -10px rgb(13 109 238 / 0.18);
+  --shadow-cta: 0 8px 28px -8px rgb(13 109 238 / 0.35);
 
   --plan-card-header-bg: color-mix(in srgb, var(--secondary-muted) 45%, white);
   --plan-card-coverage-bg: color-mix(in srgb, var(--bg-layout) 35%, white);
   --plan-card-border: color-mix(in srgb, var(--border) 80%, var(--foreground) 20%);
-  --plan-card-ring: rgb(11 37 69 / 0.04);
+  --plan-card-ring: rgb(9 37 88 / 0.04);
   --shadow-plan-card:
-    0 1px 2px rgb(11 37 69 / 0.04),
-    0 2px 8px -2px rgb(0 119 182 / 0.08),
-    0 10px 28px -8px rgb(0 119 182 / 0.1);
+    0 1px 2px rgb(9 37 88 / 0.04),
+    0 2px 8px -2px rgb(13 109 238 / 0.08),
+    0 10px 28px -8px rgb(13 109 238 / 0.1);
   --shadow-plan-card-hover:
     0 0 0 1px var(--primary),
-    0 4px 14px -4px rgb(0 119 182 / 0.14),
-    0 16px 40px -10px rgb(0 119 182 / 0.18);
+    0 4px 14px -4px rgb(13 109 238 / 0.14),
+    0 16px 40px -10px rgb(13 109 238 / 0.18);
 
-  --criteria-surface: #edf6fa;
-  --criteria-ring: #c5e4f2;
+  --criteria-surface: #eaf3fa;
+  --criteria-ring: #bddcf0;
 }
 
 @theme inline {

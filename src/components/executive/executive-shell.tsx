@@ -43,8 +43,8 @@ const SECTION_LABELS: Record<
   clinicas: { label: "Clínicas", shortLabel: "Clínicas", adminOnly: true },
   ges: { label: "GES", shortLabel: "GES", adminOnly: true },
   "reportes-pdf": {
-    label: "PDFs Isapre",
-    shortLabel: "PDFs",
+    label: "Planes / PDFs",
+    shortLabel: "Planes",
     adminOnly: true,
   },
   convenios: {
