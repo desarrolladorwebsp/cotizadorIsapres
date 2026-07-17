@@ -9,6 +9,7 @@ import {
   toPublicPartnerEntity,
 } from "@/lib/partner-entity/store";
 import { readPlatformPartnerEntity } from "@/lib/partner-entity/server";
+import { PLATFORM_LANDING_PATH } from "@/lib/partner-entity/platform-agent";
 import { buildPageMetadata } from "@/lib/seo/build-page-metadata";
 import { buildLandingPageJsonLd } from "@/lib/seo/json-ld";
 import type { PartnerEntityPublic } from "@/types/partner-entity";
@@ -17,7 +18,7 @@ export const metadata: Metadata = buildPageMetadata({
   title: "Cotizador Premium — Compara y cotiza planes Isapre en Chile",
   description:
     "Compara planes de salud Isapre en línea, cotiza según tu edad e ingreso y recibe asesoría personalizada. Plataforma multitenant para agentes y socios en Chile.",
-  path: "/index",
+  path: PLATFORM_LANDING_PATH,
   absoluteTitle: true,
   keywords: [
     "cotizador isapre chile",
@@ -48,7 +49,8 @@ async function loadLandingReviews() {
   return fromDb.length > 0 ? fromDb : LANDING_FALLBACK_REVIEWS;
 }
 
-export default async function LandingIndexPage() {
+/** Landing marketing. No usar `/index`: en Vercel/Next se resuelve como `/`. */
+export default async function LandingInicioPage() {
   const [platformEntity, partners, reviews] = await Promise.all([
     readPlatformPartnerEntity(),
     loadFeaturedPartners(),

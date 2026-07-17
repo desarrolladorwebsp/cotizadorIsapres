@@ -5,9 +5,8 @@ interface HomePageProps {
 }
 
 /**
- * Entrada `/` → cotizador. La landing vive en `/index`.
- * El middleware también redirige `/` → `/cotizador` (cookies/agent);
- * este redirect es respaldo y preserva query string.
+ * Entrada `/` → cotizador. La landing vive en `/inicio`
+ * (no usar `/index`: en Vercel se normaliza a `/`).
  */
 export default async function HomePage({ searchParams }: HomePageProps) {
   const params = await searchParams;

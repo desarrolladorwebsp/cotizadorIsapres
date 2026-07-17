@@ -19,7 +19,7 @@ function isExternalUrl(url: string): boolean {
 /** Destino de salida a la landing (nunca `/`, que redirige al cotizador). */
 function resolvePlatformLandingHref(websiteUrl: string | null | undefined): string {
   const raw = websiteUrl?.trim() || "";
-  if (!raw || raw === "/" || raw === PLATFORM_LANDING_PATH) {
+  if (!raw || raw === "/" || raw === PLATFORM_LANDING_PATH || raw === "/index") {
     return PLATFORM_LANDING_PATH;
   }
 

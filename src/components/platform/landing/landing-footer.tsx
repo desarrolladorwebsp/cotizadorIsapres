@@ -195,7 +195,7 @@ export function LandingFooter() {
           {/* Marca + redes */}
           <motion.div {...motionProps(0)} className="lg:col-span-5">
             <div className="flex flex-col gap-4 sm:gap-5">
-              <Link href="/index" className="inline-flex items-center gap-3">
+              <Link href="/inicio" className="inline-flex items-center gap-3">
                 <LandingLogo size="lg" className="rounded-2xl" />
                 <div className="min-w-0">
                   <p className="text-base font-bold tracking-tight text-foreground sm:text-lg">

@@ -7,8 +7,11 @@ import {
 /** Agent key / slug de la plataforma principal (cotizadorpremium.cl). */
 export const PLATFORM_AGENT_KEY = "cotizadorpremium";
 
-/** Landing marketing (antes en `/`). El cotizador vive en `/cotizador`. */
-export const PLATFORM_LANDING_PATH = "/index";
+/** Landing marketing (antes en `/`). El cotizador vive en `/cotizador`.
+ * No usar `/index`: en Vercel/Next el segmento `index` se normaliza a `/`
+ * y el middleware redirige `/` → `/cotizador`.
+ */
+export const PLATFORM_LANDING_PATH = "/inicio";
 
 export const PLATFORM_AGENT_WEBSITE = "https://cotizadorpremium.cl";
 

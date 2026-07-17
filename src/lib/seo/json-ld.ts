@@ -13,10 +13,10 @@ function absoluteUrl(path: string): string {
   return `${base}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
-/** JSON-LD de la landing marketing (`/index`): Organization + WebSite + WebApplication. */
+/** JSON-LD de la landing marketing (`/inicio`): Organization + WebSite + WebApplication. */
 export function buildLandingPageJsonLd() {
   const siteUrl = resolveAppBaseUrl();
-  const landingUrl = absoluteUrl("/index");
+  const landingUrl = absoluteUrl("/inicio");
   const logoUrl = absoluteUrl("/icon-512.png");
   const cotizadorUrl = absoluteUrl("/cotizador");
 

@@ -16,7 +16,7 @@ export async function buildSitemapEntries(): Promise<MetadataRoute.Sitemap> {
       priority: 1,
     },
     {
-      url: `${baseUrl}/index`,
+      url: `${baseUrl}/inicio`,
       lastModified: now,
       changeFrequency: "weekly",
       priority: 0.9,

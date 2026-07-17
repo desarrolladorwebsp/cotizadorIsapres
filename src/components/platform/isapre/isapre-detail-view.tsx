@@ -69,7 +69,7 @@ export function IsapreDetailView({ data }: { data: IsaprePageData }) {
     <div data-landing data-brand="premium" className={landing.pageRoot}>
       <header className={`${landing.header} landing-header-over-backdrop`}>
         <div className={landing.headerInner}>
-          <Link href="/index" className="flex items-center gap-3">
+          <Link href="/inicio" className="flex items-center gap-3">
             <LandingLogo size="md" />
             <div className="min-w-0">
               <p className="text-sm font-semibold tracking-tight text-foreground sm:text-base">

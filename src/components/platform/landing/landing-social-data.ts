@@ -47,12 +47,12 @@ export const LANDING_FOOTER_SOCIAL = [
 ] as const;
 
 export const LANDING_FOOTER_NAV = [
-  { label: "Inicio", href: "/index#inicio" },
-  { label: "Isapres", href: "/index#isapres" },
-  { label: "Cotizador", href: "/index#cotizar" },
-  { label: "Nuestros Socios", href: "/index#socios" },
-  { label: "Reseñas", href: "/index#reseñas" },
-  { label: "Contacto", href: "/index#contacto" },
+  { label: "Inicio", href: "/inicio#inicio" },
+  { label: "Isapres", href: "/inicio#isapres" },
+  { label: "Cotizador", href: "/inicio#cotizar" },
+  { label: "Nuestros Socios", href: "/inicio#socios" },
+  { label: "Reseñas", href: "/inicio#reseñas" },
+  { label: "Contacto", href: "/inicio#contacto" },
   { label: "Política de Privacidad", href: "/politica-privacidad" },
 ] as const;
 

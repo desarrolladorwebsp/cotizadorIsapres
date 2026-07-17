@@ -16,6 +16,7 @@ export const RESERVED_ROOT_SEGMENTS = new Set([
   "cotizador",
   "embed",
   "index",
+  "inicio",
   "isapres",
   "login",
   "ejecutivos",

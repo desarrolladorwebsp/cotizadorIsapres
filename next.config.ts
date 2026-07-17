@@ -9,6 +9,21 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/api/**/*": ["./public/images/logo-cotizador-premium.png"],
   },
+  async redirects() {
+    return [
+      // `/index` en Vercel se normaliza a `/` (→ cotizador). Preferir `/inicio`.
+      {
+        source: "/index",
+        destination: "/inicio",
+        permanent: true,
+      },
+      {
+        source: "/index/:path*",
+        destination: "/inicio/:path*",
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {
