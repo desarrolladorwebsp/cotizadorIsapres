@@ -7,6 +7,9 @@ import {
 /** Agent key / slug de la plataforma principal (cotizadorpremium.cl). */
 export const PLATFORM_AGENT_KEY = "cotizadorpremium";
 
+/** Landing marketing (antes en `/`). El cotizador vive en `/cotizador`. */
+export const PLATFORM_LANDING_PATH = "/index";
+
 export const PLATFORM_AGENT_WEBSITE = "https://cotizadorpremium.cl";
 
 export const PLATFORM_AGENT_LOGO_URL = COTIZADOR_PREMIUM_LOGO_PATH;
@@ -42,7 +45,7 @@ export function buildCotizadorPremiumPartnerRecord(): Omit<
     embedKey: PLATFORM_AGENT_KEY,
     name: "Cotizador Premium",
     logoUrl: PLATFORM_AGENT_LOGO_URL,
-    websiteUrl: "/index",
+    websiteUrl: PLATFORM_LANDING_PATH,
     whatsappNumber: "56965822864",
     whatsappMessage:
       "Hola, quiero cotizar un plan de salud con Cotizador Premium",

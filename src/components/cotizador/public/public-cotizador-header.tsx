@@ -1,14 +1,46 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useUfValue } from "@/hooks/use-uf-value";
 import { usePartnerEntity } from "@/components/partner/partner-entity-provider";
-import { PLATFORM_AGENT_KEY } from "@/lib/partner-entity/platform-agent";
+import {
+  PLATFORM_AGENT_KEY,
+  PLATFORM_AGENT_WEBSITE,
+  PLATFORM_LANDING_PATH,
+} from "@/lib/partner-entity/platform-agent";
 import { publicCotizadorShell, touchTarget, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 
 function isExternalUrl(url: string): boolean {
   return /^https?:\/\//i.test(url);
+}
+
+/** Destino de salida a la landing (nunca `/`, que redirige al cotizador). */
+function resolvePlatformLandingHref(websiteUrl: string | null | undefined): string {
+  const raw = websiteUrl?.trim() || "";
+  if (!raw || raw === "/" || raw === PLATFORM_LANDING_PATH) {
+    return PLATFORM_LANDING_PATH;
+  }
+
+  try {
+    if (isExternalUrl(raw)) {
+      const parsed = new URL(raw);
+      const platformHost = new URL(PLATFORM_AGENT_WEBSITE).hostname.replace(
+        /^www\./,
+        "",
+      );
+      const host = parsed.hostname.replace(/^www\./, "");
+      if (host === platformHost && (parsed.pathname === "/" || !parsed.pathname)) {
+        return PLATFORM_LANDING_PATH;
+      }
+    }
+  } catch {
+    // URL inválida: caer a landing interna.
+    return PLATFORM_LANDING_PATH;
+  }
+
+  return raw;
 }
 
 function ExitIcon() {
@@ -41,16 +73,25 @@ export function PublicCotizadorHeader({ embedMode = false }: PublicCotizadorHead
   });
 
   const isPlatformAgent = isBranded && entity!.slug === PLATFORM_AGENT_KEY;
-  const exitHref = isPlatformAgent ? "/index" : entity!.websiteUrl;
+  const exitHref = isPlatformAgent
+    ? resolvePlatformLandingHref(entity!.websiteUrl)
+    : entity!.websiteUrl;
   const exitLabel = isPlatformAgent
     ? "Ver la página inicial"
     : entity!.exitLabel;
-  const logoHref = isBranded ? exitHref : "/";
+  const logoHref = isBranded ? exitHref : PLATFORM_LANDING_PATH;
   const logoAlt = isBranded ? entity!.name : "Cotizador Virtual";
   const logoSrc = isBranded
     ? entity!.logoUrl
     : "/images/logo-cotizalo-antes.png";
   const logoOpensExternal = isBranded && isExternalUrl(logoHref);
+  const exitIsInternal = !isExternalUrl(exitHref);
+
+  const exitLinkClass = joinClasses(
+    touchTarget,
+    "inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-bold sm:px-4 sm:text-sm",
+    ui.ctaOutline,
+  );
 
   const logoImage = (
     <Image
@@ -81,16 +122,22 @@ export function PublicCotizadorHeader({ embedMode = false }: PublicCotizadorHead
       >
         {embedMode ? (
           <div className="flex min-w-0 shrink items-center">{logoImage}</div>
-        ) : (
+        ) : logoOpensExternal ? (
           <a
             href={logoHref}
-            {...(logoOpensExternal
-              ? { target: "_blank", rel: "noopener noreferrer" }
-              : {})}
+            target="_blank"
+            rel="noopener noreferrer"
             className="flex min-w-0 shrink items-center rounded-lg transition hover:opacity-90 focus-visible:outline-offset-4"
           >
             {logoImage}
           </a>
+        ) : (
+          <Link
+            href={logoHref}
+            className="flex min-w-0 shrink items-center rounded-lg transition hover:opacity-90 focus-visible:outline-offset-4"
+          >
+            {logoImage}
+          </Link>
         )}
 
         <div className="ml-auto flex items-center gap-2 sm:gap-3 text-xs sm:text-sm">
@@ -112,18 +159,24 @@ export function PublicCotizadorHeader({ embedMode = false }: PublicCotizadorHead
           </span>
 
           {isBranded && !embedMode ? (
-            <a
-              href={exitHref}
-              className={joinClasses(
-                touchTarget,
-                "inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-bold sm:px-4 sm:text-sm",
-                ui.ctaOutline,
-              )}
-            >
-              <ExitIcon />
-              <span className="hidden sm:inline">{exitLabel}</span>
-              <span className="sm:hidden">Inicio</span>
-            </a>
+            exitIsInternal ? (
+              <Link href={exitHref} className={exitLinkClass}>
+                <ExitIcon />
+                <span className="hidden sm:inline">{exitLabel}</span>
+                <span className="sm:hidden">Inicio</span>
+              </Link>
+            ) : (
+              <a
+                href={exitHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={exitLinkClass}
+              >
+                <ExitIcon />
+                <span className="hidden sm:inline">{exitLabel}</span>
+                <span className="sm:hidden">Inicio</span>
+              </a>
+            )
           ) : null}
         </div>
       </div>
