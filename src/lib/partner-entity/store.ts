@@ -11,6 +11,10 @@ import {
   markPartnerEntityDbCooldown,
   markPartnerEntityDbUnavailable,
 } from "@/lib/partner-entity/db-guard";
+import {
+  PLATFORM_AGENT_KEY,
+  PLATFORM_AGENT_LOGO_URL,
+} from "@/lib/partner-entity/platform-agent";
 import { prisma } from "@/lib/prisma";
 import type {
   PartnerEntityPublic,
@@ -56,6 +60,24 @@ function mapFallbackToRecord(entity: PartnerEntityPublic): PartnerEntityRecord {
   };
 }
 
+/** Logo canónico en código; evita rutas viejas en BD (p. ej. .jpeg inexistente). */
+function resolvePublicLogoUrl(entity: PartnerEntityRecord): string {
+  const isPlatform =
+    entity.slug === PLATFORM_AGENT_KEY ||
+    entity.embedKey === PLATFORM_AGENT_KEY;
+
+  if (isPlatform) {
+    return PLATFORM_AGENT_LOGO_URL;
+  }
+
+  const logo = entity.logoUrl?.trim() ?? "";
+  if (/\/images\/logo-cotizador-premium\.jpe?g$/i.test(logo)) {
+    return PLATFORM_AGENT_LOGO_URL;
+  }
+
+  return logo || PLATFORM_AGENT_LOGO_URL;
+}
+
 export function toPublicPartnerEntity(
   entity: PartnerEntityRecord,
 ): PartnerEntityPublic {
@@ -63,7 +85,7 @@ export function toPublicPartnerEntity(
     slug: entity.slug,
     embedKey: entity.embedKey,
     name: entity.name,
-    logoUrl: entity.logoUrl,
+    logoUrl: resolvePublicLogoUrl(entity),
     websiteUrl: entity.websiteUrl,
     whatsappNumber: entity.whatsappNumber,
     whatsappMessage: entity.whatsappMessage,
