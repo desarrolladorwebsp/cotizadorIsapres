@@ -29,7 +29,7 @@ function getCoverageEntriesByType(
 
 type PlanFilterMetadata = Pick<
   HealthPlan,
-  "isapre" | "plan_name" | "has_top" | "additional_notes"
+  "isapre" | "plan_name" | "plan_type" | "has_top" | "additional_notes"
 >;
 
 function matchesIsapreFilter(

@@ -6,12 +6,17 @@ import { FieldGroup, FieldHint, FieldLabel } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { PlanPdfField } from "@/components/admin/plan-pdf-field";
-import { ISAPRE_FILTER_OPTIONS } from "@/domain";
+import { ISAPRE_FILTER_OPTIONS, PLAN_TYPE_FILTER_OPTIONS } from "@/domain";
+import {
+  PLAN_TYPE_LABELS,
+  resolveHasTopFromPlanType,
+  resolvePrimaryPlanType,
+} from "@/lib/plan-metadata";
 import { uploadPlanPdf } from "@/lib/api/admin-client";
 import { ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type { Clinic } from "@/domain";
-import type { CoverageEntry, CoverageType, HealthPlan } from "@/domain";
+import type { CoverageEntry, CoverageType, HealthPlan, PlanTypeId } from "@/domain";
 
 const COVERAGE_PERCENTAGES = [40, 50, 60, 70, 80, 90, 100] as const;
 
@@ -50,8 +55,11 @@ export function PlanForm({
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
+    const planType = resolvePrimaryPlanType(initialValue);
     setForm({
       ...initialValue,
+      plan_type: planType,
+      has_top: resolveHasTopFromPlanType(planType),
       pdf_url: initialValue.pdf_url ?? null,
       pdf_public_id: initialValue.pdf_public_id ?? null,
     });
@@ -64,6 +72,15 @@ export function PlanForm({
       ISAPRE_FILTER_OPTIONS.map((option) => ({
         value: option.label,
         label: option.label,
+      })),
+    [],
+  );
+
+  const planTypeOptions = useMemo(
+    () =>
+      PLAN_TYPE_FILTER_OPTIONS.map((option) => ({
+        value: option.id,
+        label: PLAN_TYPE_LABELS[option.id],
       })),
     [],
   );
@@ -118,11 +135,14 @@ export function PlanForm({
     event.preventDefault();
     setSubmitError(null);
 
+    const planType = resolvePrimaryPlanType(form);
     const payload: HealthPlan = {
       ...form,
       isapre: form.isapre.trim(),
       plan_name: form.plan_name.trim(),
       unique_code: form.unique_code.trim(),
+      plan_type: planType,
+      has_top: resolveHasTopFromPlanType(planType),
       additional_notes: form.additional_notes?.trim() || null,
       pdf_url: form.pdf_url ?? null,
       pdf_public_id: form.pdf_public_id ?? null,
@@ -259,21 +279,26 @@ export function PlanForm({
           ) : null}
         </FieldGroup>
 
-        <FieldGroup className="flex flex-col justify-end">
-          <label className="inline-flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-3 text-sm font-medium text-foreground">
-            <input
-              type="checkbox"
-              checked={form.has_top}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  has_top: event.target.checked,
-                }))
-              }
-              className="size-4 rounded accent-primary"
-            />
-            Plan preferente / Top
-          </label>
+        <FieldGroup>
+          <FieldLabel htmlFor="plan-type">Tipo de plan</FieldLabel>
+          <Select
+            id="plan-type"
+            options={planTypeOptions}
+            value={form.plan_type}
+            onChange={(event) => {
+              const planType = event.target.value as PlanTypeId;
+              setForm((current) => ({
+                ...current,
+                plan_type: planType,
+                has_top: resolveHasTopFromPlanType(planType),
+              }));
+            }}
+            className={joinClasses("h-11", ui.input)}
+          />
+          <FieldHint>
+            Preferente, libre elección o cerrado. Obliga la clasificación del
+            plan en filtros y fichas.
+          </FieldHint>
         </FieldGroup>
 
         <PlanPdfField

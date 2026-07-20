@@ -518,6 +518,7 @@ export function createEmptyPlan(): HealthPlan {
     unique_code: "",
     base_price_uf: 1,
     ges_premium_uf: 0.731,
+    plan_type: "free_choice",
     has_top: false,
     additional_notes: null,
     pdf_url: null,

@@ -1,16 +1,35 @@
 import type { PlanTypeFilterId } from "@/types/filters";
-import type { HealthPlan, HealthPlanSummary } from "@/types/plan";
+import type { HealthPlan, HealthPlanSummary, PlanTypeId } from "@/types/plan";
 
 type PlanMetadataInput = Pick<
   HealthPlan,
   "plan_name" | "has_top" | "additional_notes"
->;
+> & {
+  plan_type?: PlanTypeId | null;
+};
 
 export const PLAN_TYPE_LABELS: Record<PlanTypeFilterId, string> = {
   closed: "Cerrado",
   free_choice: "Libre Elección",
   preferred: "Preferente",
 };
+
+export const PLAN_TYPE_IDS: PlanTypeId[] = [
+  "preferred",
+  "free_choice",
+  "closed",
+];
+
+export function isPlanTypeId(value: unknown): value is PlanTypeId {
+  return (
+    value === "preferred" || value === "free_choice" || value === "closed"
+  );
+}
+
+/** Preferente implica Top; las otras modalidades no. */
+export function resolveHasTopFromPlanType(planType: PlanTypeId): boolean {
+  return planType === "preferred";
+}
 
 function normalizeText(value: string): string {
   return value
@@ -19,7 +38,10 @@ function normalizeText(value: string): string {
     .replace(/\p{Diacritic}/gu, "");
 }
 
-export function inferPlanTypes(plan: PlanMetadataInput): PlanTypeFilterId[] {
+/** Inferencia legacy cuando aún no hay `plan_type` persistido. */
+function inferPlanTypesFromHeuristics(
+  plan: PlanMetadataInput,
+): PlanTypeFilterId[] {
   const name = normalizeText(plan.plan_name);
   const notes = normalizeText(plan.additional_notes ?? "");
   const types: PlanTypeFilterId[] = [];
@@ -45,8 +67,19 @@ export function inferPlanTypes(plan: PlanMetadataInput): PlanTypeFilterId[] {
   return types;
 }
 
+export function inferPlanTypes(plan: PlanMetadataInput): PlanTypeFilterId[] {
+  if (isPlanTypeId(plan.plan_type)) {
+    return [plan.plan_type];
+  }
+  return inferPlanTypesFromHeuristics(plan);
+}
+
 export function resolvePrimaryPlanType(plan: PlanMetadataInput): PlanTypeFilterId {
-  const types = inferPlanTypes(plan);
+  if (isPlanTypeId(plan.plan_type)) {
+    return plan.plan_type;
+  }
+
+  const types = inferPlanTypesFromHeuristics(plan);
   if (types.includes("preferred")) return "preferred";
   if (types.includes("closed")) return "closed";
   return "free_choice";

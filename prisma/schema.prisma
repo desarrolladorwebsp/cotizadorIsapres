@@ -57,6 +57,12 @@ enum ClientPipelineStatus {
   PERDIDO
 }
 
+enum PlanType {
+  preferred
+  free_choice
+  closed
+}
+
 enum ClientOrigin {
   COTIZADOR
   MANUAL
@@ -117,6 +123,7 @@ model Plan {
   isapreId        String          @map("isapre_id")
   planName        String          @map("plan_name")
   basePriceUf     Float           @map("base_price_uf")
+  planType        PlanType        @default(free_choice) @map("plan_type")
   hasTop          Boolean         @default(false) @map("has_top")
   additionalNotes String?         @map("additional_notes")
   pdfUrl          String?         @map("pdf_url")
@@ -131,6 +138,7 @@ model Plan {
   reviews         PlanReview[]
 
   @@index([isapreId])
+  @@index([planType])
   @@map("plans")
 }
 

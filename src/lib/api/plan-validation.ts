@@ -1,4 +1,9 @@
 import { resolveCanonicalClinicId } from "@/lib/clinic-canonical-ids";
+import {
+  isPlanTypeId,
+  resolveHasTopFromPlanType,
+  resolvePrimaryPlanType,
+} from "@/lib/plan-metadata";
 import type { CoverageEntry, HealthPlan } from "@/types/plan";
 
 function isOptionalPdfField(value: unknown): boolean {
@@ -38,6 +43,7 @@ export function isValidPlan(payload: unknown): payload is HealthPlan {
     typeof plan.base_price_uf === "number" &&
     Number.isFinite(plan.base_price_uf) &&
     plan.base_price_uf >= 0 &&
+    isPlanTypeId(plan.plan_type) &&
     typeof plan.has_top === "boolean" &&
     (plan.additional_notes === null ||
       typeof plan.additional_notes === "string") &&
@@ -78,6 +84,10 @@ export function getPlanValidationError(payload: unknown): string | null {
     return "El precio base en UF debe ser un número válido mayor o igual a 0.";
   }
 
+  if (!isPlanTypeId(plan.plan_type)) {
+    return "Debes seleccionar el tipo de plan (preferente, libre elección o cerrado).";
+  }
+
   if (typeof plan.has_top !== "boolean") {
     return "El indicador de plan Top no es válido.";
   }
@@ -110,11 +120,17 @@ export function dedupeCoverageEntries(
 }
 
 export function normalizePlan(payload: HealthPlan): HealthPlan {
+  const planType = isPlanTypeId(payload.plan_type)
+    ? payload.plan_type
+    : resolvePrimaryPlanType(payload);
+
   return {
     ...payload,
     isapre: payload.isapre.trim(),
     plan_name: payload.plan_name.trim(),
     unique_code: payload.unique_code.trim(),
+    plan_type: planType,
+    has_top: resolveHasTopFromPlanType(planType),
     additional_notes: payload.additional_notes?.trim() || null,
     pdf_url: payload.pdf_url?.trim() || null,
     pdf_public_id: payload.pdf_public_id?.trim() || null,

@@ -152,6 +152,9 @@ async function seedClinicsAndPlans() {
         isapreId,
         planName: plan.plan_name,
         basePriceUf: plan.base_price_uf,
+        planType:
+          plan.plan_type ??
+          (plan.has_top ? "preferred" : "free_choice"),
         hasTop: plan.has_top ?? false,
         additionalNotes: plan.additional_notes ?? null,
         pdfUrl: plan.pdf_url ?? null,

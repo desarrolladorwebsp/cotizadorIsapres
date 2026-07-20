@@ -37,6 +37,7 @@ export function buildHealthPlanCatalogItem(
     unique_code: enriched.unique_code,
     base_price_uf: enriched.base_price_uf,
     ges_premium_uf: enriched.ges_premium_uf,
+    plan_type: enriched.plan_type,
     has_top: enriched.has_top,
     additional_notes: enriched.additional_notes,
     pdf_url: enriched.pdf_url,

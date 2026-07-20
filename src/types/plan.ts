@@ -1,5 +1,8 @@
 export type CoverageType = "hospitalaria" | "ambulatoria";
 
+/** Modalidad comercial del plan Isapre. */
+export type PlanTypeId = "preferred" | "free_choice" | "closed";
+
 export interface CoverageEntry {
   clinic_id: string;
   clinic_name: string;
@@ -14,6 +17,8 @@ export interface HealthPlan {
   base_price_uf: number;
   /** Prima GES mensual en UF por beneficiario (según isapre). */
   ges_premium_uf: number;
+  /** Modalidad: preferente, libre elección o cerrado. */
+  plan_type: PlanTypeId;
   has_top: boolean;
   additional_notes: string | null;
   /** URL de descarga del PDF vía API local. */
@@ -44,6 +49,7 @@ export interface HealthPlanSummary {
   unique_code: string;
   base_price_uf: number;
   ges_premium_uf: number;
+  plan_type: PlanTypeId;
   has_top: boolean;
   additional_notes: string | null;
   pdf_url: string | null;

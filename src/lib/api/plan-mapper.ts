@@ -5,11 +5,16 @@ import {
   ISAPRE_GES_DEFAULTS,
   resolveGesPremiumUf,
 } from "@/lib/isapre-ges-defaults";
-import type { CoverageEntry, HealthPlan } from "@/types/plan";
+import {
+  resolveHasTopFromPlanType,
+  resolvePrimaryPlanType,
+} from "@/lib/plan-metadata";
+import type { CoverageEntry, HealthPlan, PlanTypeId } from "@/types/plan";
 import type {
   CoverageEntry as DbCoverage,
   Isapre as DbIsapre,
   Plan as DbPlan,
+  PlanType as DbPlanType,
 } from "@prisma/client";
 
 export type PlanWithCoverages = DbPlan & {
@@ -29,13 +34,35 @@ function resolveGesPremiumForIsapreId(isapreId: string): number {
   );
 }
 
+function resolvePlanTypeFromDb(
+  plan: Pick<DbPlan, "planName" | "hasTop" | "additionalNotes"> & {
+    planType?: DbPlanType | null;
+  },
+): PlanTypeId {
+  if (
+    plan.planType === "preferred" ||
+    plan.planType === "free_choice" ||
+    plan.planType === "closed"
+  ) {
+    return plan.planType;
+  }
+
+  return resolvePrimaryPlanType({
+    plan_name: plan.planName,
+    has_top: plan.hasTop,
+    additional_notes: plan.additionalNotes,
+  });
+}
+
 export function mapDbPlanToHealthPlan(plan: PlanWithCoverages): HealthPlan {
+  const planType = resolvePlanTypeFromDb(plan);
   return {
     isapre: plan.isapreRef.name,
     plan_name: plan.planName,
     unique_code: plan.uniqueCode,
     base_price_uf: plan.basePriceUf,
     ges_premium_uf: resolveGesPremiumUf(plan.isapreRef.gesPremiumUf),
+    plan_type: planType,
     has_top: plan.hasTop,
     additional_notes: plan.additionalNotes,
     pdf_url: plan.pdfUrl,
@@ -51,12 +78,14 @@ export function mapDbPlanToHealthPlan(plan: PlanWithCoverages): HealthPlan {
 export function mapDbPlanToHealthPlanLegacy(
   plan: PlanWithCoveragesOnly,
 ): HealthPlan {
+  const planType = resolvePlanTypeFromDb(plan);
   return {
     isapre: resolveIsapreNameFromId(plan.isapreId),
     plan_name: plan.planName,
     unique_code: plan.uniqueCode,
     base_price_uf: plan.basePriceUf,
     ges_premium_uf: resolveGesPremiumForIsapreId(plan.isapreId),
+    plan_type: planType,
     has_top: plan.hasTop,
     additional_notes: plan.additionalNotes,
     pdf_url: plan.pdfUrl,
@@ -78,12 +107,14 @@ function mapDbCoverageToEntry(entry: DbCoverage): CoverageEntry {
 }
 
 export function mapHealthPlanToDbFields(plan: HealthPlan, isapreId: string) {
+  const planType = plan.plan_type;
   return {
     uniqueCode: plan.unique_code,
     isapreId,
     planName: plan.plan_name,
     basePriceUf: plan.base_price_uf,
-    hasTop: plan.has_top,
+    planType,
+    hasTop: resolveHasTopFromPlanType(planType),
     additionalNotes: plan.additional_notes,
     pdfUrl: plan.pdf_url,
     pdfPublicId: plan.pdf_public_id,

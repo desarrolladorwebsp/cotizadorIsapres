@@ -15,8 +15,9 @@ import {
   resolveGesPremiumUf,
 } from "@/lib/isapre-ges-defaults";
 import { enrichHealthPlanCatalog } from "@/lib/plan-zones";
+import { isPlanTypeId, resolvePrimaryPlanType } from "@/lib/plan-metadata";
 import { prisma } from "@/lib/prisma";
-import type { CoverageEntry, HealthPlan, HealthPlanCatalogItem } from "@/types/plan";
+import type { CoverageEntry, HealthPlan, HealthPlanCatalogItem, PlanTypeId } from "@/types/plan";
 
 type PlanQueryStrategy =
   | "prisma_full"
@@ -25,6 +26,21 @@ type PlanQueryStrategy =
   | "raw_legacy";
 
 let activeStrategy: PlanQueryStrategy | null = null;
+
+function resolvePlanTypeFromFields(input: {
+  plan_name: string;
+  has_top: boolean;
+  additional_notes: string | null;
+  plan_type?: string | null;
+}): PlanTypeId {
+  if (isPlanTypeId(input.plan_type)) return input.plan_type;
+  return resolvePrimaryPlanType({
+    plan_name: input.plan_name,
+    has_top: input.has_top,
+    additional_notes: input.additional_notes,
+  });
+}
+
 
 function resolveGesPremiumForIsapreId(isapreId: string): number {
   const defaults = ISAPRE_GES_DEFAULTS[isapreId];
@@ -55,6 +71,7 @@ type RawModernPlanRow = {
   isapre_id: string;
   plan_name: string;
   base_price_uf: number;
+  plan_type: string | null;
   has_top: boolean;
   additional_notes: string | null;
   pdf_url: string | null;
@@ -71,6 +88,7 @@ async function findManyHealthPlansRawModern(): Promise<HealthPlan[]> {
         p.isapre_id,
         p.plan_name,
         p.base_price_uf,
+        p.plan_type,
         p.has_top,
         p.additional_notes,
         p.pdf_url,
@@ -90,6 +108,12 @@ async function findManyHealthPlansRawModern(): Promise<HealthPlan[]> {
     unique_code: plan.unique_code,
     base_price_uf: plan.base_price_uf,
     ges_premium_uf: resolveGesPremiumForIsapreId(plan.isapre_id),
+    plan_type: resolvePlanTypeFromFields({
+      plan_name: plan.plan_name,
+      has_top: plan.has_top,
+      additional_notes: plan.additional_notes,
+      plan_type: plan.plan_type,
+    }),
     has_top: plan.has_top,
     additional_notes: plan.additional_notes,
     pdf_url: plan.pdf_url,
@@ -109,6 +133,7 @@ async function findHealthPlanByCodeRawModern(
         p.isapre_id,
         p.plan_name,
         p.base_price_uf,
+        p.plan_type,
         p.has_top,
         p.additional_notes,
         p.pdf_url,
@@ -132,6 +157,12 @@ async function findHealthPlanByCodeRawModern(
     unique_code: plan.unique_code,
     base_price_uf: plan.base_price_uf,
     ges_premium_uf: resolveGesPremiumForIsapreId(plan.isapre_id),
+    plan_type: resolvePlanTypeFromFields({
+      plan_name: plan.plan_name,
+      has_top: plan.has_top,
+      additional_notes: plan.additional_notes,
+      plan_type: plan.plan_type,
+    }),
     has_top: plan.has_top,
     additional_notes: plan.additional_notes,
     pdf_url: plan.pdf_url,
@@ -146,6 +177,7 @@ type RawLegacyPlanRow = {
   isapre: string;
   plan_name: string;
   base_price_uf: number;
+  plan_type?: string | null;
   has_top: boolean;
   additional_notes: string | null;
   pdf_url: string | null;
@@ -181,6 +213,12 @@ async function findManyHealthPlansRawLegacy(): Promise<HealthPlan[]> {
       unique_code: plan.unique_code,
       base_price_uf: plan.base_price_uf,
       ges_premium_uf: resolveGesPremiumForIsapreId(isapreId),
+      plan_type: resolvePlanTypeFromFields({
+        plan_name: plan.plan_name,
+        has_top: plan.has_top,
+        additional_notes: plan.additional_notes,
+        plan_type: plan.plan_type,
+      }),
       has_top: plan.has_top,
       additional_notes: plan.additional_notes,
       pdf_url: plan.pdf_url,
@@ -224,6 +262,12 @@ async function findHealthPlanByCodeRawLegacy(
     unique_code: plan.unique_code,
     base_price_uf: plan.base_price_uf,
     ges_premium_uf: resolveGesPremiumForIsapreId(isapreId),
+    plan_type: resolvePlanTypeFromFields({
+      plan_name: plan.plan_name,
+      has_top: plan.has_top,
+      additional_notes: plan.additional_notes,
+      plan_type: plan.plan_type,
+    }),
     has_top: plan.has_top,
     additional_notes: plan.additional_notes,
     pdf_url: plan.pdf_url,
@@ -250,6 +294,12 @@ async function findManyWithPrismaFull(): Promise<HealthPlan[]> {
         unique_code: plan.uniqueCode,
         base_price_uf: plan.basePriceUf,
         ges_premium_uf: resolveGesPremiumUf(plan.isapreRef.gesPremiumUf),
+        plan_type: resolvePlanTypeFromFields({
+          plan_name: plan.planName,
+          has_top: plan.hasTop,
+          additional_notes: plan.additionalNotes,
+          plan_type: plan.planType,
+        }),
         has_top: plan.hasTop,
         additional_notes: plan.additionalNotes,
         pdf_url: plan.pdfUrl,
@@ -277,6 +327,12 @@ async function findManyWithPrismaCoverages(): Promise<HealthPlan[]> {
         unique_code: plan.uniqueCode,
         base_price_uf: plan.basePriceUf,
         ges_premium_uf: resolveGesPremiumForIsapreId(plan.isapreId),
+        plan_type: resolvePlanTypeFromFields({
+          plan_name: plan.planName,
+          has_top: plan.hasTop,
+          additional_notes: plan.additionalNotes,
+          plan_type: plan.planType,
+        }),
         has_top: plan.hasTop,
         additional_notes: plan.additionalNotes,
         pdf_url: plan.pdfUrl,
@@ -308,6 +364,12 @@ async function findHealthPlanWithPrismaFull(
       unique_code: plan.uniqueCode,
       base_price_uf: plan.basePriceUf,
       ges_premium_uf: resolveGesPremiumUf(plan.isapreRef.gesPremiumUf),
+      plan_type: resolvePlanTypeFromFields({
+        plan_name: plan.planName,
+        has_top: plan.hasTop,
+        additional_notes: plan.additionalNotes,
+        plan_type: plan.planType,
+      }),
       has_top: plan.hasTop,
       additional_notes: plan.additionalNotes,
       pdf_url: plan.pdfUrl,
@@ -337,6 +399,12 @@ async function findHealthPlanWithPrismaCoverages(
       unique_code: plan.uniqueCode,
       base_price_uf: plan.basePriceUf,
       ges_premium_uf: resolveGesPremiumForIsapreId(plan.isapreId),
+      plan_type: resolvePlanTypeFromFields({
+        plan_name: plan.planName,
+        has_top: plan.hasTop,
+        additional_notes: plan.additionalNotes,
+        plan_type: plan.planType,
+      }),
       has_top: plan.hasTop,
       additional_notes: plan.additionalNotes,
       pdf_url: plan.pdfUrl,
@@ -413,6 +481,12 @@ export async function findManyHealthPlanCatalogItems(): Promise<
         unique_code: plan.uniqueCode,
         base_price_uf: plan.basePriceUf,
         ges_premium_uf: resolveGesPremiumUf(plan.isapreRef.gesPremiumUf),
+        plan_type: resolvePlanTypeFromFields({
+          plan_name: plan.planName,
+          has_top: plan.hasTop,
+          additional_notes: plan.additionalNotes,
+          plan_type: plan.planType,
+        }),
         has_top: plan.hasTop,
         additional_notes: plan.additionalNotes,
         pdf_url: plan.pdfUrl,

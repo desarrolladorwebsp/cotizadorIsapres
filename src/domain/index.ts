@@ -20,6 +20,7 @@ export type {
   HealthPlanSummary,
   PlanCoverageSummary,
   PlanSearchResult,
+  PlanTypeId,
 } from "@/types/plan";
 
 export { buildBeneficiaryGroupSummary } from "@/lib/beneficiary-summary";
@@ -60,10 +61,13 @@ export {
   splitCoverageByType,
 } from "@/lib/plan-format";
 export {
+  PLAN_TYPE_IDS,
   PLAN_TYPE_LABELS,
   formatBasePriceBadgeLabel,
   inferPlanTypes,
+  isPlanTypeId,
   resolveCommercialPlanName,
+  resolveHasTopFromPlanType,
   resolvePrimaryPlanType,
 } from "@/lib/plan-metadata";
 export { applyDashboardFilters } from "@/lib/apply-plan-filters";
