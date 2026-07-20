@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { resolveAppBaseUrl } from "@/lib/platform/routing";
+import { PROD_APP_BASE_URL } from "@/lib/platform/routing";
 import {
   DEFAULT_DESCRIPTION,
   DEFAULT_KEYWORDS,
@@ -23,11 +23,17 @@ export interface PageMetadataInput {
   ogType?: "website" | "article";
   /** Evita la plantilla del layout (p. ej. home). */
   absoluteTitle?: boolean;
+  /**
+   * Forzar noindex (p. ej. dominio legacy cotizador.cotizaloantes.cl).
+   * Los canónicos siguen apuntando a cotizadorpremium.cl.
+   */
+  forceNoIndex?: boolean;
 }
 
+/** Canónicos siempre al dominio premium, aunque el request sea legacy. */
 function resolveCanonicalUrl(path?: string): string | undefined {
   if (!path) return undefined;
-  const base = resolveAppBaseUrl();
+  const base = PROD_APP_BASE_URL.replace(/\/$/, "");
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   return `${base}${normalizedPath}`;
 }
@@ -41,9 +47,10 @@ export function buildPageMetadata(input: PageMetadataInput): Metadata {
   const fullTitle = input.absoluteTitle
     ? input.title
     : `${input.title} | ${SITE_NAME}`;
+  const shouldNoIndex = Boolean(input.noIndex || input.forceNoIndex);
 
-  const robots = input.noIndex
-    ? { index: false as const, follow: false as const }
+  const robots = shouldNoIndex
+    ? { index: false as const, follow: true as const }
     : {
         index: true as const,
         follow: true as const,
@@ -87,13 +94,16 @@ export function buildPageMetadata(input: PageMetadataInput): Metadata {
 }
 
 /** Metadatos base compartidos por el layout raíz. */
-export function buildRootMetadata(): Metadata {
-  const baseUrl = resolveAppBaseUrl();
+export function buildRootMetadata(options?: {
+  forceNoIndex?: boolean;
+}): Metadata {
+  const canonicalBase = PROD_APP_BASE_URL.replace(/\/$/, "");
+  const forceNoIndex = Boolean(options?.forceNoIndex);
 
   return {
-    metadataBase: new URL(baseUrl),
+    metadataBase: new URL(canonicalBase),
     title: {
-      default: SITE_NAME,
+      default: `${SITE_NAME} — Cotiza y compara planes Isapre en Chile`,
       template: `%s | ${SITE_NAME}`,
     },
     description: DEFAULT_DESCRIPTION,
@@ -109,9 +119,9 @@ export function buildRootMetadata(): Metadata {
       telephone: false,
     },
     openGraph: {
-      title: SITE_NAME,
+      title: `${SITE_NAME} — Cotiza y compara planes Isapre en Chile`,
       description: DEFAULT_DESCRIPTION,
-      url: baseUrl,
+      url: canonicalBase,
       siteName: SITE_NAME,
       locale: SITE_LOCALE,
       type: "website",
@@ -126,14 +136,16 @@ export function buildRootMetadata(): Metadata {
     },
     twitter: {
       card: "summary_large_image",
-      title: SITE_NAME,
+      title: `${SITE_NAME} — Cotiza y compara planes Isapre en Chile`,
       description: DEFAULT_DESCRIPTION,
       images: [DEFAULT_OG_IMAGE_PATH],
     },
-    robots: {
-      index: true,
-      follow: true,
-    },
+    robots: forceNoIndex
+      ? { index: false, follow: true }
+      : {
+          index: true,
+          follow: true,
+        },
     icons: {
       icon: [
         { url: "/favicon.ico", sizes: "48x48" },

@@ -1,21 +1,22 @@
 /** Configuración SEO global de Cotizador Premium. */
 export const SITE_NAME = "Cotizador Premium";
 
-export const SITE_TAGLINE = "Plataforma de cotización Isapre en Chile";
+export const SITE_TAGLINE = "Cotiza y compara planes Isapre en Chile";
 
 export const DEFAULT_DESCRIPTION =
-  "Compara y cotiza planes de salud Isapre en línea. Precios personalizados según tu edad, ingreso y región, con asesoría experta en Chile.";
+  "Cotizador Premium: compara y cotiza planes de salud Isapre en línea. Precios personalizados según tu edad, ingreso y región, con asesoría experta en Chile.";
 
 export const DEFAULT_KEYWORDS = [
+  "cotizador premium",
   "cotizador isapre",
   "cotizar plan de salud",
   "comparar planes isapre",
   "planes de salud chile",
   "isapre online",
-  "cotizador premium",
   "seguro de salud chile",
   "precio plan isapre",
   "cotización isapre",
+  "cotizadorpremium.cl",
 ] as const;
 
 /** Imagen por defecto para Open Graph / Twitter Cards. */

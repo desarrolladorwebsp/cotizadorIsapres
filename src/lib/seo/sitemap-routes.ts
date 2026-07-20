@@ -1,25 +1,26 @@
 import { ISAPRE_PAGE_SLUGS } from "@/lib/isapre-pages/content";
 import { readActivePartnerSlugs } from "@/lib/partner-entity/store";
-import { resolveAppBaseUrl } from "@/lib/platform/routing";
+import { PROD_APP_BASE_URL } from "@/lib/platform/routing";
 import type { MetadataRoute } from "next";
 
 export async function buildSitemapEntries(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = resolveAppBaseUrl();
+  // Sitemap siempre en el dominio canónico SEO.
+  const baseUrl = PROD_APP_BASE_URL.replace(/\/$/, "");
   const now = new Date();
   const slugs = await readActivePartnerSlugs();
 
   const entries: MetadataRoute.Sitemap = [
     {
-      url: `${baseUrl}/cotizador`,
-      lastModified: now,
-      changeFrequency: "daily",
-      priority: 1,
-    },
-    {
       url: `${baseUrl}/inicio`,
       lastModified: now,
       changeFrequency: "weekly",
-      priority: 0.9,
+      priority: 1,
+    },
+    {
+      url: `${baseUrl}/cotizador`,
+      lastModified: now,
+      changeFrequency: "daily",
+      priority: 0.95,
     },
   ];
 

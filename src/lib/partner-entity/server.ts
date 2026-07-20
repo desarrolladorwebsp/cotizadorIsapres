@@ -11,7 +11,10 @@ import {
   readPartnerEntityBySlug,
   toPublicPartnerEntity,
 } from "@/lib/partner-entity/store";
+import { isLegacySeoRequest } from "@/lib/seo/request-host";
 import type { PartnerEntityPublic } from "@/types/partner-entity";
+
+const LEGACY_DEFAULT_PARTNER_SLUG = "cotizaloantes";
 
 function resolveDefaultSlug(): string {
   return (
@@ -29,18 +32,36 @@ export async function readPartnerEntityFromCookieSlug(
   return entity ? toPublicPartnerEntity(entity) : null;
 }
 
-/** Resuelve entidad para /cotizador (agent key, cookie o default). */
+/**
+ * Resuelve entidad para /cotizador.
+ * Prioridad: `?agent=` / `?entidad=` → cookie (solo host legacy o con agent) → default del host.
+ *
+ * En cotizadorpremium.cl sin agent explícito siempre gana Cotizador Premium,
+ * aunque quede una cookie previa de otro partner (p. ej. cotizaloantes).
+ */
 export async function resolvePartnerEntityForCotizador(
   agentKey?: string,
   cookieSlug?: string,
 ): Promise<PartnerEntityPublic> {
-  const candidates = [agentKey, cookieSlug].filter(
-    (value): value is string => Boolean(value?.trim()),
-  );
-
-  for (const key of candidates) {
-    const entity = await readPartnerEntityByAgentKey(key);
+  const trimmedAgent = agentKey?.trim();
+  if (trimmedAgent) {
+    const entity = await readPartnerEntityByAgentKey(trimmedAgent);
     if (entity) return toPublicPartnerEntity(entity);
+  }
+
+  const legacyHost = await isLegacySeoRequest();
+
+  if (legacyHost) {
+    const trimmedCookie = cookieSlug?.trim();
+    if (trimmedCookie) {
+      const entity = await readPartnerEntityByAgentKey(trimmedCookie);
+      if (entity) return toPublicPartnerEntity(entity);
+    }
+
+    const legacyEntity = await readPartnerEntityBySlug(
+      LEGACY_DEFAULT_PARTNER_SLUG,
+    );
+    if (legacyEntity) return toPublicPartnerEntity(legacyEntity);
   }
 
   const entity = await readPartnerEntityBySlug(resolveDefaultSlug());

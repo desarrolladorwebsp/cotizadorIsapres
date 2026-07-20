@@ -5,6 +5,7 @@ import { JsonLdScript } from "@/components/seo/json-ld-script";
 import { loadPartnerEntityPage } from "@/lib/partner-entity/server";
 import { isEmbedSearchParam } from "@/lib/embed/is-embed-request";
 import { buildPageMetadata } from "@/lib/seo/build-page-metadata";
+import { isLegacySeoRequest } from "@/lib/seo/request-host";
 import { buildCotizadorPageJsonLd } from "@/lib/seo/json-ld";
 import {
   isReservedRootSegment,
@@ -23,6 +24,7 @@ export async function generateMetadata({
   const { partnerSlug } = await params;
   const query = await searchParams;
   const decodedSlug = decodeURIComponent(partnerSlug).trim().toLowerCase();
+  const legacyHost = await isLegacySeoRequest();
 
   if (isReservedRootSegment(decodedSlug) || !isValidPartnerSlugSegment(decodedSlug)) {
     return buildPageMetadata({
@@ -51,6 +53,7 @@ export async function generateMetadata({
     title: `Cotizar plan de salud con ${entity.name}`,
     description: `Compara y cotiza planes Isapre con ${entity.name}. Precios según tu edad, ingreso y región en Chile.`,
     path: `/${decodedSlug}`,
+    forceNoIndex: legacyHost,
     keywords: [
       "cotizador isapre",
       entity.name.toLowerCase(),

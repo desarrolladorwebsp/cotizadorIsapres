@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { EMBED_DOCUMENT_HEADER } from "@/lib/embed/is-embed-request";
 import { COTIZADOR_PREMIUM_PALETTE } from "@/lib/partner-entity/cotizador-premium-palette";
 import { buildRootMetadata } from "@/lib/seo/build-page-metadata";
+import { isLegacySeoHostname, normalizeHostname } from "@/lib/seo/request-host";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -17,7 +18,15 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = buildRootMetadata();
+export async function generateMetadata(): Promise<Metadata> {
+  const headerList = await headers();
+  const host = normalizeHostname(
+    headerList.get("x-forwarded-host") ?? headerList.get("host"),
+  );
+  return buildRootMetadata({
+    forceNoIndex: isLegacySeoHostname(host),
+  });
+}
 
 export const viewport: Viewport = {
   themeColor: COTIZADOR_PREMIUM_PALETTE.primary,

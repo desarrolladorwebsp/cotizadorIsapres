@@ -11,24 +11,31 @@ import {
 import { readPlatformPartnerEntity } from "@/lib/partner-entity/server";
 import { PLATFORM_LANDING_PATH } from "@/lib/partner-entity/platform-agent";
 import { buildPageMetadata } from "@/lib/seo/build-page-metadata";
+import { isLegacySeoRequest } from "@/lib/seo/request-host";
 import { buildLandingPageJsonLd } from "@/lib/seo/json-ld";
 import type { PartnerEntityPublic } from "@/types/partner-entity";
 
-export const metadata: Metadata = buildPageMetadata({
-  title: "Cotizador Premium — Compara y cotiza planes Isapre en Chile",
-  description:
-    "Compara planes de salud Isapre en línea, cotiza según tu edad e ingreso y recibe asesoría personalizada. Plataforma multitenant para agentes y socios en Chile.",
-  path: PLATFORM_LANDING_PATH,
-  absoluteTitle: true,
-  keywords: [
-    "cotizador isapre chile",
-    "comparar planes de salud",
-    "cotizar isapre online",
-    "planes isapre precios",
-    "asesoría isapre",
-    "cotizador premium",
-  ],
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const legacyHost = await isLegacySeoRequest();
+
+  return buildPageMetadata({
+    title: "Cotizador Premium — Cotiza y compara planes Isapre en Chile",
+    description:
+      "Cotizador Premium oficial: compara planes de salud Isapre en línea, cotiza según tu edad e ingreso y recibe asesoría personalizada en Chile.",
+    path: PLATFORM_LANDING_PATH,
+    absoluteTitle: true,
+    forceNoIndex: legacyHost,
+    keywords: [
+      "cotizador premium",
+      "cotizadorpremium.cl",
+      "cotizador isapre chile",
+      "comparar planes de salud",
+      "cotizar isapre online",
+      "planes isapre precios",
+      "asesoría isapre",
+    ],
+  });
+}
 
 async function loadFeaturedPartners(): Promise<PartnerEntityPublic[]> {
   const slugs = await readActivePartnerSlugs();

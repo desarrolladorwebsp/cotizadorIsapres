@@ -28,11 +28,13 @@ import {
 } from "@/lib/partner-entity/constants";
 import { isValidAgentKeySegment } from "@/lib/platform/routing";
 import { forwardRequest } from "@/lib/embed/middleware-embed";
+import { isLegacySeoHostname, normalizeHostname } from "@/lib/seo/request-host";
 
 const ADMIN_PREFIX = "/cotizador/admin";
 const EXECUTIVE_PREFIX = "/cotizador/ejecutivos";
 const ADMIN_LOGIN = `${ADMIN_PREFIX}/login`;
 const EXECUTIVE_LOGIN = `${EXECUTIVE_PREFIX}/login`;
+const LEGACY_DEFAULT_PARTNER_SLUG = "cotizaloantes";
 
 const PARTNER_SLUG_PATTERN = /^\/([a-z0-9]+(?:-[a-z0-9]+)*)\/?$/;
 const EMBED_PARTNER_PATTERN = /^\/embed\/([a-z0-9]+(?:-[a-z0-9]+)*)\/?$/;
@@ -143,6 +145,16 @@ function readAgentKeyFromSearchParams(request: NextRequest): string | null {
   return agent;
 }
 
+/** Marca por hostname cuando no hay `?agent=` / `?entidad=`. */
+function defaultPartnerSlugForRequest(request: NextRequest): string {
+  const host = normalizeHostname(
+    request.headers.get("x-forwarded-host") ?? request.headers.get("host"),
+  );
+  return isLegacySeoHostname(host)
+    ? LEGACY_DEFAULT_PARTNER_SLUG
+    : DEFAULT_PARTNER_ENTITY_SLUG;
+}
+
 function redirectToCotizadorWithAgent(
   request: NextRequest,
   agent: string,
@@ -162,9 +174,9 @@ function redirectRootToCotizador(request: NextRequest): NextResponse {
   const redirectUrl = new URL("/cotizador", request.url);
   redirectUrl.search = request.nextUrl.search;
   const response = NextResponse.redirect(redirectUrl, 308);
-  if (!request.cookies.get(PARTNER_ENTITY_COOKIE)?.value) {
-    setPartnerEntityCookie(response, DEFAULT_PARTNER_ENTITY_SLUG);
-  }
+  // Sin agent explícito: siempre alinear cookie al host (premium vs legacy).
+  // Evita que una visita previa con ?agent=cotizaloantes deje Cotízalo en cotizadorpremium.cl.
+  setPartnerEntityCookie(response, defaultPartnerSlugForRequest(request));
   return response;
 }
 
@@ -193,10 +205,11 @@ export async function middleware(request: NextRequest) {
       return setPartnerEntityCookie(response, agent);
     }
 
-    if (!request.cookies.get(PARTNER_ENTITY_COOKIE)?.value) {
-      setPartnerEntityCookie(response, DEFAULT_PARTNER_ENTITY_SLUG);
-    }
-    return response;
+    // Sin agent: forzar marca del host (no reutilizar cookie de otro partner).
+    return setPartnerEntityCookie(
+      response,
+      defaultPartnerSlugForRequest(request),
+    );
   }
 
   if (pathname === STAFF_LOGIN_PATH) {

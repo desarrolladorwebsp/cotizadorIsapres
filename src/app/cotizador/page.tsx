@@ -10,6 +10,7 @@ import {
 import { resolvePartnerEntityForCotizador } from "@/lib/partner-entity/server";
 import { isEmbedSearchParam } from "@/lib/embed/is-embed-request";
 import { buildPageMetadata } from "@/lib/seo/build-page-metadata";
+import { isLegacySeoRequest } from "@/lib/seo/request-host";
 import { buildCotizadorPageJsonLd } from "@/lib/seo/json-ld";
 
 interface CotizadorPageProps {
@@ -27,6 +28,7 @@ export async function generateMetadata({
   searchParams,
 }: CotizadorPageProps): Promise<Metadata> {
   const params = await searchParams;
+  const legacyHost = await isLegacySeoRequest();
 
   if (isEmbedSearchParam(params.embed)) {
     return buildPageMetadata({
@@ -50,11 +52,11 @@ export async function generateMetadata({
 
   const title = isBranded
     ? `Cotizar plan de salud con ${entity!.name}`
-    : "Cotizar plan de salud";
+    : "Cotizador Premium — Cotiza tu plan Isapre";
 
   const description = isBranded
     ? `Compara planes Isapre con ${entity!.name}. Precios personalizados según tu edad, ingreso mensual y región en Chile.`
-    : "Compara planes Isapre con precios personalizados según tu edad, ingreso mensual y región. Cotiza en línea con Cotizador Premium.";
+    : "Cotiza y compara planes Isapre en Cotizador Premium. Precios personalizados según tu edad, ingreso mensual y región en Chile.";
 
   const path = agentKey?.trim()
     ? `/cotizador?agent=${encodeURIComponent(agentKey.trim())}`
@@ -64,12 +66,15 @@ export async function generateMetadata({
     title,
     description,
     path,
+    absoluteTitle: !isBranded,
+    forceNoIndex: legacyHost,
     keywords: [
+      "cotizador premium",
       "cotizar plan isapre",
       "comparador planes salud",
       "precio plan isapre",
       "cotizador online chile",
-      ...(isBranded ? [entity!.name.toLowerCase()] : []),
+      ...(isBranded ? [entity!.name.toLowerCase()] : ["cotizadorpremium.cl"]),
     ],
   });
 }

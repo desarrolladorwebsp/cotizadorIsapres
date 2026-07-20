@@ -6,6 +6,7 @@ import { useUfValue } from "@/hooks/use-uf-value";
 import { usePartnerEntity } from "@/components/partner/partner-entity-provider";
 import {
   PLATFORM_AGENT_KEY,
+  PLATFORM_AGENT_LOGO_URL,
   PLATFORM_AGENT_WEBSITE,
   PLATFORM_LANDING_PATH,
 } from "@/lib/partner-entity/platform-agent";
@@ -83,7 +84,7 @@ export function PublicCotizadorHeader({ embedMode = false }: PublicCotizadorHead
   const logoAlt = isBranded ? entity!.name : "Cotizador Virtual";
   const logoSrc = isBranded
     ? entity!.logoUrl
-    : "/images/logo-cotizalo-antes.png";
+    : PLATFORM_AGENT_LOGO_URL;
   const logoOpensExternal = isBranded && isExternalUrl(logoHref);
   const exitIsInternal = !isExternalUrl(exitHref);
 
