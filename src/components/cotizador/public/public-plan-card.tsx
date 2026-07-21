@@ -7,7 +7,7 @@ import {
   AmbulatoryCoverageIcon,
   HospitalCoverageIcon,
 } from "@/components/plan-card/coverage-column-icons";
-import { ChatIcon, DownloadIcon } from "@/components/plan-card/icons";
+import { ChatIcon, FileIcon } from "@/components/plan-card/icons";
 import { IsapreLogo } from "@/components/plan-card/isapre-logo";
 import {
   buildPlanFinalPriceQuote,
@@ -29,13 +29,10 @@ import { joinClasses } from "@/lib/utils";
 import type { BeneficiaryGroupSummary } from "@/domain";
 import type { HealthPlanSummary } from "@/domain";
 import type { PlanTypeFilterId } from "@/types/filters";
-import {
-  buildPlanPdfFileName,
-  getPlanPdfDownloadUrl,
-  planHasPdf,
-} from "@/lib/plan-pdf";
+import { planHasPdf } from "@/lib/plan-pdf";
 import type { CurrencyDisplay } from "./public-results-toolbar";
 import { formatQuotedUf } from "@/domain";
+import { PublicPlanPdfModal } from "./public-plan-pdf-modal";
 
 export interface PublicPlanCardProps {
   plan: HealthPlanSummary;
@@ -187,6 +184,7 @@ export function PublicPlanCard({
   highlightAmbulatoryClinicIds = [],
 }: PublicPlanCardProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const [pdfModalOpen, setPdfModalOpen] = useState(false);
   const needsClinicDetail =
     highlightHospitalClinicIds.length > 0 ||
     highlightAmbulatoryClinicIds.length > 0;
@@ -195,6 +193,8 @@ export function PublicPlanCard({
     plan.unique_code,
     needsClinicDetail && inView,
   );
+
+  const hasPdf = planHasPdf(plan);
 
   const { hospitalaria, ambulatoria } = useMemo(() => {
     if (!detailPlan) {
@@ -281,18 +281,15 @@ export function PublicPlanCard({
           <div className="flex flex-wrap items-center gap-2">
             <PlanCardActionButton
               label="PDF"
-              icon={<DownloadIcon />}
+              icon={<FileIcon />}
               variant="secondary"
-              href={getPlanPdfDownloadUrl(plan) ?? undefined}
-              target="_blank"
-              rel="noopener noreferrer"
-              download={buildPlanPdfFileName(plan.unique_code)}
+              onClick={() => setPdfModalOpen(true)}
               title={
-                planHasPdf(plan)
-                  ? "Descargar PDF del plan"
+                hasPdf
+                  ? "Ver contrato PDF del plan"
                   : "PDF no disponible para este plan"
               }
-              disabled={!planHasPdf(plan)}
+              disabled={!hasPdf}
             />
             <PlanCardActionButton
               label="Solicitar"
@@ -337,6 +334,12 @@ export function PublicPlanCard({
           Cargando prestadores…
         </p>
       ) : null}
+
+      <PublicPlanPdfModal
+        open={pdfModalOpen}
+        plan={plan}
+        onClose={() => setPdfModalOpen(false)}
+      />
     </motion.article>
   );
 }
