@@ -7,6 +7,7 @@ import type {
   CompanyAgreementAdminListResult,
   CompanyAgreementImportResult,
 } from "@/types/company-agreement";
+import type { PlanBulkImportResult } from "@/types/plan-bulk-import";
 import type { HealthPlan } from "@/types/plan";
 import type { PlanPdfReport } from "@/types/plan-pdf-report";
 import type { PlanPdfBatchUploadResponse } from "@/types/plan-pdf-upload";
@@ -213,6 +214,20 @@ export async function importCompanyAgreementsAdmin(input: {
   });
 
   return parseJsonResponse<CompanyAgreementImportResult>(response);
+}
+
+export async function importPlansBulkAdmin(
+  file: File,
+): Promise<PlanBulkImportResult> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch("/api/admin/plans/import", {
+    method: "POST",
+    body: formData,
+  });
+
+  return parseJsonResponse<PlanBulkImportResult>(response);
 }
 
 export async function updateIsapreGes(

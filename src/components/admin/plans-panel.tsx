@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -24,6 +24,7 @@ import {
   createEmptyPlan,
   createPlan,
   deletePlan,
+  importPlansBulkAdmin,
   updatePlan,
 } from "@/lib/api/admin-client";
 import { formatPlanUf } from "@/domain";
@@ -42,6 +43,10 @@ import { ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type { Clinic, HealthPlan } from "@/domain";
 import { PlanForm } from "./plan-form";
+
+/** Plantilla oficial (Google Sheets) para carga / actualización masiva de planes. */
+export const PLAN_BULK_IMPORT_TEMPLATE_URL =
+  "https://docs.google.com/spreadsheets/d/1Epvertgw-tHTWWoHS5IULCVOFE5fvPGwGsvqr1UBPVg/edit?usp=sharing";
 
 export interface PlansPanelProps {
   plans: HealthPlan[];
@@ -86,6 +91,8 @@ export function PlansPanel({
   const [formMode, setFormMode] = useState<FormMode>(null);
   const [draftPlan, setDraftPlan] = useState<HealthPlan>(createEmptyPlan());
   const [saving, setSaving] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const bulkFileInputRef = useRef<HTMLInputElement>(null);
 
   const filteredPlans = useMemo(
     () =>
@@ -167,14 +174,81 @@ export function PlansPanel({
     }
   }
 
+  async function handleBulkImport(files: FileList | null) {
+    const file = files?.[0];
+    if (!file) return;
+
+    const lower = file.name.toLowerCase();
+    if (!lower.endsWith(".xlsx") && !lower.endsWith(".xls")) {
+      onNotify("Solo se permiten archivos Excel (.xlsx / .xls).", "error");
+      return;
+    }
+
+    setImporting(true);
+    try {
+      const result = await importPlansBulkAdmin(file);
+      const parts = [
+        `${result.processed} fila(s)`,
+        result.created ? `${result.created} creados` : null,
+        result.updated ? `${result.updated} actualizados` : null,
+        result.deleted ? `${result.deleted} eliminados` : null,
+      ].filter(Boolean);
+
+      const warningHint =
+        result.warnings.length > 0
+          ? ` · ${result.warnings.length} aviso(s)`
+          : "";
+
+      onNotify(`Carga masiva OK: ${parts.join(" · ")}${warningHint}.`);
+      await onRefresh();
+    } catch (error) {
+      onNotify(
+        error instanceof Error
+          ? error.message
+          : "No se pudo importar el Excel de planes.",
+        "error",
+      );
+    } finally {
+      setImporting(false);
+      if (bulkFileInputRef.current) bulkFileInputRef.current.value = "";
+    }
+  }
+
   return (
     <AdminPanel>
       <AdminPanelHeader
         title="Planes de salud"
-        description="Catálogo de planes del cotizador. Filtra por isapre, zona o tipo y ordena por nombre, precio o coberturas."
+        description="Catálogo de planes del cotizador. Filtra por isapre, zona o tipo y ordena por nombre, precio o coberturas. Para cargas masivas usa la plantilla oficial."
         actions={
           <>
             <AdminRefreshButton onClick={() => void onRefresh()} />
+            <a
+              href={PLAN_BULK_IMPORT_TEMPLATE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Abrir plantilla de carga masiva en Google Sheets"
+              className={joinClasses(
+                "inline-flex h-9 items-center justify-center rounded-lg border border-primary/30 bg-white px-3 text-sm font-semibold text-primary transition hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35",
+              )}
+            >
+              Formato carga masiva
+            </a>
+            <input
+              ref={bulkFileInputRef}
+              type="file"
+              accept=".xlsx,.xls,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              className="hidden"
+              onChange={(event) => void handleBulkImport(event.target.files)}
+            />
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              disabled={importing || loading}
+              onClick={() => bulkFileInputRef.current?.click()}
+            >
+              {importing ? "Importando…" : "Subir Excel"}
+            </Button>
             <Button size="sm" onClick={openCreateForm}>
               Agregar plan
             </Button>

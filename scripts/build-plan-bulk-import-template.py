@@ -15,7 +15,7 @@ from pathlib import Path
 
 import openpyxl
 from openpyxl.formatting.rule import FormulaRule
-from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+from openpyxl.styles import Alignment, Border, Font, PatternFill, Protection, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.workbook.defined_name import DefinedName
 from openpyxl.worksheet.datavalidation import DataValidation
@@ -63,6 +63,8 @@ COBERTURAS_LIST_START_COL = 20  # T
 HEADER_FILL = PatternFill("solid", fgColor="092558")
 HEADER_FONT = Font(color="FFFFFF", bold=True, size=11)
 SELECT_FILL = PatternFill("solid", fgColor="0D6DEE")
+CALC_FILL = PatternFill("solid", fgColor="E2E8F0")
+CALC_HEADER_FILL = PatternFill("solid", fgColor="475569")
 WARN_FILL = PatternFill("solid", fgColor="FEF3C7")
 ERROR_FILL = PatternFill("solid", fgColor="FECACA")
 TITLE_FONT = Font(bold=True, size=14, color="092558")
@@ -73,6 +75,8 @@ THIN = Border(
     top=Side(style="thin", color="CBD5E1"),
     bottom=Side(style="thin", color="CBD5E1"),
 )
+LOCKED = Protection(locked=True)
+UNLOCKED = Protection(locked=False)
 
 
 def load_clinics() -> list[tuple[str, str]]:
@@ -90,16 +94,31 @@ def clinic_labels(clinics: list[tuple[str, str]]) -> list[str]:
     return [f"{clinic_id} | {name}" for clinic_id, name in clinics]
 
 
-def style_header(ws, headers: list[str], select_headers: set[str]) -> None:
+def style_header(
+    ws,
+    headers: list[str],
+    select_headers: set[str],
+    calc_headers: set[str] | None = None,
+) -> None:
+    calc_headers = calc_headers or set()
     for col, header in enumerate(headers, start=1):
-        label = f"{header} ▾" if header in select_headers else header
+        if header in select_headers:
+            label = f"{header} ▾"
+            fill = SELECT_FILL
+        elif header in calc_headers:
+            label = f"{header} 🔒"
+            fill = CALC_HEADER_FILL
+        else:
+            label = header
+            fill = HEADER_FILL
         cell = ws.cell(1, col, label)
         cell.font = HEADER_FONT
-        cell.fill = SELECT_FILL if header in select_headers else HEADER_FILL
+        cell.fill = fill
         cell.alignment = Alignment(
             horizontal="center", vertical="center", wrap_text=True
         )
         cell.border = THIN
+        cell.protection = LOCKED
     ws.row_dimensions[1].height = 36
     ws.freeze_panes = "A2"
     ws.auto_filter.ref = f"A1:{get_column_letter(len(headers))}{MAX_DATA_ROWS + 1}"
@@ -200,53 +219,83 @@ def build_instrucciones(wb: openpyxl.Workbook, clinic_count: int) -> None:
 
     lines = [
         "",
-        "CAMPOS SELECT (flecha ▾ en el encabezado — NO escribir a mano)",
+        "CAMPOS SELECT (flecha ▾ — NO escribir a mano)",
         "Planes: accion, isapre, tipo_plan, zona_1…zona_5",
         "Coberturas: tipo_cobertura, clinica, porcentaje",
         "Excel BLOQUEA cualquier valor que no esté en la lista (error stop).",
         "",
+        "COLUMNAS CALCULADAS (candado 🔒 — NO editables)",
+        "alerta_codigo          Avisa si codigo_unico está duplicado en Planes.",
+        "coberturas_hosp        Cuenta filas hospitalaria en Coberturas con el mismo codigo_unico.",
+        "coberturas_amb         Cuenta filas ambulatoria en Coberturas con el mismo codigo_unico.",
+        "Se actualizan solas al agregar/quitar filas en Coberturas. La hoja Planes está protegida.",
+        "",
         "CÓMO USAR",
         "1. En cada celda SELECT haz clic y elige de la flecha desplegable.",
         "2. Completa Planes (1 fila = 1 plan) y Coberturas (N filas por codigo_unico).",
-        "3. No inventes isapres, tipos, zonas ni clínicas.",
-        "4. codigo_unico debe ser único dentro de este Excel (columna alerta_codigo avisa duplicados).",
+        "3. Revisa coberturas_hosp / coberturas_amb: deben subir al ir añadiendo clínicas.",
+        "4. No inventes isapres, tipos, zonas ni clínicas.",
+        "5. codigo_unico debe ser único dentro de este Excel.",
         "",
         "HOJA PLANES",
-        "accion ▾*          crear | actualizar | eliminar",
-        "codigo_unico*      texto libre (clave del plan)",
-        "alerta_codigo      automática (no editar)",
-        "isapre ▾*          lista oficial",
-        "nombre_plan*       texto",
-        "precio_base_uf*    número ≥ 0",
-        "ges_uf             número ≥ 0 (opcional)",
-        "tipo_plan ▾*       Preferente | Libre Elección | Cerrado",
-        "zona_1…zona_5 ▾   una o varias (deja vacías las que no uses)",
-        "notas              texto libre",
+        "accion ▾*             crear | actualizar | eliminar",
+        "codigo_unico*         texto libre (clave del plan)",
+        "alerta_codigo 🔒      automática",
+        "isapre ▾*             lista oficial",
+        "nombre_plan*          texto",
+        "precio_base_uf*       número ≥ 0",
+        "ges_uf                número ≥ 0 (opcional)",
+        "tipo_plan ▾*          Preferente | Libre Elección | Cerrado",
+        "coberturas_hosp 🔒    # prestadores hospitalarios (desde Coberturas)",
+        "coberturas_amb 🔒     # prestadores ambulatorios (desde Coberturas)",
+        "zona_1…zona_5 ▾      una o varias (deja vacías las que no uses)",
+        "notas                 texto libre",
         "",
         "HOJA COBERTURAS",
-        "codigo_unico*      mismo código que en Planes",
-        "tipo_cobertura ▾*  hospitalaria | ambulatoria",
-        "clinica ▾*         id | nombre (catálogo embebido)",
-        "porcentaje ▾*      40 | 50 | 60 | 70 | 80 | 90 | 100",
+        "codigo_unico*         mismo código que en Planes",
+        "tipo_cobertura ▾*     hospitalaria | ambulatoria",
+        "clinica ▾*            id | nombre (catálogo embebido)",
+        "porcentaje ▾*         40 | 50 | 60 | 70 | 80 | 90 | 100",
         "",
         "REGLAS",
         f"- {clinic_count} clínicas en el SELECT (hoja Catalogo_Clinicas para consultar).",
         "- Si hay filas de Coberturas para un plan → al importar se REEMPLAZAN todas sus coberturas.",
         "- eliminar: basta accion + codigo_unico.",
-        "- Encabezado azul brillante = SELECT. Encabezado navy = texto/número.",
+        "- Encabezado azul brillante = SELECT. Gris con 🔒 = fórmula bloqueada. Navy = texto/número.",
         "",
         "EJEMPLO",
         "Filas EJEMPLO-001 / EJEMPLO-002 son de muestra: bórralas antes de una carga real.",
+        "EJEMPLO-001 debería mostrar coberturas_hosp=2 y coberturas_amb=2.",
     ]
 
     for row, text in enumerate(lines, start=2):
         ws.cell(row, 1, text)
-        if text.startswith(("CAMPOS", "CÓMO", "HOJA", "REGLAS", "EJEMPLO")):
+        if text.startswith(
+            ("CAMPOS", "COLUMNAS", "CÓMO", "HOJA", "REGLAS", "EJEMPLO")
+        ):
             ws.cell(row, 1).font = Font(bold=True, color="092558", size=12)
         elif text.startswith("-") or "▾" in text:
             ws.cell(row, 1).font = SUBTITLE_FONT
 
     ws.column_dimensions["A"].width = 110
+
+
+def coverage_count_formula(row_idx: int, coverage_type: str) -> str:
+    """Cuenta filas en Coberturas para el codigo_unico de esta fila y un tipo."""
+    end = MAX_DATA_ROWS + 1
+    return (
+        f'=IF(B{row_idx}="","",'
+        f'COUNTIFS(Coberturas!$A$2:$A${end},B{row_idx},'
+        f'Coberturas!$B$2:$B${end},"{coverage_type}"))'
+    )
+
+
+def duplicate_code_formula(row_idx: int) -> str:
+    end = MAX_DATA_ROWS + 1
+    return (
+        f'=IF(B{row_idx}="","",IF(COUNTIF($B$2:$B${end},B{row_idx})>1,'
+        f'"DUPLICADO — revisa codigo_unico",""))'
+    )
 
 
 def build_planes_sheet(wb: openpyxl.Workbook) -> None:
@@ -262,11 +311,28 @@ def build_planes_sheet(wb: openpyxl.Workbook) -> None:
         "precio_base_uf",
         "ges_uf",
         "tipo_plan",
+        "coberturas_hosp",
+        "coberturas_amb",
         *zone_headers,
         "notas",
     ]
     select_headers = {"accion", "isapre", "tipo_plan", *zone_headers}
-    style_header(ws, headers, select_headers)
+    calc_headers = {"alerta_codigo", "coberturas_hosp", "coberturas_amb"}
+    style_header(ws, headers, select_headers, calc_headers)
+
+    # Índices 1-based
+    col_by_header = {h: i + 1 for i, h in enumerate(headers)}
+    editable_headers = {
+        "accion",
+        "codigo_unico",
+        "isapre",
+        "nombre_plan",
+        "precio_base_uf",
+        "ges_uf",
+        "tipo_plan",
+        *zone_headers,
+        "notas",
+    }
 
     # Listas ocultas en la misma hoja (fuente de los SELECT)
     col = PLANES_LIST_START_COL
@@ -302,27 +368,41 @@ def build_planes_sheet(wb: openpyxl.Workbook) -> None:
         },
     ]
 
-    for row_idx, sample in enumerate(samples, start=2):
-        for col_idx, header in enumerate(headers, start=1):
-            value = sample.get(header, "")
-            cell = ws.cell(row_idx, col_idx, value if value != "" else None)
+    end = MAX_DATA_ROWS + 1
+
+    def apply_calc_and_protection(row_idx: int) -> None:
+        for header, col_idx in col_by_header.items():
+            cell = ws.cell(row_idx, col_idx)
             cell.border = THIN
             if header == "alerta_codigo":
-                cell.value = (
-                    f'=IF(B{row_idx}="","",IF(COUNTIF($B$2:$B${MAX_DATA_ROWS + 1},B{row_idx})>1,'
-                    f'"DUPLICADO — revisa codigo_unico",""))'
-                )
+                cell.value = duplicate_code_formula(row_idx)
                 cell.fill = WARN_FILL
+                cell.protection = LOCKED
+            elif header == "coberturas_hosp":
+                cell.value = coverage_count_formula(row_idx, "hospitalaria")
+                cell.fill = CALC_FILL
+                cell.protection = LOCKED
+                cell.alignment = Alignment(horizontal="center")
+            elif header == "coberturas_amb":
+                cell.value = coverage_count_formula(row_idx, "ambulatoria")
+                cell.fill = CALC_FILL
+                cell.protection = LOCKED
+                cell.alignment = Alignment(horizontal="center")
+            elif header in editable_headers:
+                cell.protection = UNLOCKED
+            else:
+                cell.protection = LOCKED
 
-    for row_idx in range(4, MAX_DATA_ROWS + 2):
-        cell = ws.cell(row_idx, 3)
-        cell.value = (
-            f'=IF(B{row_idx}="","",IF(COUNTIF($B$2:$B${MAX_DATA_ROWS + 1},B{row_idx})>1,'
-            f'"DUPLICADO — revisa codigo_unico",""))'
-        )
-        cell.border = THIN
+    for row_idx, sample in enumerate(samples, start=2):
+        for header, col_idx in col_by_header.items():
+            if header in calc_headers:
+                continue
+            value = sample.get(header, "")
+            ws.cell(row_idx, col_idx, value if value != "" else None)
+        apply_calc_and_protection(row_idx)
 
-    end = MAX_DATA_ROWS + 1
+    for row_idx in range(4, end + 1):
+        apply_calc_and_protection(row_idx)
 
     # SELECT estrictos (misma hoja)
     add_select(
@@ -349,8 +429,9 @@ def build_planes_sheet(wb: openpyxl.Workbook) -> None:
         prompt="Elige Preferente, Libre Elección o Cerrado.",
         error="Tipo de plan inválido. Solo hay 3 opciones en el desplegable.",
     )
+    zona_start = col_by_header["zona_1"]
     for offset in range(ZONE_COLUMNS):
-        letter = get_column_letter(9 + offset)
+        letter = get_column_letter(zona_start + offset)
         add_select(
             ws,
             range_zona,
@@ -399,12 +480,14 @@ def build_planes_sheet(wb: openpyxl.Workbook) -> None:
         "F": 14,
         "G": 10,
         "H": 18,
-        "I": 36,
-        "J": 36,
+        "I": 14,
+        "J": 14,
         "K": 36,
         "L": 36,
         "M": 36,
-        "N": 28,
+        "N": 36,
+        "O": 36,
+        "P": 28,
     }
     for letter, width in widths.items():
         ws.column_dimensions[letter].width = width
@@ -412,9 +495,19 @@ def build_planes_sheet(wb: openpyxl.Workbook) -> None:
     ws.cell(
         MAX_DATA_ROWS + 3,
         1,
-        "▾ = SELECT (lista desplegable). Excel rechaza valores fuera de la lista. "
-        "No desocultar columnas auxiliares al final de la hoja.",
+        "▾ = SELECT. 🔒 = fórmula bloqueada (coberturas_hosp / coberturas_amb cuentan "
+        "filas de Coberturas por codigo_unico). Hoja protegida: no edites columnas grises.",
     ).font = Font(italic=True, color="64748B", size=9)
+    ws.cell(MAX_DATA_ROWS + 3, 1).protection = LOCKED
+
+    # Proteger hoja: columnas calculadas no editables; el resto sí.
+    ws.protection.sheet = True
+    ws.protection.enable()
+    ws.protection.autoFilter = True
+    ws.protection.sort = True
+    ws.protection.insertRows = True
+    ws.protection.deleteRows = False
+    # Sin contraseña: se puede desproteger si hace falta, pero por defecto bloquea 🔒.
 
 
 def build_coberturas_sheet(
@@ -549,6 +642,7 @@ def main() -> None:
     wb.save(OUT_FILE)
     print(f"Plantilla regenerada: {OUT_FILE}")
     print("SELECT Planes: accion, isapre, tipo_plan, zona_1..5")
+    print("CALC Planes (bloqueadas): alerta_codigo, coberturas_hosp, coberturas_amb")
     print("SELECT Coberturas: tipo_cobertura, clinica, porcentaje")
     print(f"Clínicas: {len(clinics)}")
 
