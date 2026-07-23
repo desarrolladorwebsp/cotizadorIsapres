@@ -461,7 +461,7 @@ export function ContractPlanModal({
               aria-hidden
             />
 
-            <div className="flex shrink-0 items-center justify-between border-b px-4 py-2.5 pt-3 sm:px-6 sm:py-3 sm:pt-4">
+            <div className="flex shrink-0 items-center justify-between px-4 py-2 pt-2.5 sm:px-6 sm:py-2 sm:pt-3">
               <div className="flex items-center gap-3">
                 <IsapreLogo isapre={summary.isapre} size="md" />
                 <div>
@@ -486,79 +486,89 @@ export function ContractPlanModal({
               </button>
             </div>
 
-            <div className="flex shrink-0 items-center justify-center gap-2 border-b bg-secondary-muted px-3 py-2 text-center text-xs text-primary-dark sm:px-6 sm:py-2.5 sm:text-sm">
-              <span
-                className={joinClasses(
-                  "hidden size-6 shrink-0 items-center justify-center rounded-full sm:inline-flex",
-                  accentIconClass.secondary,
-                )}
-                aria-hidden
-              >
-                ✉
-              </span>
-              {activeTab === "request"
-                ? "Completa el formulario para recibir un precio exacto con un ejecutivo especializado."
-                : activeTab === "price"
-                  ? "Revisa el precio estimado del plan según la edad del cotizante."
-                  : "Conoce las coberturas y características principales del plan."}
-            </div>
-
-            <div className="grid shrink-0 gap-3 border-b px-4 py-3 sm:grid-cols-[1fr_auto] sm:items-center sm:gap-4 sm:px-6 sm:py-4">
-              <div className="min-w-0 space-y-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span
-                    className={joinClasses(
-                      "rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide",
-                      badgeTone,
-                    )}
-                  >
-                    {planTypeLabel}
-                  </span>
-                </div>
-                <h2
-                  id="contract-plan-title"
-                  className="text-base font-bold leading-snug text-foreground sm:text-lg"
-                >
-                  {commercialName}
-                </h2>
-                <p className="flex flex-wrap items-center gap-2 font-mono text-xs text-muted">
-                  <span>{summary.unique_code}</span>
-                </p>
-              </div>
-
+            <div className="shrink-0 px-4 pb-3 pt-1 sm:px-6 sm:pb-3 sm:pt-1.5">
               <div
                 className={joinClasses(
-                  "rounded-xl border px-4 py-3 text-right sm:min-w-52",
-                  "bg-primary/5",
-                  accent.borderPrimary,
-                  accent.ringPrimary,
+                  "grid gap-4 rounded-xl border border-border bg-white p-4 sm:grid-cols-[minmax(0,1.1fr)_minmax(0,1.2fr)_auto] sm:items-center sm:gap-0 sm:p-5",
+                  safeWidth,
                 )}
               >
-                <div className="flex items-center justify-end gap-2">
-                  <p className="text-[10px] font-bold uppercase tracking-wide text-muted">
-                    Precio estimado
-                  </p>
+                <div className="relative min-w-0 space-y-2 sm:pr-6">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span
+                      className={joinClasses(
+                        "rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide",
+                        badgeTone,
+                      )}
+                    >
+                      {planTypeLabel}
+                    </span>
+                  </div>
+                  <h2
+                    id="contract-plan-title"
+                    className="text-xl font-bold leading-snug text-primary-dark sm:text-2xl"
+                  >
+                    {commercialName}
+                  </h2>
+                  <p className="text-sm text-muted">{summary.unique_code}</p>
+                  <div
+                    className="absolute right-0 top-1/2 hidden h-[72%] w-px -translate-y-1/2 bg-border sm:block"
+                    aria-hidden
+                  />
                 </div>
-                <p
-                  className={joinClasses(
-                    "mt-1 text-xl font-bold sm:text-2xl",
-                    accent.valuePrimary,
-                  )}
-                >
-                  Desde {formatPlanClp(uiPrices.displayFinalPriceClp)}
-                  <span className="text-sm font-semibold text-muted">
-                    {" "}
-                    /mes
+
+                <div className="flex min-w-0 items-center gap-3 sm:px-6">
+                  <span
+                    className={joinClasses(
+                      "flex size-14 shrink-0 items-center justify-center rounded-full sm:size-16",
+                      accentIconClass.primary,
+                    )}
+                    aria-hidden
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      className="size-7 sm:size-8"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M12 3 5 6.5v5.2c0 4.1 2.8 7.8 7 8.8 4.2-1 7-4.7 7-8.8V6.5L12 3Z" />
+                      <path d="m9.2 12 1.9 1.9 3.7-3.8" />
+                    </svg>
                   </span>
-                </p>
-                <p
-                  className={joinClasses(
-                    "mt-0.5 text-xs font-semibold",
-                    accent.valueSecondary,
-                  )}
-                >
-                  {formatQuotedUf(uiPrices.displayFinalPriceUf)}
-                </p>
+                  <div className="min-w-0">
+                    <p className="font-bold text-primary-dark">Conoce tu plan</p>
+                    <p className="mt-0.5 text-sm leading-snug text-muted">
+                      Revisa las coberturas y características principales de
+                      este plan.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("overview")}
+                      className="mt-1.5 text-sm font-semibold text-primary transition hover:text-primary-dark"
+                    >
+                      Ver detalles del plan →
+                    </button>
+                  </div>
+                </div>
+
+                <div className="rounded-xl bg-primary px-5 py-4 text-center text-white sm:min-w-52">
+                  <p className="text-[10px] font-bold uppercase tracking-wide text-white/85">
+                    Precio estimado mensual
+                  </p>
+                  <p className="mt-1 text-xl font-bold sm:text-2xl">
+                    Desde {formatPlanClp(uiPrices.displayFinalPriceClp)}
+                    <span className="text-sm font-semibold text-white/90">
+                      {" "}
+                      /mes
+                    </span>
+                  </p>
+                  <span className="mt-2 inline-block rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-semibold text-white">
+                    {formatQuotedUf(uiPrices.displayFinalPriceUf)}
+                  </span>
+                </div>
               </div>
             </div>
 
