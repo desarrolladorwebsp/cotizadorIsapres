@@ -166,6 +166,7 @@ export function ContractPlanModal({
   const [rut, setRut] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [acceptPrivacy, setAcceptPrivacy] = useState(false);
 
   useEffect(() => {
     if (!open) {
@@ -181,6 +182,7 @@ export function ContractPlanModal({
       setRut("");
       setEmail("");
       setPhone("");
+      setAcceptPrivacy(false);
       return;
     }
 
@@ -196,6 +198,7 @@ export function ContractPlanModal({
     setRut(deepLink.requestPrefill?.rut ?? "");
     setEmail(deepLink.requestPrefill?.email ?? deepLink.email ?? "");
     setPhone(deepLink.requestPrefill?.phone ?? "");
+    setAcceptPrivacy(false);
   }, [open, initialTab, deepLink.requestPrefill, deepLink.email]);
 
   useEffect(() => {
@@ -303,6 +306,11 @@ export function ContractPlanModal({
       errors.push("Ingresa tu teléfono de contacto.");
     } else if (normalizeRequestPhoneDigits(phone).length < 8) {
       errors.push("Ingresa un teléfono válido (mínimo 8 dígitos).");
+    }
+    if (!acceptPrivacy) {
+      errors.push(
+        "Debes autorizar el tratamiento de tus datos personales para continuar.",
+      );
     }
 
     return errors;
@@ -661,6 +669,8 @@ export function ContractPlanModal({
                     onEmailChange={setEmail}
                     phone={phone}
                     onPhoneChange={setPhone}
+                    acceptPrivacy={acceptPrivacy}
+                    onAcceptPrivacyChange={setAcceptPrivacy}
                     attemptedSubmit={attemptedSubmit}
                     validationErrors={validationErrors}
                     submitError={submitError}
@@ -753,6 +763,8 @@ export function ContractPlanModal({
                       onEmailChange={setEmail}
                       phone={phone}
                       onPhoneChange={setPhone}
+                      acceptPrivacy={acceptPrivacy}
+                      onAcceptPrivacyChange={setAcceptPrivacy}
                       attemptedSubmit={attemptedSubmit}
                       validationErrors={validationErrors}
                       submitError={submitError}

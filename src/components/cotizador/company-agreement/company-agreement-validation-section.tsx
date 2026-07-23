@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { CompanyAgreementInfoModal } from "@/components/cotizador/company-agreement/company-agreement-info-modal";
 import {
@@ -10,6 +11,7 @@ import {
 } from "@/lib/email/company-agreement-schema";
 import { COMPANY_AGREEMENT_DISCOUNT_DISCLAIMER } from "@/lib/company-agreements/constants";
 import { sanitizeRutInput } from "@/lib/auth/rut";
+import { privacyPolicyMeta } from "@/constants/privacy-policy";
 import { safeWidth, touchTarget, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type {
@@ -139,6 +141,8 @@ export function CompanyAgreementValidationSection({
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [companyRut, setCompanyRut] = useState("");
+  const [acceptPrivacy, setAcceptPrivacy] = useState(false);
+  const [privacyError, setPrivacyError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<
     Partial<Record<FieldKey, string>>
   >({});
@@ -226,6 +230,8 @@ export function CompanyAgreementValidationSection({
     setEmail("");
     setPhone("");
     setCompanyRut("");
+    setAcceptPrivacy(false);
+    setPrivacyError(null);
     setFieldErrors({});
     setSubmitError(null);
     setSubmitting(false);
@@ -238,6 +244,7 @@ export function CompanyAgreementValidationSection({
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setSubmitError(null);
+    setPrivacyError(null);
     setAgreementMatch(null);
     setAgreementNotFound(false);
     setSubmitted(false);
@@ -261,6 +268,13 @@ export function CompanyAgreementValidationSection({
     const errors = validateCompanyAgreementFields(values);
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
+      return;
+    }
+
+    if (!acceptPrivacy) {
+      setPrivacyError(
+        "Debes autorizar el tratamiento de tus datos personales para continuar.",
+      );
       return;
     }
 
@@ -569,6 +583,58 @@ export function CompanyAgreementValidationSection({
             >
               El RUT empresa es necesario para validar el convenio. Los demás
               campos son opcionales.
+            </p>
+          ) : null}
+
+          <label
+            className={joinClasses(
+              "flex items-start gap-2.5 rounded-lg border px-2.5 py-2",
+              privacyError
+                ? "border-red-300 bg-red-50/80"
+                : "border-border/70 bg-white/50",
+              isInline && "sm:col-span-2",
+              compactEmbed && "max-md:px-2 max-md:py-1.5",
+            )}
+          >
+            <input
+              type="checkbox"
+              checked={acceptPrivacy}
+              onChange={(e) => {
+                setAcceptPrivacy(e.target.checked);
+                setPrivacyError(null);
+              }}
+              required
+              className="mt-0.5 size-3.5 shrink-0 accent-primary"
+            />
+            <span
+              className={joinClasses(
+                "text-[11px] leading-relaxed text-muted",
+                compactEmbed && "max-md:text-[10px]",
+              )}
+            >
+              Autorizo el tratamiento de mis datos personales conforme a la
+              legislación chilena vigente (Ley N° 21.719) y la{" "}
+              <Link
+                href={privacyPolicyMeta.path}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-primary underline-offset-2 hover:underline"
+              >
+                política de privacidad
+              </Link>
+              .
+            </span>
+          </label>
+
+          {privacyError ? (
+            <p
+              className={joinClasses(
+                "rounded-lg bg-red-50 px-2.5 py-2 text-[11px] text-red-900 ring-1 ring-red-200/80",
+                compactEmbed && "max-md:text-[10px]",
+              )}
+              role="status"
+            >
+              {privacyError}
             </p>
           ) : null}
 

@@ -1,6 +1,9 @@
 "use client";
 
+import Link from "next/link";
+
 import { Button } from "@/components/ui/button";
+import { privacyPolicyMeta } from "@/constants/privacy-policy";
 import { safeWidth, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 
@@ -38,6 +41,8 @@ export interface ModalRequestFormProps {
   onEmailChange: (value: string) => void;
   phone: string;
   onPhoneChange: (value: string) => void;
+  acceptPrivacy: boolean;
+  onAcceptPrivacyChange: (value: boolean) => void;
   attemptedSubmit: boolean;
   validationErrors: string[];
   submitError: string | null;
@@ -55,6 +60,8 @@ export function ModalRequestForm({
   onEmailChange,
   phone,
   onPhoneChange,
+  acceptPrivacy,
+  onAcceptPrivacyChange,
   attemptedSubmit,
   validationErrors,
   submitError,
@@ -171,6 +178,38 @@ export function ModalRequestForm({
               ),
             )}
           />
+        </label>
+
+        <label
+          className={joinClasses(
+            "flex items-start gap-3 rounded-xl border px-3 py-3",
+            attemptedSubmit && !acceptPrivacy
+              ? "border-accent-danger/40 bg-danger-muted/40"
+              : "border-border bg-white/60",
+          )}
+        >
+          <input
+            type="checkbox"
+            checked={acceptPrivacy}
+            onChange={(e) => onAcceptPrivacyChange(e.target.checked)}
+            required
+            aria-invalid={attemptedSubmit && !acceptPrivacy}
+            className="mt-0.5 size-4 shrink-0 accent-primary"
+          />
+          <span className="text-xs leading-relaxed text-muted sm:text-sm">
+            Autorizo el tratamiento de mis datos personales conforme a la
+            legislación chilena vigente (Ley N° 21.719) y la{" "}
+            <Link
+              href={privacyPolicyMeta.path}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold text-primary underline-offset-2 hover:underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              política de privacidad
+            </Link>
+            .
+          </span>
         </label>
       </div>
 
