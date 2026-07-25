@@ -9,6 +9,12 @@ export interface FiltersFabProps {
   onClick: () => void;
   activeFilterCount?: number;
   compactEmbed?: boolean;
+  /**
+   * Altura extra a sumar al `bottom` (p. ej. barra de selección).
+   * Acepta cualquier valor CSS de longitud (`12rem`, `148px`, `var(--selection-bar-height)`).
+   * Sin valor, el FAB usa la posición original.
+   */
+  bottomOffset?: string;
 }
 
 export function FiltersFab({
@@ -16,7 +22,11 @@ export function FiltersFab({
   onClick,
   activeFilterCount,
   compactEmbed = false,
+  bottomOffset,
 }: FiltersFabProps) {
+  const elevated = Boolean(bottomOffset?.trim());
+  const baseGap = compactEmbed ? "1rem" : "1.25rem";
+
   return (
     <AnimatePresence>
       {visible ? (
@@ -28,10 +38,22 @@ export function FiltersFab({
           transition={{ type: "spring", stiffness: 400, damping: 26 }}
           onClick={onClick}
           aria-label="Abrir filtros y beneficiarios"
+          style={
+            elevated
+              ? {
+                  bottom: `max(${baseGap}, calc(env(safe-area-inset-bottom, 0px) + ${bottomOffset} + ${baseGap}))`,
+                }
+              : undefined
+          }
           className={joinClasses(
-            "fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] left-[max(1.25rem,env(safe-area-inset-left))] z-40 inline-flex min-h-12 min-w-12 items-center justify-center gap-2 rounded-full px-5 shadow-[0_8px_28px_-6px_var(--primary)] lg:hidden",
+            "fixed left-[max(1.25rem,env(safe-area-inset-left))] z-40 inline-flex min-h-12 min-w-12 items-center justify-center gap-2 rounded-full px-5 shadow-[0_8px_28px_-6px_var(--primary)] lg:hidden",
+            !elevated &&
+              "bottom-[max(1.25rem,env(safe-area-inset-bottom))]",
             compactEmbed &&
-              "max-md:bottom-[max(1rem,env(safe-area-inset-bottom))] max-md:left-[max(1rem,env(safe-area-inset-left))] max-md:min-h-10 max-md:min-w-10 max-md:px-3.5",
+              "max-md:left-[max(1rem,env(safe-area-inset-left))] max-md:min-h-10 max-md:min-w-10 max-md:px-3.5",
+            compactEmbed &&
+              !elevated &&
+              "max-md:bottom-[max(1rem,env(safe-area-inset-bottom))]",
             ui.cta,
           )}
         >

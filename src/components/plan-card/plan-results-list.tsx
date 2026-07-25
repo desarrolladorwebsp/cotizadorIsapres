@@ -16,6 +16,10 @@ export interface PlanResultsListProps {
   highlightAmbulatoryClinicIds?: string[];
   activeClient?: PlanCardActiveClient | null;
   onNotify?: (message: string, tone?: "success" | "error") => void;
+  /** Códigos de planes seleccionados (selección múltiple ejecutivo). */
+  selectedPlanCodes?: ReadonlySet<string>;
+  onPlanSelectedChange?: (uniqueCode: string, selected: boolean) => void;
+  className?: string;
 }
 
 const ANIMATED_LIST_LIMIT = 24;
@@ -56,9 +60,15 @@ export function PlanResultsList({
   highlightAmbulatoryClinicIds = [],
   activeClient = null,
   onNotify,
+  selectedPlanCodes,
+  onPlanSelectedChange,
+  className,
 }: PlanResultsListProps) {
   const shouldAnimate = plans.length <= ANIMATED_LIST_LIMIT;
-  const listClassName = "flex flex-col gap-4 sm:gap-5 xl:gap-6";
+  const listClassName = joinClasses(
+    "flex flex-col gap-4 sm:gap-5 xl:gap-6",
+    className,
+  );
 
   const sharedProps = {
     beneficiarySummary,
@@ -71,17 +81,32 @@ export function PlanResultsList({
     selectVariant: onAssignPlan ? ("success" as const) : undefined,
   };
 
-  const cards = plans.map((plan) => (
-    <PlanCard
-      key={plan.unique_code}
-      plan={plan}
-      {...sharedProps}
-      onSelect={onAssignPlan ? () => onAssignPlan(plan) : undefined}
-    />
-  ));
+  function renderCard(plan: HealthPlan) {
+    const selected = selectedPlanCodes?.has(plan.unique_code) ?? false;
+
+    return (
+      <PlanCard
+        plan={plan}
+        {...sharedProps}
+        selected={selected}
+        onSelectedChange={
+          onPlanSelectedChange
+            ? (next) => onPlanSelectedChange(plan.unique_code, next)
+            : undefined
+        }
+        onSelect={onAssignPlan ? () => onAssignPlan(plan) : undefined}
+      />
+    );
+  }
 
   if (!shouldAnimate) {
-    return <div className={listClassName}>{cards}</div>;
+    return (
+      <div className={listClassName}>
+        {plans.map((plan) => (
+          <div key={plan.unique_code}>{renderCard(plan)}</div>
+        ))}
+      </div>
+    );
   }
 
   return (
@@ -99,11 +124,7 @@ export function PlanResultsList({
           className={joinClasses(motionGpu)}
           style={{ willChange: "transform, opacity" }}
         >
-          <PlanCard
-            plan={plan}
-            {...sharedProps}
-            onSelect={onAssignPlan ? () => onAssignPlan(plan) : undefined}
-          />
+          {renderCard(plan)}
         </motion.div>
       ))}
     </motion.div>

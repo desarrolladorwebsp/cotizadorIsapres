@@ -86,6 +86,18 @@ export function PlanCard({
     [plan.base_price_uf, plan.ges_premium_uf, beneficiarySummary, ufToClp],
   );
 
+  const isAssignCta = selectVariant === "success";
+
+  function handleAssign() {
+    onSelect?.();
+  }
+
+  function handleToggleSelection() {
+    const next = !isSelected;
+    setIsSelected(next);
+    onSelectedChange?.(next);
+  }
+
   function handleSelect() {
     if (onSelect && !onSelectedChange) {
       onSelect();
@@ -174,7 +186,10 @@ export function PlanCard({
 
       <PlanCardActions
         selected={isSelected}
-        onSelect={handleSelect}
+        onSelect={isAssignCta ? handleAssign : handleSelect}
+        onToggleSelection={
+          onSelectedChange ? handleToggleSelection : undefined
+        }
         onDownloadPdf={handleDownloadPdf}
         onAddInsurance={onAddInsurance}
         onWhatsApp={onNotify ? handleWhatsApp : undefined}

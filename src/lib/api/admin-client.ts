@@ -92,6 +92,32 @@ export async function fetchExecutiveClients(): Promise<UserRecord[]> {
   return parseJsonResponse<UserRecord[]>(response);
 }
 
+export async function sendExecutiveSelectedPlansEmail(input: {
+  clientId: string;
+  profileSummary?: string | null;
+  plans: Array<{
+    isapre: string;
+    name: string;
+    code: string;
+    type: string;
+    priceUf: string;
+    priceClp: string;
+    listPriceUf: string | null;
+    listPriceClp: string | null;
+    convenioLabel: string | null;
+    hospitalCoverage: string;
+    ambulatoryCoverage: string;
+    pdfUrl: string | null;
+  }>;
+}): Promise<{ ok: true; id: string; email: string; planCount: number }> {
+  const response = await fetch("/api/executive/share-plans-email", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  return parseJsonResponse(response);
+}
+
 export async function createExecutiveClient(
   input: import("@/types/user").CreateManualClientInput,
 ): Promise<UserRecord> {

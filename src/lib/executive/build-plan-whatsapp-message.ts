@@ -198,18 +198,16 @@ export function resolveAbsolutePlanPdfUrl(plan: HealthPlan): string | null {
   return `${base}${url.startsWith("/") ? url : `/${url}`}`;
 }
 
-/**
- * Mensaje puntual de plan para compartir por WhatsApp / portapapeles.
- * Sin JSX; reutiliza precios, coberturas, PDF y convenio del cotizador ejecutivo.
- */
-export function buildPlanWhatsAppMessage(input: PlanWhatsAppShareInput): string {
+/** Bloques de un plan (sin saludo). Reutilizado por mensaje individual y masivo. */
+function buildPlanShareBlocks(
+  input: Omit<PlanWhatsAppShareInput, "clientFullName">,
+): string[] {
   const {
     plan,
     beneficiarySummary,
     ufToClp,
     highlightHospitalClinicIds = [],
     highlightAmbulatoryClinicIds = [],
-    clientFullName,
     validatedAgreement = null,
   } = input;
 
@@ -238,12 +236,6 @@ export function buildPlanWhatsAppMessage(input: PlanWhatsAppShareInput): string 
     hasConvenio && mappingCode == null ? priceFactor : 1;
 
   const blocks: string[] = [];
-
-  const firstName = firstNameFromFullName(clientFullName);
-  if (firstName) {
-    blocks.push(`Hola ${firstName},`);
-    blocks.push("");
-  }
 
   blocks.push(`📌 *PLAN DE SALUD* [${planTypeLabel}]`);
   blocks.push(`✅ *${plan.isapre} - ${commercialName}*`);
@@ -319,7 +311,205 @@ export function buildPlanWhatsAppMessage(input: PlanWhatsAppShareInput): string 
     );
   }
 
+  return blocks;
+}
+
+/**
+ * Mensaje puntual de plan para compartir por WhatsApp / portapapeles.
+ * Sin JSX; reutiliza precios, coberturas, PDF y convenio del cotizador ejecutivo.
+ */
+export function buildPlanWhatsAppMessage(input: PlanWhatsAppShareInput): string {
+  const blocks: string[] = [];
+  const firstName = firstNameFromFullName(input.clientFullName);
+  if (firstName) {
+    blocks.push(`Hola ${firstName},`);
+    blocks.push("");
+  }
+  blocks.push(...buildPlanShareBlocks(input));
   return blocks.join("\n");
+}
+
+export interface SelectedPlansShareInput {
+  plans: HealthPlan[];
+  beneficiarySummary: BeneficiaryGroupSummary;
+  ufToClp: number;
+  highlightHospitalClinicIds?: string[];
+  highlightAmbulatoryClinicIds?: string[];
+  clientFullName?: string | null;
+  validatedAgreement?: ValidatedCompanyAgreement | null;
+}
+
+/**
+ * Mensaje consolidado para varios planes (WhatsApp / correo texto).
+ * Un solo saludo; planes numerados como Alternativa N.
+ */
+export function buildSelectedPlansShareMessage(
+  input: SelectedPlansShareInput,
+): string {
+  const {
+    plans,
+    beneficiarySummary,
+    ufToClp,
+    highlightHospitalClinicIds = [],
+    highlightAmbulatoryClinicIds = [],
+    clientFullName,
+    validatedAgreement = null,
+  } = input;
+
+  if (plans.length === 0) return "";
+
+  const blocks: string[] = [];
+  const firstName = firstNameFromFullName(clientFullName);
+  if (firstName) {
+    blocks.push(`Hola ${firstName},`);
+    blocks.push("");
+  }
+
+  blocks.push(
+    `Te comparto ${plans.length} alternativa${plans.length === 1 ? "" : "s"} de planes de salud.`,
+  );
+  blocks.push("");
+
+  plans.forEach((plan, index) => {
+    if (index > 0) {
+      blocks.push("");
+      blocks.push("────────────");
+      blocks.push("");
+    }
+    blocks.push(`*Alternativa ${index + 1}*`);
+    blocks.push("");
+    blocks.push(
+      ...buildPlanShareBlocks({
+        plan,
+        beneficiarySummary,
+        ufToClp,
+        highlightHospitalClinicIds,
+        highlightAmbulatoryClinicIds,
+        validatedAgreement,
+      }),
+    );
+  });
+
+  return blocks.join("\n");
+}
+
+function tsvCell(value: string): string {
+  return value.replace(/[\t\n\r]+/g, " ").trim();
+}
+
+function formatCoverageCompact(entries: CoverageEntry[]): string {
+  if (entries.length === 0) return "—";
+  return entries
+    .map((entry) => `${entry.clinic_name} (${entry.percentage}%)`)
+    .join("; ");
+}
+
+/** Tabla TSV (una fila por plan) para pegar en Excel / Sheets. */
+export function buildSelectedPlansTableTsv(
+  input: SelectedPlansShareInput,
+): string {
+  const headers = [
+    "Isapre",
+    "Nombre del plan",
+    "Código",
+    "Tipo",
+    "Precio final UF",
+    "Precio final CLP",
+    "Cobertura hospitalaria",
+    "Cobertura ambulatoria",
+    "Enlace PDF",
+  ];
+
+  const rows = input.plans.map((plan) => {
+    const { standardQuote, agreementPrices } = resolveAgreementPricesForPlan(
+      plan,
+      input.beneficiarySummary,
+      input.ufToClp,
+      input.validatedAgreement,
+    );
+    const finalUf = agreementPrices.hasAgreementDiscount
+      ? agreementPrices.displayFinalPriceUf
+      : standardQuote.finalPriceUf;
+    const finalClp = agreementPrices.hasAgreementDiscount
+      ? agreementPrices.displayFinalPriceClp
+      : standardQuote.finalPriceClp;
+    const { hospitalaria, ambulatoria } = splitCoverageByType(plan.coverage);
+
+    return [
+      plan.isapre,
+      resolveCommercialPlanName(plan),
+      plan.unique_code,
+      PLAN_TYPE_LABELS[resolvePrimaryPlanType(plan)],
+      formatQuotedUf(finalUf),
+      formatPlanClp(finalClp),
+      formatCoverageCompact(hospitalaria),
+      formatCoverageCompact(ambulatoria),
+      resolveAbsolutePlanPdfUrl(plan) ?? "",
+    ].map(tsvCell);
+  });
+
+  return [headers, ...rows].map((row) => row.join("\t")).join("\n");
+}
+
+/** Snapshot tipado para correo ejecutivo (sin HTML). */
+export interface SelectedPlanEmailSnapshot {
+  isapre: string;
+  name: string;
+  code: string;
+  type: string;
+  priceUf: string;
+  priceClp: string;
+  listPriceUf: string | null;
+  listPriceClp: string | null;
+  convenioLabel: string | null;
+  hospitalCoverage: string;
+  ambulatoryCoverage: string;
+  pdfUrl: string | null;
+}
+
+export function buildSelectedPlansEmailSnapshots(
+  input: SelectedPlansShareInput,
+): SelectedPlanEmailSnapshot[] {
+  return input.plans.map((plan) => {
+    const { standardQuote, agreementPrices } = resolveAgreementPricesForPlan(
+      plan,
+      input.beneficiarySummary,
+      input.ufToClp,
+      input.validatedAgreement,
+    );
+    const hasConvenio = agreementPrices.hasAgreementDiscount;
+    const { hospitalaria, ambulatoria } = splitCoverageByType(plan.coverage);
+
+    return {
+      isapre: plan.isapre,
+      name: resolveCommercialPlanName(plan),
+      code: plan.unique_code,
+      type: PLAN_TYPE_LABELS[resolvePrimaryPlanType(plan)],
+      priceUf: formatQuotedUf(
+        hasConvenio
+          ? agreementPrices.displayFinalPriceUf
+          : standardQuote.finalPriceUf,
+      ),
+      priceClp: formatPlanClp(
+        hasConvenio
+          ? agreementPrices.displayFinalPriceClp
+          : standardQuote.finalPriceClp,
+      ),
+      listPriceUf: hasConvenio
+        ? formatQuotedUf(agreementPrices.listFinalPriceUf)
+        : null,
+      listPriceClp: hasConvenio
+        ? formatPlanClp(agreementPrices.listFinalPriceClp)
+        : null,
+      convenioLabel:
+        hasConvenio && input.validatedAgreement
+          ? `${input.validatedAgreement.companyName.trim()} (−${formatDiscountPercentLabel(agreementPrices.discountPercent)})`
+          : null,
+      hospitalCoverage: formatCoverageCompact(hospitalaria),
+      ambulatoryCoverage: formatCoverageCompact(ambulatoria),
+      pdfUrl: resolveAbsolutePlanPdfUrl(plan),
+    };
+  });
 }
 
 export async function copyTextToClipboard(text: string): Promise<boolean> {

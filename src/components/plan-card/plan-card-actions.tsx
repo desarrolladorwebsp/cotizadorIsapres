@@ -9,6 +9,7 @@ import { FileIcon, ShieldIcon } from "./icons";
 export interface PlanCardActionsProps {
   selected: boolean;
   onSelect: () => void;
+  onToggleSelection?: () => void;
   onDownloadPdf?: () => void;
   onAddInsurance?: () => void;
   onWhatsApp?: () => void;
@@ -73,6 +74,7 @@ function QuickActionButton({
 export function PlanCardActions({
   selected,
   onSelect,
+  onToggleSelection,
   onDownloadPdf,
   onAddInsurance,
   onWhatsApp,
@@ -84,15 +86,68 @@ export function PlanCardActions({
   const assignAria = assignClientName
     ? `Asignar plan a ${assignClientName}`
     : "Asignar plan a cliente";
+  const showMultiSelect = Boolean(onToggleSelection);
 
   return (
     <footer
       className={joinClasses(
-        "flex flex-col gap-4 border-t bg-white px-4 py-5 sm:px-6 md:flex-row md:items-center md:justify-end lg:px-8",
+        "flex flex-col gap-4 border-t bg-white px-4 py-5 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8",
         ui.border,
       )}
     >
-      <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center md:w-auto md:justify-end">
+      {showMultiSelect ? (
+        <button
+          type="button"
+          onClick={onToggleSelection}
+          aria-pressed={selected}
+          aria-label={
+            selected ? "Quitar plan de la selección" : "Seleccionar plan"
+          }
+          className={joinClasses(
+            touchTarget,
+            "h-auto w-full gap-2.5 rounded-xl border px-3.5 py-2.5 transition active:scale-[0.98] md:w-auto",
+            selected
+              ? "border-primary bg-primary text-primary-foreground shadow-[0_4px_14px_-4px_var(--primary)] hover:bg-primary-hover"
+              : "border-primary/35 bg-primary/8 text-primary-dark hover:border-primary/55 hover:bg-primary/14 hover:shadow-[0_4px_12px_-4px_rgb(13,109,238/0.28)]",
+          )}
+        >
+          <span
+            aria-hidden
+            className={joinClasses(
+              "flex size-5 shrink-0 items-center justify-center rounded-md border-2 transition",
+              selected
+                ? "border-white/80 bg-white text-primary"
+                : "border-primary/45 bg-white",
+            )}
+          >
+            {selected ? (
+              <svg
+                viewBox="0 0 16 16"
+                className="size-3.5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.4"
+              >
+                <path
+                  d="M3.5 8.5 6.5 11.5 12.5 4.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            ) : null}
+          </span>
+          <span className="text-sm font-bold tracking-tight">
+            {selected ? "Seleccionado" : "Seleccionar"}
+          </span>
+        </button>
+      ) : null}
+
+      <div
+        className={joinClasses(
+          "flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center md:w-auto",
+          showMultiSelect ? "md:justify-end" : "md:ml-auto md:justify-end",
+        )}
+      >
         <div className="flex items-center justify-center gap-2 sm:justify-start">
           <QuickActionButton
             label="Ver detalle del plan (PDF)"
