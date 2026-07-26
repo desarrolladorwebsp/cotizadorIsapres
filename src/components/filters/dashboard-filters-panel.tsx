@@ -47,6 +47,8 @@ export interface DashboardFiltersPanelProps {
   hideHelperText?: boolean;
   /** Estilo reforzado para el panel ejecutivo. */
   executiveVisual?: boolean;
+  /** Oculta el botón interno (p. ej. si el sidebar provee uno propio). */
+  showClearAction?: boolean;
 }
 
 export function DashboardFiltersPanel({
@@ -69,6 +71,7 @@ export function DashboardFiltersPanel({
   defaultPriceMax,
   hideHelperText = false,
   executiveVisual = false,
+  showClearAction = true,
 }: DashboardFiltersPanelProps) {
   const showPriceFilter =
     priceMin !== undefined &&
@@ -349,22 +352,31 @@ export function DashboardFiltersPanel({
           />
         </FilterSection>
 
-        <div className={joinClasses(executiveVisual ? "py-4" : "py-4", compactEmbed && "max-md:py-3")}>
-          <button
-            type="button"
-            onClick={clearFilters}
+        {showClearAction ? (
+          <div
             className={joinClasses(
-              "inline-flex w-full items-center justify-center gap-1.5 rounded-lg px-4 text-xs font-semibold transition",
-              executiveVisual
-                ? "text-muted hover:bg-surface-hover hover:text-foreground"
-                : joinClasses("border border-border/80 bg-bg-layout/40 text-muted hover:border-border hover:bg-surface-hover hover:text-foreground"),
-              compactEmbed && "max-md:px-2.5 max-md:text-[11px]",
-              touchTarget,
+              executiveVisual ? "py-4" : "py-4",
+              compactEmbed && "max-md:py-3",
             )}
           >
-            Limpiar filtros
-          </button>
-        </div>
+            <button
+              type="button"
+              onClick={clearFilters}
+              className={joinClasses(
+                "inline-flex w-full items-center justify-center gap-1.5 rounded-lg px-4 text-xs font-semibold transition",
+                executiveVisual
+                  ? "text-muted hover:bg-surface-hover hover:text-foreground"
+                  : joinClasses(
+                      "border border-border/80 bg-bg-layout/40 text-muted hover:border-border hover:bg-surface-hover hover:text-foreground",
+                    ),
+                compactEmbed && "max-md:px-2.5 max-md:text-[11px]",
+                touchTarget,
+              )}
+            >
+              Limpiar filtros
+            </button>
+          </div>
+        ) : null}
       </div>
     </div>
   );

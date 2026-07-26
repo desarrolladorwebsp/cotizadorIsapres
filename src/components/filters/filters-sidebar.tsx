@@ -1,10 +1,12 @@
 "use client";
 
+import { useCallback } from "react";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 import { AnimatePresence, motion } from "framer-motion";
 import { BeneficiariesForm } from "@/components/beneficiaries";
 import { usePlanClinicOptions } from "@/hooks/use-plan-clinic-options";
 import { useIsLargeScreen } from "@/hooks/use-media-query";
+import { createClearedDashboardFilters } from "@/domain";
 import { touchTarget, filtersSidebarDesktopShell, filtersSidebarScrollBody, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type {
@@ -17,6 +19,8 @@ import { DashboardFiltersPanel } from "./dashboard-filters-panel";
 export interface FiltersSidebarProps {
   open: boolean;
   onClose: () => void;
+  /** Reabre el panel (desktop tras “Ocultar”). */
+  onOpen?: () => void;
   beneficiaries: FamilyBeneficiariesState;
   onBeneficiariesChange: (
     next: FamilyBeneficiariesState,
@@ -35,6 +39,9 @@ export interface FiltersSidebarProps {
   hideHelperText?: boolean;
   /** Estilo reforzado para el panel ejecutivo. */
   executiveVisual?: boolean;
+  /** Búsqueda de planes (opcional; p. ej. cotizador ejecutivo). */
+  search?: string;
+  onSearchChange?: (value: string) => void;
 }
 
 function CloseIcon() {
@@ -53,6 +60,7 @@ function CloseIcon() {
 export function FiltersSidebar({
   open,
   onClose,
+  onOpen,
   beneficiaries,
   onBeneficiariesChange,
   filters,
@@ -66,8 +74,12 @@ export function FiltersSidebar({
   defaultPriceMax,
   hideHelperText = false,
   executiveVisual = false,
+  search,
+  onSearchChange,
 }: FiltersSidebarProps) {
   const isLargeScreen = useIsLargeScreen();
+  const showPlanSearch =
+    typeof search === "string" && typeof onSearchChange === "function";
   const {
     options: clinicOptions,
     loading: clinicOptionsLoading,
@@ -75,6 +87,65 @@ export function FiltersSidebar({
   } = usePlanClinicOptions(true);
 
   useScrollLock(open && !isLargeScreen);
+
+  const handleClearSidebarFilters = useCallback(() => {
+    onFiltersChange(createClearedDashboardFilters());
+
+    if (defaultPriceMin !== undefined && defaultPriceMax !== undefined) {
+      onPriceMinChange(defaultPriceMin);
+      onPriceMaxChange(defaultPriceMax);
+    }
+
+    onSearchChange?.("");
+  }, [
+    defaultPriceMax,
+    defaultPriceMin,
+    onFiltersChange,
+    onPriceMaxChange,
+    onPriceMinChange,
+    onSearchChange,
+  ]);
+
+  /** Desktop oculto: riel compacto para volver a mostrar (después de todos los hooks). */
+  if (isLargeScreen && !open) {
+    return (
+      <div
+        className={joinClasses(
+          filtersSidebarDesktopShell,
+          "flex w-12 max-w-none shrink-0 flex-col border-r bg-white",
+          executiveVisual
+            ? "border-[color:color-mix(in_srgb,var(--dash-navy)_25%,var(--border))] lg:shadow-[8px_0_28px_-16px_rgb(9_37_88/0.14)]"
+            : ui.border,
+        )}
+      >
+        <button
+          type="button"
+          onClick={() => onOpen?.()}
+          className={joinClasses(
+            "flex flex-1 flex-col items-center gap-3 px-1.5 py-4 text-[10px] font-bold transition",
+            executiveVisual
+              ? "bg-[color:var(--dash-navy)] text-white hover:bg-[color:color-mix(in_srgb,var(--dash-navy)_88%,black)]"
+              : "text-primary-dark hover:bg-primary/5",
+          )}
+          aria-label="Mostrar filtros y beneficiarios"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            className="size-4 shrink-0"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            aria-hidden
+          >
+            <path d="M4 7h16M4 12h10M4 17h16" strokeLinecap="round" />
+          </svg>
+          <span className="[writing-mode:vertical-rl] rotate-180 tracking-wide">
+            Mostrar filtros
+          </span>
+        </button>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -110,7 +181,7 @@ export function FiltersSidebar({
           executiveVisual
             ? "border-[color:color-mix(in_srgb,var(--dash-navy)_25%,var(--border))] bg-white lg:shadow-[8px_0_28px_-16px_rgb(9_37_88/0.14)]"
             : joinClasses("bg-white", ui.border),
-          !open && "pointer-events-none lg:pointer-events-auto",
+          !open && "pointer-events-none",
           open ? "lg:flex" : "lg:hidden",
         )}
         data-executive-filters={executiveVisual ? "true" : undefined}
@@ -189,6 +260,49 @@ export function FiltersSidebar({
                 )}
               />
 
+              {showPlanSearch ? (
+                <div
+                  className={joinClasses(
+                    "space-y-2",
+                    executiveVisual ? "py-4" : "py-4 sm:py-5",
+                  )}
+                >
+                  <label
+                    htmlFor="sidebar-plan-search"
+                    className={joinClasses(
+                      "block text-xs font-semibold",
+                      executiveVisual ? "text-primary-dark" : "text-muted",
+                    )}
+                  >
+                    Buscar planes
+                  </label>
+                  <div className="relative">
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted/60"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      aria-hidden
+                    >
+                      <circle cx="11" cy="11" r="7" />
+                      <path d="M20 20l-3.5-3.5" strokeLinecap="round" />
+                    </svg>
+                    <input
+                      id="sidebar-plan-search"
+                      type="search"
+                      value={search}
+                      onChange={(event) => onSearchChange(event.target.value)}
+                      placeholder="Nombre, código o Isapre..."
+                      className={joinClasses(
+                        "h-11 w-full rounded-lg py-2 pl-10 pr-3 text-sm",
+                        ui.input,
+                      )}
+                    />
+                  </div>
+                </div>
+              ) : null}
+
               <div className={executiveVisual ? undefined : "py-2"}>
                 <DashboardFiltersPanel
                   value={filters}
@@ -206,7 +320,28 @@ export function FiltersSidebar({
                   defaultPriceMax={defaultPriceMax}
                   hideHelperText={hideHelperText}
                   executiveVisual={executiveVisual}
+                  showClearAction={false}
                 />
+              </div>
+
+              <div
+                className={joinClasses(
+                  "border-t",
+                  executiveVisual
+                    ? "border-border/40 py-4"
+                    : "border-border/50 py-4 sm:py-5",
+                )}
+              >
+                <button
+                  type="button"
+                  onClick={handleClearSidebarFilters}
+                  className={joinClasses(
+                    "inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-red-600 bg-red-600 px-4 text-xs font-semibold text-white transition hover:border-red-700 hover:bg-red-700",
+                    touchTarget,
+                  )}
+                >
+                  Limpiar filtros
+                </button>
               </div>
             </div>
           </div>

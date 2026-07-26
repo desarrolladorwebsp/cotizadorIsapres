@@ -16,7 +16,6 @@ import {
   CompanyAgreementValidationSection,
   useOptionalCompanyAgreementContext,
 } from "@/components/cotizador/company-agreement";
-import { RegionFilterSelect } from "@/components/filters/region-filter-select";
 import { PlanResultsList } from "@/components/plan-card";
 import { CotizadorHeader, type CotizadorHeaderVariant } from "@/components/cotizador/cotizador-header";
 import { CotizadorNav } from "@/components/cotizador/cotizador-nav";
@@ -30,7 +29,6 @@ import {
   sendExecutiveSelectedPlansEmail,
 } from "@/lib/api/admin-client";
 import {
-  applyRegionToDashboardFilters,
   createDefaultDashboardFilters,
   getActiveAmbulatoryClinicIds,
   getActiveHospitalClinicIds,
@@ -47,11 +45,7 @@ import {
   INITIAL_PLANS_PAGE_SIZE,
   PLANS_PAGE_SIZE_STEP,
 } from "@/lib/plan-search-config";
-import {
-  createDefaultQuoteCriteria,
-  SORT_OPTIONS,
-  type QuoteSortKey,
-} from "@/lib/quote-criteria-options";
+import { SORT_OPTIONS, type QuoteSortKey } from "@/lib/quote-criteria-options";
 import type { BeneficiaryGroupSummary, HealthPlan } from "@/domain";
 import type { UserRecord } from "@/types/user";
 import {
@@ -140,17 +134,12 @@ function CotizadorWorkspaceInner({
   onNotify,
 }: CotizadorWorkspaceProps) {
   const { plans, loading, error } = usePlansCatalog();
-  const defaultRegion = createDefaultQuoteCriteria().region;
   const dashboard = useCotizadorDashboard(plans, {
-    initialDashboardFilters: applyRegionToDashboardFilters(
-      createDefaultDashboardFilters(),
-      defaultRegion,
-    ),
+    initialDashboardFilters: createDefaultDashboardFilters(),
   });
   const {
     setPriceMin,
     setPriceMax,
-    setDashboardFilters,
     filteredPlans,
     sidebarOpen,
     setSidebarOpen,
@@ -170,7 +159,6 @@ function CotizadorWorkspaceInner({
     ufToClp,
   } = dashboard;
   const [assignPlan, setAssignPlan] = useState<HealthPlan | null>(null);
-  const [region, setRegion] = useState(defaultRegion);
   const [sortKey, setSortKey] = useState<QuoteSortKey>("price_asc");
   const [visibleCount, setVisibleCount] = useState(INITIAL_PLANS_PAGE_SIZE);
   const [priceBoundsInitialized, setPriceBoundsInitialized] = useState(false);
@@ -185,12 +173,14 @@ function CotizadorWorkspaceInner({
   const [compareOpen, setCompareOpen] = useState(false);
   const [emailSending, setEmailSending] = useState(false);
   const [selectionBarHeight, setSelectionBarHeight] = useState(0);
-  /** Acciones de la barra ocultas por defecto (mobile y desktop). */
+  /** Acciones: abiertas por defecto en desktop; cerradas en mobile. */
   const [selectionActionsOpen, setSelectionActionsOpen] = useState(false);
   const isExecutive = variant === "executive";
   const searchParams = useSearchParams();
   const clientPickerRef = useRef<HTMLDivElement>(null);
   const selectionBarRef = useRef<HTMLDivElement>(null);
+  const prevShowSelectionBarRef = useRef(false);
+  const prevIsLargeScreenRef = useRef(isLargeScreen);
   const validatedAgreement =
     useOptionalCompanyAgreementContext()?.validatedAgreement ?? null;
   const selectedPlanCount = isExecutive ? selectedPlanCodes.size : 0;
@@ -230,6 +220,34 @@ function CotizadorWorkspaceInner({
     setCompareOpen(false);
     setSelectionActionsOpen(false);
   }, []);
+
+  useEffect(() => {
+    if (!isExecutive) return;
+
+    const justAppeared =
+      showSelectionBar && !prevShowSelectionBarRef.current;
+    const becameLargeScreen =
+      isLargeScreen && !prevIsLargeScreenRef.current;
+
+    prevShowSelectionBarRef.current = showSelectionBar;
+    prevIsLargeScreenRef.current = isLargeScreen;
+
+    if (!showSelectionBar) {
+      setSelectionActionsOpen(false);
+      return;
+    }
+
+    // Al aparecer la barra: desktop abierto, mobile cerrado.
+    if (justAppeared) {
+      setSelectionActionsOpen(isLargeScreen);
+      return;
+    }
+
+    // Resize mobile → desktop con selección activa: abrir acciones.
+    if (becameLargeScreen) {
+      setSelectionActionsOpen(true);
+    }
+  }, [isExecutive, isLargeScreen, showSelectionBar]);
 
   useEffect(() => {
     if (!showSelectionBar) return;
@@ -401,7 +419,6 @@ function CotizadorWorkspaceInner({
         sortKey,
         priceMin,
         priceMax,
-        region,
         displayedPlans.length,
         beneficiarySummary.totalFactors,
       ].join("|"),
@@ -410,7 +427,6 @@ function CotizadorWorkspaceInner({
       sortKey,
       priceMin,
       priceMax,
-      region,
       displayedPlans.length,
       beneficiarySummary.totalFactors,
     ],
@@ -425,16 +441,6 @@ function CotizadorWorkspaceInner({
       Math.min(current + PLANS_PAGE_SIZE_STEP, displayedPlans.length),
     );
   }
-
-  const handleRegionChange = useCallback(
-    (nextRegion: string) => {
-      setRegion(nextRegion);
-      setDashboardFilters((currentFilters) =>
-        applyRegionToDashboardFilters(currentFilters, nextRegion),
-      );
-    },
-    [setDashboardFilters],
-  );
 
   function notify(message: string, tone: "success" | "error" = "success") {
     onNotify?.(message, tone);
@@ -617,6 +623,7 @@ function CotizadorWorkspaceInner({
             <FiltersSidebar
               open={sidebarOpen}
               onClose={() => setSidebarOpen(false)}
+              onOpen={() => setSidebarOpen(true)}
               beneficiaries={beneficiaries}
               onBeneficiariesChange={handleBeneficiariesChange}
               filters={dashboardFilters}
@@ -630,6 +637,8 @@ function CotizadorWorkspaceInner({
               defaultPriceMax={defaultPriceBounds.max}
               hideHelperText={embeddedInExecutiveShell}
               executiveVisual={embeddedInExecutiveShell}
+              search={isExecutive ? search : undefined}
+              onSearchChange={isExecutive ? handleSearchChange : undefined}
             />
           ) : null}
 
@@ -663,89 +672,42 @@ function CotizadorWorkspaceInner({
               </section>
             ) : null}
 
-            <section
-              className={joinClasses(
-                "rounded-xl border bg-white p-4 shadow-card sm:p-6",
-                ui.border,
-              )}
-            >
-              <div className="grid gap-5 sm:gap-6 md:grid-cols-2 md:items-end">
-                <RegionFilterSelect
-                  id="executive-plan-region"
-                  value={region}
-                  onChange={handleRegionChange}
-                />
-
-                <div className="space-y-2">
-                  <label
-                    htmlFor="plan-search"
-                    className="text-xs font-medium text-muted"
-                  >
-                    Buscar planes
-                  </label>
-                  <div className="relative">
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted/60"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                      aria-hidden
-                    >
-                      <circle cx="11" cy="11" r="7" />
-                      <path d="M20 20l-3.5-3.5" strokeLinecap="round" />
-                    </svg>
-                    <input
-                      id="plan-search"
-                      type="search"
-                      value={search}
-                      onChange={(event) =>
-                        handleSearchChange(event.target.value)
-                      }
-                      placeholder="Nombre, código o Isapre..."
-                      className={joinClasses(
-                        "h-12 w-full rounded-lg py-2 pl-10 pr-4 text-base md:h-11 md:text-sm",
-                        ui.input,
-                      )}
-                    />
+            <section className="border-b border-border/40 pb-3 pt-0.5">
+              <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-end sm:gap-x-3 sm:gap-y-2">
+                <div className="flex min-w-0 shrink-0 gap-3">
+                  <div className="min-w-0">
+                    <p className="mb-1 text-xs font-medium text-muted">
+                      Planes encontrados
+                    </p>
+                    <p className="flex h-10 items-center text-sm font-bold tabular-nums text-primary-dark">
+                      {displayedPlans.length}
+                    </p>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="mb-1 text-xs font-medium text-muted">
+                      Factor total
+                    </p>
+                    <p className="flex h-10 items-center text-sm font-bold tabular-nums text-primary-dark">
+                      {beneficiarySummary.totalFactors.toLocaleString("es-CL", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </p>
                   </div>
                 </div>
-              </div>
 
-              <CompanyAgreementValidationSection
-                variant="inline"
-                source="executive"
-              />
-            </section>
+                {isExecutive ? (
+                  <CompanyAgreementValidationSection
+                    source="executive"
+                    fields="companyRutOnly"
+                    className="min-w-0 w-full sm:w-auto sm:min-w-[14.5rem] sm:max-w-sm sm:flex-1 lg:flex-none"
+                  />
+                ) : null}
 
-            <section
-              className={joinClasses(
-                "flex flex-col gap-3 rounded-xl border bg-white px-4 py-3 shadow-card sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-5 sm:py-3.5",
-                ui.border,
-              )}
-            >
-              <p className="text-sm text-muted">
-                <span className="font-bold text-primary-dark">
-                  {displayedPlans.length}
-                </span>{" "}
-                planes encontrados
-                <span className="mx-2 hidden text-border sm:inline">·</span>
-                <span className="mt-1 block text-foreground/80 sm:mt-0 sm:inline">
-                  Factor total:{" "}
-                  <span className="font-bold tabular-nums text-primary-dark">
-                    {beneficiarySummary.totalFactors.toLocaleString("es-CL", {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
-                  </span>
-                </span>
-              </p>
-
-              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                 {isExecutive ? (
                   <div
                     ref={clientPickerRef}
-                    className="relative min-w-0 flex-1 sm:max-w-xs sm:flex-none"
+                    className="relative min-w-0 w-full sm:w-52 sm:flex-none"
                   >
                     <label
                       htmlFor="active-client-search"
@@ -855,9 +817,9 @@ function CotizadorWorkspaceInner({
 
                 <label
                   htmlFor="plan-sort"
-                  className="flex min-w-0 flex-1 items-center gap-2 sm:flex-none"
+                  className="block min-w-0 w-full sm:w-auto sm:min-w-[11rem] sm:flex-none"
                 >
-                  <span className="shrink-0 text-xs font-medium text-muted">
+                  <span className="mb-1 block text-xs font-medium text-muted">
                     Ordenar por
                   </span>
                   <select
@@ -867,7 +829,7 @@ function CotizadorWorkspaceInner({
                       setSortKey(event.target.value as QuoteSortKey)
                     }
                     className={joinClasses(
-                      "h-10 min-w-0 flex-1 rounded-lg px-3 text-sm sm:min-w-[11rem] sm:flex-none",
+                      "h-10 w-full min-w-0 rounded-lg px-3 text-sm sm:min-w-[11rem]",
                       ui.input,
                     )}
                   >
@@ -879,19 +841,6 @@ function CotizadorWorkspaceInner({
                   </select>
                 </label>
 
-                {!sidebarOpen && isLargeScreen ? (
-                  <button
-                    type="button"
-                    onClick={() => setSidebarOpen(true)}
-                    className={joinClasses(
-                      "h-10 shrink-0 rounded-lg border px-3.5 text-sm font-semibold transition",
-                      ui.border,
-                      "text-primary-dark hover:bg-primary/5",
-                    )}
-                  >
-                    Mostrar filtros
-                  </button>
-                ) : null}
               </div>
             </section>
 

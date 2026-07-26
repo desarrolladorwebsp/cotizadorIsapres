@@ -23,7 +23,6 @@ export interface ExecutiveMobileNavDrawerProps {
   navItems: ExecutiveNavItem[];
   activeSection: StaffSection;
   onSectionChange: (section: StaffSection) => void;
-  panelTitle: string;
   sectionIcons?: Partial<Record<StaffSection, ReactNode>>;
   userFullName?: string | null;
   userSubtitle?: string | null;
@@ -55,7 +54,6 @@ export function ExecutiveMobileNavDrawer({
   navItems,
   activeSection,
   onSectionChange,
-  panelTitle,
   sectionIcons,
   userFullName,
   userSubtitle,
@@ -106,11 +104,8 @@ export function ExecutiveMobileNavDrawer({
       >
         <div className="premium-executive-mobile-nav-header flex shrink-0 items-center justify-between gap-3 px-4 py-3.5">
           <div className="min-w-0">
-            <p className="premium-mobile-nav-kicker text-xs font-semibold uppercase tracking-wide">
-              Menú
-            </p>
             <p className="premium-mobile-nav-title truncate text-sm font-bold">
-              {panelTitle}
+              Menú
             </p>
           </div>
           <button

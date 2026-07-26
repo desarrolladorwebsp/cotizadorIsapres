@@ -9,7 +9,7 @@ import {
   validateCompanyAgreementFields,
 } from "@/lib/email/company-agreement-schema";
 import { COMPANY_AGREEMENT_DISCOUNT_DISCLAIMER } from "@/lib/company-agreements/constants";
-import { sanitizeRutInput } from "@/lib/auth/rut";
+import { isValidRut, sanitizeRutInput } from "@/lib/auth/rut";
 import { safeWidth, touchTarget, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type {
@@ -90,8 +90,67 @@ function formatIsapreBenefitLabel(
   return `Beneficio aplicable a planes ${isapreName.trim()}.`;
 }
 
+function formatDiscountPercentValue(value: number | null): string {
+  if (value == null) return "Beneficio preferencial";
+  const formatted = Number.isInteger(value)
+    ? String(value)
+    : value.toLocaleString("es-CL", { maximumFractionDigits: 2 });
+  return `${formatted}%`;
+}
+
+function AgreementMatchHoverDetails({
+  agreement,
+}: {
+  agreement: CompanyAgreementRecord;
+}) {
+  const rut = formatAgreementRut(agreement.companyRutRaw) ?? agreement.companyRut;
+  const isapre = agreement.isapreName?.trim() || "No especificada";
+
+  return (
+    <div
+      className="pointer-events-none absolute left-0 top-full z-40 mt-1.5 w-[min(100%,20rem)] rounded-lg border border-emerald-200/90 bg-white px-3 py-2.5 text-[11px] text-emerald-950 opacity-0 shadow-lg ring-1 ring-emerald-900/5 transition-opacity duration-150 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100"
+      role="tooltip"
+    >
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-800/80">
+        Detalle del convenio
+      </p>
+      <dl className="mt-1.5 space-y-1">
+        <div className="flex gap-2">
+          <dt className="shrink-0 text-muted">Empresa</dt>
+          <dd className="min-w-0 font-semibold text-foreground">
+            {agreement.companyName}
+          </dd>
+        </div>
+        <div className="flex gap-2">
+          <dt className="shrink-0 text-muted">RUT</dt>
+          <dd className="min-w-0 font-medium tabular-nums text-foreground">
+            {rut}
+          </dd>
+        </div>
+        <div className="flex gap-2">
+          <dt className="shrink-0 text-muted">Descuento</dt>
+          <dd className="min-w-0 font-semibold text-emerald-800">
+            {formatDiscountPercentValue(agreement.discountPercent)}
+            {agreement.discountPercent != null ? " sobre el plan" : ""}
+          </dd>
+        </div>
+        <div className="flex gap-2">
+          <dt className="shrink-0 text-muted">Isapre</dt>
+          <dd className="min-w-0 font-semibold text-foreground">{isapre}</dd>
+        </div>
+      </dl>
+      {agreement.discountPercent != null ? (
+        <p className="mt-2 border-t border-emerald-100 pt-1.5 text-[10px] leading-snug text-muted">
+          {COMPANY_AGREEMENT_DISCOUNT_DISCLAIMER}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 export type CompanyAgreementSource = "public" | "executive" | "embed";
 export type CompanyAgreementVariant = "standalone" | "inline";
+export type CompanyAgreementFields = "all" | "companyRutOnly";
 
 export interface CompanyAgreementValidationSectionProps {
   compactEmbed?: boolean;
@@ -100,6 +159,8 @@ export interface CompanyAgreementValidationSectionProps {
   className?: string;
   /** Integrado en la tarjeta del buscador principal. */
   variant?: CompanyAgreementVariant;
+  /** `companyRutOnly`: toolbar ejecutiva compacta (solo RUT empresa). */
+  fields?: CompanyAgreementFields;
 }
 
 type FieldKey = "userRut" | "email" | "phone" | "companyRut";
@@ -131,8 +192,10 @@ export function CompanyAgreementValidationSection({
   partnerEntitySlug,
   className,
   variant = "standalone",
+  fields = "all",
 }: CompanyAgreementValidationSectionProps) {
   const isInline = variant === "inline";
+  const companyRutOnly = fields === "companyRutOnly";
   const [expanded, setExpanded] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
   const [userRut, setUserRut] = useState("");
@@ -151,8 +214,12 @@ export function CompanyAgreementValidationSection({
 
   const agreementContext = useOptionalCompanyAgreementContext();
 
+  const resolvedSource: CompanyAgreementSource = compactEmbed ? "embed" : source;
+  /** Público/widget: sin revelar match, sin correo de inquiry ni descuento en contexto. */
+  const isPublicOrEmbed = resolvedSource !== "executive";
+
   useEffect(() => {
-    if (!agreementContext) return;
+    if (!agreementContext || isPublicOrEmbed) return;
 
     if (agreementMatch) {
       agreementContext.setValidatedAgreement({
@@ -167,11 +234,29 @@ export function CompanyAgreementValidationSection({
     }
 
     agreementContext.setValidatedAgreement(null);
-  }, [agreementMatch, agreementContext]);
+  }, [agreementMatch, agreementContext, isPublicOrEmbed]);
 
-  const resolvedSource: CompanyAgreementSource = compactEmbed ? "embed" : source;
-  /** Público/widget: mensajes genéricos, sin filtrar % real, isapre ni razón social. */
-  const restrictAgreementDetails = resolvedSource !== "executive";
+  useEffect(() => {
+    if (!agreementContext) return;
+
+    const hasAny =
+      Boolean(userRut.trim()) ||
+      Boolean(email.trim()) ||
+      Boolean(phone.trim()) ||
+      Boolean(companyRut.trim());
+
+    if (!hasAny) {
+      agreementContext.setInquiryDraft(null);
+      return;
+    }
+
+    agreementContext.setInquiryDraft({
+      userRut,
+      email,
+      phone,
+      companyRut,
+    });
+  }, [agreementContext, userRut, email, phone, companyRut]);
 
   const handleRutChange = useCallback(
     (field: "userRut" | "companyRut", value: string) => {
@@ -251,17 +336,48 @@ export function CompanyAgreementValidationSection({
       return;
     }
 
-    if (!hasCompanyAgreementInquiryData(values)) {
-      setSubmitError(
-        "Ingresa el RUT de tu empresa para validar si cuenta con convenio.",
-      );
+    if (isPublicOrEmbed) {
+      if (!isValidRut(companyRut)) {
+        setFieldErrors({ companyRut: "RUT no válido." });
+        return;
+      }
+
+      const optionalErrors = validateCompanyAgreementFields(values);
+      if (Object.keys(optionalErrors).length > 0) {
+        setFieldErrors(optionalErrors);
+        return;
+      }
+
+      // Público/embed: no lookup, no correo de inquiry, no revelar match.
+      setSubmitting(true);
+      try {
+        setSubmitted(true);
+        setFieldErrors({});
+        if (isInline) setExpanded(true);
+      } finally {
+        setSubmitting(false);
+      }
       return;
     }
 
-    const errors = validateCompanyAgreementFields(values);
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors);
-      return;
+    if (companyRutOnly) {
+      if (!isValidRut(companyRut)) {
+        setFieldErrors({ companyRut: "RUT no válido." });
+        return;
+      }
+    } else {
+      if (!hasCompanyAgreementInquiryData(values)) {
+        setSubmitError(
+          "Ingresa el RUT de tu empresa para validar si cuenta con convenio.",
+        );
+        return;
+      }
+
+      const errors = validateCompanyAgreementFields(values);
+      if (Object.keys(errors).length > 0) {
+        setFieldErrors(errors);
+        return;
+      }
     }
 
     setSubmitting(true);
@@ -277,9 +393,9 @@ export function CompanyAgreementValidationSection({
 
       setAgreementNotFound(true);
 
-      const wantsFollowUp = Boolean(
-        email.trim() || phone.trim() || userRut.trim(),
-      );
+      const wantsFollowUp =
+        !companyRutOnly &&
+        Boolean(email.trim() || phone.trim() || userRut.trim());
 
       if (!wantsFollowUp) {
         if (isInline) setExpanded(true);
@@ -332,22 +448,25 @@ export function CompanyAgreementValidationSection({
 
   function renderFieldInput(
     field: FieldKey,
-    options?: { inline?: boolean },
+    options?: { inline?: boolean; toolbar?: boolean },
   ) {
     const inline = options?.inline ?? false;
+    const toolbar = options?.toolbar ?? false;
 
     return (
       <label
         key={field}
         className={joinClasses(
           "block min-w-0",
-          inline ? "space-y-1" : "space-y-1.5",
+          toolbar ? undefined : inline ? "space-y-1" : "space-y-1.5",
         )}
       >
         <span
           className={joinClasses(
-            "text-xs font-semibold text-foreground/90",
-            compactEmbed && "max-md:text-[11px]",
+            toolbar
+              ? "mb-1 block text-xs font-medium text-muted"
+              : "text-xs font-semibold text-foreground/90",
+            !toolbar && compactEmbed && "max-md:text-[11px]",
           )}
         >
           {FIELD_LABELS[field]}
@@ -377,16 +496,18 @@ export function CompanyAgreementValidationSection({
           }}
           placeholder={FIELD_PLACEHOLDERS[field]}
           className={joinClasses(
-            inline
-              ? joinClasses(
-                  inlineFieldClass,
-                  compactEmbed && "max-md:h-8 max-md:text-xs",
-                )
-              : joinClasses(
-                  "h-10 w-full rounded-xl px-3 text-sm",
-                  compactEmbed && "max-md:h-9 max-md:rounded-lg max-md:text-xs",
-                  ui.input,
-                ),
+            toolbar
+              ? joinClasses("h-10 w-full rounded-lg px-3 text-sm", ui.input)
+              : inline
+                ? joinClasses(
+                    inlineFieldClass,
+                    compactEmbed && "max-md:h-8 max-md:text-xs",
+                  )
+                : joinClasses(
+                    "h-10 w-full rounded-xl px-3 text-sm",
+                    compactEmbed && "max-md:h-9 max-md:rounded-lg max-md:text-xs",
+                    ui.input,
+                  ),
             fieldErrors[field] && "ring-red-500/60 focus:ring-red-500/40",
           )}
           aria-label={FIELD_LABELS[field]}
@@ -419,13 +540,38 @@ export function CompanyAgreementValidationSection({
           className,
         )}
       >
-        Hacer otra consulta
+        {companyRutOnly ? "Otra consulta" : "Hacer otra consulta"}
       </Button>
     );
   }
 
   const statusMessage =
-    submitted ? (
+    isPublicOrEmbed && submitted ? (
+      <div
+        className={joinClasses(
+          "rounded-xl border border-emerald-400/80 bg-emerald-100 px-3 py-3 text-sm text-emerald-950 shadow-sm",
+          isInline && "mb-2",
+          compactEmbed && "max-md:text-xs",
+        )}
+        role="status"
+      >
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <p className="font-semibold text-emerald-800">
+              Revisaremos tu consulta de convenio
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-emerald-950/90">
+              Para entregarte la información de tu convenio, solicita cualquier
+              plan desde el cotizador. Un ejecutivo se contactará contigo y te
+              orientará con el beneficio que corresponda.
+            </p>
+          </div>
+          {renderNewQueryButton(
+            "border-emerald-400/70 text-emerald-900 hover:bg-white hover:text-emerald-950",
+          )}
+        </div>
+      </div>
+    ) : submitted ? (
       <div
         className={joinClasses(
           "rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-3 text-sm text-emerald-950",
@@ -438,8 +584,8 @@ export function CompanyAgreementValidationSection({
           <div className="min-w-0">
             <p className="font-semibold">Consulta registrada</p>
             <p className="mt-1 text-xs leading-relaxed text-emerald-900/90">
-              No encontramos un convenio activo para el RUT ingresado, pero recibimos
-              tus datos. Te contactaremos si corresponde un beneficio.
+              No encontramos un convenio activo para el RUT ingresado, pero
+              recibimos tus datos. Te contactaremos si corresponde un beneficio.
             </p>
           </div>
           {renderNewQueryButton("text-emerald-900 hover:text-emerald-950")}
@@ -448,79 +594,163 @@ export function CompanyAgreementValidationSection({
     ) : agreementMatch ? (
       <div
         className={joinClasses(
-          "rounded-xl border border-emerald-300/80 bg-emerald-50 px-3 py-3 text-sm text-emerald-950 shadow-sm",
-          isInline && "mb-2",
+          companyRutOnly
+            ? "group relative cursor-help rounded-md bg-emerald-50/90 px-2 py-1.5 text-[11px] text-emerald-950 ring-1 ring-emerald-200/70"
+            : "rounded-xl border border-emerald-300/80 bg-emerald-50 px-3 py-3 text-sm text-emerald-950 shadow-sm",
+          isInline && !companyRutOnly && "mb-2",
           compactEmbed && "max-md:text-xs",
         )}
         role="status"
+        tabIndex={companyRutOnly ? 0 : undefined}
+        aria-describedby={
+          companyRutOnly ? "executive-agreement-hover-details" : undefined
+        }
       >
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div
+          className={joinClasses(
+            "flex gap-2",
+            companyRutOnly
+              ? "items-center justify-between"
+              : "flex-col sm:flex-row sm:items-start sm:justify-between sm:gap-3",
+          )}
+        >
           <div className="min-w-0">
-            <p className="font-semibold text-emerald-800">
-              Convenio vigente confirmado
+            <p
+              className={joinClasses(
+                "font-semibold text-emerald-800",
+                companyRutOnly && "text-[11px] leading-tight",
+              )}
+            >
+              {companyRutOnly
+                ? "Convenio confirmado"
+                : "Convenio vigente confirmado"}
             </p>
-            {restrictAgreementDetails ? (
-              <p className="mt-1 text-xs leading-relaxed text-emerald-950/90">
-                Tu empresa pertenece a un convenio. Puedes acceder a hasta un 10%
-                de descuento. Para aplicar el beneficio, consulta con nuestros
-                asesores: selecciona un plan y un asesor se comunicará contigo.
+            <p
+              className={joinClasses(
+                "leading-relaxed text-emerald-950/90",
+                companyRutOnly ? "mt-0.5 truncate text-[11px]" : "mt-1 text-xs",
+              )}
+            >
+              <span className="font-semibold text-emerald-950">
+                {agreementMatch.companyName}
+              </span>
+              {formatAgreementRut(agreementMatch.companyRutRaw) ? (
+                <> · RUT {formatAgreementRut(agreementMatch.companyRutRaw)}</>
+              ) : null}
+              {" · "}
+              {formatDiscountPercent(agreementMatch.discountPercent)}
+              {formatIsapreBenefitLabel(agreementMatch.isapreName)
+                ? ` ${formatIsapreBenefitLabel(agreementMatch.isapreName)}`
+                : ""}
+              {!companyRutOnly
+                ? " Puedes continuar cotizando con este beneficio aplicable."
+                : null}
+            </p>
+            {agreementMatch.discountPercent != null && !companyRutOnly ? (
+              <p className="mt-2 text-[11px] leading-relaxed text-emerald-900/75">
+                {COMPANY_AGREEMENT_DISCOUNT_DISCLAIMER}
               </p>
-            ) : (
-              <>
-                <p className="mt-1 text-xs leading-relaxed text-emerald-950/90">
-                  La empresa{" "}
-                  <span className="font-semibold text-emerald-950">
-                    {agreementMatch.companyName}
-                  </span>
-                  {formatAgreementRut(agreementMatch.companyRutRaw) ? (
-                    <>
-                      {" "}
-                      (RUT {formatAgreementRut(agreementMatch.companyRutRaw)}) cuenta con{" "}
-                    </>
-                  ) : (
-                    " cuenta con "
-                  )}
-                  {formatDiscountPercent(agreementMatch.discountPercent)}
-                  {formatIsapreBenefitLabel(agreementMatch.isapreName)
-                    ? ` ${formatIsapreBenefitLabel(agreementMatch.isapreName)}`
-                    : ""}{" "}
-                  Puedes continuar cotizando con este beneficio aplicable.
-                </p>
-                {agreementMatch.discountPercent != null ? (
-                  <p className="mt-2 text-[11px] leading-relaxed text-emerald-900/75">
-                    {COMPANY_AGREEMENT_DISCOUNT_DISCLAIMER}
-                  </p>
-                ) : null}
-              </>
-            )}
+            ) : null}
           </div>
           {renderNewQueryButton(
-            "border-emerald-300/70 text-emerald-900 hover:bg-white hover:text-emerald-950",
+            companyRutOnly
+              ? "h-7 border-emerald-300/60 px-2 text-[10px] text-emerald-900 hover:bg-white hover:text-emerald-950"
+              : "border-emerald-300/70 text-emerald-900 hover:bg-white hover:text-emerald-950",
           )}
         </div>
+        {companyRutOnly ? (
+          <div id="executive-agreement-hover-details">
+            <AgreementMatchHoverDetails agreement={agreementMatch} />
+          </div>
+        ) : null}
       </div>
     ) : agreementNotFound ? (
       <div
         className={joinClasses(
-          "rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-950",
-          isInline && "mb-2",
+          companyRutOnly
+            ? "rounded-md bg-amber-50/90 px-2 py-1.5 text-[11px] text-amber-950 ring-1 ring-amber-200/70"
+            : "rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-950",
+          isInline && !companyRutOnly && "mb-2",
           compactEmbed && "max-md:text-xs",
         )}
         role="status"
       >
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div
+          className={joinClasses(
+            "flex gap-2",
+            companyRutOnly
+              ? "items-center justify-between"
+              : "flex-col gap-3 sm:flex-row sm:items-start sm:justify-between",
+          )}
+        >
           <div className="min-w-0">
-            <p className="font-semibold">Convenio no encontrado</p>
-            <p className="mt-1 text-xs leading-relaxed text-amber-900/90">
-              No identificamos un convenio activo para el RUT de empresa ingresado.
-              Puedes continuar cotizando con normalidad o dejarnos tus datos de
-              contacto para una revisión manual.
+            <p
+              className={joinClasses(
+                "font-semibold",
+                companyRutOnly && "text-[11px] leading-tight",
+              )}
+            >
+              Convenio no encontrado
+            </p>
+            <p
+              className={joinClasses(
+                "leading-relaxed text-amber-900/90",
+                companyRutOnly ? "mt-0.5 text-[11px]" : "mt-1 text-xs",
+              )}
+            >
+              {companyRutOnly
+                ? "Sin convenio activo para este RUT. Prueba otro o sigue cotizando."
+                : "No identificamos un convenio activo para el RUT de empresa ingresado. Puedes continuar cotizando con normalidad o dejarnos tus datos de contacto para una revisión manual."}
             </p>
           </div>
-          {renderNewQueryButton("text-amber-950 hover:text-amber-900")}
+          {renderNewQueryButton(
+            companyRutOnly
+              ? "h-7 border-amber-300/60 px-2 text-[10px] text-amber-950 hover:text-amber-900"
+              : "text-amber-950 hover:text-amber-900",
+          )}
         </div>
       </div>
     ) : null;
+
+  if (companyRutOnly) {
+    const showCompactForm = !agreementMatch && !agreementNotFound;
+    return (
+      <div className={joinClasses("min-w-0", className)}>
+        {showCompactForm ? (
+          <form
+            onSubmit={handleSubmit}
+            className="flex items-end gap-2"
+            noValidate
+          >
+            <div className="min-w-0 flex-1 sm:w-36 sm:flex-none">
+              {renderFieldInput("companyRut", { toolbar: true })}
+            </div>
+            <Button
+              type="submit"
+              size="sm"
+              disabled={submitting}
+              className="h-10 shrink-0 rounded-lg bg-red-600 px-3.5 text-xs font-semibold text-white hover:bg-red-700"
+            >
+              {submitting ? "Validando…" : "Validar"}
+            </Button>
+          </form>
+        ) : null}
+        {statusMessage ? (
+          <div className={showCompactForm ? "mt-1.5" : undefined}>
+            {statusMessage}
+          </div>
+        ) : null}
+        {submitError ? (
+          <p
+            className="mt-1 text-[11px] text-red-700"
+            role="status"
+          >
+            {submitError}
+          </p>
+        ) : null}
+      </div>
+    );
+  }
 
   const formContent = (
     <>

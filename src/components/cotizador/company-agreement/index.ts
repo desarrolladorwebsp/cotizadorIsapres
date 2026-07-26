@@ -3,9 +3,11 @@ export {
   CompanyAgreementProvider,
   useCompanyAgreementContext,
   useOptionalCompanyAgreementContext,
+  type CompanyAgreementInquiryDraft,
 } from "./company-agreement-context";
 export {
   CompanyAgreementValidationSection,
+  type CompanyAgreementFields,
   type CompanyAgreementSource,
   type CompanyAgreementVariant,
   type CompanyAgreementValidationSectionProps,

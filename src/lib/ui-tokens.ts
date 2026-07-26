@@ -39,7 +39,7 @@ export const horizontalScrollRail =
 
 /** Panel lateral de filtros (cotizador principal y ejecutivos, no widget). */
 export const filtersSidebarDesktopShell =
-  "lg:sticky lg:top-24 lg:z-20 lg:max-h-[calc(100dvh-7rem)] lg:min-h-0 lg:self-start";
+  "lg:sticky lg:top-20 lg:z-20 lg:max-h-[calc(100dvh-5.5rem)] lg:min-h-0 lg:self-start";
 
 /** Cuerpo con scroll independiente dentro del panel de filtros. */
 export const filtersSidebarScrollBody =

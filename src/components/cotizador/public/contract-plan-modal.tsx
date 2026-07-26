@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -152,8 +152,10 @@ export function ContractPlanModal({
     open,
   );
   const { entity: partnerEntity } = usePartnerEntity();
-  const { validatedAgreement } = useCompanyAgreementContext();
+  const { validatedAgreement, inquiryDraft } = useCompanyAgreementContext();
   const convenioEmpresa = toCotizacionNotifyConvenio(validatedAgreement);
+  const inquiryDraftRef = useRef(inquiryDraft);
+  inquiryDraftRef.current = inquiryDraft;
   const [activeTab, setActiveTab] = useState<ModalTabId>("overview");
   const [submitted, setSubmitted] = useState(false);
   const [emailNotifyFailed, setEmailNotifyFailed] = useState(false);
@@ -186,6 +188,7 @@ export function ContractPlanModal({
       return;
     }
 
+    const draft = inquiryDraftRef.current;
     setActiveTab(initialTab ?? "overview");
     setSubmitted(false);
     setEmailNotifyFailed(false);
@@ -194,10 +197,21 @@ export function ContractPlanModal({
     setSubmitError(null);
     setValidationErrors([]);
     setAttemptedSubmit(false);
+    // Prefill al abrir: deepLink gana; si no hay, borrador del convenio.
+    // No reaccionar a cambios del draft mientras el modal está abierto.
     setName(deepLink.requestPrefill?.name ?? "");
-    setRut(deepLink.requestPrefill?.rut ?? "");
-    setEmail(deepLink.requestPrefill?.email ?? deepLink.email ?? "");
-    setPhone(deepLink.requestPrefill?.phone ?? "");
+    setRut(
+      deepLink.requestPrefill?.rut?.trim() || draft?.userRut?.trim() || "",
+    );
+    setEmail(
+      deepLink.requestPrefill?.email?.trim() ||
+        deepLink.email?.trim() ||
+        draft?.email?.trim() ||
+        "",
+    );
+    setPhone(
+      deepLink.requestPrefill?.phone?.trim() || draft?.phone?.trim() || "",
+    );
     setAcceptPrivacy(false);
   }, [open, initialTab, deepLink.requestPrefill, deepLink.email]);
 
@@ -461,24 +475,13 @@ export function ContractPlanModal({
               aria-hidden
             />
 
-            <div className="flex shrink-0 items-center justify-between px-4 py-2 pt-2.5 sm:px-6 sm:py-2 sm:pt-3">
-              <div className="flex items-center gap-3">
-                <IsapreLogo isapre={summary.isapre} size="md" />
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-                    {summary.isapre}
-                  </p>
-                  <p className="text-sm font-bold text-primary-dark">
-                    Isapres Premium
-                  </p>
-                </div>
-              </div>
+            <div className="flex shrink-0 items-center justify-end px-3 pb-0 pt-2 sm:px-5 sm:pt-2.5">
               <button
                 type="button"
                 onClick={onClose}
                 aria-label="Cerrar modal"
                 className={joinClasses(
-                  "rounded-full p-2 text-muted transition hover:bg-surface-hover hover:text-foreground",
+                  "rounded-full text-muted transition hover:bg-surface-hover hover:text-foreground",
                   touchTarget,
                 )}
               >
@@ -486,51 +489,58 @@ export function ContractPlanModal({
               </button>
             </div>
 
-            <div className="shrink-0 px-4 pb-3 pt-1 sm:px-6 sm:pb-3 sm:pt-1.5">
+            <div className="shrink-0 px-4 pb-5 pt-1 sm:px-6 sm:pb-6 sm:pt-2">
               <div
                 className={joinClasses(
-                  "grid gap-4 rounded-xl border border-border bg-white p-4 sm:grid-cols-[minmax(0,1.1fr)_minmax(0,1.2fr)_auto] sm:items-center sm:gap-0 sm:p-5",
+                  "grid items-center gap-6 sm:grid-cols-[auto_minmax(0,1fr)_minmax(0,1.15fr)_auto] sm:gap-x-8 sm:gap-y-0 lg:gap-x-10",
                   safeWidth,
                 )}
               >
-                <div className="relative min-w-0 space-y-2 sm:pr-6">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span
-                      className={joinClasses(
-                        "rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide",
-                        badgeTone,
-                      )}
-                    >
-                      {planTypeLabel}
-                    </span>
-                  </div>
+                <div className="flex min-w-0 items-center gap-3 sm:w-[9.5rem] sm:flex-col sm:items-start sm:gap-2.5">
+                  <IsapreLogo
+                    isapre={summary.isapre}
+                    size="md"
+                    className="!border-0 !shadow-none"
+                  />
+                  <p className="truncate text-sm font-bold leading-snug text-primary-dark">
+                    {summary.isapre}
+                  </p>
+                </div>
+
+                <div className="min-w-0 space-y-2">
+                  <span
+                    className={joinClasses(
+                      "inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide",
+                      badgeTone,
+                    )}
+                  >
+                    {planTypeLabel}
+                  </span>
                   <h2
                     id="contract-plan-title"
-                    className="text-xl font-bold leading-snug text-primary-dark sm:text-2xl"
+                    className="text-xl font-bold leading-[1.15] tracking-tight text-primary-dark sm:text-[1.65rem]"
                   >
                     {commercialName}
                   </h2>
-                  <p className="text-sm text-muted">{summary.unique_code}</p>
-                  <div
-                    className="absolute right-0 top-1/2 hidden h-[72%] w-px -translate-y-1/2 bg-border sm:block"
-                    aria-hidden
-                  />
+                  <p className="font-mono text-[11px] tracking-wide text-muted/80">
+                    {summary.unique_code}
+                  </p>
                 </div>
 
-                <div className="flex min-w-0 items-center gap-3 sm:px-6">
+                <div className="flex min-w-0 items-start gap-3.5 sm:items-center">
                   <span
                     className={joinClasses(
-                      "flex size-14 shrink-0 items-center justify-center rounded-full sm:size-16",
+                      "mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-full sm:mt-0 sm:size-11",
                       accentIconClass.primary,
                     )}
                     aria-hidden
                   >
                     <svg
                       viewBox="0 0 24 24"
-                      className="size-7 sm:size-8"
+                      className="size-[1.15rem]"
                       fill="none"
                       stroke="currentColor"
-                      strokeWidth="1.8"
+                      strokeWidth="1.75"
                       strokeLinecap="round"
                       strokeLinejoin="round"
                     >
@@ -539,33 +549,27 @@ export function ContractPlanModal({
                     </svg>
                   </span>
                   <div className="min-w-0">
-                    <p className="font-bold text-primary-dark">Conoce tu plan</p>
-                    <p className="mt-0.5 text-sm leading-snug text-muted">
+                    <p className="text-[15px] font-bold leading-snug text-primary-dark">
+                      Conoce tu plan
+                    </p>
+                    <p className="mt-1.5 max-w-[17.5rem] text-[13px] leading-relaxed text-muted">
                       Revisa las coberturas y características principales de
                       este plan.
                     </p>
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab("overview")}
-                      className="mt-1.5 text-sm font-semibold text-primary transition hover:text-primary-dark"
-                    >
-                      Ver detalles del plan →
-                    </button>
                   </div>
                 </div>
 
-                <div className="rounded-xl bg-primary px-5 py-4 text-center text-white sm:min-w-52">
-                  <p className="text-[10px] font-bold uppercase tracking-wide text-white/85">
+                <div className="flex flex-col items-center justify-center rounded-2xl bg-primary px-7 py-5 text-center text-primary-foreground sm:min-h-[7.25rem] sm:min-w-[14.5rem] sm:px-8">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/70">
                     Precio estimado mensual
                   </p>
-                  <p className="mt-1 text-xl font-bold sm:text-2xl">
+                  <p className="mt-2.5 text-[1.45rem] font-bold leading-none tracking-tight sm:text-[1.65rem]">
                     Desde {formatPlanClp(uiPrices.displayFinalPriceClp)}
-                    <span className="text-sm font-semibold text-white/90">
-                      {" "}
+                    <span className="ml-1.5 text-sm font-semibold text-white/80">
                       /mes
                     </span>
                   </p>
-                  <span className="mt-2 inline-block rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-semibold text-white">
+                  <span className="mt-3 inline-flex rounded-full bg-white/15 px-3 py-1 text-xs font-semibold tabular-nums text-white">
                     {formatQuotedUf(uiPrices.displayFinalPriceUf)}
                   </span>
                 </div>

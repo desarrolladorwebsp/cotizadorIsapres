@@ -26,34 +26,6 @@
   color: #ffffff;
 }
 
-[data-premium-surface] .premium-executive-header-title {
-  color: #ffffff;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-}
-
-[data-premium-surface] .premium-executive-header-subtitle {
-  color: color-mix(in srgb, var(--dash-cyan) 72%, white);
-}
-
-[data-premium-surface] .premium-executive-header-cta {
-  border: 1.5px solid color-mix(in srgb, var(--dash-cyan) 70%, white);
-  color: #ffffff;
-  background: transparent;
-  border-radius: 0.375rem;
-  font-weight: 600;
-  transition:
-    background-color 160ms ease,
-    border-color 160ms ease,
-    color 160ms ease;
-}
-
-[data-premium-surface] .premium-executive-header-cta:hover {
-  background: color-mix(in srgb, var(--dash-cyan) 18%, transparent);
-  border-color: var(--dash-cyan);
-  color: #ffffff;
-}
-
 [data-premium-surface] .premium-executive-menu-btn {
   color: #ffffff;
   border-color: color-mix(in srgb, white 28%, transparent);
@@ -67,7 +39,7 @@
 
 [data-premium-surface] .premium-executive-header .premium-executive-tabs {
   background: transparent;
-  border-color: color-mix(in srgb, white 12%, transparent);
+  border: none;
 }
 
 [data-premium-surface] .premium-executive-header .premium-executive-tab {
@@ -115,16 +87,22 @@
   border-color: transparent;
 }
 
-[data-premium-surface] .premium-executive-user-on-dark .premium-user-logout {
-  border: 1.5px solid color-mix(in srgb, white 55%, transparent);
+[data-premium-surface] .premium-executive-user-on-dark .premium-user-menu-trigger {
   color: #ffffff;
-  background: transparent;
-  border-radius: 0.375rem;
 }
 
-[data-premium-surface] .premium-executive-user-on-dark .premium-user-logout:hover {
-  background: color-mix(in srgb, white 10%, transparent);
+[data-premium-surface] .premium-executive-user-on-dark .premium-user-menu-dropdown {
+  border-color: color-mix(in srgb, white 18%, transparent);
+  background: color-mix(in srgb, var(--dash-navy) 96%, black);
+  box-shadow: 0 12px 28px -10px rgb(0 0 0 / 0.45);
+}
+
+[data-premium-surface] .premium-executive-user-on-dark .premium-user-menu-item {
   color: #ffffff;
+}
+
+[data-premium-surface] .premium-executive-user-on-dark .premium-user-menu-item:hover {
+  background: color-mix(in srgb, white 10%, transparent);
 }
 
 /* Mobile drawer */

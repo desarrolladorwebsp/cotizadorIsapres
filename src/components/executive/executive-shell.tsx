@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState, type ReactNode } from "react";
 import { UserMenu } from "@/components/auth/user-menu";
 import {
@@ -168,11 +167,6 @@ export function ExecutiveShell({
     ...SECTION_LABELS[id],
   }));
 
-  const panelTitle = showAdminAccess ? "Panel comercial" : "Panel del ejecutivo";
-  const panelSubtitle = showAdminAccess
-    ? "Gestión y ventas"
-    : "Herramientas comerciales";
-
   const activeSectionLabel = useMemo(
     () => navItems.find((item) => item.id === activeSection)?.label ?? "Inicio",
     [activeSection, navItems],
@@ -183,93 +177,78 @@ export function ExecutiveShell({
   return (
     <div className={joinClasses(appShellRoot, "min-h-screen bg-bg-layout")}>
       <header className="premium-executive-header sticky top-0 z-30 shrink-0">
-        <div className="mx-auto flex max-w-7xl items-center gap-2 px-3 py-3 sm:gap-3 sm:px-6 sm:py-3.5 lg:px-8">
-          <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3">
+        <div className="flex w-full max-w-none items-center gap-2 px-3 py-2 sm:gap-3 sm:px-4 sm:py-2.5 lg:px-5">
+          <div className="flex shrink-0 items-center gap-2.5 sm:gap-3">
             <LandingLogo
               size="lg"
               variant="logo"
               className="premium-executive-logo"
             />
-            <div className="min-w-0">
-              <p className="premium-executive-header-title truncate text-sm sm:text-base">
-                {panelTitle}
-              </p>
-              <p className="premium-executive-header-subtitle truncate text-[11px] sm:text-xs lg:hidden">
-                {activeSectionLabel}
-              </p>
-              <p className="premium-executive-header-subtitle hidden truncate text-xs lg:block">
-                Cotizador Premium · {panelSubtitle}
-              </p>
-            </div>
+            <p className="truncate text-xs font-semibold text-white/80 lg:hidden">
+              {activeSectionLabel}
+            </p>
           </div>
 
-          <div className="hidden shrink-0 items-center gap-1.5 sm:gap-2.5 lg:flex">
-            <Link
-              href="/"
+          <nav
+            className="premium-executive-tabs hidden min-w-0 flex-1 lg:block"
+            aria-label="Secciones del panel"
+          >
+            <div
               className={joinClasses(
-                "premium-executive-header-cta px-3 text-sm sm:px-4",
-                touchTarget,
+                horizontalScrollRail,
+                "flex gap-1 py-0.5",
               )}
             >
-              Cotizador público
-            </Link>
+              {navItems.map((item) => {
+                const isActive = activeSection === item.id;
 
-            {staffUser ? (
-              <UserMenu
-                fullName={staffUser.fullName}
-                subtitle={userSubtitle}
-                compact
-                onDark
-              />
-            ) : null}
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => onSectionChange(item.id)}
+                    className={joinClasses(
+                      "premium-executive-tab shrink-0 px-2.5 py-1.5 text-xs xl:px-3 xl:text-sm",
+                      touchTarget,
+                      isActive && "premium-executive-tab-active",
+                    )}
+                    aria-current={isActive ? "page" : undefined}
+                  >
+                    {SECTION_ICONS[item.id]}
+                    <span>{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </nav>
+
+          <div className="ml-auto flex shrink-0 items-center gap-2 lg:ml-0">
+            <div className="hidden items-center lg:flex">
+              {staffUser ? (
+                <UserMenu
+                  fullName={staffUser.fullName}
+                  subtitle={userSubtitle}
+                  compact
+                  onDark
+                  menuMode="dropdown"
+                />
+              ) : null}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setMobileNavOpen(true)}
+              className={joinClasses(
+                "premium-executive-menu-btn inline-flex shrink-0 rounded-md lg:hidden",
+                touchTarget,
+              )}
+              aria-label="Abrir menú de navegación"
+              aria-expanded={mobileNavOpen}
+            >
+              <ExecutiveMenuIcon />
+            </button>
           </div>
-
-          <button
-            type="button"
-            onClick={() => setMobileNavOpen(true)}
-            className={joinClasses(
-              "premium-executive-menu-btn inline-flex shrink-0 rounded-md lg:hidden",
-              touchTarget,
-            )}
-            aria-label="Abrir menú de navegación"
-            aria-expanded={mobileNavOpen}
-          >
-            <ExecutiveMenuIcon />
-          </button>
         </div>
-
-        <nav
-          className="premium-executive-tabs hidden border-t px-4 sm:px-6 lg:block lg:px-8"
-          aria-label="Secciones del panel"
-        >
-          <div
-            className={joinClasses(
-              horizontalScrollRail,
-              "mx-auto flex max-w-7xl gap-1.5 py-2.5",
-            )}
-          >
-            {navItems.map((item) => {
-              const isActive = activeSection === item.id;
-
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => onSectionChange(item.id)}
-                  className={joinClasses(
-                    "premium-executive-tab shrink-0 px-3.5 py-2 text-sm",
-                    touchTarget,
-                    isActive && "premium-executive-tab-active",
-                  )}
-                  aria-current={isActive ? "page" : undefined}
-                >
-                  {SECTION_ICONS[item.id]}
-                  <span>{item.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </nav>
       </header>
 
       <ExecutiveMobileNavDrawer
@@ -278,7 +257,6 @@ export function ExecutiveShell({
         navItems={navItems}
         activeSection={activeSection}
         onSectionChange={onSectionChange}
-        panelTitle={panelTitle}
         sectionIcons={SECTION_ICONS}
         userFullName={staffUser?.fullName}
         userSubtitle={staffUser ? userSubtitle : null}
@@ -299,7 +277,7 @@ export function ExecutiveShell({
           className={joinClasses(
             appShellScroll,
             safeWidth,
-            "mx-auto w-full max-w-7xl px-3 py-5 sm:px-6 sm:py-7 lg:px-8 lg:py-8",
+            "mx-auto w-full max-w-7xl px-3 py-5 sm:px-4 sm:py-7 lg:px-5 lg:py-8",
           )}
         >
           {children}

@@ -10,10 +10,20 @@ import {
 } from "react";
 import type { ValidatedCompanyAgreement } from "@/types/company-agreement";
 
+export interface CompanyAgreementInquiryDraft {
+  userRut: string;
+  email: string;
+  phone: string;
+  companyRut: string;
+}
+
 interface CompanyAgreementContextValue {
   validatedAgreement: ValidatedCompanyAgreement | null;
   setValidatedAgreement: (agreement: ValidatedCompanyAgreement | null) => void;
   clearValidatedAgreement: () => void;
+  /** Borrador de contacto ingresado en “Validar convenio” (prefill de Solicitar). */
+  inquiryDraft: CompanyAgreementInquiryDraft | null;
+  setInquiryDraft: (draft: CompanyAgreementInquiryDraft | null) => void;
 }
 
 const CompanyAgreementContext =
@@ -22,6 +32,8 @@ const CompanyAgreementContext =
 export function CompanyAgreementProvider({ children }: { children: ReactNode }) {
   const [validatedAgreement, setValidatedAgreementState] =
     useState<ValidatedCompanyAgreement | null>(null);
+  const [inquiryDraft, setInquiryDraftState] =
+    useState<CompanyAgreementInquiryDraft | null>(null);
 
   const setValidatedAgreement = useCallback(
     (agreement: ValidatedCompanyAgreement | null) => {
@@ -34,13 +46,28 @@ export function CompanyAgreementProvider({ children }: { children: ReactNode }) 
     setValidatedAgreementState(null);
   }, []);
 
+  const setInquiryDraft = useCallback(
+    (draft: CompanyAgreementInquiryDraft | null) => {
+      setInquiryDraftState(draft);
+    },
+    [],
+  );
+
   const value = useMemo(
     () => ({
       validatedAgreement,
       setValidatedAgreement,
       clearValidatedAgreement,
+      inquiryDraft,
+      setInquiryDraft,
     }),
-    [validatedAgreement, setValidatedAgreement, clearValidatedAgreement],
+    [
+      validatedAgreement,
+      setValidatedAgreement,
+      clearValidatedAgreement,
+      inquiryDraft,
+      setInquiryDraft,
+    ],
   );
 
   return (

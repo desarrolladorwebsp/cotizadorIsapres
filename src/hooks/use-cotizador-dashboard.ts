@@ -56,8 +56,12 @@ export function useCotizadorDashboard(
   );
 
   useEffect(() => {
-    setSidebarOpen(isLargeScreen);
     setSidebarReady(true);
+  }, []);
+
+  /** Solo sincroniza al cruzar breakpoint; no pelea con “Ocultar” en desktop. */
+  useEffect(() => {
+    setSidebarOpen(isLargeScreen);
   }, [isLargeScreen]);
 
   const filteredPlans = useMemo(() => {
