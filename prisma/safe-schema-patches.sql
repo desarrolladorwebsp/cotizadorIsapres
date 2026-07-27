@@ -49,3 +49,32 @@ EXCEPTION
 END $$;
 
 CREATE INDEX IF NOT EXISTS "plans_plan_type_idx" ON "plans"("plan_type");
+
+-- Recuperación de contraseña staff (migración 20250716120000)
+CREATE TABLE IF NOT EXISTS "password_reset_tokens" (
+    "id" TEXT NOT NULL,
+    "token_hash" TEXT NOT NULL,
+    "staff_account_id" TEXT NOT NULL,
+    "expires_at" TIMESTAMP(3) NOT NULL,
+    "used_at" TIMESTAMP(3),
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "password_reset_tokens_pkey" PRIMARY KEY ("id")
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS "password_reset_tokens_token_hash_key"
+  ON "password_reset_tokens"("token_hash");
+
+CREATE INDEX IF NOT EXISTS "password_reset_tokens_staff_account_id_idx"
+  ON "password_reset_tokens"("staff_account_id");
+
+CREATE INDEX IF NOT EXISTS "password_reset_tokens_expires_at_idx"
+  ON "password_reset_tokens"("expires_at");
+
+DO $$ BEGIN
+  ALTER TABLE "password_reset_tokens"
+    ADD CONSTRAINT "password_reset_tokens_staff_account_id_fkey"
+    FOREIGN KEY ("staff_account_id") REFERENCES "staff_accounts"("id")
+    ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;

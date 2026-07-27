@@ -9,7 +9,7 @@ if (!process.env.DATABASE_URL?.trim()) {
 
 function applySafeSchemaPatches() {
   console.warn(
-    "[build] Aplicando parches SQL aditivos (columnas opcionales faltantes)...",
+    "[build] Aplicando parches SQL aditivos (columnas/tablas opcionales faltantes)...",
   );
   execSync(
     "npx prisma db execute --file prisma/safe-schema-patches.sql --schema prisma/schema.prisma",
@@ -23,20 +23,22 @@ try {
   console.log("[build] Migraciones aplicadas correctamente.");
 } catch (error) {
   console.warn(
-    "[build] prisma migrate deploy falló; se intentan parches SQL seguros.",
+    "[build] prisma migrate deploy falló; se continúan parches SQL seguros.",
   );
   if (error instanceof Error) {
     console.warn(error.message);
   }
+}
 
-  try {
-    applySafeSchemaPatches();
-  } catch (patchError) {
-    console.warn(
-      "[build] No se pudieron aplicar parches SQL. La app puede fallar si faltan columnas.",
-    );
-    if (patchError instanceof Error) {
-      console.warn(patchError.message);
-    }
+// Siempre: IF NOT EXISTS / idempotente. Cubre tablas/columnas faltantes
+// aunque el historial de migraciones esté inconsistente (p. ej. password_reset_tokens).
+try {
+  applySafeSchemaPatches();
+} catch (patchError) {
+  console.warn(
+    "[build] No se pudieron aplicar parches SQL. La app puede fallar si faltan columnas/tablas.",
+  );
+  if (patchError instanceof Error) {
+    console.warn(patchError.message);
   }
 }

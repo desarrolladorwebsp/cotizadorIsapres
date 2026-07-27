@@ -24,6 +24,12 @@ export function toApiError(error: unknown): ApiError {
     const target = Array.isArray(error.meta?.target)
       ? (error.meta.target as string[]).join(", ")
       : undefined;
+    const model =
+      typeof error.meta?.modelName === "string"
+        ? error.meta.modelName
+        : typeof error.meta?.table === "string"
+          ? error.meta.table
+          : undefined;
 
     switch (error.code) {
       case "P2002":
@@ -36,15 +42,29 @@ export function toApiError(error: unknown): ApiError {
         );
       case "P2003":
         return new ApiError(
-          "No se puede guardar el plan porque faltan datos relacionados (isapre o clínica).",
+          model?.toLowerCase().includes("plan")
+            ? "No se puede guardar el plan porque faltan datos relacionados (isapre o clínica)."
+            : "No se puede guardar el registro porque faltan datos relacionados.",
           400,
           error.code,
         );
+      case "P2021":
+        return new ApiError(
+          "Falta una tabla requerida en la base de datos. Contacta a soporte o vuelve a intentar tras el despliegue.",
+          503,
+          error.code,
+        );
       case "P2025":
-        return new ApiError("El plan solicitado no existe.", 404, error.code);
+        return new ApiError(
+          model?.toLowerCase().includes("plan")
+            ? "El plan solicitado no existe."
+            : "El registro solicitado no existe.",
+          404,
+          error.code,
+        );
       default:
         return new ApiError(
-          "Error de base de datos al procesar el plan.",
+          "Error de base de datos al procesar la solicitud.",
           500,
           error.code,
         );
@@ -87,7 +107,7 @@ export function toApiError(error: unknown): ApiError {
     return new ApiError(error.message, 500);
   }
 
-  return new ApiError("Ocurrió un error inesperado al procesar el plan.", 500);
+  return new ApiError("Ocurrió un error inesperado al procesar la solicitud.", 500);
 }
 
 export async function parseJsonBody(request: Request): Promise<unknown> {

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { apiErrorResponse, parseJsonBody } from "@/lib/api/api-error";
 import { PASSWORD_RESET_RATE_LIMIT } from "@/lib/auth/constants";
 import {
@@ -64,6 +65,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, message: genericMessage });
   } catch (error) {
     console.error("POST /api/auth/password-reset/request", error);
+    // Tabla ausente u otro fallo de esquema: mensaje claro (sin textos de “plan”).
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      (error.code === "P2021" || error.code === "P2010")
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "El servicio de recuperación no está listo en el servidor. Intenta de nuevo en unos minutos.",
+        },
+        { status: 503 },
+      );
+    }
     const { body, status } = apiErrorResponse(error);
     return NextResponse.json(body, { status });
   }
