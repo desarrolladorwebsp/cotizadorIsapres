@@ -255,7 +255,9 @@ export function PublicQuoteCriteriaBar({
             ? "max-md:gap-y-2.5 sm:grid sm:grid-cols-2 sm:items-end"
             : joinClasses(
                 "md:grid md:items-end md:gap-2 lg:gap-3 xl:gap-4",
-                "md:grid-cols-[minmax(0,8.5rem)_minmax(0,0.85fr)_minmax(0,11rem)_minmax(0,1fr)_auto_auto]",
+                /* Edad | Tipo | Renta (más ancha) | Cargas (más compacta) | CTAs */
+                "md:grid-cols-[minmax(0,8.5rem)_minmax(0,0.85fr)_minmax(0,14rem)_minmax(0,0.72fr)_auto_auto]",
+                "xl:grid-cols-[minmax(0,8.5rem)_minmax(0,0.9fr)_minmax(0,15.5rem)_minmax(0,0.65fr)_auto_auto]",
               ),
         )}
       >
