@@ -137,7 +137,7 @@ export function ConfirmableFieldInput({
             }
           }}
           className={joinClasses(
-            "h-11 min-w-0 flex-1 rounded-xl border-0 bg-white px-3 text-sm shadow-sm ring-1 ring-border/80 focus:ring-2 focus:ring-primary/40",
+            "h-11 min-w-0 flex-1 rounded-xl border-0 bg-white px-3 text-sm text-primary-dark shadow-sm ring-1 ring-border/80 placeholder:text-primary-dark/45 focus:ring-2 focus:ring-primary/40",
             !compact && "h-12 text-base",
             isCommitted && "ring-primary/35",
             compact && "max-md:h-9 max-md:rounded-lg max-md:px-2.5 max-md:text-xs",

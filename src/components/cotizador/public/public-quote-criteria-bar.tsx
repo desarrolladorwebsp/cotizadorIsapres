@@ -50,7 +50,7 @@ export interface PublicQuoteCriteriaBarProps {
 }
 
 const fieldClass = joinClasses(
-  "h-12 w-full rounded-xl border-0 bg-white px-3 text-base shadow-sm ring-1 ring-border/80 focus:ring-2 focus:ring-primary/40",
+  "h-12 w-full rounded-xl border-0 bg-white px-3 text-base text-primary-dark shadow-sm ring-1 ring-border/80 focus:ring-2 focus:ring-primary/40",
 );
 
 const compactFieldClass =

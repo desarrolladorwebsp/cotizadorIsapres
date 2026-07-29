@@ -197,6 +197,26 @@
   --convenio-accent-muted: rgb(255 255 255 / 0.18);
 }
 
+/*
+  Los controles blancos no deben heredar el color claro de la barra:
+  sin esto, edad/renta/select quedan con texto blanco sobre fondo blanco.
+*/
+[data-brand="premium"] [data-criteria-bar] input,
+[data-brand="premium"] [data-criteria-bar] select,
+[data-brand="premium"] [data-criteria-bar] textarea {
+  color: #092558;
+}
+
+[data-brand="premium"] [data-criteria-bar] input::placeholder,
+[data-brand="premium"] [data-criteria-bar] textarea::placeholder {
+  color: rgb(9 37 88 / 0.45);
+}
+
+[data-brand="premium"] [data-criteria-bar] select option {
+  color: #092558;
+  background-color: #ffffff;
+}
+
 [data-brand="premium"] [data-criteria-bar] label,
 [data-brand="premium"] [data-criteria-bar] .text-muted,
 [data-brand="premium"] [data-criteria-bar] [data-criteria-added] {
