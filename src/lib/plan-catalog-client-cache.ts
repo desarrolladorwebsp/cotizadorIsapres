@@ -1,6 +1,6 @@
 import type { HealthPlanCatalogItem } from "@/types/plan";
 
-const CATALOG_CACHE_KEY = "cotizador:plan-catalog:v3";
+const CATALOG_CACHE_KEY = "cotizador:plan-catalog:v4";
 const CATALOG_CACHE_TTL_MS = 30 * 60 * 1000;
 
 interface CachedPlanCatalog {

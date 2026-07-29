@@ -18,7 +18,22 @@ import { joinClasses } from "@/lib/utils";
 import type { Clinic } from "@/domain";
 import type { CoverageEntry, CoverageType, HealthPlan, PlanTypeId } from "@/domain";
 
-const COVERAGE_PERCENTAGES = [40, 50, 60, 70, 80, 90, 100] as const;
+/** Incluye 0% para no enmascarar valores importados fuera del rango habitual. */
+const COVERAGE_PERCENTAGES = [0, 40, 50, 60, 70, 80, 90, 100] as const;
+
+function coveragePercentageOptions(currentPercentage: number) {
+  const values = new Set<number>(COVERAGE_PERCENTAGES);
+  if (Number.isFinite(currentPercentage)) {
+    values.add(Math.round(currentPercentage));
+  }
+
+  return [...values]
+    .sort((left, right) => left - right)
+    .map((value) => ({
+      value: String(value),
+      label: `${value}%`,
+    }));
+}
 
 export interface PlanFormProps {
   initialValue: HealthPlan;
@@ -383,10 +398,7 @@ export function PlanForm({
                 <FieldGroup>
                   <FieldLabel>% Cobertura</FieldLabel>
                   <Select
-                    options={COVERAGE_PERCENTAGES.map((value) => ({
-                      value: String(value),
-                      label: `${value}%`,
-                    }))}
+                    options={coveragePercentageOptions(entry.percentage)}
                     value={String(entry.percentage)}
                     onChange={(event) =>
                       updateCoverage(index, {

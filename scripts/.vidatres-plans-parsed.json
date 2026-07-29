@@ -9558,55 +9558,55 @@
       {
         "clinic_id": "cl-redsalud-mayor",
         "clinic_name": "Clínica RedSalud Mayor Temuco",
-        "percentage": 0,
+        "percentage": 40,
         "type": "hospitalaria"
       },
       {
         "clinic_id": "cl-alemana-valdivia",
         "clinic_name": "Clínica Alemana de Valdivia",
-        "percentage": 0,
+        "percentage": 40,
         "type": "hospitalaria"
       },
       {
         "clinic_id": "cl-alemana-osorno",
         "clinic_name": "Clínica Alemana de Osorno",
-        "percentage": 0,
+        "percentage": 40,
         "type": "hospitalaria"
       },
       {
         "clinic_id": "cl-puerto-montt",
         "clinic_name": "Clínica Puerto Montt Achs Salud",
-        "percentage": 0,
+        "percentage": 40,
         "type": "hospitalaria"
       },
       {
         "clinic_id": "cl-andes-salud-puerto-montt",
         "clinic_name": "Clínica Andes Salud Puerto Montt",
-        "percentage": 0,
+        "percentage": 40,
         "type": "hospitalaria"
       },
       {
         "clinic_id": "cl-davila",
         "clinic_name": "Clínica Dávila",
-        "percentage": 0,
+        "percentage": 40,
         "type": "hospitalaria"
       },
       {
         "clinic_id": "cl-davila-vespucio",
         "clinic_name": "Clínica Dávila Vespucio",
-        "percentage": 0,
+        "percentage": 40,
         "type": "hospitalaria"
       },
       {
         "clinic_id": "cl-redsalud-santiago",
         "clinic_name": "Clínica RedSalud Santiago",
-        "percentage": 0,
+        "percentage": 40,
         "type": "hospitalaria"
       },
       {
         "clinic_id": "cl-redsalud-providencia",
         "clinic_name": "Clínica RedSalud Providencia",
-        "percentage": 0,
+        "percentage": 40,
         "type": "hospitalaria"
       },
       {
