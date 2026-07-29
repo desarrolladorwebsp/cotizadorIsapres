@@ -100,11 +100,11 @@ export type PercentageTone = "hospital" | "ambulatory" | "neutral";
 
 export const percentageToneActiveClass: Record<PercentageTone, string> = {
   hospital:
-    "border-primary bg-primary/10 text-primary-dark ring-2 ring-primary/25",
+    "border-primary bg-primary/25 text-primary-dark font-semibold shadow-sm ring-2 ring-primary/40",
   ambulatory:
-    "border-secondary bg-secondary-muted text-secondary ring-2 ring-secondary/25",
+    "border-secondary bg-secondary/20 text-primary-dark font-semibold shadow-sm ring-2 ring-secondary/45",
   neutral:
-    "border-primary bg-primary/10 text-primary-dark ring-2 ring-primary/30",
+    "border-primary bg-primary/25 text-primary-dark font-semibold shadow-sm ring-2 ring-primary/45",
 };
 
 export type StatusBadgeTone =

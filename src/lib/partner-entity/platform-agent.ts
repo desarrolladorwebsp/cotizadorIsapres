@@ -1,6 +1,6 @@
 import type { PartnerEntityPublic, PartnerEntityTheme } from "@/types/partner-entity";
 import {
-  COTIZADOR_PREMIUM_LOGO_PATH,
+  COTIZADOR_PREMIUM_ICON_PATH,
   COTIZADOR_PREMIUM_PALETTE,
 } from "@/lib/partner-entity/cotizador-premium-palette";
 
@@ -15,7 +15,8 @@ export const PLATFORM_LANDING_PATH = "/inicio";
 
 export const PLATFORM_AGENT_WEBSITE = "https://cotizadorpremium.cl";
 
-export const PLATFORM_AGENT_LOGO_URL = COTIZADOR_PREMIUM_LOGO_PATH;
+/** Isotipo Premium — logo de menús / headers de plataforma. */
+export const PLATFORM_AGENT_LOGO_URL = COTIZADOR_PREMIUM_ICON_PATH;
 
 /**
  * Tema de marca Cotizador Premium — ver `cotizador-premium-palette.ts`.
@@ -37,6 +38,9 @@ export const COTIZADOR_PREMIUM_THEME: PartnerEntityTheme = {
   surfaceHover: COTIZADOR_PREMIUM_PALETTE.surfaceHover,
   criteriaSurface: COTIZADOR_PREMIUM_PALETTE.criteriaSurface,
   criteriaRing: COTIZADOR_PREMIUM_PALETTE.criteriaRing,
+  convenioAccent: COTIZADOR_PREMIUM_PALETTE.convenioAccent,
+  convenioAccentStrong: COTIZADOR_PREMIUM_PALETTE.convenioAccentStrong,
+  convenioAccentMuted: COTIZADOR_PREMIUM_PALETTE.convenioAccentMuted,
 };
 
 export function buildCotizadorPremiumPartnerRecord(): Omit<

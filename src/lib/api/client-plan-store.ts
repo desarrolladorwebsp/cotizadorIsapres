@@ -2,12 +2,14 @@ import { prisma } from "@/lib/prisma";
 import { ApiError } from "@/lib/api/api-error";
 import { logClientActivity } from "@/lib/api/client-activity-store";
 import { formatClientPlanLabel } from "@/lib/client-plan/format";
+import { advancePipelineStatus } from "@/lib/client-pipeline/constants";
 import {
   mapDbClientRecord,
   readClientOrThrow,
   type ClientRecordWithPlans,
 } from "@/lib/api/user-store";
 import type { ClientActivityActor } from "@/types/client-activity";
+import type { ClientPipelineStatus } from "@/types/client-pipeline";
 import type { UpdateClientAdvisedPlanInput } from "@/types/client-plan";
 import type { UserRecord } from "@/types/user";
 
@@ -82,9 +84,19 @@ export async function updateClientAdvisedPlan(
     resolvePlanLabel(nextPlanCode),
   ]);
 
+  const currentStatus = existing.pipelineStatus as ClientPipelineStatus;
+  const nextStatus = nextPlanCode
+    ? advancePipelineStatus(currentStatus, "PROPUESTA_ENVIADA")
+    : currentStatus;
+
   const user = await prisma.user.update({
     where: { id: userId },
-    data: { advisedPlanCode: nextPlanCode },
+    data: {
+      advisedPlanCode: nextPlanCode,
+      ...(nextStatus !== currentStatus
+        ? { pipelineStatus: nextStatus }
+        : {}),
+    },
     include: {
       assignedExecutive: {
         select: { id: true, fullName: true, email: true },

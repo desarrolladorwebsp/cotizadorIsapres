@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useState } from "react";
-import { touchTarget, ui } from "@/lib/ui-tokens";
+import { touchTarget } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 
 export interface ConfirmableFieldInputProps {
@@ -85,6 +85,7 @@ export function ConfirmableFieldInput({
           htmlFor={inputId}
           className={joinClasses(
             "text-xs font-semibold text-muted",
+            !compact && "text-sm",
             compact && "text-[11px]",
             labelClassName,
           )}
@@ -93,6 +94,7 @@ export function ConfirmableFieldInput({
         </label>
         {isCommitted || justConfirmed ? (
           <span
+            data-criteria-added
             className={joinClasses(
               "inline-flex items-center gap-1 text-[10px] font-semibold text-primary-dark",
               compact && "text-[9px]",
@@ -136,6 +138,7 @@ export function ConfirmableFieldInput({
           }}
           className={joinClasses(
             "h-11 min-w-0 flex-1 rounded-xl border-0 bg-white px-3 text-sm shadow-sm ring-1 ring-border/80 focus:ring-2 focus:ring-primary/40",
+            !compact && "h-12 text-base",
             isCommitted && "ring-primary/35",
             compact && "max-md:h-9 max-md:rounded-lg max-md:px-2.5 max-md:text-xs",
             inputClassName,
@@ -143,8 +146,10 @@ export function ConfirmableFieldInput({
         />
         {isCommitted ? (
           <span
+            data-criteria-committed-icon
             className={joinClasses(
               "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary-dark",
+              !compact && "h-12 w-12",
               compact && "max-md:h-9 max-md:w-9 max-md:rounded-lg",
             )}
             title="Dato agregado al cálculo"
@@ -165,14 +170,16 @@ export function ConfirmableFieldInput({
             type="button"
             onClick={handleConfirm}
             disabled={!canConfirm}
+            data-criteria-add
             aria-label={confirmLabel ?? `${actionLabel} ${label.toLowerCase()}`}
             className={joinClasses(
               touchTarget,
-              "h-11 shrink-0 rounded-xl px-3 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-45",
-              compact && "max-md:h-9 max-md:rounded-lg max-md:px-2.5 max-md:text-[11px]",
+              "h-11 shrink-0 rounded-full px-3.5 text-xs font-bold transition disabled:cursor-not-allowed",
+              !compact && "h-12 px-4 text-sm",
+              compact && "max-md:h-9 max-md:rounded-full max-md:px-2.5 max-md:text-[11px]",
               canConfirm
-                ? ui.cta
-                : joinClasses(ui.border, "bg-white text-muted"),
+                ? "bg-secondary text-primary-dark shadow-sm hover:brightness-105"
+                : "border border-white/50 bg-white/70 text-primary-dark",
             )}
           >
             {actionLabel}

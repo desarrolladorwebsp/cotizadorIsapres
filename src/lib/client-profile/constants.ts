@@ -3,6 +3,12 @@ import type {
   ClientExecutiveProfile,
   ClientProfileInput,
 } from "@/types/client-profile";
+import {
+  assertClientManagementRuts,
+  formatOptionalClientRut,
+  type ClientManagementRutOptions,
+} from "@/lib/client-profile/validate-client-ruts";
+import { formatRut } from "@/lib/auth/rut";
 
 export const MARITAL_STATUS_OPTIONS = [
   "Soltero/a",
@@ -121,6 +127,7 @@ export function buildFullName(firstNames: string, lastNames: string): string {
 
 export function normalizeClientProfileInput(
   input: ClientProfileInput,
+  options: ClientManagementRutOptions = { requireTitularRut: false },
 ): {
   email: string;
   phone: string | null;
@@ -141,18 +148,29 @@ export function normalizeClientProfileInput(
     throw new Error("Indica el correo electrónico del titular.");
   }
 
-  const dependents = (input.dependents ?? []).map((dependent) => ({
-    id: dependent.id || buildEmptyDependent().id,
-    rut: dependent.rut.trim(),
-    birthDate: dependent.birthDate.trim(),
-    heightCm: dependent.heightCm.trim(),
-    weightKg: dependent.weightKg.trim(),
-  }));
+  assertClientManagementRuts(
+    {
+      rut: input.rut,
+      dependents: input.dependents,
+    },
+    options,
+  );
+
+  const dependents = (input.dependents ?? []).map((dependent) => {
+    const rutRaw = dependent.rut.trim();
+    return {
+      id: dependent.id || buildEmptyDependent().id,
+      rut: rutRaw ? formatRut(rutRaw) : "",
+      birthDate: dependent.birthDate.trim(),
+      heightCm: dependent.heightCm.trim(),
+      weightKg: dependent.weightKg.trim(),
+    };
+  });
 
   return {
     email,
     phone: input.phone?.trim() || null,
-    rut: input.rut?.trim() || null,
+    rut: formatOptionalClientRut(input.rut),
     fullName,
     profile: {
       firstNames,

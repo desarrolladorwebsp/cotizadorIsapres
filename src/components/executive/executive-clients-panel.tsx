@@ -6,9 +6,9 @@ import { Input } from "@/components/ui/input";
 import {
   IconSettings,
   IconUserPlus,
+  IconUsers,
   IconWhatsApp,
 } from "@/components/executive/executive-icons";
-import { executiveLeadBannerClass } from "@/lib/executive/action-styles";
 import {
   AdminPanel,
   AdminPanelHeader,
@@ -22,6 +22,7 @@ import {
   AdminTableRow,
   AdminRowActions,
   AdminToolbar,
+  AdminFormModal,
   TableCellStack,
 } from "@/components/admin/admin-data-table";
 import {
@@ -35,11 +36,13 @@ import { ClientPipelineDrawer } from "@/components/executive/client-pipeline-dra
 import { ClientPipelineStatusBadge } from "@/components/executive/client-pipeline-status-badge";
 import { ClientPlanSummary } from "@/components/executive/client-plan-summary";
 import { ClientOriginBadge } from "@/components/executive/client-origin-badge";
+import { ClientContactMethodBadge } from "@/components/executive/client-contact-method-badge";
+import { ClientRutCell } from "@/components/executive/client-rut-cell";
 import { CotizadorSourceBadge } from "@/components/executive/cotizador-source-badge";
 import { CreateClientModal } from "@/components/executive/create-client-modal";
 import { buildClientWhatsAppMessage } from "@/lib/client-pipeline/constants";
 import { buildWhatsAppUrl } from "@/lib/partner-entity/theme";
-import { ui } from "@/lib/ui-tokens";
+import { touchTarget, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type { StaffAccountRecord } from "@/types/staff-account";
 import type { UserRecord } from "@/types/user";
@@ -55,6 +58,17 @@ function formatDate(value: string): string {
   }).format(new Date(value));
 }
 
+function formatNextCallAt(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return new Intl.DateTimeFormat("es-CL", {
+    timeZone: "America/Santiago",
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(date);
+}
+
 export function ExecutiveClientsPanel({
   onNotify,
 }: ExecutiveClientsPanelProps) {
@@ -67,6 +81,10 @@ export function ExecutiveClientsPanel({
   const [distributing, setDistributing] = useState(false);
   const [pipelineClient, setPipelineClient] = useState<UserRecord | null>(null);
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [pendingExecutiveByClientId, setPendingExecutiveByClientId] = useState<
+    Record<string, string>
+  >({});
+  const [distributeConfirmOpen, setDistributeConfirmOpen] = useState(false);
 
   async function loadClients() {
     setLoading(true);
@@ -115,11 +133,6 @@ export function ExecutiveClientsPanel({
     [clients],
   );
 
-  const assignedLeadCount = useMemo(
-    () => clients.filter((client) => client.clientOrigin === "COTIZADOR").length,
-    [clients],
-  );
-
   async function handleAssignExecutive(
     client: UserRecord,
     executiveAccountId: string | null,
@@ -130,6 +143,11 @@ export function ExecutiveClientsPanel({
       setClients((current) =>
         current.map((row) => (row.id === updated.id ? updated : row)),
       );
+      setPendingExecutiveByClientId((current) => {
+        const next = { ...current };
+        delete next[client.id];
+        return next;
+      });
       onNotify(
         executiveAccountId
           ? `Cliente asignado a ${updated.assignedExecutiveName ?? "ejecutivo"}.`
@@ -147,11 +165,35 @@ export function ExecutiveClientsPanel({
     }
   }
 
+  function handlePendingExecutiveChange(clientId: string, executiveAccountId: string) {
+    setPendingExecutiveByClientId((current) => ({
+      ...current,
+      [clientId]: executiveAccountId,
+    }));
+  }
+
+  function cancelPendingExecutiveChange(clientId: string) {
+    setPendingExecutiveByClientId((current) => {
+      const next = { ...current };
+      delete next[clientId];
+      return next;
+    });
+  }
+
+  function resolveExecutiveLabel(executiveAccountId: string): string {
+    if (!executiveAccountId) return "Sin asignar";
+    return (
+      executives.find((executive) => executive.id === executiveAccountId)?.fullName ??
+      "el ejecutivo seleccionado"
+    );
+  }
+
   async function handleDistributeUnassigned() {
     setDistributing(true);
     try {
       const result = await distributeUnassignedClients();
       onNotify(result.message, result.assigned > 0 ? "success" : "error");
+      setDistributeConfirmOpen(false);
       await loadClients();
     } catch (error) {
       onNotify(
@@ -169,43 +211,62 @@ export function ExecutiveClientsPanel({
     <AdminPanel>
       <AdminPanelHeader
         title="Clientes"
-        description={
-          isAdmin
-            ? "Cartera completa del cotizador: leads del cotizador y registros manuales de ejecutivos."
-            : "Tu cartera de clientes: agrega personas que captaste por tu cuenta y gestiona los leads que te asignen."
-        }
+        compactMobile
         actions={
           <>
-            <AdminRefreshButton onClick={() => void loadClients()} />
-            <Button size="sm" variant="success" onClick={() => setCreateModalOpen(true)}>
-              <IconUserPlus className="mr-1.5 size-4" />
-              Agregar cliente
+            <AdminRefreshButton
+              compactMobile
+              onClick={() => void loadClients()}
+            />
+            <Button
+              size="sm"
+              variant="success"
+              onClick={() => setCreateModalOpen(true)}
+              aria-label="Agregar cliente"
+              title="Agregar cliente"
+              className={joinClasses(
+                touchTarget,
+                "px-0 sm:h-9 sm:min-h-9 sm:min-w-0 sm:px-3",
+              )}
+            >
+              <IconUserPlus className="size-4 sm:mr-1.5" />
+              <span className="hidden sm:inline">Agregar cliente</span>
             </Button>
             {isAdmin && unassignedCount > 0 ? (
               <Button
                 size="sm"
                 variant="warning"
                 disabled={distributing}
-                onClick={() => void handleDistributeUnassigned()}
+                onClick={() => setDistributeConfirmOpen(true)}
+                aria-label={
+                  distributing
+                    ? "Asignando pendientes"
+                    : `Asignar pendientes (${unassignedCount})`
+                }
+                title={
+                  distributing
+                    ? "Asignando…"
+                    : `Asignar pendientes (${unassignedCount})`
+                }
+                className={joinClasses(
+                  touchTarget,
+                  "relative px-0 sm:h-9 sm:min-h-9 sm:min-w-0 sm:px-3",
+                )}
               >
-                {distributing
-                  ? "Asignando…"
-                  : `Asignar pendientes (${unassignedCount})`}
+                <IconUsers className="size-4 sm:mr-1.5" />
+                <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-700 px-1 text-[10px] font-bold text-white sm:hidden">
+                  {unassignedCount}
+                </span>
+                <span className="hidden sm:inline">
+                  {distributing
+                    ? "Asignando…"
+                    : `Asignar pendientes (${unassignedCount})`}
+                </span>
               </Button>
             ) : null}
           </>
         }
       />
-
-      {!isAdmin && assignedLeadCount > 0 ? (
-        <p className={executiveLeadBannerClass()}>
-          Tienes{" "}
-          <span className="font-semibold">{assignedLeadCount}</span>{" "}
-          {assignedLeadCount === 1 ? "lead del cotizador" : "leads del cotizador"}{" "}
-          en tu cartera. El color de la etiqueta indica desde qué
-          cotizador provienen.
-        </p>
-      ) : null}
 
       <AdminToolbar>
         <Input
@@ -255,6 +316,14 @@ export function ExecutiveClientsPanel({
                       {client.fullName}
                     </p>
                     <ClientPipelineStatusBadge status={client.pipelineStatus} />
+                    <ClientContactMethodBadge
+                      method={client.preferredContactMethod}
+                    />
+                    {formatNextCallAt(client.nextCallAt) ? (
+                      <p className="text-[11px] leading-tight text-primary-dark">
+                        Próximo llamado: {formatNextCallAt(client.nextCallAt)}
+                      </p>
+                    ) : null}
                   </TableCellStack>
                 </AdminTableCell>
                 <AdminTableCell className="whitespace-nowrap">
@@ -289,36 +358,82 @@ export function ExecutiveClientsPanel({
                   </TableCellStack>
                 </AdminTableCell>
                 <AdminTableCell className="whitespace-nowrap">
-                  <TableCellStack>
-                    <span className="font-mono text-sm tabular-nums">
-                      {client.rut ?? "—"}
-                    </span>
-                  </TableCellStack>
+                  <ClientRutCell rut={client.rut} />
                 </AdminTableCell>
                 {isAdmin ? (
                   <AdminTableCell className="min-w-[11rem]">
-                    <TableCellStack>
-                      <select
-                        value={client.assignedExecutiveId ?? ""}
-                        disabled={savingId === client.id}
-                        onChange={(event) => {
-                          const value = event.target.value;
-                          void handleAssignExecutive(client, value || null);
-                        }}
-                        className={joinClasses(
-                          "h-9 w-full min-w-[10rem] rounded-lg px-2 text-sm",
-                          ui.input,
-                        )}
-                        aria-label={`Asignar ejecutivo a ${client.fullName}`}
-                      >
-                        <option value="">Sin asignar</option>
-                        {executives.map((executive) => (
-                          <option key={executive.id} value={executive.id}>
-                            {executive.fullName}
-                          </option>
-                        ))}
-                      </select>
-                    </TableCellStack>
+                    {(() => {
+                      const currentExecutiveId = client.assignedExecutiveId ?? "";
+                      const selectedExecutiveId =
+                        pendingExecutiveByClientId[client.id] ?? currentExecutiveId;
+                      const hasPendingChange =
+                        selectedExecutiveId !== currentExecutiveId;
+
+                      return (
+                        <TableCellStack className="gap-2">
+                          <select
+                            value={selectedExecutiveId}
+                            disabled={savingId === client.id}
+                            onChange={(event) => {
+                              handlePendingExecutiveChange(
+                                client.id,
+                                event.target.value,
+                              );
+                            }}
+                            className={joinClasses(
+                              "h-9 w-full min-w-[10rem] rounded-lg px-2 text-sm",
+                              ui.input,
+                              hasPendingChange ? "ring-2 ring-primary/25" : "",
+                            )}
+                            aria-label={`Asignar ejecutivo a ${client.fullName}`}
+                          >
+                            <option value="">Sin asignar</option>
+                            {executives.map((executive) => (
+                              <option key={executive.id} value={executive.id}>
+                                {executive.fullName}
+                              </option>
+                            ))}
+                          </select>
+
+                          {hasPendingChange ? (
+                            <div className="space-y-2 rounded-lg border border-primary/20 bg-primary/5 p-2.5">
+                              <p className="text-[11px] leading-snug text-muted">
+                                {selectedExecutiveId
+                                  ? `¿Confirmas asignar a ${client.fullName} al ejecutivo ${resolveExecutiveLabel(selectedExecutiveId)}?`
+                                  : `¿Confirmas dejar a ${client.fullName} sin ejecutivo asignado?`}
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="primary"
+                                  disabled={savingId === client.id}
+                                  onClick={() => {
+                                    void handleAssignExecutive(
+                                      client,
+                                      selectedExecutiveId || null,
+                                    );
+                                  }}
+                                >
+                                  Confirmar
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="ghost"
+                                  disabled={savingId === client.id}
+                                  onClick={() =>
+                                    cancelPendingExecutiveChange(client.id)
+                                  }
+                                >
+                                  Cancelar
+                                </Button>
+                              </div>
+                            </div>
+                          ) : null}
+                        </TableCellStack>
+                      );
+                    })()}
                   </AdminTableCell>
                 ) : null}
                 <AdminTableCell className="whitespace-nowrap">
@@ -366,6 +481,32 @@ export function ExecutiveClientsPanel({
         </AdminTable>
       </AdminTableCard>
 
+      <AdminFormModal
+        open={distributeConfirmOpen}
+        title="Asignar clientes pendientes"
+        description={`¿Confirmas asignar automáticamente ${unassignedCount} cliente${unassignedCount === 1 ? "" : "s"} sin ejecutivo (round-robin)?`}
+        onClose={() => setDistributeConfirmOpen(false)}
+        size="md"
+      >
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button
+            type="button"
+            variant="ghost"
+            disabled={distributing}
+            onClick={() => setDistributeConfirmOpen(false)}
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="button"
+            disabled={distributing}
+            onClick={() => void handleDistributeUnassigned()}
+          >
+            {distributing ? "Asignando…" : "Confirmar"}
+          </Button>
+        </div>
+      </AdminFormModal>
+
       <CreateClientModal
         open={createModalOpen}
         onClose={() => setCreateModalOpen(false)}
@@ -384,6 +525,19 @@ export function ExecutiveClientsPanel({
             current.map((row) => (row.id === updated.id ? updated : row)),
           );
           setPipelineClient(updated);
+        }}
+        onRedirected={(updated) => {
+          if (isAdmin) {
+            setClients((current) =>
+              current.map((row) => (row.id === updated.id ? updated : row)),
+            );
+            setPipelineClient(updated);
+            return;
+          }
+          setClients((current) =>
+            current.filter((row) => row.id !== updated.id),
+          );
+          setPipelineClient(null);
         }}
         onNotify={onNotify}
       />

@@ -12,7 +12,12 @@ import { requireAdminSession } from "@/lib/auth/require-auth";
 import { resendStaffInviteForEmail } from "@/lib/auth/staff-invite-store";
 import { sendStaffActivationEmail } from "@/lib/email/send-staff-invite";
 import { prisma } from "@/lib/prisma";
-import type { StaffRealm, UpdateStaffAccountInput } from "@/types/staff-account";
+import type {
+  ExecutiveKind,
+  StaffRealm,
+  UpdateStaffAccountInput,
+} from "@/types/staff-account";
+import { isExecutiveKind } from "@/types/staff-account";
 import type { SubscriptionStatus } from "@prisma/client";
 
 interface RouteContext {
@@ -48,7 +53,8 @@ function isValidUpdateInput(payload: unknown): payload is UpdateStaffAccountInpu
       (typeof data.subscriptionStatus === "string" &&
         SUBSCRIPTION_STATUSES.has(data.subscriptionStatus as SubscriptionStatus))) &&
     (data.assignmentsSuspended === undefined ||
-      typeof data.assignmentsSuspended === "boolean")
+      typeof data.assignmentsSuspended === "boolean") &&
+    (data.executiveKind === undefined || isExecutiveKind(data.executiveKind))
   );
 }
 
@@ -70,6 +76,13 @@ export async function PATCH(request: Request, context: RouteContext) {
     if (!isValidUpdateInput(payload)) {
       return NextResponse.json(
         { error: "Datos de actualización inválidos." },
+        { status: 400 },
+      );
+    }
+
+    if (payload.executiveKind !== undefined && realm !== "executive") {
+      return NextResponse.json(
+        { error: "Solo se puede cambiar el tipo de rol en cuentas ejecutivas." },
         { status: 400 },
       );
     }
@@ -137,10 +150,18 @@ export async function POST(request: Request, context: RouteContext) {
         return NextResponse.json({ error: "Invitación inválida." }, { status: 400 });
       }
 
+      const executiveKind: ExecutiveKind | null =
+        invite.realm === "executive"
+          ? (invite.executiveKind && isExecutiveKind(invite.executiveKind)
+              ? invite.executiveKind
+              : "ISAPRES_PREMIUM")
+          : null;
+
       const admin = await readAdminById(session.sub);
       const { token } = await resendStaffInviteForEmail({
         email: invite.email,
         realm: invite.realm,
+        executiveKind,
         rut: invite.rut ?? undefined,
         invitedByAdminId: admin?.id,
       });
@@ -148,6 +169,7 @@ export async function POST(request: Request, context: RouteContext) {
       await sendStaffActivationEmail({
         email: invite.email,
         realm: invite.realm,
+        executiveKind,
         activationToken: token,
         rut: invite.rut,
         request,

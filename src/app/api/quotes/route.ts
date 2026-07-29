@@ -5,9 +5,11 @@ import {
   requireExecutiveOrAdminSession,
 } from "@/lib/auth/require-auth";
 import { AUTH_REALM } from "@/lib/auth/constants";
+import { assertStaffCanAccessSection } from "@/lib/auth/staff-role";
 import { apiErrorResponse } from "@/lib/api/api-error";
 import { createQuote } from "@/lib/api/quote-store";
 import { enforcePublicPostGuard } from "@/lib/security/public-post-guard";
+import type { ExecutiveSessionUser } from "@/lib/auth/types";
 
 function isValidCreateQuoteInput(payload: unknown): payload is CreateQuoteInput {
   if (!payload || typeof payload !== "object") return false;
@@ -27,6 +29,17 @@ function isValidCreateQuoteInput(payload: unknown): payload is CreateQuoteInput 
 export async function GET(request: Request) {
   try {
     const { realm, user } = await requireExecutiveOrAdminSession(request);
+
+    assertStaffCanAccessSection(
+      {
+        realm,
+        executiveKind:
+          realm === AUTH_REALM.executive
+            ? (user as ExecutiveSessionUser).executiveKind
+            : null,
+      },
+      "cotizaciones",
+    );
 
     const quotes =
       realm === AUTH_REALM.admin

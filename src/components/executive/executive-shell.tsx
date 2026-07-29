@@ -8,9 +8,8 @@ import {
 } from "@/components/executive/executive-mobile-nav-drawer";
 import { LandingLogo } from "@/components/platform/landing/landing-logo";
 import { useStaffSession } from "@/hooks/use-auth-session";
+import { getStaffRoleLabel } from "@/lib/auth/staff-role";
 import {
-  STAFF_ADMIN_SECTIONS,
-  STAFF_BASE_SECTIONS,
   type StaffSection,
 } from "@/lib/staff/staff-sections";
 import {
@@ -21,6 +20,7 @@ import {
   touchTarget,
 } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
+import type { ExecutiveSessionUser } from "@/lib/auth/types";
 
 export type ExecutiveSection = StaffSection;
 
@@ -29,6 +29,7 @@ const SECTION_LABELS: Record<
   { label: string; shortLabel: string; adminOnly?: boolean }
 > = {
   inicio: { label: "Inicio", shortLabel: "Inicio" },
+  calendario: { label: "Calendario", shortLabel: "Calend." },
   cotizador: { label: "Cotizador", shortLabel: "Cotiz." },
   clientes: { label: "Clientes", shortLabel: "Clientes" },
   cotizaciones: { label: "Cotizaciones", shortLabel: "Leads" },
@@ -72,6 +73,12 @@ const SECTION_ICONS: Record<StaffSection, ReactNode> = {
   inicio: (
     <NavIcon>
       <path d="M4 10.5L12 4l8 6.5V20a1 1 0 01-1 1h-5v-6H10v6H5a1 1 0 01-1-1v-9.5z" strokeLinecap="round" strokeLinejoin="round" />
+    </NavIcon>
+  ),
+  calendario: (
+    <NavIcon>
+      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <path d="M3 10h18M8 3v4M16 3v4" strokeLinecap="round" />
     </NavIcon>
   ),
   cotizador: (
@@ -143,26 +150,22 @@ const SECTION_ICONS: Record<StaffSection, ReactNode> = {
 export interface ExecutiveShellProps {
   activeSection: ExecutiveSection;
   onSectionChange: (section: ExecutiveSection) => void;
-  hasAdminAccess?: boolean;
+  /** Secciones permitidas para la sesión actual. */
+  allowedSections: StaffSection[];
   children: React.ReactNode;
 }
 
 export function ExecutiveShell({
   activeSection,
   onSectionChange,
-  hasAdminAccess = false,
+  allowedSections,
   children,
 }: ExecutiveShellProps) {
-  const { user: staffUser, isAdmin } = useStaffSession();
+  const { user: staffUser, isAdmin, realm, executiveKind } = useStaffSession();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const isFullBleed = activeSection === "cotizador";
-  const showAdminAccess = hasAdminAccess || isAdmin;
 
-  const navSections: StaffSection[] = showAdminAccess
-    ? [...STAFF_BASE_SECTIONS, ...STAFF_ADMIN_SECTIONS]
-    : STAFF_BASE_SECTIONS;
-
-  const navItems = navSections.map((id) => ({
+  const navItems = allowedSections.map((id) => ({
     id,
     ...SECTION_LABELS[id],
   }));
@@ -172,7 +175,14 @@ export function ExecutiveShell({
     [activeSection, navItems],
   );
 
-  const userSubtitle = isAdmin ? "Administrador" : "Ejecutivo comercial";
+  const userSubtitle = getStaffRoleLabel({
+    realm: realm ?? (isAdmin ? "admin" : "executive"),
+    executiveKind:
+      executiveKind ??
+      (staffUser && "executiveKind" in staffUser
+        ? (staffUser as ExecutiveSessionUser).executiveKind
+        : null),
+  });
 
   return (
     <div className={joinClasses(appShellRoot, "min-h-screen bg-bg-layout")}>
@@ -181,7 +191,6 @@ export function ExecutiveShell({
           <div className="flex shrink-0 items-center gap-2.5 sm:gap-3">
             <LandingLogo
               size="lg"
-              variant="logo"
               className="premium-executive-logo"
             />
             <p className="truncate text-xs font-semibold text-white/80 lg:hidden">

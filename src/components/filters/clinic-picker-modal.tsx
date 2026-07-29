@@ -222,7 +222,7 @@ export function ClinicPickerModal({
                       ui.borderHairline,
                       "hover:border-primary hover:shadow-sm hover:ring-2 hover:ring-primary/20",
                       isSelected &&
-                        "border-primary bg-primary/5 font-semibold text-primary-dark ring-2 ring-primary/30",
+                        "border-primary bg-primary/20 font-semibold text-primary-dark ring-2 ring-primary/40 shadow-sm",
                     )}
                   >
                     <span className="absolute right-1.5 top-1 text-[10px] tabular-nums text-muted/45">

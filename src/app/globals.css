@@ -60,6 +60,11 @@
   --criteria-surface: #fff8e8;
   --criteria-ring: #f0e4c8;
 
+  /* Convenio — fallback coral (marcas naranja / prueba de contraste) */
+  --convenio-accent: #d85a30;
+  --convenio-accent-strong: #ff6b4a;
+  --convenio-accent-muted: #fce8e0;
+
   /* Espaciado base 8pt */
   --space-1: 0.25rem;
   --space-2: 0.5rem;
@@ -172,8 +177,179 @@
     0 4px 14px -4px rgb(13 109 238 / 0.14),
     0 16px 40px -10px rgb(13 109 238 / 0.18);
 
-  --criteria-surface: #eaf3fa;
-  --criteria-ring: #bddcf0;
+  --criteria-surface: #0d6dee;
+  --criteria-ring: #0956c4;
+
+  /* Convenio: coral sobre azul primary de la barra de criterios */
+  --convenio-accent: #d85a30;
+  --convenio-accent-strong: #ff6b4a;
+  --convenio-accent-muted: #fce8e0;
+}
+
+/* Barra de criterios Premium: fondo = primary; tipografía e iconos claros */
+[data-brand="premium"] [data-criteria-bar] {
+  color: #ffffff;
+  --criteria-on-surface: #ffffff;
+  --criteria-on-surface-muted: rgb(255 255 255 / 0.9);
+  /* Coral claro legible sobre azul (el #D85A30 sólido no contrasta) */
+  --convenio-accent: #ffd2c2;
+  --convenio-accent-strong: #ff6b4a;
+  --convenio-accent-muted: rgb(255 255 255 / 0.18);
+}
+
+[data-brand="premium"] [data-criteria-bar] label,
+[data-brand="premium"] [data-criteria-bar] .text-muted,
+[data-brand="premium"] [data-criteria-bar] [data-criteria-added] {
+  color: var(--criteria-on-surface-muted) !important;
+}
+
+/* «Agregar / Actualizar»: cyan de marca — se lee como botón, no se confunde con el CTA */
+[data-brand="premium"] [data-criteria-bar] [data-criteria-add] {
+  background-color: #1ac9ea !important;
+  color: #092558 !important;
+  border: none !important;
+  border-radius: 9999px !important;
+  font-weight: 700 !important;
+  padding-inline: 0.9rem !important;
+  box-shadow:
+    0 2px 0 rgb(9 37 88 / 0.12),
+    0 6px 16px -6px rgb(26 201 234 / 0.65);
+  opacity: 1 !important;
+}
+
+[data-brand="premium"] [data-criteria-bar] [data-criteria-add]:disabled {
+  background-color: rgb(26 201 234 / 0.45) !important;
+  color: #092558 !important;
+  box-shadow: none;
+  opacity: 1 !important;
+  cursor: not-allowed;
+}
+
+[data-brand="premium"] [data-criteria-bar] [data-criteria-add]:not(:disabled):hover {
+  background-color: #3dd4f0 !important;
+  color: #092558 !important;
+  filter: none;
+}
+
+[data-brand="premium"] [data-criteria-bar] [data-criteria-add]:not(:disabled):active {
+  transform: scale(0.98);
+}
+
+[data-brand="premium"] [data-criteria-bar] [data-criteria-committed-icon] {
+  background-color: rgb(255 255 255 / 0.22) !important;
+  color: #ffffff !important;
+}
+
+/* CTA principal «Buscar plan»: máximo contraste y peso visual sobre el card */
+[data-brand="premium"] [data-criteria-bar] [data-criteria-cta] {
+  background-color: #ff6b4a !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.01em;
+  border: 2px solid rgb(255 255 255 / 0.85) !important;
+  box-shadow:
+    0 4px 0 rgb(9 37 88 / 0.18),
+    0 12px 32px -8px rgb(255 107 74 / 0.75),
+    0 0 0 4px rgb(255 255 255 / 0.2);
+  transform: translateY(0);
+}
+
+[data-brand="premium"] [data-criteria-bar] [data-criteria-cta]:hover {
+  background-color: #ff7d60 !important;
+  color: #ffffff !important;
+  filter: none;
+  box-shadow:
+    0 5px 0 rgb(9 37 88 / 0.16),
+    0 16px 36px -8px rgb(255 107 74 / 0.85),
+    0 0 0 4px rgb(255 255 255 / 0.28);
+}
+
+[data-brand="premium"] [data-criteria-bar] [data-criteria-cta]:active {
+  transform: translateY(1px) scale(0.99);
+}
+
+[data-brand="premium"] [data-criteria-bar] [data-criteria-secondary] {
+  color: #092558 !important;
+  border: 1.5px solid rgb(255 255 255 / 0.85) !important;
+  background-color: #ffffff !important;
+  font-weight: 700 !important;
+  border-radius: 9999px;
+  box-shadow: 0 4px 14px -6px rgb(9 37 88 / 0.28);
+}
+
+[data-brand="premium"] [data-criteria-bar] [data-criteria-secondary]:hover {
+  background-color: #eaf3fa !important;
+  border-color: #ffffff !important;
+  color: #092558 !important;
+}
+
+[data-brand="premium"] [data-criteria-bar] [data-criteria-loads] {
+  border-color: rgb(255 255 255 / 0.55);
+  background-color: rgb(255 255 255 / 0.95);
+  color: var(--primary-dark);
+}
+
+[data-brand="premium"] [data-criteria-bar] [data-criteria-loads]:hover {
+  background-color: #ffffff;
+}
+
+/* Convenio sobre fondo primary: acento claro + CTA coral relleno */
+[data-brand="premium"] [data-convenio-inline] {
+  border-color: rgb(255 255 255 / 0.35) !important;
+}
+
+[data-brand="premium"] [data-convenio-title],
+[data-brand="premium"] [data-convenio-toggle],
+[data-brand="premium"] [data-convenio-info] {
+  color: #ffd2c2 !important;
+}
+
+[data-brand="premium"] [data-convenio-info] {
+  border-color: rgb(255 210 194 / 0.55) !important;
+  background-color: rgb(255 255 255 / 0.12);
+}
+
+[data-brand="premium"] [data-convenio-info]:hover {
+  background-color: rgb(255 255 255 / 0.22) !important;
+  color: #ffffff !important;
+}
+
+[data-brand="premium"] [data-convenio-hint] {
+  color: rgb(255 255 255 / 0.78) !important;
+}
+
+[data-brand="premium"] [data-convenio-field-label] {
+  color: rgb(255 255 255 / 0.9) !important;
+}
+
+[data-brand="premium"] [data-convenio-cta] {
+  background-color: #ff6b4a !important;
+  color: #ffffff !important;
+}
+
+[data-brand="premium"] [data-convenio-cta]:hover {
+  background-color: #ff6b4a !important;
+  filter: brightness(0.95);
+  color: #ffffff !important;
+}
+
+[data-brand="isapre-premium"] {
+  --primary: #6cc24a;
+  --primary-hover: #5ab83d;
+  --primary-dark: #1f8f84;
+  --primary-foreground: #ffffff;
+  --secondary: #2eaea0;
+  --secondary-muted: #e8f7f5;
+  --bg-layout: #ffffff;
+  --foreground: #1a2e2b;
+  --muted: #5c6b68;
+  --border: #d4ebe8;
+  --surface-hover: #f0faf8;
+  --criteria-surface: #f4fbf9;
+  --criteria-ring: #c5e8e3;
+  --convenio-accent: #1f8f84;
+  --convenio-accent-strong: #6cc24a;
+  --convenio-accent-muted: #e8f7f5;
 }
 
 @theme inline {

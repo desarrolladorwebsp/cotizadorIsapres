@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { horizontalScrollRail, ui } from "@/lib/ui-tokens";
+import { horizontalScrollRail, touchTarget, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 
 export function AdminPanel({ children, className }: { children: ReactNode; className?: string }) {
@@ -13,20 +13,45 @@ export function AdminPanelHeader({
   title,
   description,
   actions,
+  compactMobile = false,
 }: {
   title: string;
   description?: string;
   actions?: ReactNode;
+  /** Título e acciones en una sola fila en mobile (izq / der). */
+  compactMobile?: boolean;
 }) {
   return (
-    <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-      <div>
+    <div
+      className={
+        compactMobile
+          ? "flex items-center justify-between gap-2 lg:items-end"
+          : "flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"
+      }
+    >
+      <div className={compactMobile ? "min-w-0" : undefined}>
         <h2 className="text-xl font-bold text-primary-dark">{title}</h2>
         {description ? (
-          <p className="mt-1 max-w-3xl text-sm text-muted">{description}</p>
+          <p
+            className={joinClasses(
+              "mt-1 max-w-3xl text-sm text-muted",
+              compactMobile && "hidden lg:block",
+            )}
+          >
+            {description}
+          </p>
         ) : null}
       </div>
-      {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
+      {actions ? (
+        <div
+          className={joinClasses(
+            "flex gap-2",
+            compactMobile ? "shrink-0 flex-nowrap" : "flex-wrap",
+          )}
+        >
+          {actions}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -257,13 +282,46 @@ export function AdminRowActions({
 export function AdminRefreshButton({
   onClick,
   label = "Actualizar",
+  compactMobile = false,
 }: {
   onClick: () => void;
   label?: string;
+  /** En mobile solo ícono; desde `sm` ícono + texto. */
+  compactMobile?: boolean;
 }) {
+  if (!compactMobile) {
+    return (
+      <Button type="button" variant="ghost" size="sm" onClick={onClick}>
+        {label}
+      </Button>
+    );
+  }
+
   return (
-    <Button type="button" variant="ghost" size="sm" onClick={onClick}>
-      {label}
+    <Button
+      type="button"
+      variant="ghost"
+      size="sm"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      className={joinClasses(touchTarget, "px-0 sm:h-9 sm:min-h-9 sm:min-w-0 sm:px-3")}
+    >
+      <svg
+        viewBox="0 0 24 24"
+        className="size-4 sm:mr-1.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        aria-hidden
+      >
+        <path
+          d="M21 12a9 9 0 11-2.64-6.36M21 3v6h-6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+      <span className="hidden sm:inline">{label}</span>
     </Button>
   );
 }

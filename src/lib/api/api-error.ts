@@ -77,7 +77,13 @@ export function toApiError(error: unknown): ApiError {
       detail.includes("pipelineStatus") ||
       detail.includes("pipelineChecklist") ||
       detail.includes("pipelineClosedRecord") ||
-      detail.includes("pipelineNotes")
+      detail.includes("pipelineNotes") ||
+      detail.includes("assignedExecutiveId") ||
+      detail.includes("preferredContactMethod") ||
+      detail.includes("lastCallOutcome") ||
+      detail.includes("nextCallAt") ||
+      detail.includes("clientOrigin") ||
+      detail.includes("Unknown argument")
     ) {
       return new ApiError(
         "El servidor está usando una versión desactualizada de la base de datos. Reinicia con `npm run dev`.",

@@ -11,14 +11,27 @@ import {
 } from "@/lib/api/api-error";
 import { requireExecutiveOrAdminSession } from "@/lib/auth/require-auth";
 import { AUTH_REALM } from "@/lib/auth/constants";
+import { assertStaffCanAccessSection } from "@/lib/auth/staff-role";
 import { parseExecutiveSharePlansEmailInput } from "@/lib/email/executive-share-plans-schema";
 import { sendExecutiveSharePlansEmail } from "@/lib/email/send-executive-share-plans";
+import type { ExecutiveSessionUser } from "@/lib/auth/types";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(request: Request) {
   try {
     const { realm, user } = await requireExecutiveOrAdminSession(request);
+
+    assertStaffCanAccessSection(
+      {
+        realm,
+        executiveKind:
+          realm === AUTH_REALM.executive
+            ? (user as ExecutiveSessionUser).executiveKind
+            : null,
+      },
+      "cotizador",
+    );
     const payload = await parseJsonBody(request);
     const input = parseExecutiveSharePlansEmailInput(payload);
 

@@ -59,7 +59,7 @@ export function ForgotPasswordForm() {
     <div className="landing-glass-panel-strong w-full max-w-md rounded-3xl border border-border/70 p-6 shadow-card sm:p-8">
       <div className="mb-8 text-center">
         <div className="mx-auto mb-4 flex justify-center">
-          <LandingLogo size="lg" variant="logo" transparent />
+          <LandingLogo size="lg" transparent />
         </div>
         <h1 className="landing-text-gradient text-2xl font-bold tracking-tight sm:text-[1.65rem]">
           Recuperar contraseña

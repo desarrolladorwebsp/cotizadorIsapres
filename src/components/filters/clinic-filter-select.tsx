@@ -94,9 +94,14 @@ export function ClinicFilterSelect({
         onClick={() => setModalOpen(true)}
         disabled={loading}
         className={joinClasses(
-          "flex w-full items-center gap-2 rounded-lg border border-border/70 bg-bg-layout/30 px-3 text-left transition",
+          "flex w-full items-center gap-2 rounded-lg border px-3 text-left transition",
           compactEmbed ? "min-h-10 py-2 text-xs" : "min-h-11 py-2.5 text-sm",
-          ui.hoverSurface,
+          hasSelection
+            ? "border-primary bg-primary/20 font-semibold text-primary-dark shadow-sm ring-2 ring-primary/35"
+            : joinClasses(
+                "border-border/70 bg-bg-layout/30",
+                ui.hoverSurface,
+              ),
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
           loading && "cursor-wait opacity-70",
         )}
@@ -109,7 +114,9 @@ export function ClinicFilterSelect({
         <span
           className={joinClasses(
             "min-w-0 flex-1 truncate",
-            hasSelection ? "font-medium text-foreground" : "text-muted",
+            hasSelection
+              ? "font-semibold text-primary-dark"
+              : "text-muted",
           )}
         >
           {loading

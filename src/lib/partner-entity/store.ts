@@ -14,7 +14,12 @@ import {
 import {
   PLATFORM_AGENT_KEY,
   PLATFORM_AGENT_LOGO_URL,
+  COTIZADOR_PREMIUM_THEME,
 } from "@/lib/partner-entity/platform-agent";
+import {
+  ISAPRE_PREMIUM_THEME,
+  isIsaprePremiumAgentKey,
+} from "@/lib/partner-entity/isapre-premium-agent";
 import { prisma } from "@/lib/prisma";
 import type {
   PartnerEntityPublic,
@@ -29,6 +34,26 @@ function parseTheme(raw: unknown): PartnerEntityTheme {
   }
 
   return raw as PartnerEntityTheme;
+}
+
+/** Tokens de marca canónicos en código (criterios / convenio) sobre theme de BD. */
+function resolvePublicTheme(entity: PartnerEntityRecord): PartnerEntityTheme {
+  const isPlatform =
+    entity.slug === PLATFORM_AGENT_KEY ||
+    entity.embedKey === PLATFORM_AGENT_KEY;
+
+  if (isPlatform) {
+    return { ...entity.theme, ...COTIZADOR_PREMIUM_THEME };
+  }
+
+  if (
+    isIsaprePremiumAgentKey(entity.slug) ||
+    isIsaprePremiumAgentKey(entity.embedKey)
+  ) {
+    return { ...entity.theme, ...ISAPRE_PREMIUM_THEME };
+  }
+
+  return entity.theme;
 }
 
 function mapDbPartnerEntity(entity: DbPartnerEntity): PartnerEntityRecord {
@@ -71,7 +96,10 @@ function resolvePublicLogoUrl(entity: PartnerEntityRecord): string {
   }
 
   const logo = entity.logoUrl?.trim() ?? "";
-  if (/\/images\/logo-cotizador-premium\.jpe?g$/i.test(logo)) {
+  if (
+    /\/images\/logo-cotizador-premium\.(jpe?g|png)$/i.test(logo) ||
+    /\/images\/icono-logo-cotizador-premium\.png$/i.test(logo)
+  ) {
     return PLATFORM_AGENT_LOGO_URL;
   }
 
@@ -91,7 +119,7 @@ export function toPublicPartnerEntity(
     whatsappMessage: entity.whatsappMessage,
     exitLabel: entity.exitLabel,
     brandKey: entity.brandKey,
-    theme: entity.theme,
+    theme: resolvePublicTheme(entity),
   };
 }
 

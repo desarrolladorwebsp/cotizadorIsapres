@@ -29,21 +29,76 @@ import {
   resendPendingStaffInvite,
   updateStaffAccount,
 } from "@/lib/api/admin-client";
+import { getStaffRoleLabel } from "@/lib/auth/staff-role";
 import { ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type {
+  ExecutiveKind,
   PendingStaffInviteRecord,
   StaffAccountRecord,
   StaffRealm,
 } from "@/types/staff-account";
 
-const ROLE_OPTIONS = [
-  { value: "executive", label: "Ejecutivo" },
-  { value: "admin", label: "Administrador" },
-] as const;
+type InviteRoleValue =
+  | "admin"
+  | "isapres_premium"
+  | "zoom"
+  | "isapres";
 
-function getRoleLabel(realm: StaffRealm): string {
-  return realm === "admin" ? "Administrador" : "Ejecutivo";
+const INVITE_ROLE_OPTIONS: Array<{ value: InviteRoleValue; label: string }> = [
+  { value: "admin", label: "Administrador" },
+  { value: "isapres_premium", label: "Ejecutivo Isapres Premium" },
+  { value: "zoom", label: "Ejecutivo Zoom" },
+  { value: "isapres", label: "Ejecutivo Isapres" },
+];
+
+const EXECUTIVE_KIND_OPTIONS: Array<{ value: ExecutiveKind; label: string }> = [
+  { value: "ISAPRES_PREMIUM", label: "Ejecutivo Isapres Premium" },
+  { value: "ZOOM", label: "Ejecutivo Zoom" },
+  { value: "ISAPRES", label: "Ejecutivo Isapres" },
+];
+
+function inviteRoleToCreateInput(value: InviteRoleValue): {
+  realm: StaffRealm;
+  executiveKind: ExecutiveKind | null;
+} {
+  switch (value) {
+    case "admin":
+      return { realm: "admin", executiveKind: null };
+    case "zoom":
+      return { realm: "executive", executiveKind: "ZOOM" };
+    case "isapres":
+      return { realm: "executive", executiveKind: "ISAPRES" };
+    case "isapres_premium":
+    default:
+      return { realm: "executive", executiveKind: "ISAPRES_PREMIUM" };
+  }
+}
+
+function inviteRoleDescription(value: InviteRoleValue): string {
+  switch (value) {
+    case "admin":
+      return "Acceso completo al panel, incluyendo configuración y usuarios.";
+    case "isapres_premium":
+      return "Dashboard, clientes asignados, cotizador y mapa de clínicas.";
+    case "zoom":
+    case "isapres":
+      return "Solo dashboard y clientes asignados.";
+  }
+}
+
+function getAccountRoleLabel(account: StaffAccountRecord): string {
+  return getStaffRoleLabel({
+    realm: account.realm,
+    executiveKind: account.executiveKind,
+  });
+}
+
+function getInviteRoleLabel(invite: PendingStaffInviteRecord): string {
+  return getStaffRoleLabel({
+    realm: invite.realm,
+    executiveKind: invite.executiveKind,
+  });
 }
 
 export interface UsersPanelProps {
@@ -99,11 +154,13 @@ export function UsersPanel({
   const [search, setSearch] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<StaffAccountRecord | null>(null);
+  const [roleTarget, setRoleTarget] = useState<StaffAccountRecord | null>(null);
+  const [roleDraft, setRoleDraft] = useState<ExecutiveKind>("ISAPRES_PREMIUM");
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState<{
     email: string;
-    realm: StaffRealm;
-  }>({ email: "", realm: "executive" });
+    role: InviteRoleValue;
+  }>({ email: "", role: "isapres_premium" });
 
   async function loadAccounts() {
     setLoading(true);
@@ -177,8 +234,13 @@ export function UsersPanel({
               row.account.email,
               row.account.phone,
               row.account.rut,
+              getAccountRoleLabel(row.account),
             ]
-          : [row.invite.email, row.invite.rut, getRoleLabel(row.invite.realm)];
+          : [
+              row.invite.email,
+              row.invite.rut,
+              getInviteRoleLabel(row.invite),
+            ];
 
       return values
         .filter(Boolean)
@@ -187,13 +249,18 @@ export function UsersPanel({
   }, [directoryRows, search]);
 
   function openModal() {
-    setDraft({ email: "", realm: "executive" });
+    setDraft({ email: "", role: "isapres_premium" });
     setModalOpen(true);
   }
 
+  function openRoleModal(account: StaffAccountRecord) {
+    setRoleTarget(account);
+    setRoleDraft(account.executiveKind ?? "ISAPRES_PREMIUM");
+  }
+
   const inviteRoleOptions = executivesOnly
-    ? ROLE_OPTIONS.filter((option) => option.value === "executive")
-    : [...ROLE_OPTIONS];
+    ? INVITE_ROLE_OPTIONS.filter((option) => option.value !== "admin")
+    : [...INVITE_ROLE_OPTIONS];
 
   const panelDescription = executivesOnly
     ? "Ejecutivos que reciben solicitudes de clientes. La invitación por correo es el único medio para crear un usuario en el sistema."
@@ -204,8 +271,10 @@ export function UsersPanel({
     setSaving(true);
 
     try {
+      const { realm, executiveKind } = inviteRoleToCreateInput(draft.role);
       const result = await createStaffAccount({
-        realm: draft.realm,
+        realm,
+        executiveKind,
         email: draft.email.trim(),
       });
 
@@ -222,6 +291,32 @@ export function UsersPanel({
     } catch (error) {
       onNotify(
         error instanceof Error ? error.message : "No se pudo enviar la invitación.",
+        "error",
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleChangeRole() {
+    if (!roleTarget || roleTarget.realm !== "executive") return;
+
+    setSaving(true);
+    try {
+      await updateStaffAccount(roleTarget.realm, roleTarget.id, {
+        executiveKind: roleDraft,
+      });
+      onNotify(
+        `Rol actualizado a ${getStaffRoleLabel({
+          realm: "executive",
+          executiveKind: roleDraft,
+        })}.`,
+      );
+      setRoleTarget(null);
+      await loadAccounts();
+    } catch (error) {
+      onNotify(
+        error instanceof Error ? error.message : "No se pudo cambiar el rol.",
         "error",
       );
     } finally {
@@ -389,7 +484,7 @@ export function UsersPanel({
                       </p>
                     </AdminTableCell>
                     <AdminTableCell>
-                      <AdminBadge tone="neutral">{getRoleLabel(invite.realm)}</AdminBadge>
+                      <AdminBadge tone="neutral">{getInviteRoleLabel(invite)}</AdminBadge>
                     </AdminTableCell>
                     <AdminTableCell>
                       <p>{invite.email}</p>
@@ -449,7 +544,7 @@ export function UsersPanel({
                     </p>
                   </AdminTableCell>
                   <AdminTableCell>
-                    <AdminBadge tone="neutral">{getRoleLabel(account.realm)}</AdminBadge>
+                    <AdminBadge tone="neutral">{getAccountRoleLabel(account)}</AdminBadge>
                   </AdminTableCell>
                   <AdminTableCell>
                     <p>{account.email}</p>
@@ -480,6 +575,16 @@ export function UsersPanel({
                   <AdminTableCell align="right">
                     {canManage ? (
                       <AdminRowActions>
+                        {account.realm === "executive" ? (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => openRoleModal(account)}
+                          >
+                            Cambiar rol
+                          </Button>
+                        ) : null}
                         {account.realm === "executive" &&
                         account.active &&
                         account.onboardingCompleted ? (
@@ -535,26 +640,16 @@ export function UsersPanel({
             <span className="text-sm font-medium">Rol</span>
             <Select
               required
-              value={draft.realm}
+              value={draft.role}
               options={inviteRoleOptions}
               onChange={(event) =>
                 setDraft((current) => ({
                   ...current,
-                  realm: event.target.value as StaffRealm,
+                  role: event.target.value as InviteRoleValue,
                 }))
               }
             />
-            {!executivesOnly ? (
-              <p className="text-xs text-muted">
-                {draft.realm === "admin"
-                  ? "Acceso completo al panel, incluyendo configuración y usuarios."
-                  : "Recibe y gestiona solicitudes de clientes y cotizaciones."}
-              </p>
-            ) : (
-              <p className="text-xs text-muted">
-                Recibe y gestiona solicitudes de clientes y cotizaciones.
-              </p>
-            )}
+            <p className="text-xs text-muted">{inviteRoleDescription(draft.role)}</p>
           </label>
 
           <label className="block space-y-2">
@@ -583,11 +678,56 @@ export function UsersPanel({
 
       {canManage ? (
         <AdminFormModal
+          open={Boolean(roleTarget)}
+          title="Cambiar rol de ejecutivo"
+          description={
+            roleTarget
+              ? `Selecciona el tipo de ejecutivo para ${roleTarget.fullName}. El menú del panel se actualizará en el próximo inicio de sesión o al recargar.`
+              : ""
+          }
+          onClose={() => setRoleTarget(null)}
+          size="md"
+        >
+          <div className="space-y-4">
+            <label className="block space-y-2">
+              <span className="text-sm font-medium">Tipo de ejecutivo</span>
+              <Select
+                required
+                value={roleDraft}
+                options={EXECUTIVE_KIND_OPTIONS}
+                onChange={(event) =>
+                  setRoleDraft(event.target.value as ExecutiveKind)
+                }
+              />
+              <p className="text-xs text-muted">
+                La promoción o degradación a administrador no está disponible desde aquí
+                (requiere nueva invitación de administrador).
+              </p>
+            </label>
+
+            <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+              <Button type="button" variant="ghost" onClick={() => setRoleTarget(null)}>
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                disabled={saving || roleDraft === roleTarget?.executiveKind}
+                onClick={() => void handleChangeRole()}
+              >
+                {saving ? "Guardando…" : "Guardar rol"}
+              </Button>
+            </div>
+          </div>
+        </AdminFormModal>
+      ) : null}
+
+      {canManage ? (
+        <AdminFormModal
           open={Boolean(deleteTarget)}
           title="Eliminar usuario"
         description={
           deleteTarget
-            ? `¿Eliminar permanentemente a ${deleteTarget.fullName} (${getRoleLabel(deleteTarget.realm)})? Esta acción no se puede deshacer.`
+            ? `¿Eliminar permanentemente a ${deleteTarget.fullName} (${getAccountRoleLabel(deleteTarget)})? Esta acción no se puede deshacer.`
             : ""
         }
         onClose={() => setDeleteTarget(null)}

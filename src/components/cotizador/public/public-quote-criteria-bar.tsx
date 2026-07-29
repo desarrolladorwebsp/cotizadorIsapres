@@ -50,13 +50,13 @@ export interface PublicQuoteCriteriaBarProps {
 }
 
 const fieldClass = joinClasses(
-  "h-11 w-full rounded-xl border-0 bg-white px-3 text-sm shadow-sm ring-1 ring-border/80 focus:ring-2 focus:ring-primary/40",
+  "h-12 w-full rounded-xl border-0 bg-white px-3 text-base shadow-sm ring-1 ring-border/80 focus:ring-2 focus:ring-primary/40",
 );
 
 const compactFieldClass =
   "max-md:h-9 max-md:rounded-lg max-md:px-2.5 max-md:text-xs";
 
-const labelClass = "text-xs font-semibold text-muted";
+const labelClass = "text-sm font-semibold text-muted";
 
 function isValidIncomeDraft(raw: string): boolean {
   const digits = normalizeIncomeDigits(raw);
@@ -242,6 +242,7 @@ export function PublicQuoteCriteriaBar({
 
   return (
     <section
+      data-criteria-bar
       className={joinClasses(
         criteriaBar,
         compactEmbed && "max-md:rounded-xl max-md:p-3 max-md:shadow-none",
@@ -354,11 +355,13 @@ export function PublicQuoteCriteriaBar({
           <button
             type="button"
             onClick={() => setLoadsOpen((open) => !open)}
+            data-criteria-loads
             className={joinClasses(
               touchTarget,
-              "flex h-11 w-full items-center gap-2 rounded-xl border border-dashed border-primary/40 bg-white px-3 text-sm font-semibold text-primary-dark transition hover:bg-primary/5",
+              "flex h-12 w-full items-center gap-2 rounded-xl border border-dashed border-primary/40 bg-white px-3 text-base font-semibold text-primary-dark transition hover:bg-primary/5",
               !compactEmbed && "md:px-2.5 lg:px-3",
-              compactEmbed && "max-md:min-h-10 max-md:rounded-lg max-md:px-2.5 max-md:text-xs",
+              compactEmbed &&
+                "max-md:h-9 max-md:min-h-10 max-md:rounded-lg max-md:px-2.5 max-md:text-xs",
             )}
           >
             <span className="inline-flex min-w-0 items-center gap-1.5">
@@ -415,10 +418,11 @@ export function PublicQuoteCriteriaBar({
         <button
           type="button"
           onClick={handleSearchClick}
+          data-criteria-cta
           className={joinClasses(
             touchTarget,
-            "h-11 w-full shrink-0 rounded-full px-5 text-sm font-bold text-white shadow-[var(--shadow-cta)] transition hover:brightness-105",
-            !compactEmbed && "md:w-auto md:whitespace-nowrap md:px-4 xl:px-5",
+            "h-12 w-full shrink-0 rounded-full px-5 text-base font-bold text-white shadow-[var(--shadow-cta)] transition hover:brightness-105",
+            !compactEmbed && "md:w-auto md:whitespace-nowrap md:px-5 xl:px-6",
             compactEmbed && "max-md:h-10 max-md:px-4 max-md:text-xs sm:col-span-2",
             ui.cta,
           )}
@@ -441,13 +445,14 @@ export function PublicQuoteCriteriaBar({
           <button
             type="button"
             onClick={onResetAll}
+            data-criteria-secondary
             className={joinClasses(
               touchTarget,
-              "h-11 w-full shrink-0 rounded-full border px-4 text-sm font-semibold",
+              "h-12 w-full shrink-0 rounded-full border px-4 text-sm font-semibold",
               !compactEmbed && "md:w-auto md:whitespace-nowrap md:px-3.5 xl:px-4",
               compactEmbed && "max-md:h-10 max-md:px-4 max-md:text-xs sm:col-span-2",
               ui.border,
-              "bg-white text-muted transition hover:border-primary/35 hover:bg-surface-hover hover:text-primary-dark",
+              "bg-white text-primary-dark transition hover:border-primary/35 hover:bg-surface-hover",
             )}
           >
             {compactEmbed ? (

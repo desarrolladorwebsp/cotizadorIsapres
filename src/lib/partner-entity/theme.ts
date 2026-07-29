@@ -18,6 +18,9 @@ const THEME_VAR_MAP: Record<keyof PartnerEntityTheme, string> = {
   criteriaRing: "--criteria-ring",
   accentWarning: "--accent-warning",
   accentWarningForeground: "--accent-warning-foreground",
+  convenioAccent: "--convenio-accent",
+  convenioAccentStrong: "--convenio-accent-strong",
+  convenioAccentMuted: "--convenio-accent-muted",
 };
 
 export function partnerThemeToPrismaJson(

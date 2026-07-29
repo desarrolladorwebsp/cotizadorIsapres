@@ -59,9 +59,3 @@ export function executiveStatCardClass(tone: ExecutiveStatTone): string {
     styles.bg,
   );
 }
-
-export function executiveLeadBannerClass(): string {
-  return joinClasses(
-    "rounded-xl border border-violet-200 bg-gradient-to-r from-violet-50 via-white to-sky-50 px-4 py-3 text-sm text-violet-950",
-  );
-}

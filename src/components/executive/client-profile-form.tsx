@@ -1,16 +1,28 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CollapsibleSection } from "@/components/executive/collapsible-section";
 import {
   buildEmptyDependent,
   MARITAL_STATUS_OPTIONS,
   splitFullName,
 } from "@/lib/client-profile/constants";
-import { sanitizeRutInput } from "@/lib/auth/rut";
+import { sanitizeRutInput, isValidRut } from "@/lib/auth/rut";
+import {
+  getClientManagementRutErrors,
+  getClientManagementRutWarnings,
+} from "@/lib/client-profile/validate-client-ruts";
+import { ISAPRE_FILTER_OPTIONS } from "@/lib/filter-options";
 import { ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type { ClientDependentProfile } from "@/types/client-profile";
+
+const ISAPRE_SELECT_OPTIONS = ISAPRE_FILTER_OPTIONS.map((option) => ({
+  value: option.label,
+  label: option.label,
+}));
 
 export interface ClientProfileFormValue {
   email: string;
@@ -50,34 +62,87 @@ export interface ClientProfileFormProps {
   value: ClientProfileFormValue;
   onChange: (value: ClientProfileFormValue) => void;
   showEmail?: boolean;
-}
-
-function SectionTitle({
-  title,
-  description,
-}: {
-  title: string;
-  description?: string;
-}) {
-  return (
-    <div className="space-y-1">
-      <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-      {description ? (
-        <p className="text-xs text-muted">{description}</p>
-      ) : null}
-    </div>
-  );
+  /** Al crear cliente el RUT titular es obligatorio. */
+  requireTitularRut?: boolean;
+  rutErrors?: {
+    titular?: string;
+    dependents?: Record<string, string>;
+  };
 }
 
 export function ClientProfileForm({
   value,
   onChange,
   showEmail = true,
+  requireTitularRut = false,
+  rutErrors,
 }: ClientProfileFormProps) {
+  const [blurRutErrors, setBlurRutErrors] = useState<{
+    titular?: string;
+    dependents: Record<string, string>;
+  }>({ dependents: {} });
+
+  const isapreOptions = useMemo(() => {
+    const current = value.currentIsapre.trim();
+    if (
+      current &&
+      !ISAPRE_SELECT_OPTIONS.some((option) => option.value === current)
+    ) {
+      return [{ value: current, label: current }, ...ISAPRE_SELECT_OPTIONS];
+    }
+    return ISAPRE_SELECT_OPTIONS;
+  }, [value.currentIsapre]);
+
+  const titularRutError = rutErrors?.titular ?? blurRutErrors.titular;
+  const titularRutIsSoftWarning = Boolean(
+    titularRutError &&
+      value.rut.trim() &&
+      !isValidRut(value.rut) &&
+      titularRutError !== "El RUT es obligatorio.",
+  );
+
+  function dependentRutError(dependentId: string): string | undefined {
+    return (
+      rutErrors?.dependents?.[dependentId] ??
+      blurRutErrors.dependents[dependentId]
+    );
+  }
+
+  function validateTitularRutOnBlur() {
+    const errors = getClientManagementRutErrors(
+      { rut: value.rut },
+      { requireTitularRut },
+    );
+    const warnings = getClientManagementRutWarnings({ rut: value.rut });
+    setBlurRutErrors((current) => ({
+      ...current,
+      titular: errors.titular ?? warnings.titular,
+    }));
+  }
+
+  function validateDependentRutOnBlur(dependentId: string, rut: string) {
+    const warnings = getClientManagementRutWarnings({
+      dependents: [{ id: dependentId, rut }],
+    });
+    setBlurRutErrors((current) => {
+      const dependents = { ...current.dependents };
+      const message = warnings.dependents[dependentId];
+      if (message) {
+        dependents[dependentId] = message;
+      } else {
+        delete dependents[dependentId];
+      }
+      return { ...current, dependents };
+    });
+  }
+
   function updateField<K extends keyof ClientProfileFormValue>(
     field: K,
     fieldValue: ClientProfileFormValue[K],
   ) {
+    if (field === "rut") {
+      setBlurRutErrors((current) => ({ ...current, titular: undefined }));
+    }
     onChange({ ...value, [field]: fieldValue });
   }
 
@@ -86,6 +151,13 @@ export function ClientProfileForm({
     field: keyof ClientDependentProfile,
     fieldValue: string,
   ) {
+    if (field === "rut") {
+      setBlurRutErrors((current) => {
+        const dependents = { ...current.dependents };
+        delete dependents[dependentId];
+        return { ...current, dependents };
+      });
+    }
     onChange({
       ...value,
       dependents: value.dependents.map((dependent) =>
@@ -114,12 +186,12 @@ export function ClientProfileForm({
 
   return (
     <div className="space-y-6">
-      <section className="space-y-4 rounded-xl border border-border bg-bg-layout/30 p-4">
-        <SectionTitle
-          title="Datos del titular"
-          description="Información personal y de contacto que el ejecutivo registra para la gestión."
-        />
-
+      <CollapsibleSection
+        title="Datos del titular"
+        description="Información personal y de contacto que el ejecutivo registra para la gestión."
+        className="rounded-xl border border-border bg-bg-layout/30 p-4"
+        bodyClassName="space-y-4"
+      >
         <div className="grid gap-3 sm:grid-cols-2">
           {showEmail ? (
             <label className="block space-y-1.5 sm:col-span-2">
@@ -144,14 +216,39 @@ export function ClientProfileForm({
           </label>
 
           <label className="block space-y-1.5">
-            <span className="text-xs font-medium">RUT titular</span>
+            <span className="text-xs font-medium">
+              RUT titular{requireTitularRut ? " *" : ""}
+            </span>
             <Input
               value={value.rut}
+              required={requireTitularRut}
+              aria-invalid={Boolean(titularRutError) && !titularRutIsSoftWarning}
               onChange={(event) =>
                 updateField("rut", sanitizeRutInput(event.target.value))
               }
+              onBlur={validateTitularRutOnBlur}
               placeholder="12345678-9"
+              className={
+                titularRutError
+                  ? titularRutIsSoftWarning
+                    ? "border-amber-400 focus-visible:ring-amber-300/40"
+                    : "border-danger focus-visible:ring-danger/30"
+                  : undefined
+              }
             />
+            {titularRutError ? (
+              <p
+                className={
+                  titularRutIsSoftWarning
+                    ? "text-xs text-amber-800"
+                    : "text-xs text-danger"
+                }
+              >
+                {titularRutIsSoftWarning
+                  ? `${titularRutError} Puedes guardar de todos modos.`
+                  : titularRutError}
+              </p>
+            ) : null}
           </label>
 
           <label className="block space-y-1.5">
@@ -185,13 +282,20 @@ export function ClientProfileForm({
 
           <label className="block space-y-1.5">
             <span className="text-xs font-medium">Isapre actual</span>
-            <Input
+            <select
               value={value.currentIsapre}
               onChange={(event) =>
                 updateField("currentIsapre", event.target.value)
               }
-              placeholder="Ej. Consalud"
-            />
+              className={joinClasses("h-10 w-full rounded-md px-3 text-sm", ui.input)}
+            >
+              <option value="">Seleccionar…</option>
+              {isapreOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
           </label>
 
           <label className="block space-y-1.5">
@@ -248,19 +352,19 @@ export function ClientProfileForm({
             />
           </label>
         </div>
-      </section>
+      </CollapsibleSection>
 
-      <section className="space-y-4 rounded-xl border border-border bg-bg-layout/30 p-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <SectionTitle
-            title="Cargas familiares"
-            description="Agrega cada carga con sus datos básicos."
-          />
+      <CollapsibleSection
+        title="Cargas familiares"
+        description="Agrega cada carga con sus datos básicos."
+        className="rounded-xl border border-border bg-bg-layout/30 p-4"
+        bodyClassName="space-y-4"
+        headerRight={
           <Button type="button" variant="info" size="sm" onClick={addDependent}>
             Agregar carga
           </Button>
-        </div>
-
+        }
+      >
         {value.dependents.length === 0 ? (
           <p className="rounded-lg border border-dashed border-border px-3 py-4 text-sm text-muted">
             Sin cargas registradas. Usa &quot;Agregar carga&quot; si el cliente tiene
@@ -292,6 +396,7 @@ export function ClientProfileForm({
                     <span className="text-xs font-medium">RUT carga</span>
                     <Input
                       value={dependent.rut}
+                      aria-invalid={false}
                       onChange={(event) =>
                         updateDependent(
                           dependent.id,
@@ -299,8 +404,22 @@ export function ClientProfileForm({
                           sanitizeRutInput(event.target.value),
                         )
                       }
+                      onBlur={() =>
+                        validateDependentRutOnBlur(dependent.id, dependent.rut)
+                      }
                       placeholder="12345678-9"
+                      className={
+                        dependentRutError(dependent.id)
+                          ? "border-amber-400 focus-visible:ring-amber-300/40"
+                          : undefined
+                      }
                     />
+                    {dependentRutError(dependent.id) ? (
+                      <p className="text-xs text-amber-800">
+                        {dependentRutError(dependent.id)} Puedes guardar de todos
+                        modos.
+                      </p>
+                    ) : null}
                   </label>
 
                   <label className="block space-y-1.5">
@@ -352,7 +471,7 @@ export function ClientProfileForm({
             ))}
           </div>
         )}
-      </section>
+      </CollapsibleSection>
     </div>
   );
 }

@@ -15,6 +15,11 @@ export interface PartnerEntityTheme {
   criteriaRing?: string;
   accentWarning?: string;
   accentWarningForeground?: string;
+  /** Texto / links del bloque convenio (p. ej. coral sobre azules). */
+  convenioAccent?: string;
+  /** Fondo del CTA «Validar convenio» (azul/verde/coral según agente). */
+  convenioAccentStrong?: string;
+  convenioAccentMuted?: string;
 }
 
 export interface PartnerEntityRecord {

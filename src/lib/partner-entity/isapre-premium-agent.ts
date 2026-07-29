@@ -31,6 +31,11 @@ export const ISAPRE_PREMIUM_THEME: PartnerEntityTheme = {
   surfaceHover: "#f0faf8",
   criteriaSurface: "#f4fbf9",
   criteriaRing: "#c5e8e3",
+  /** Texto convenio en verde de marca. */
+  convenioAccent: "#1F8F84",
+  /** CTA Validar convenio: verde fuerte. */
+  convenioAccentStrong: "#6CC24A",
+  convenioAccentMuted: "#E8F7F5",
 };
 
 export function buildIsaprePremiumPartnerRecord(): PartnerEntityPublic {

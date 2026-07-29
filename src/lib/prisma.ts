@@ -11,6 +11,8 @@ const REQUIRED_DELEGATES = [
   "clientActivity",
   "planReview",
   "companyAgreement",
+  "calendlyBooking",
+  "appMeta",
 ] as const;
 
 const globalForPrisma = globalThis as unknown as {
@@ -28,10 +30,21 @@ function createPrismaClient(): PrismaClient {
 }
 
 function computeSchemaFingerprint(): string {
-  return Prisma.dmmf.datamodel.models
-    .map((model) => model.name)
+  const models = Prisma.dmmf.datamodel.models
+    .map(
+      (model) =>
+        `${model.name}:{${model.fields.map((field) => field.name).join(",")}}`,
+    )
     .sort()
-    .join(",");
+    .join("|");
+  const enums = Prisma.dmmf.datamodel.enums
+    .map(
+      (entry) =>
+        `${entry.name}:${entry.values.map((value) => value.name).join("|")}`,
+    )
+    .sort()
+    .join(";");
+  return `${models}#${enums}`;
 }
 
 function hasRequiredDelegates(client: PrismaClient): boolean {

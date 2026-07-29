@@ -2,8 +2,10 @@
 
 import { UserMenu } from "@/components/auth/user-menu";
 import { useStaffSession } from "@/hooks/use-auth-session";
+import { getStaffRoleLabel } from "@/lib/auth/staff-role";
 import { touchTarget, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
+import type { ExecutiveSessionUser } from "@/lib/auth/types";
 
 export type CotizadorHeaderVariant = "client" | "executive";
 
@@ -19,7 +21,7 @@ export function CotizadorHeader({
   onToggleSidebar,
 }: CotizadorHeaderProps) {
   const isExecutive = variant === "executive";
-  const { user: staffUser, isAdmin } = useStaffSession();
+  const { user: staffUser, isAdmin, realm, executiveKind } = useStaffSession();
 
   return (
     <header
@@ -93,7 +95,14 @@ export function CotizadorHeader({
             {staffUser ? (
               <UserMenu
                 fullName={staffUser.fullName}
-                subtitle={isAdmin ? "Administrador" : "Ejecutivo comercial"}
+                subtitle={getStaffRoleLabel({
+                  realm: realm ?? (isAdmin ? "admin" : "executive"),
+                  executiveKind:
+                    executiveKind ??
+                    (staffUser && "executiveKind" in staffUser
+                      ? (staffUser as ExecutiveSessionUser).executiveKind
+                      : null),
+                })}
               />
             ) : null}
           </>

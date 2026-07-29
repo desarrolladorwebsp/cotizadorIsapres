@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
-import { useAuthSession } from "@/hooks/use-auth-session";
+import { useStaffSession } from "@/hooks/use-auth-session";
 import {
   fetchExecutiveClients,
   fetchQuotes,
@@ -13,11 +13,16 @@ import {
   IconClock,
   IconUsers,
 } from "@/components/executive/executive-icons";
+import type { UserRecord } from "@/types/user";
 
 interface DashboardStats {
   clients: number;
   quotes: number;
   pendingQuotes: number;
+  inDocumentation: number;
+  closed: number;
+  noAnswer: number;
+  inFollowUp: number;
 }
 
 function DashboardHeroDecoration() {
@@ -63,8 +68,17 @@ function DashboardHeroDecoration() {
   );
 }
 
+function countByStatus(clients: UserRecord[], status: string): number {
+  return clients.filter((client) => client.pipelineStatus === status).length;
+}
+
 export function ExecutiveDashboardHome() {
-  const { user } = useAuthSession("executive");
+  const { user, executiveKind, isAdmin, allowedSections } = useStaffSession();
+  const isLimited =
+    !isAdmin &&
+    (executiveKind === "ISAPRES" || executiveKind === "ZOOM");
+  const canSeeQuotes = isAdmin || allowedSections.includes("cotizaciones");
+
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
 
@@ -73,17 +87,30 @@ export function ExecutiveDashboardHome() {
 
     void (async () => {
       try {
-        const [clients, quotes] = await Promise.all([
-          fetchExecutiveClients(),
-          fetchQuotes(),
-        ]);
+        const clients = await fetchExecutiveClients();
+        let quotesLength = 0;
+        let pendingQuotes = 0;
+        if (canSeeQuotes) {
+          try {
+            const quotes = await fetchQuotes();
+            quotesLength = quotes.length;
+            pendingQuotes = quotes.filter(
+              (quote) => quote.status === "PENDING",
+            ).length;
+          } catch {
+            // Limited roles may not access cotizaciones.
+          }
+        }
 
         if (!cancelled) {
           setStats({
             clients: clients.length,
-            quotes: quotes.length,
-            pendingQuotes: quotes.filter((quote) => quote.status === "PENDING")
-              .length,
+            quotes: quotesLength,
+            pendingQuotes,
+            inDocumentation: countByStatus(clients, "DOCUMENTACION"),
+            closed: countByStatus(clients, "CERRADO"),
+            noAnswer: countByStatus(clients, "NO_CONTESTA"),
+            inFollowUp: countByStatus(clients, "EN_SEGUIMIENTO"),
           });
         }
       } catch {
@@ -100,7 +127,7 @@ export function ExecutiveDashboardHome() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [canSeeQuotes]);
 
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
@@ -111,31 +138,79 @@ export function ExecutiveDashboardHome() {
 
   const firstName = user?.fullName?.split(" ")[0];
 
+  const heroHint = isLimited
+    ? executiveKind === "ISAPRES"
+      ? "Revisa tus clientes asignados, el calendario y cierra el contrato cuando corresponda."
+      : "Revisa tus clientes asignados y el calendario de llamados."
+    : "Usa el menú de navegación para acceder al cotizador, tus clientes y cotizaciones.";
+
   const statCards: Array<{
     label: string;
     hint: string;
     value: number | undefined;
     icon: ReactNode;
-  }> = [
-    {
-      label: "Mis clientes",
-      hint: "Total de clientes registrados",
-      value: stats?.clients,
-      icon: <IconUsers className="size-6" />,
-    },
-    {
-      label: "Cotizaciones",
-      hint: "Solicitudes asociadas a tu gestión",
-      value: stats?.quotes,
-      icon: <IconClipboard className="size-6" />,
-    },
-    {
-      label: "Prospectos pendientes",
-      hint: "Cotizaciones por gestionar",
-      value: stats?.pendingQuotes,
-      icon: <IconClock className="size-6" />,
-    },
-  ];
+  }> = isLimited
+    ? executiveKind === "ISAPRES"
+      ? [
+          {
+            label: "Mis clientes",
+            hint: "Clientes asignados a tu cartera",
+            value: stats?.clients,
+            icon: <IconUsers className="size-6" />,
+          },
+          {
+            label: "En documentación",
+            hint: "Listos o en proceso de contratación",
+            value: stats?.inDocumentation,
+            icon: <IconClipboard className="size-6" />,
+          },
+          {
+            label: "Cerrados",
+            hint: "Negocios cerrados en tu cartera",
+            value: stats?.closed,
+            icon: <IconClock className="size-6" />,
+          },
+        ]
+      : [
+          {
+            label: "Mis clientes",
+            hint: "Clientes asignados a tu cartera",
+            value: stats?.clients,
+            icon: <IconUsers className="size-6" />,
+          },
+          {
+            label: "No contesta",
+            hint: "Pendientes de contacto",
+            value: stats?.noAnswer,
+            icon: <IconClipboard className="size-6" />,
+          },
+          {
+            label: "En seguimiento",
+            hint: "Clientes con llamado o seguimiento",
+            value: stats?.inFollowUp,
+            icon: <IconClock className="size-6" />,
+          },
+        ]
+    : [
+        {
+          label: "Mis clientes",
+          hint: "Total de clientes registrados",
+          value: stats?.clients,
+          icon: <IconUsers className="size-6" />,
+        },
+        {
+          label: "Cotizaciones",
+          hint: "Solicitudes asociadas a tu gestión",
+          value: stats?.quotes,
+          icon: <IconClipboard className="size-6" />,
+        },
+        {
+          label: "Prospectos pendientes",
+          hint: "Cotizaciones por gestionar",
+          value: stats?.pendingQuotes,
+          icon: <IconClock className="size-6" />,
+        },
+      ];
 
   return (
     <div className="space-y-5 sm:space-y-7">
@@ -153,8 +228,7 @@ export function ExecutiveDashboardHome() {
             ) : null}
           </h1>
           <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted sm:text-[0.95rem]">
-            Usa el menú de navegación para acceder al cotizador, tus clientes y
-            cotizaciones.
+            {heroHint}
           </p>
         </div>
       </section>
@@ -173,7 +247,11 @@ export function ExecutiveDashboardHome() {
                 "premium-dash-stat-value mt-3 tabular-nums",
               )}
             >
-              {loadingStats ? "—" : (item.value ?? 0)}
+              {loadingStats
+                ? "—"
+                : item.value === undefined
+                  ? "—"
+                  : item.value}
             </p>
             <p className="premium-dash-stat-hint mt-1.5">{item.hint}</p>
           </div>

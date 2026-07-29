@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CotizadorWorkspace } from "@/components/cotizador/cotizador-workspace";
 import { ExecutiveToastStack } from "@/components/executive/executive-toast";
@@ -12,6 +12,7 @@ import { PlansAndPdfsAdminView } from "@/components/admin/plans-and-pdfs-admin-v
 import { UsersPanel } from "@/components/admin/users-panel";
 import { ExecutiveAdminProspectsView } from "@/components/executive/admin/executive-admin-prospects-view";
 import { ExecutiveClientsPanel } from "@/components/executive/executive-clients-panel";
+import { ExecutiveCalendarPanel } from "@/components/executive/executive-calendar-panel";
 import { ExecutiveClinicsMapPanel } from "@/components/executive/executive-clinics-map-panel";
 import { ExecutiveDashboardHome } from "@/components/executive/executive-dashboard-home";
 import { ExecutiveQuotesPanel } from "@/components/executive/executive-quotes-panel";
@@ -26,9 +27,9 @@ import {
 } from "@/lib/api/admin-client";
 import {
   isStaffSection,
-  STAFF_ADMIN_SECTIONS,
   STAFF_SECTION_QUERY,
   staffSectionHref,
+  type StaffSection,
 } from "@/lib/staff/staff-sections";
 import type { Clinic } from "@/types/clinic";
 import type { HealthPlan } from "@/types/plan";
@@ -36,7 +37,7 @@ import type { HealthPlan } from "@/types/plan";
 export function ExecutiveDashboard() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isAdmin } = useStaffSession();
+  const { allowedSections, loading: sessionLoading } = useStaffSession();
 
   const [section, setSection] = useState<ExecutiveSection>("inicio");
   const [plans, setPlans] = useState<HealthPlan[]>([]);
@@ -44,17 +45,42 @@ export function ExecutiveDashboard() {
   const [loadingCatalog, setLoadingCatalog] = useState(false);
   const { toasts, notify, dismiss } = useExecutiveToast();
 
+  const sectionSet = useMemo(
+    () => new Set<StaffSection>(allowedSections),
+    [allowedSections],
+  );
+
+  const canAccessSection = useCallback(
+    (next: StaffSection) => sectionSet.has(next),
+    [sectionSet],
+  );
+
   useEffect(() => {
+    if (sessionLoading || allowedSections.length === 0) return;
+
     const querySection = searchParams.get(STAFF_SECTION_QUERY);
     if (isStaffSection(querySection)) {
-      if (STAFF_ADMIN_SECTIONS.includes(querySection) && !isAdmin) {
+      if (!canAccessSection(querySection)) {
         setSection("inicio");
         router.replace(staffSectionHref("inicio"));
         return;
       }
       setSection(querySection);
+      return;
     }
-  }, [searchParams, isAdmin, router]);
+
+    if (!canAccessSection(section)) {
+      setSection("inicio");
+      router.replace(staffSectionHref("inicio"));
+    }
+  }, [
+    searchParams,
+    canAccessSection,
+    router,
+    sessionLoading,
+    section,
+    allowedSections.length,
+  ]);
 
   const loadClinics = useCallback(async () => {
     setLoadingCatalog(true);
@@ -95,17 +121,20 @@ export function ExecutiveDashboard() {
   }, [notify]);
 
   useEffect(() => {
-    if ((section === "clinicas" || section === "reportes-pdf") && isAdmin) {
+    if (
+      (section === "clinicas" || section === "reportes-pdf") &&
+      canAccessSection(section)
+    ) {
       void loadCatalog();
       return;
     }
-    if (section === "mapa") {
+    if (section === "mapa" && canAccessSection("mapa")) {
       void loadClinics();
     }
-  }, [section, isAdmin, loadCatalog, loadClinics]);
+  }, [section, canAccessSection, loadCatalog, loadClinics]);
 
   function handleSectionChange(next: ExecutiveSection) {
-    if (STAFF_ADMIN_SECTIONS.includes(next) && !isAdmin) return;
+    if (!canAccessSection(next)) return;
     setSection(next);
     router.replace(staffSectionHref(next), { scroll: false });
   }
@@ -115,11 +144,17 @@ export function ExecutiveDashboard() {
       <ExecutiveShell
         activeSection={section}
         onSectionChange={handleSectionChange}
-        hasAdminAccess={isAdmin}
+        allowedSections={allowedSections}
       >
-        {section === "inicio" ? <ExecutiveDashboardHome /> : null}
+        {section === "inicio" && canAccessSection("inicio") ? (
+          <ExecutiveDashboardHome />
+        ) : null}
 
-        {section === "cotizador" ? (
+        {section === "calendario" && canAccessSection("calendario") ? (
+          <ExecutiveCalendarPanel />
+        ) : null}
+
+        {section === "cotizador" && canAccessSection("cotizador") ? (
           <CotizadorWorkspace
             variant="executive"
             embeddedInExecutiveShell
@@ -127,15 +162,15 @@ export function ExecutiveDashboard() {
           />
         ) : null}
 
-        {section === "clientes" ? (
+        {section === "clientes" && canAccessSection("clientes") ? (
           <ExecutiveClientsPanel onNotify={notify} />
         ) : null}
 
-        {section === "cotizaciones" ? (
+        {section === "cotizaciones" && canAccessSection("cotizaciones") ? (
           <ExecutiveQuotesPanel onNotify={notify} />
         ) : null}
 
-        {section === "mapa" ? (
+        {section === "mapa" && canAccessSection("mapa") ? (
           <ExecutiveClinicsMapPanel
             clinics={clinics}
             loading={loadingCatalog}
@@ -143,15 +178,15 @@ export function ExecutiveDashboard() {
           />
         ) : null}
 
-        {section === "prospectos" && isAdmin ? (
+        {section === "prospectos" && canAccessSection("prospectos") ? (
           <ExecutiveAdminProspectsView onNotify={notify} embedded />
         ) : null}
 
-        {section === "usuarios" && isAdmin ? (
+        {section === "usuarios" && canAccessSection("usuarios") ? (
           <UsersPanel onNotify={notify} canManage />
         ) : null}
 
-        {section === "clinicas" && isAdmin ? (
+        {section === "clinicas" && canAccessSection("clinicas") ? (
           <ClinicsPanel
             clinics={clinics}
             plans={plans}
@@ -162,11 +197,11 @@ export function ExecutiveDashboard() {
           />
         ) : null}
 
-        {section === "ges" && isAdmin ? (
+        {section === "ges" && canAccessSection("ges") ? (
           <GesPanel onNotify={notify} canManage />
         ) : null}
 
-        {section === "reportes-pdf" && isAdmin ? (
+        {section === "reportes-pdf" && canAccessSection("reportes-pdf") ? (
           <PlansAndPdfsAdminView
             plans={plans}
             clinics={clinics}
@@ -176,7 +211,7 @@ export function ExecutiveDashboard() {
           />
         ) : null}
 
-        {section === "convenios" && isAdmin ? (
+        {section === "convenios" && canAccessSection("convenios") ? (
           <CompanyAgreementsPanel onNotify={notify} />
         ) : null}
       </ExecutiveShell>

@@ -41,6 +41,39 @@ function parsePipelinePayload(payload: unknown): UpdateClientPipelineInput {
       typeof data.pipelineNotes === "string" ? data.pipelineNotes : null;
   }
 
+  if (data.nextCallAt !== undefined) {
+    if (data.nextCallAt === null) {
+      input.nextCallAt = null;
+    } else if (typeof data.nextCallAt === "string") {
+      input.nextCallAt = data.nextCallAt;
+    } else {
+      throw new Error("Fecha de próximo llamado inválida.");
+    }
+  }
+
+  if (data.lastCallOutcome !== undefined) {
+    input.lastCallOutcome =
+      data.lastCallOutcome === null
+        ? null
+        : typeof data.lastCallOutcome === "string"
+          ? data.lastCallOutcome
+          : null;
+  }
+
+  if (data.preferredContactMethod !== undefined) {
+    if (data.preferredContactMethod === null) {
+      input.preferredContactMethod = null;
+    } else if (
+      typeof data.preferredContactMethod === "string" &&
+      (data.preferredContactMethod === "ZOOM" ||
+        data.preferredContactMethod === "WHATSAPP")
+    ) {
+      input.preferredContactMethod = data.preferredContactMethod;
+    } else {
+      throw new Error("Método de contacto inválido.");
+    }
+  }
+
   if (data.clientProfile !== undefined) {
     input.clientProfile = parseClientProfilePayload(data.clientProfile);
   }
@@ -58,7 +91,19 @@ export async function PATCH(request: Request, context: RouteContext) {
     const updated = await updateClientPipeline(id, input, {
       executiveAccountId: user.id,
       isAdmin: realm === AUTH_REALM.admin,
+      executiveKind:
+        realm === AUTH_REALM.executive
+          ? (user as import("@/lib/auth/types").ExecutiveSessionUser).executiveKind
+          : null,
     });
+
+    if (
+      realm === AUTH_REALM.executive &&
+      (user as import("@/lib/auth/types").ExecutiveSessionUser).executiveKind ===
+        "ISAPRES"
+    ) {
+      return NextResponse.json({ ...updated, pipelineNotes: null });
+    }
 
     return NextResponse.json(updated);
   } catch (error) {

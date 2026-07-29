@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ClientPlanHistoryTimeline } from "@/components/executive/client-plan-history-timeline";
 import { ClientPlanSummary } from "@/components/executive/client-plan-summary";
+import { CollapsibleSection } from "@/components/executive/collapsible-section";
 import {
   fetchClientActivities,
   fetchPlans,
@@ -119,15 +120,13 @@ export function ClientAdvisedPlanSection({
   }
 
   return (
-    <div className="space-y-5 rounded-xl border border-border bg-bg-layout/40 p-4">
-      <div>
-        <h3 className="text-sm font-semibold text-foreground">Planes del cliente</h3>
-        <p className="mt-1 text-xs text-muted">
-          El plan solicitado viene de la cotización. Puedes registrar otro plan o
-          Isapre que asesores al cliente.
-        </p>
-      </div>
-
+    <CollapsibleSection
+      title="Planes del cliente"
+      description="El plan solicitado viene de la cotización. Puedes registrar otro plan o Isapre que asesores al cliente."
+      defaultOpen={false}
+      className="rounded-xl border border-border bg-bg-layout/40 p-4"
+      bodyClassName="space-y-5"
+    >
       <div className="grid gap-4 md:grid-cols-2">
         <div className="rounded-lg border border-border bg-white p-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted">
@@ -255,6 +254,6 @@ export function ClientAdvisedPlanSection({
           loading={loadingActivities}
         />
       </div>
-    </div>
+    </CollapsibleSection>
   );
 }

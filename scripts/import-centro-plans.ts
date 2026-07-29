@@ -69,7 +69,9 @@ async function importPlans(plans: HealthPlan[]) {
         isapreId,
         planName: plan.plan_name,
         basePriceUf: plan.base_price_uf,
-        hasTop: plan.has_top,
+        // Temporal: homogenizar modalidad como Preferente en imports Isapre.
+        planType: "preferred",
+        hasTop: true,
         additionalNotes: plan.additional_notes,
         pdfUrl: plan.pdf_url,
         pdfPublicId: plan.pdf_public_id,

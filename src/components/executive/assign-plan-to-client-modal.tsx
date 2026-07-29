@@ -18,13 +18,19 @@ import {
   resolveAgreementPlanMapping,
   buildPlanAgreementPriceDisplayWithMapping,
 } from "@/lib/company-agreements/plan-price-discount";
-import { sanitizeRutInput } from "@/lib/auth/rut";
+import { sanitizeRutInput, isValidRut } from "@/lib/auth/rut";
+import {
+  getClientManagementRutErrors,
+  getClientManagementRutWarnings,
+} from "@/lib/client-profile/validate-client-ruts";
 import { buildPlanFinalPriceQuote, formatPlanClp, formatQuotedUf } from "@/domain";
 import { ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type { BeneficiaryGroupSummary } from "@/domain";
 import type { HealthPlan } from "@/domain";
 import type { UserRecord } from "@/types/user";
+import { MANUAL_CLIENT_ORIGIN_OPTIONS } from "@/types/user";
+import { Select } from "@/components/ui/select";
 
 type AssignMode = "existing" | "new";
 
@@ -47,6 +53,7 @@ const EMPTY_NEW_CLIENT = {
   phone: "",
   rut: "",
   pipelineNotes: "",
+  clientOrigin: "MANUAL" as (typeof MANUAL_CLIENT_ORIGIN_OPTIONS)[number]["value"],
 };
 
 export function AssignPlanToClientModal({
@@ -66,6 +73,7 @@ export function AssignPlanToClientModal({
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
   const [newClient, setNewClient] = useState(EMPTY_NEW_CLIENT);
+  const [rutError, setRutError] = useState<string | undefined>();
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -75,6 +83,7 @@ export function AssignPlanToClientModal({
     setSelectedClientId(initialClientId?.trim() || null);
     setNotes("");
     setNewClient(EMPTY_NEW_CLIENT);
+    setRutError(undefined);
 
     let cancelled = false;
     setLoadingClients(true);
@@ -168,6 +177,20 @@ export function AssignPlanToClientModal({
 
   async function handleAssign() {
     if (!plan) return;
+
+    if (mode === "new") {
+      const errors = getClientManagementRutErrors(
+        { rut: newClient.rut },
+        { requireTitularRut: true },
+      );
+      if (errors.firstMessage) {
+        setRutError(errors.titular ?? errors.firstMessage);
+        onNotify(errors.firstMessage, "error");
+        return;
+      }
+      setRutError(undefined);
+    }
+
     setSaving(true);
 
     try {
@@ -181,6 +204,7 @@ export function AssignPlanToClientModal({
           firstNames: newClient.firstNames.trim(),
           lastNames: newClient.lastNames.trim(),
           pipelineNotes: newClient.pipelineNotes.trim() || null,
+          clientOrigin: newClient.clientOrigin,
         });
       } else {
         const existing = clients.find((row) => row.id === selectedClientId);
@@ -218,7 +242,8 @@ export function AssignPlanToClientModal({
       : Boolean(
           newClient.firstNames.trim() &&
             newClient.lastNames.trim() &&
-            newClient.email.trim(),
+            newClient.email.trim() &&
+            newClient.rut.trim(),
         );
 
   return (
@@ -375,6 +400,24 @@ export function AssignPlanToClientModal({
         ) : (
           <div className="space-y-3">
             <label className="block space-y-1.5">
+              <span className="text-sm font-medium">Origen *</span>
+              <Select
+                required
+                value={newClient.clientOrigin}
+                options={MANUAL_CLIENT_ORIGIN_OPTIONS.map((option) => ({
+                  value: option.value,
+                  label: option.label,
+                }))}
+                onChange={(event) =>
+                  setNewClient((current) => ({
+                    ...current,
+                    clientOrigin: event.target
+                      .value as (typeof MANUAL_CLIENT_ORIGIN_OPTIONS)[number]["value"],
+                  }))
+                }
+              />
+            </label>
+            <label className="block space-y-1.5">
               <span className="text-sm font-medium">Nombres *</span>
               <Input
                 required
@@ -427,16 +470,50 @@ export function AssignPlanToClientModal({
               />
             </label>
             <label className="block space-y-1.5">
-              <span className="text-sm font-medium">RUT</span>
+              <span className="text-sm font-medium">RUT *</span>
               <Input
+                required
                 value={newClient.rut}
-                onChange={(event) =>
+                aria-invalid={Boolean(rutError)}
+                onChange={(event) => {
+                  setRutError(undefined);
                   setNewClient((current) => ({
                     ...current,
                     rut: sanitizeRutInput(event.target.value),
-                  }))
+                  }));
+                }}
+                onBlur={() => {
+                  const errors = getClientManagementRutErrors(
+                    { rut: newClient.rut },
+                    { requireTitularRut: true },
+                  );
+                  const warnings = getClientManagementRutWarnings({
+                    rut: newClient.rut,
+                  });
+                  setRutError(errors.titular ?? warnings.titular);
+                }}
+                placeholder="12345678-9"
+                className={
+                  rutError
+                    ? newClient.rut.trim() && !isValidRut(newClient.rut)
+                      ? "border-amber-400 focus-visible:ring-amber-300/40"
+                      : "border-danger focus-visible:ring-danger/30"
+                    : undefined
                 }
               />
+              {rutError ? (
+                <p
+                  className={
+                    newClient.rut.trim() && !isValidRut(newClient.rut)
+                      ? "text-xs text-amber-800"
+                      : "text-xs text-danger"
+                  }
+                >
+                  {newClient.rut.trim() && !isValidRut(newClient.rut)
+                    ? `${rutError} Puedes guardar de todos modos.`
+                    : rutError}
+                </p>
+              ) : null}
             </label>
             <label className="block space-y-1.5">
               <span className="text-sm font-medium">Notas</span>

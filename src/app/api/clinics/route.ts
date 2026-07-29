@@ -1,8 +1,17 @@
 import { NextResponse } from "next/server";
 import { readClinics, writeClinics } from "@/lib/api/data-store";
 import type { Clinic } from "@/types/clinic";
-import { requireAdminSession, requireStaffSession } from "@/lib/auth/require-auth";
-import { apiErrorResponse } from "@/lib/api/api-error";
+import {
+  requireAdminSession,
+  requireExecutiveOrAdminSession,
+} from "@/lib/auth/require-auth";
+import { AUTH_REALM } from "@/lib/auth/constants";
+import {
+  staffCanAccessSection,
+} from "@/lib/auth/staff-role";
+import { apiErrorResponse, ApiError } from "@/lib/api/api-error";
+import type { ExecutiveSessionUser } from "@/lib/auth/types";
+import type { StaffSection } from "@/lib/staff/staff-sections";
 
 function isValidClinic(payload: unknown): payload is Clinic {
   if (!payload || typeof payload !== "object") return false;
@@ -15,9 +24,35 @@ function isValidClinic(payload: unknown): payload is Clinic {
   );
 }
 
+const CLINICS_READ_SECTIONS: StaffSection[] = [
+  "mapa",
+  "clinicas",
+  "reportes-pdf",
+];
+
 export async function GET(request: Request) {
   try {
-    await requireStaffSession(request);
+    const { realm, user } = await requireExecutiveOrAdminSession(request);
+    const access = {
+      realm,
+      executiveKind:
+        realm === AUTH_REALM.executive
+          ? (user as ExecutiveSessionUser).executiveKind
+          : null,
+    };
+
+    const allowed = CLINICS_READ_SECTIONS.some((section) =>
+      staffCanAccessSection(access, section),
+    );
+
+    if (!allowed) {
+      throw new ApiError(
+        "No tienes permiso para acceder a este recurso.",
+        403,
+        "SECTION_FORBIDDEN",
+      );
+    }
+
     const clinics = await readClinics();
     return NextResponse.json(clinics);
   } catch (error) {

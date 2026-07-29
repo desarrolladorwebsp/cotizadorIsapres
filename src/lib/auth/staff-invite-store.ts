@@ -8,9 +8,14 @@ import {
 } from "@/lib/auth/password";
 import { issueSession } from "@/lib/auth/session";
 import { EXECUTIVE_ONBOARDING_PATH } from "@/lib/auth/constants";
-import { staffRealmToRole } from "@/lib/auth/staff-role";
+import {
+  DEFAULT_EXECUTIVE_KIND,
+  normalizeExecutiveKind,
+  staffRealmToRole,
+} from "@/lib/auth/staff-role";
 import { formatRut, isValidRut, normalizeRut, rutMatches } from "@/lib/auth/rut";
-import type { StaffRealm } from "@/types/staff-account";
+import type { ExecutiveKind, StaffRealm } from "@/types/staff-account";
+import { isExecutiveKind } from "@/types/staff-account";
 import type { SubscriptionStatus } from "@prisma/client";
 
 const INVITE_TTL_DAYS = 7;
@@ -18,6 +23,7 @@ const INVITE_TTL_DAYS = 7;
 export interface StaffInvitePublic {
   email: string;
   realm: StaffRealm;
+  executiveKind: ExecutiveKind | null;
   rut: string | null;
   expiresAt: string;
 }
@@ -42,9 +48,18 @@ function isValidRealm(value: string): value is StaffRealm {
   return value === "admin" || value === "executive";
 }
 
+function resolveInviteExecutiveKind(
+  realm: StaffRealm,
+  kind: ExecutiveKind | null | undefined,
+): ExecutiveKind | null {
+  if (realm === "admin") return null;
+  return normalizeExecutiveKind(kind);
+}
+
 export async function createStaffInvite(input: {
   email: string;
   realm: StaffRealm;
+  executiveKind?: ExecutiveKind | null;
   rut?: string;
   invitedByAdminId?: string;
 }): Promise<{
@@ -54,6 +69,7 @@ export async function createStaffInvite(input: {
     id: string;
     email: string;
     realm: StaffRealm;
+    executiveKind: ExecutiveKind | null;
     rut: string | null;
     expiresAt: string;
     createdAt: string;
@@ -64,6 +80,21 @@ export async function createStaffInvite(input: {
 
   if (rut && !isValidRut(rut)) {
     throw new ApiError("El RUT indicado no es válido.", 400, "INVALID_RUT");
+  }
+
+  if (input.realm === "executive") {
+    const kind = input.executiveKind ?? DEFAULT_EXECUTIVE_KIND;
+    if (!isExecutiveKind(kind)) {
+      throw new ApiError("Tipo de ejecutivo inválido.", 400, "INVALID_EXECUTIVE_KIND");
+    }
+  }
+
+  if (input.realm === "admin" && input.executiveKind) {
+    throw new ApiError(
+      "Un administrador no puede tener tipo de ejecutivo.",
+      400,
+      "INVALID_EXECUTIVE_KIND",
+    );
   }
 
   const existing = await prisma.staffAccount.findUnique({ where: { email } });
@@ -81,11 +112,17 @@ export async function createStaffInvite(input: {
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + INVITE_TTL_DAYS);
 
+  const executiveKind = resolveInviteExecutiveKind(
+    input.realm,
+    input.executiveKind,
+  );
+
   const invite = await prisma.staffInvite.create({
     data: {
       email,
       rut,
       realm: input.realm,
+      executiveKind,
       tokenHash: hashToken(token),
       expiresAt,
       invitedByAdminId: input.invitedByAdminId ?? null,
@@ -99,6 +136,7 @@ export async function createStaffInvite(input: {
       id: invite.id,
       email: invite.email,
       realm: input.realm,
+      executiveKind,
       rut: invite.rut,
       expiresAt: invite.expiresAt.toISOString(),
       createdAt: invite.createdAt.toISOString(),
@@ -122,6 +160,7 @@ export async function readStaffInviteByToken(
   return {
     email: invite.email,
     realm: invite.realm,
+    executiveKind: resolveInviteExecutiveKind(invite.realm, invite.executiveKind),
     rut: invite.rut,
     expiresAt: invite.expiresAt.toISOString(),
   };
@@ -188,6 +227,7 @@ export async function activateStaffAccountFromInvite(
         email: invite.email,
         fullName,
         role,
+        executiveKind: null,
         rut: formattedRut,
         passwordHash,
         active: true,
@@ -214,12 +254,14 @@ export async function activateStaffAccountFromInvite(
   const trialExpiresAt = new Date();
   trialExpiresAt.setDate(trialExpiresAt.getDate() + 30);
   const subscriptionStatus: SubscriptionStatus = "TRIAL";
+  const executiveKind = normalizeExecutiveKind(invite.executiveKind);
 
   const account = await prisma.staffAccount.create({
     data: {
       email: invite.email,
       fullName,
       role,
+      executiveKind,
       rut: formattedRut,
       passwordHash,
       active: true,
@@ -253,7 +295,7 @@ export async function cancelPendingStaffInvite(inviteId: string): Promise<void> 
   }
 
   await prisma.staffInvite.update({
-    where: { id: inviteId },
+    where: { id: invite.id },
     data: { acceptedAt: new Date() },
   });
 }
@@ -261,6 +303,7 @@ export async function cancelPendingStaffInvite(inviteId: string): Promise<void> 
 export async function resendStaffInviteForEmail(input: {
   email: string;
   realm: StaffRealm;
+  executiveKind?: ExecutiveKind | null;
   rut?: string;
   invitedByAdminId?: string;
 }): Promise<{ token: string }> {
@@ -272,6 +315,7 @@ export async function listPendingStaffInvites(): Promise<
     id: string;
     email: string;
     realm: StaffRealm;
+    executiveKind: ExecutiveKind | null;
     rut: string | null;
     expiresAt: string;
     createdAt: string;
@@ -290,6 +334,7 @@ export async function listPendingStaffInvites(): Promise<
       id: invite.id,
       email: invite.email,
       realm: invite.realm,
+      executiveKind: resolveInviteExecutiveKind(invite.realm, invite.executiveKind),
       rut: invite.rut,
       expiresAt: invite.expiresAt.toISOString(),
       createdAt: invite.createdAt.toISOString(),

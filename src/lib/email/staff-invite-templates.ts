@@ -3,14 +3,18 @@ import {
   buildEmailShell,
   resolvePremiumEmailBrand,
 } from "@/lib/email/email-branding";
-import type { StaffRealm } from "@/types/staff-account";
+import { getStaffRoleLabelLower } from "@/lib/auth/staff-role";
+import type { ExecutiveKind, StaffRealm } from "@/types/staff-account";
 
 function resolvePremiumBrand() {
   return resolvePremiumEmailBrand();
 }
 
-function resolveRealmLabel(realm: StaffRealm): string {
-  return realm === "admin" ? "administrador" : "ejecutivo";
+function resolveRoleLabel(
+  realm: StaffRealm,
+  executiveKind?: ExecutiveKind | null,
+): string {
+  return getStaffRoleLabelLower({ realm, executiveKind });
 }
 
 export function buildStaffInviteEmailHtml(input: {
@@ -19,9 +23,10 @@ export function buildStaffInviteEmailHtml(input: {
   temporaryPassword: string;
   loginUrl: string;
   realm: StaffRealm;
+  executiveKind?: ExecutiveKind | null;
 }): string {
   const brand = resolvePremiumBrand();
-  const roleLabel = resolveRealmLabel(input.realm);
+  const roleLabel = resolveRoleLabel(input.realm, input.executiveKind);
 
   const body = `
     <h1 style="margin:0 0 12px;font-size:22px;color:#222;">Tu acceso al cotizador</h1>
@@ -58,26 +63,39 @@ export function buildStaffInviteEmailHtml(input: {
   );
 }
 
-export function buildStaffInviteEmailSubject(realm: StaffRealm): string {
-  return realm === "admin"
-    ? "Tu acceso de administrador — Cotizador Premium"
-    : "Tu acceso de ejecutivo — Cotizador Premium";
+export function buildStaffInviteEmailSubject(
+  realm: StaffRealm,
+  executiveKind?: ExecutiveKind | null,
+): string {
+  if (realm === "admin") {
+    return "Tu acceso de administrador — Cotizador Premium";
+  }
+
+  const label = resolveRoleLabel(realm, executiveKind);
+  return `Tu acceso de ${label} — Cotizador Premium`;
 }
 
-export function buildStaffActivationEmailSubject(realm: StaffRealm): string {
-  return realm === "admin"
-    ? "Activa tu cuenta de administrador — Cotizador Premium"
-    : "Activa tu cuenta de ejecutivo — Cotizador Premium";
+export function buildStaffActivationEmailSubject(
+  realm: StaffRealm,
+  executiveKind?: ExecutiveKind | null,
+): string {
+  if (realm === "admin") {
+    return "Activa tu cuenta de administrador — Cotizador Premium";
+  }
+
+  const label = resolveRoleLabel(realm, executiveKind);
+  return `Activa tu cuenta de ${label} — Cotizador Premium`;
 }
 
 export function buildStaffActivationEmailHtml(input: {
   email: string;
   activationUrl: string;
   realm: StaffRealm;
+  executiveKind?: ExecutiveKind | null;
   rut?: string | null;
 }): string {
   const brand = resolvePremiumBrand();
-  const roleLabel = resolveRealmLabel(input.realm);
+  const roleLabel = resolveRoleLabel(input.realm, input.executiveKind);
   const rutRow = input.rut
     ? `<tr>
         <td style="padding:12px 14px;background:#fafafa;font-size:13px;color:#666;border-top:1px solid #eee;">RUT registrado</td>

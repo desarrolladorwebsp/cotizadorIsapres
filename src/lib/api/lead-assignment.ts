@@ -1,23 +1,42 @@
 import { prisma } from "@/lib/prisma";
 import { isSubscriptionActive } from "@/lib/auth/subscription";
 import { queueExecutiveClientAssignmentEmail } from "@/lib/email/notify-executive-client-assignment";
+import type { ExecutiveKind } from "@prisma/client";
+
+export interface EligibleExecutiveRow {
+  id: string;
+  fullName?: string;
+  email?: string;
+}
+
+export interface ListEligibleExecutivesOptions {
+  /** Si se indica, solo ese kind (p. ej. ISAPRES_PREMIUM). */
+  executiveKind?: ExecutiveKind;
+  /** Incluir nombre/email (listados UI). */
+  withProfile?: boolean;
+}
 
 /**
  * Ejecutivos elegibles para recibir nuevos clientes:
  * activos, onboarding completo, sin suspensión de asignaciones y suscripción vigente.
  */
-export async function listEligibleExecutivesForAssignment(): Promise<
-  { id: string }[]
-> {
+export async function listEligibleExecutivesForAssignment(
+  options?: ListEligibleExecutivesOptions,
+): Promise<EligibleExecutiveRow[]> {
   const executives = await prisma.staffAccount.findMany({
     where: {
       role: "EXECUTIVE",
       active: true,
       onboardingCompleted: true,
       assignmentsSuspended: false,
+      ...(options?.executiveKind
+        ? { executiveKind: options.executiveKind }
+        : {}),
     },
     select: {
       id: true,
+      fullName: true,
+      email: true,
       subscriptionStatus: true,
       subscriptionExpiresAt: true,
     },
@@ -31,15 +50,26 @@ export async function listEligibleExecutivesForAssignment(): Promise<
         subscriptionExpiresAt: executive.subscriptionExpiresAt,
       }),
     )
-    .map(({ id }) => ({ id }));
+    .map((executive) =>
+      options?.withProfile
+        ? {
+            id: executive.id,
+            fullName: executive.fullName,
+            email: executive.email,
+          }
+        : { id: executive.id },
+    );
 }
 
 /**
  * Round-robin 1×1 por clientes asignados: elige al ejecutivo elegible con
  * menos clientes vinculados. En empate, prioriza al que lleva más tiempo sin recibir uno.
+ * Opcionalmente filtra por `executiveKind` (p. ej. solo Isapres Premium).
  */
-export async function pickExecutiveRoundRobin(): Promise<string | null> {
-  const executives = await listEligibleExecutivesForAssignment();
+export async function pickExecutiveRoundRobin(
+  options?: Pick<ListEligibleExecutivesOptions, "executiveKind">,
+): Promise<string | null> {
+  const executives = await listEligibleExecutivesForAssignment(options);
 
   if (executives.length === 0) return null;
 

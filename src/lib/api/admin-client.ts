@@ -21,6 +21,7 @@ import type {
   UpdateStaffAccountInput,
 } from "@/types/staff-account";
 import type { UserRecord } from "@/types/user";
+import type { CalendarCallEvent } from "@/types/calendar";
 
 async function parseJsonResponse<T>(response: Response): Promise<T> {
   let data: (T & { error?: string }) | null = null;
@@ -90,6 +91,49 @@ export async function fetchQuotes(): Promise<QuoteRecord[]> {
 export async function fetchExecutiveClients(): Promise<UserRecord[]> {
   const response = await fetch("/api/executive/clients");
   return parseJsonResponse<UserRecord[]>(response);
+}
+
+export async function fetchCalendarCallEvents(input: {
+  from: string;
+  to: string;
+}): Promise<CalendarCallEvent[]> {
+  const params = new URLSearchParams({
+    from: input.from,
+    to: input.to,
+  });
+  const response = await fetch(
+    `/api/executive/calendar/events?${params.toString()}`,
+  );
+  const data = await parseJsonResponse<{ events: CalendarCallEvent[] }>(response);
+  return data.events;
+}
+
+export interface CalendlySchedulingLinkResult {
+  teamId: "EQUIPO_1" | "EQUIPO_2" | "EQUIPO_3";
+  teamLabel: string;
+  schedulingUrl: string;
+  prefill: { email: string | null; name: string | null } | null;
+  configuredTeams: Array<{
+    teamId: string;
+    label: string;
+    ready: boolean;
+  }>;
+}
+
+/** Link de agendamiento Calendly (round-robin o equipo explícito). */
+export async function fetchCalendlySchedulingLink(input: {
+  clientId?: string;
+  team?: "EQUIPO_1" | "EQUIPO_2" | "EQUIPO_3";
+  auto?: boolean;
+}): Promise<CalendlySchedulingLinkResult> {
+  const params = new URLSearchParams();
+  if (input.team) params.set("team", input.team);
+  else if (input.auto !== false) params.set("auto", "1");
+  if (input.clientId) params.set("clientId", input.clientId);
+  const response = await fetch(
+    `/api/executive/calendly/scheduling-link?${params.toString()}`,
+  );
+  return parseJsonResponse<CalendlySchedulingLinkResult>(response);
 }
 
 export async function sendExecutiveSelectedPlansEmail(input: {
@@ -426,6 +470,73 @@ export async function updateClientPipeline(
     },
   );
   return parseJsonResponse<UserRecord>(response);
+}
+
+export async function redirectClientToPremium(
+  clientId: string,
+  input: import("@/types/client-pipeline").RedirectClientToPremiumInput,
+): Promise<UserRecord> {
+  const response = await fetch(
+    `/api/executive/clients/${encodeURIComponent(clientId)}/redirect-premium`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+  );
+  return parseJsonResponse<UserRecord>(response);
+}
+
+export async function redirectClientToZoom(
+  clientId: string,
+  input: import("@/types/client-pipeline").RedirectClientFromPremiumInput,
+): Promise<UserRecord> {
+  const response = await fetch(
+    `/api/executive/clients/${encodeURIComponent(clientId)}/redirect-zoom`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+  );
+  return parseJsonResponse<UserRecord>(response);
+}
+
+export async function redirectClientToIsapres(
+  clientId: string,
+  input: import("@/types/client-pipeline").RedirectClientFromPremiumInput,
+): Promise<UserRecord> {
+  const response = await fetch(
+    `/api/executive/clients/${encodeURIComponent(clientId)}/redirect-isapres`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+  );
+  return parseJsonResponse<UserRecord>(response);
+}
+
+export async function fetchPremiumExecutives(): Promise<
+  Array<{ id: string; fullName: string; email: string }>
+> {
+  const response = await fetch("/api/executive/premium-executives");
+  const data = await parseJsonResponse<{
+    executives: Array<{ id: string; fullName: string; email: string }>;
+  }>(response);
+  return data.executives;
+}
+
+export async function fetchEligibleExecutives(
+  kind: "ZOOM" | "ISAPRES" | "ISAPRES_PREMIUM",
+): Promise<Array<{ id: string; fullName: string; email: string }>> {
+  const response = await fetch(
+    `/api/executive/eligible-executives?kind=${encodeURIComponent(kind)}`,
+  );
+  const data = await parseJsonResponse<{
+    executives: Array<{ id: string; fullName: string; email: string }>;
+  }>(response);
+  return data.executives;
 }
 
 export async function updateClientAdvisedPlan(

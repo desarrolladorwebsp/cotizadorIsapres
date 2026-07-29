@@ -105,6 +105,14 @@ export function mapDbUser(user: UserWithExecutive): UserRecord {
     checklist: resolveClientChecklist(user.pipelineChecklist),
     closedRecord: parseClientClosedRecord(user.pipelineClosedRecord),
     pipelineNotes: user.pipelineNotes,
+    nextCallAt: user.nextCallAt?.toISOString() ?? null,
+    lastCallOutcome: user.lastCallOutcome,
+    preferredContactMethod:
+      (user.preferredContactMethod as import("@/types/client-pipeline").ClientContactMethod | null) ??
+      null,
+    calendlyTeam:
+      (user.calendlyTeam as UserRecord["calendlyTeam"]) ?? null,
+    zoomJoinUrl: user.zoomJoinUrl ?? null,
     clientProfile: resolveClientProfile(user.clientProfile, {
       fullName: user.fullName,
     }),
@@ -285,7 +293,7 @@ export async function createManualClient(
 ): Promise<UserRecord> {
   let normalized;
   try {
-    normalized = normalizeClientProfileInput(input);
+    normalized = normalizeClientProfileInput(input, { requireTitularRut: true });
   } catch (error) {
     throw new ApiError(
       error instanceof Error ? error.message : "Datos inválidos.",
@@ -323,7 +331,7 @@ export async function createManualClient(
       rut: normalized.rut,
       role: "CLIENT",
       active: true,
-      clientOrigin: "MANUAL",
+      clientOrigin: input.clientOrigin ?? "MANUAL",
       assignedExecutiveId,
       pipelineNotes: input.pipelineNotes?.trim() || null,
       clientProfile: normalized.profile as unknown as Prisma.InputJsonValue,

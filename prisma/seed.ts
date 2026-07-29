@@ -215,6 +215,7 @@ async function seedAuthAccounts() {
         email: executive.email,
         fullName: executive.fullName,
         role: "EXECUTIVE",
+        executiveKind: "ISAPRES_PREMIUM",
         phone: executive.phone,
         rut: executive.rut,
         passwordHash,
@@ -225,6 +226,22 @@ async function seedAuthAccounts() {
         subscriptionExpiresAt:
           executive.subscriptionStatus === "TRIAL" ? trialExpiresAt : null,
       },
+    });
+  }
+
+  // Cuentas demo existentes: asegurar kind Premium.
+  await prisma.staffAccount.updateMany({
+    where: {
+      role: "EXECUTIVE",
+      executiveKind: null,
+    },
+    data: { executiveKind: "ISAPRES_PREMIUM" },
+  });
+
+  for (const executive of EXECUTIVE_ACCOUNTS) {
+    await prisma.staffAccount.updateMany({
+      where: { email: executive.email, role: "EXECUTIVE" },
+      data: { executiveKind: "ISAPRES_PREMIUM" },
     });
   }
 

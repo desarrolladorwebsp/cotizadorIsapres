@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
 import { AdminFormModal } from "@/components/admin/admin-data-table";
 import {
   ClientProfileForm,
@@ -9,9 +10,13 @@ import {
   type ClientProfileFormValue,
 } from "@/components/executive/client-profile-form";
 import { createExecutiveClient } from "@/lib/api/admin-client";
+import { getClientManagementRutErrors } from "@/lib/client-profile/validate-client-ruts";
 import { ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
-import type { UserRecord } from "@/types/user";
+import {
+  MANUAL_CLIENT_ORIGIN_OPTIONS,
+  type UserRecord,
+} from "@/types/user";
 
 export interface CreateClientModalProps {
   open: boolean;
@@ -29,17 +34,47 @@ export function CreateClientModal({
   const [profile, setProfile] = useState<ClientProfileFormValue>(
     buildEmptyClientProfileFormValue(),
   );
+  const [clientOrigin, setClientOrigin] = useState<
+    (typeof MANUAL_CLIENT_ORIGIN_OPTIONS)[number]["value"]
+  >("MANUAL");
   const [pipelineNotes, setPipelineNotes] = useState("");
   const [saving, setSaving] = useState(false);
+  const [rutErrors, setRutErrors] = useState<{
+    titular?: string;
+    dependents?: Record<string, string>;
+  }>({});
 
   function handleClose() {
     setProfile(buildEmptyClientProfileFormValue());
+    setClientOrigin("MANUAL");
     setPipelineNotes("");
+    setRutErrors({});
     onClose();
   }
 
-  async function handleSubmit(event: React.FormEvent) {
+  function handleProfileChange(next: ClientProfileFormValue) {
+    setProfile(next);
+    if (rutErrors.titular || rutErrors.dependents) {
+      setRutErrors({});
+    }
+  }
+
+  async function handleSubmit(event: FormEvent) {
     event.preventDefault();
+
+    const errors = getClientManagementRutErrors(
+      { rut: profile.rut, dependents: profile.dependents },
+      { requireTitularRut: true },
+    );
+    if (errors.firstMessage) {
+      setRutErrors({
+        titular: errors.titular,
+        dependents: errors.dependents,
+      });
+      onNotify(errors.firstMessage, "error");
+      return;
+    }
+
     setSaving(true);
     try {
       const created = await createExecutiveClient({
@@ -57,6 +92,7 @@ export function CreateClientModal({
         commune: profile.commune || null,
         dependents: profile.dependents,
         pipelineNotes: pipelineNotes.trim() || null,
+        clientOrigin,
       });
       onCreated(created);
       onNotify("Cliente registrado.");
@@ -80,7 +116,30 @@ export function CreateClientModal({
       size="xl"
     >
       <form className="space-y-4" onSubmit={(event) => void handleSubmit(event)}>
-        <ClientProfileForm value={profile} onChange={setProfile} />
+        <label className="block space-y-2">
+          <span className="text-sm font-medium">Origen *</span>
+          <Select
+            required
+            value={clientOrigin}
+            options={MANUAL_CLIENT_ORIGIN_OPTIONS.map((option) => ({
+              value: option.value,
+              label: option.label,
+            }))}
+            onChange={(event) =>
+              setClientOrigin(
+                event.target
+                  .value as (typeof MANUAL_CLIENT_ORIGIN_OPTIONS)[number]["value"],
+              )
+            }
+          />
+        </label>
+
+        <ClientProfileForm
+          value={profile}
+          onChange={handleProfileChange}
+          requireTitularRut
+          rutErrors={rutErrors}
+        />
 
         <label className="block space-y-2">
           <span className="text-sm font-medium">Notas iniciales</span>

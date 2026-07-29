@@ -1,5 +1,6 @@
-import type { SubscriptionStatus } from "@prisma/client";
+import type { ExecutiveKind, SubscriptionStatus } from "@prisma/client";
 import type { AuthRealm } from "@/lib/auth/constants";
+import type { StaffSection } from "@/lib/staff/staff-sections";
 
 export interface SessionPayload {
   sub: string;
@@ -25,6 +26,7 @@ export interface ExecutiveSessionUser {
   fullName: string;
   phone: string | null;
   rut: string | null;
+  executiveKind: ExecutiveKind;
   subscriptionStatus: SubscriptionStatus;
   subscriptionExpiresAt: string | null;
   subscriptionActive: boolean;
@@ -40,12 +42,21 @@ export interface LoginResponseUser {
 
 export interface StaffMeResponse {
   realm: AuthRealm;
+  /** Null para administradores. */
+  executiveKind: ExecutiveKind | null;
   user: AdminSessionUser | ExecutiveSessionUser;
   capabilities: {
     adminPanel: boolean;
     executivePanel: boolean;
+    sections: StaffSection[];
   };
 }
+
+export interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
 
 export interface LoginCredentials {
   email: string;

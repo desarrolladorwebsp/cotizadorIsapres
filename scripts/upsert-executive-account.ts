@@ -25,6 +25,7 @@ async function upsertExecutiveAccount(
       email: normalizedEmail,
       fullName,
       role: "EXECUTIVE",
+      executiveKind: "ISAPRES_PREMIUM",
       passwordHash,
       active: true,
       mustChangePassword: false,
@@ -38,6 +39,7 @@ async function upsertExecutiveAccount(
     update: {
       fullName,
       role: "EXECUTIVE",
+      executiveKind: "ISAPRES_PREMIUM",
       passwordHash,
       active: true,
       mustChangePassword: false,

@@ -13,12 +13,13 @@ import {
 import { getEquipoFromEmail, getResendApiKey } from "@/lib/email/resend-config";
 import { buildInlineAttachmentsForHtml } from "@/lib/email/email-inline-assets";
 import { resolveServerAppBaseUrl } from "@/lib/platform/routing";
-import type { StaffRealm } from "@/types/staff-account";
+import type { ExecutiveKind, StaffRealm } from "@/types/staff-account";
 
 /** Invitación con enlace de activación (flujo principal). */
 export async function sendStaffActivationEmail(input: {
   email: string;
   realm: StaffRealm;
+  executiveKind?: ExecutiveKind | null;
   activationToken: string;
   rut?: string | null;
   request?: Request;
@@ -36,6 +37,7 @@ export async function sendStaffActivationEmail(input: {
       email: input.email,
       activationUrl,
       realm: input.realm,
+      executiveKind: input.executiveKind,
       rut: input.rut,
     });
   const attachments = buildInlineAttachmentsForHtml(html);
@@ -43,7 +45,7 @@ export async function sendStaffActivationEmail(input: {
   const result = await resend.emails.send({
     from: fromEmail,
     to: input.email,
-    subject: buildStaffActivationEmailSubject(input.realm),
+    subject: buildStaffActivationEmailSubject(input.realm, input.executiveKind),
     html,
     attachments: attachments.length > 0 ? attachments : undefined,
   });
@@ -69,6 +71,7 @@ export async function sendStaffInviteEmail(input: {
   email: string;
   temporaryPassword: string;
   realm: StaffRealm;
+  executiveKind?: ExecutiveKind | null;
   request?: Request;
 }): Promise<string> {
   const resend = new Resend(getResendApiKey());
@@ -83,13 +86,14 @@ export async function sendStaffInviteEmail(input: {
       temporaryPassword: input.temporaryPassword,
       loginUrl,
       realm: input.realm,
+      executiveKind: input.executiveKind,
     });
   const attachments = buildInlineAttachmentsForHtml(html);
 
   const result = await resend.emails.send({
     from: fromEmail,
     to: input.email,
-    subject: buildStaffInviteEmailSubject(input.realm),
+    subject: buildStaffInviteEmailSubject(input.realm, input.executiveKind),
     html,
     attachments: attachments.length > 0 ? attachments : undefined,
   });

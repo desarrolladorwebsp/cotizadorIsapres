@@ -6,6 +6,7 @@ import type {
   ExecutiveSessionUser,
   StaffMeResponse,
 } from "@/lib/auth/types";
+import type { StaffSection } from "@/lib/staff/staff-sections";
 
 export function useStaffSession() {
   const [data, setData] = useState<StaffMeResponse | null>(null);
@@ -50,13 +51,18 @@ export function useStaffSession() {
     };
   }, []);
 
+  const isAdmin = data?.capabilities.adminPanel ?? false;
+
   return {
     session: data,
     user: data?.user ?? null,
     realm: data?.realm ?? null,
-    isAdmin: data?.capabilities.adminPanel ?? false,
+    executiveKind: data?.executiveKind ?? null,
+    isAdmin,
     /** Puede acceder al panel ejecutivo (admin o ejecutivo). */
     isExecutive: data?.capabilities.executivePanel ?? false,
+    /** Vacío hasta que /api/auth/me responda (evita flash de menú incorrecto). */
+    allowedSections: data?.capabilities.sections ?? ([] as StaffSection[]),
     /** Solo cuentas ejecutivas con perfil pendiente deben completar onboarding. */
     needsExecutiveOnboarding:
       data?.realm === "executive" &&

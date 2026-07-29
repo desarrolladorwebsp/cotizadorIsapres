@@ -10,9 +10,9 @@ interface LandingLogoProps {
   /** Sin fondo ni sombra (p. ej. header navy del panel ejecutivo). */
   transparent?: boolean;
   /**
-   * `logo` = logo oficial de página (`logo-cotizador-premium.png`).
-   * `icon` = isotipo para favicon / header compacto (`icono-logo-cotizador-premium.png`).
-   */
+ * `icon` = isotipo oficial de menús / headers (`icono-logo-cotizador-premium.png`).
+ * `logo` = wordmark completo (usar solo cuando se pida explícitamente).
+ */
   variant?: "logo" | "icon";
 }
 
@@ -26,7 +26,7 @@ export function LandingLogo({
   size = "md",
   className = "",
   transparent = false,
-  variant = "logo",
+  variant = "icon",
 }: LandingLogoProps) {
   const config = SIZE[size];
   const src =

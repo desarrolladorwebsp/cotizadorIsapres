@@ -462,6 +462,7 @@ export function CompanyAgreementValidationSection({
         )}
       >
         <span
+          data-convenio-field-label
           className={joinClasses(
             toolbar
               ? "mb-1 block text-xs font-medium text-muted"
@@ -728,8 +729,10 @@ export function CompanyAgreementValidationSection({
             <Button
               type="submit"
               size="sm"
+              variant="ghost"
+              data-convenio-cta
               disabled={submitting}
-              className="h-10 shrink-0 rounded-lg bg-red-600 px-3.5 text-xs font-semibold text-white hover:bg-red-700"
+              className="h-10 shrink-0 rounded-lg border-0 bg-[var(--convenio-accent-strong)] px-3.5 text-xs font-semibold text-white shadow-sm hover:bg-[var(--convenio-accent-strong)] hover:brightness-95 hover:text-white"
             >
               {submitting ? "Validando…" : "Validar"}
             </Button>
@@ -778,9 +781,11 @@ export function CompanyAgreementValidationSection({
               <Button
                 type="submit"
                 size="sm"
+                variant="ghost"
+                data-convenio-cta
                 disabled={submitting}
                 className={joinClasses(
-                  "w-full shrink-0 bg-red-600 text-white hover:bg-red-700 lg:w-auto lg:min-w-[7.5rem]",
+                  "w-full shrink-0 border-0 bg-[var(--convenio-accent-strong)] text-white shadow-sm hover:bg-[var(--convenio-accent-strong)] hover:brightness-95 hover:text-white lg:w-auto lg:min-w-[7.5rem]",
                   isInline && "h-9 rounded-lg px-4 text-xs",
                   compactEmbed && "max-md:h-8 max-md:px-3 max-md:text-[11px]",
                 )}
@@ -823,9 +828,10 @@ export function CompanyAgreementValidationSection({
       <>
         <div
           data-embed-measure
+          data-convenio-inline
           className={joinClasses(
             safeWidth,
-            "border-t border-red-200",
+            "border-t border-[var(--convenio-accent)]/25",
             compactEmbed ? "mt-2.5 pt-2.5" : "mt-3 pt-3",
             className,
           )}
@@ -843,8 +849,9 @@ export function CompanyAgreementValidationSection({
               )}
             >
               <span
+                data-convenio-title
                 className={joinClasses(
-                  "min-w-0 flex-1 font-semibold leading-snug text-red-700",
+                  "min-w-0 flex-1 font-semibold leading-snug text-[var(--convenio-accent)]",
                   compactEmbed
                     ? "text-xs max-md:text-[11px]"
                     : "text-sm sm:text-[15px]",
@@ -852,7 +859,10 @@ export function CompanyAgreementValidationSection({
               >
                 {INLINE_TITLE}
               </span>
-              <span className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-red-700">
+              <span
+                data-convenio-toggle
+                className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-[var(--convenio-accent)]"
+              >
                 {expanded ? "Ocultar" : "Consultar"}
                 <ChevronIcon expanded={expanded} />
               </span>
@@ -862,8 +872,9 @@ export function CompanyAgreementValidationSection({
               type="button"
               onClick={() => setInfoOpen(true)}
               aria-label="Más información sobre convenios empresa"
+              data-convenio-info
               className={joinClasses(
-                "inline-flex shrink-0 items-center justify-center rounded-full border border-red-200 text-red-700 transition hover:bg-red-50",
+                "inline-flex shrink-0 items-center justify-center rounded-full border border-[var(--convenio-accent)]/30 text-[var(--convenio-accent)] transition hover:bg-[var(--convenio-accent-muted)]",
                 "size-8",
                 touchTarget,
               )}
@@ -885,7 +896,7 @@ export function CompanyAgreementValidationSection({
               >
                 <div className={joinClasses("pt-2", compactEmbed && "pt-1.5")}>
                   {formContent}
-                  <p className="mt-1.5 text-[10px] text-muted/90">
+                  <p className="mt-1.5 text-[10px] text-muted/90" data-convenio-hint>
                     El RUT empresa es necesario para validar. Los demás campos
                     son opcionales.
                   </p>
@@ -915,7 +926,7 @@ export function CompanyAgreementValidationSection({
         aria-labelledby="company-agreement-title"
         className={joinClasses(
           safeWidth,
-          "rounded-2xl border border-red-200 bg-gradient-to-br from-red-50 via-white to-red-50 shadow-sm",
+          "rounded-2xl border border-[var(--convenio-accent)]/25 bg-gradient-to-br from-[var(--convenio-accent-muted)] via-white to-[var(--convenio-accent-muted)] shadow-sm",
           compactEmbed ? "p-3 max-md:p-2.5" : "p-4 sm:p-5",
           className,
         )}
@@ -928,7 +939,7 @@ export function CompanyAgreementValidationSection({
         >
           <span
             className={joinClasses(
-              "inline-flex shrink-0 items-center justify-center rounded-xl bg-red-100 text-red-700",
+              "inline-flex shrink-0 items-center justify-center rounded-xl bg-[var(--convenio-accent-muted)] text-[var(--convenio-accent)]",
               compactEmbed ? "size-9 max-md:size-8" : "size-10",
             )}
             aria-hidden
@@ -947,7 +958,7 @@ export function CompanyAgreementValidationSection({
                 <h2
                   id="company-agreement-title"
                   className={joinClasses(
-                    "font-bold leading-snug text-red-700",
+                    "font-bold leading-snug text-[var(--convenio-accent)]",
                     compactEmbed
                       ? "text-sm max-md:text-[13px]"
                       : "text-base sm:text-lg",
@@ -955,7 +966,7 @@ export function CompanyAgreementValidationSection({
                 >
                   {INLINE_TITLE}
                 </h2>
-                <span className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-red-700">
+                <span className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-[var(--convenio-accent)]">
                   {expanded ? "Ocultar formulario" : "Consultar convenio"}
                   <ChevronIcon expanded={expanded} />
                 </span>
@@ -966,7 +977,7 @@ export function CompanyAgreementValidationSection({
                 onClick={() => setInfoOpen(true)}
                 aria-label="Más información sobre convenios empresa"
                 className={joinClasses(
-                  "inline-flex shrink-0 items-center justify-center rounded-full border border-red-200 text-red-700 transition hover:bg-red-50",
+                  "inline-flex shrink-0 items-center justify-center rounded-full border border-[var(--convenio-accent)]/30 text-[var(--convenio-accent)] transition hover:bg-[var(--convenio-accent-muted)]",
                   compactEmbed ? "size-8" : "size-9",
                   touchTarget,
                 )}

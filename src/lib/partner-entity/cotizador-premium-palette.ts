@@ -27,13 +27,19 @@ export const COTIZADOR_PREMIUM_PALETTE = {
   foreground: "#092558",
   border: "#D0E2F0",
   surfaceHover: "#EAF3FA",
-  criteriaSurface: "#EAF3FA",
-  criteriaRing: "#BDDCF0",
+  /** Misma familia que el badge «Mostrando…» (bg-primary). */
+  criteriaSurface: "#0D6DEE",
+  criteriaRing: "#0956C4",
+  /** Coral para contraste con la paleta azul (texto / Ocultar). */
+  convenioAccent: "#D85A30",
+  /** CTA Validar convenio: coral (contrasta sobre criteria-surface = primary). */
+  convenioAccentStrong: "#FF6B4A",
+  convenioAccentMuted: "#FCE8E0",
 } as const;
 
 export const COTIZADOR_PREMIUM_LOGO_PATH =
   "/images/logo-cotizador-premium.png";
 
-/** Isotipo / icono oficial — solo favicon y marcas compactas (CEO header). */
+/** Isotipo oficial — menús, headers y marca compacta de plataforma. */
 export const COTIZADOR_PREMIUM_ICON_PATH =
   "/images/icono-logo-cotizador-premium.png";

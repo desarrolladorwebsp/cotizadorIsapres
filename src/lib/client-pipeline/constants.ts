@@ -9,6 +9,7 @@ export const CLIENT_PIPELINE_STATUS_LABELS: Record<ClientPipelineStatus, string>
   {
     NUEVO: "Nuevo",
     CONTACTADO: "Contactado",
+    NO_CONTESTA: "No contesta",
     EN_SEGUIMIENTO: "En seguimiento",
     PROPUESTA_ENVIADA: "Propuesta enviada",
     DOCUMENTACION: "Documentación",
@@ -23,6 +24,7 @@ export const CLIENT_PIPELINE_STATUS_DESCRIPTIONS: Record<
 > = {
   NUEVO: "Cliente asignado, sin primer contacto",
   CONTACTADO: "Primer contacto realizado",
+  NO_CONTESTA: "Se intentó contactar y no respondió",
   EN_SEGUIMIENTO: "Conversación activa con el cliente",
   PROPUESTA_ENVIADA: "Plan o propuesta enviada al cliente",
   DOCUMENTACION: "Recolectando documentos para la Isapre",
@@ -37,6 +39,7 @@ export const CLIENT_PIPELINE_STATUS_TONES: Record<
 > = {
   NUEVO: "warning",
   CONTACTADO: "info",
+  NO_CONTESTA: "warning",
   EN_SEGUIMIENTO: "info",
   PROPUESTA_ENVIADA: "info",
   DOCUMENTACION: "warning",
@@ -48,6 +51,7 @@ export const CLIENT_PIPELINE_STATUS_TONES: Record<
 export const CLIENT_PIPELINE_STATUS_OPTIONS: ClientPipelineStatus[] = [
   "NUEVO",
   "CONTACTADO",
+  "NO_CONTESTA",
   "EN_SEGUIMIENTO",
   "PROPUESTA_ENVIADA",
   "DOCUMENTACION",
@@ -55,6 +59,47 @@ export const CLIENT_PIPELINE_STATUS_OPTIONS: ClientPipelineStatus[] = [
   "CERRADO",
   "PERDIDO",
 ];
+
+/** Estados relevantes en la gestión simplificada de Ejecutivo Zoom. */
+export const ZOOM_PIPELINE_STATUS_OPTIONS: ClientPipelineStatus[] = [
+  "NUEVO",
+  "CONTACTADO",
+  "NO_CONTESTA",
+  "EN_SEGUIMIENTO",
+  "PERDIDO",
+];
+
+/** Orden del embudo comercial (ramas laterales con rango bajo para poder reingresar). */
+const PIPELINE_FUNNEL_RANK: Record<ClientPipelineStatus, number> = {
+  NUEVO: 0,
+  NO_CONTESTA: 1,
+  CONTACTADO: 2,
+  EN_SEGUIMIENTO: 3,
+  PROPUESTA_ENVIADA: 4,
+  DOCUMENTACION: 5,
+  ENVIADO_ISAPRE: 6,
+  CERRADO: 7,
+  PERDIDO: -1,
+};
+
+/**
+ * Avanza el estado solo hacia adelante en el embudo.
+ * No mueve CERRADO ni PERDIDO; tampoco degrada un estado más avanzado.
+ */
+export function advancePipelineStatus(
+  current: ClientPipelineStatus | null | undefined,
+  target: ClientPipelineStatus,
+): ClientPipelineStatus {
+  const from = current ?? "NUEVO";
+  if (from === "CERRADO" || from === "PERDIDO") return from;
+  if (target === "PERDIDO" || target === "NO_CONTESTA" || target === "CERRADO") {
+    return target;
+  }
+  const fromRank = PIPELINE_FUNNEL_RANK[from];
+  const targetRank = PIPELINE_FUNNEL_RANK[target];
+  if (targetRank < 0) return from;
+  return targetRank > fromRank ? target : from;
+}
 
 const DEFAULT_CHECKLIST_DEFINITIONS: Array<
   Pick<ClientChecklistItem, "id" | "label" | "category">

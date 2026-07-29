@@ -12,11 +12,42 @@ import {
   isValidPlan,
   normalizePlan,
 } from "@/lib/api/plan-validation";
-import { requireAdminSession, requireStaffSession } from "@/lib/auth/require-auth";
+import { requireAdminSession, requireExecutiveOrAdminSession } from "@/lib/auth/require-auth";
+import { AUTH_REALM } from "@/lib/auth/constants";
+import { staffCanAccessSection } from "@/lib/auth/staff-role";
+import { ApiError } from "@/lib/api/api-error";
+import type { ExecutiveSessionUser } from "@/lib/auth/types";
+import type { StaffSection } from "@/lib/staff/staff-sections";
+
+const PLANS_READ_SECTIONS: StaffSection[] = [
+  "clinicas",
+  "reportes-pdf",
+  "cotizador",
+];
 
 export async function GET(request: Request) {
   try {
-    await requireStaffSession(request);
+    const { realm, user } = await requireExecutiveOrAdminSession(request);
+    const access = {
+      realm,
+      executiveKind:
+        realm === AUTH_REALM.executive
+          ? (user as ExecutiveSessionUser).executiveKind
+          : null,
+    };
+
+    const allowed = PLANS_READ_SECTIONS.some((section) =>
+      staffCanAccessSection(access, section),
+    );
+
+    if (!allowed) {
+      throw new ApiError(
+        "No tienes permiso para acceder a este recurso.",
+        403,
+        "SECTION_FORBIDDEN",
+      );
+    }
+
     const plans = await readPlans();
     return NextResponse.json(plans);
   } catch (error) {

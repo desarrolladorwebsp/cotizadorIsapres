@@ -14,6 +14,7 @@ import {
   readStaffSessionFromCookies,
   readStaffSessionFromRequest,
 } from "@/lib/auth/session";
+import { getStaffSectionsForAccount } from "@/lib/auth/staff-role";
 import type {
   AdminSessionUser,
   ExecutiveSessionUser,
@@ -213,12 +214,22 @@ export async function buildStaffMeResponse(
     const resolved = await resolveEffectiveStaffSession(request);
     if (!resolved) return null;
 
+    const executiveKind =
+      resolved.realm === AUTH_REALM.executive
+        ? (resolved.user as ExecutiveSessionUser).executiveKind
+        : null;
+
     return {
       realm: resolved.realm,
+      executiveKind,
       user: resolved.user,
       capabilities: {
         adminPanel: staffCanAccessAdminRoutes(resolved.realm),
         executivePanel: staffCanAccessExecutiveRoutes(resolved.realm),
+        sections: getStaffSectionsForAccount({
+          realm: resolved.realm,
+          executiveKind,
+        }),
       },
       sessionUpgraded: resolved.sessionUpgraded,
     };

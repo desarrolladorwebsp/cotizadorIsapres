@@ -6,10 +6,10 @@ import { useUfValue } from "@/hooks/use-uf-value";
 import { usePartnerEntity } from "@/components/partner/partner-entity-provider";
 import {
   PLATFORM_AGENT_KEY,
-  PLATFORM_AGENT_LOGO_URL,
   PLATFORM_AGENT_WEBSITE,
   PLATFORM_LANDING_PATH,
 } from "@/lib/partner-entity/platform-agent";
+import { COTIZADOR_PREMIUM_ICON_PATH } from "@/lib/partner-entity/cotizador-premium-palette";
 import { publicCotizadorShell, touchTarget, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 
@@ -82,9 +82,11 @@ export function PublicCotizadorHeader({ embedMode = false }: PublicCotizadorHead
     : entity!.exitLabel;
   const logoHref = isBranded ? exitHref : PLATFORM_LANDING_PATH;
   const logoAlt = isBranded ? entity!.name : "Cotizador Virtual";
-  const logoSrc = isBranded
-    ? entity!.logoUrl
-    : PLATFORM_AGENT_LOGO_URL;
+  const logoSrc = isPlatformAgent
+    ? COTIZADOR_PREMIUM_ICON_PATH
+    : isBranded
+      ? entity!.logoUrl
+      : COTIZADOR_PREMIUM_ICON_PATH;
   const logoOpensExternal = isBranded && isExternalUrl(logoHref);
   const exitIsInternal = !isExternalUrl(exitHref);
 
@@ -98,9 +100,13 @@ export function PublicCotizadorHeader({ embedMode = false }: PublicCotizadorHead
     <Image
       src={logoSrc}
       alt={logoAlt}
-      width={224}
-      height={59}
-      className="h-9 w-auto max-w-[min(100%,13rem)] object-contain object-left sm:h-11 sm:max-w-none"
+      width={isPlatformAgent || !isBranded ? 48 : 224}
+      height={isPlatformAgent || !isBranded ? 48 : 59}
+      className={
+        isPlatformAgent || !isBranded
+          ? "size-10 shrink-0 object-contain sm:size-11"
+          : "h-9 w-auto max-w-[min(100%,13rem)] object-contain object-left sm:h-11 sm:max-w-none"
+      }
       priority
       unoptimized={logoSrc.startsWith("http")}
     />

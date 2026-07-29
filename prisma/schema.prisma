@@ -38,6 +38,13 @@ enum StaffRole {
   EXECUTIVE
 }
 
+/// Discriminador de ejecutivo (null en ADMIN).
+enum ExecutiveKind {
+  ISAPRES_PREMIUM
+  ZOOM
+  ISAPRES
+}
+
 enum SubscriptionStatus {
   TRIAL
   ACTIVE
@@ -49,6 +56,7 @@ enum SubscriptionStatus {
 enum ClientPipelineStatus {
   NUEVO
   CONTACTADO
+  NO_CONTESTA
   EN_SEGUIMIENTO
   PROPUESTA_ENVIADA
   DOCUMENTACION
@@ -66,6 +74,24 @@ enum PlanType {
 enum ClientOrigin {
   COTIZADOR
   MANUAL
+  CAMPANA_LEAD_WHATSAPP
+}
+
+enum ClientContactMethod {
+  ZOOM
+  WHATSAPP
+}
+
+enum CalendlyTeam {
+  EQUIPO_1
+  EQUIPO_2
+  EQUIPO_3
+}
+
+enum CalendlyBookingStatus {
+  SCHEDULED
+  CANCELED
+  NO_SHOW
 }
 
 model Isapre {
@@ -171,21 +197,69 @@ model User {
   pipelineChecklist    Json?                 @map("pipeline_checklist")
   pipelineClosedRecord Json?                 @map("pipeline_closed_record")
   pipelineNotes        String?               @map("pipeline_notes")
-  advisedPlanCode      String?               @map("advised_plan_code")
-  clientOrigin         ClientOrigin          @default(COTIZADOR) @map("client_origin")
-  clientProfile        Json?                 @map("client_profile")
-  createdAt            DateTime              @default(now()) @map("created_at")
-  updatedAt            DateTime          @updatedAt @map("updated_at")
-  quotes               Quote[]
-  activities           ClientActivity[]
-  reviews              PlanReview[]
-  assignedExecutive    StaffAccount? @relation("AssignedClients", fields: [assignedExecutiveId], references: [id], onDelete: SetNull)
-  advisedPlan          Plan?         @relation("AdvisedPlans", fields: [advisedPlanCode], references: [uniqueCode], onDelete: SetNull)
+  /// Próximo llamado agendado (p. ej. Ejecutivo Zoom).
+  nextCallAt           DateTime?             @map("next_call_at")
+  /// Último resultado / nota corta del llamado.
+  lastCallOutcome      String?               @map("last_call_outcome")
+  /// Cómo debe contactar el ejecutivo Premium (tras redirección Zoom).
+  preferredContactMethod ClientContactMethod? @map("preferred_contact_method")
+  /// Equipo Calendly asignado (reuniones Zoom).
+  calendlyTeam           CalendlyTeam?          @map("calendly_team")
+  /// Link de Zoom de la última reunión Calendly activa.
+  zoomJoinUrl            String?                @map("zoom_join_url")
+  advisedPlanCode        String?                @map("advised_plan_code")
+  clientOrigin           ClientOrigin           @default(COTIZADOR) @map("client_origin")
+  clientProfile          Json?                  @map("client_profile")
+  createdAt              DateTime               @default(now()) @map("created_at")
+  updatedAt              DateTime               @updatedAt @map("updated_at")
+  quotes                 Quote[]
+  activities             ClientActivity[]
+  reviews                PlanReview[]
+  calendlyBookings       CalendlyBooking[]
+  assignedExecutive      StaffAccount? @relation("AssignedClients", fields: [assignedExecutiveId], references: [id], onDelete: SetNull)
+  advisedPlan            Plan?         @relation("AdvisedPlans", fields: [advisedPlanCode], references: [uniqueCode], onDelete: SetNull)
 
   @@index([role])
   @@index([assignedExecutiveId])
   @@index([advisedPlanCode])
+  @@index([nextCallAt])
   @@map("users")
+}
+
+/// Key-value para contadores (p. ej. round-robin Calendly).
+model AppMeta {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("app_meta")
+}
+
+/// Reunión agendada vía Calendly (equipos Zoom).
+model CalendlyBooking {
+  id            String                @id @default(cuid())
+  userId        String?               @map("user_id")
+  calendlyTeam  CalendlyTeam          @map("calendly_team")
+  eventUuid     String                @unique @map("event_uuid")
+  inviteeUuid   String                @map("invitee_uuid")
+  inviteeEmail  String?               @map("invitee_email")
+  startAt       DateTime              @map("start_at")
+  endAt         DateTime?             @map("end_at")
+  status        CalendlyBookingStatus @default(SCHEDULED)
+  zoomJoinUrl   String?               @map("zoom_join_url")
+  zoomMeetingId String?               @map("zoom_meeting_id")
+  cancelUrl     String?               @map("cancel_url")
+  rescheduleUrl String?               @map("reschedule_url")
+  createdAt     DateTime              @default(now()) @map("created_at")
+  updatedAt     DateTime              @updatedAt @map("updated_at")
+  user          User?                 @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([inviteeUuid])
+  @@index([startAt])
+  @@index([calendlyTeam])
+  @@index([status])
+  @@map("calendly_bookings")
 }
 
 /// Cuentas del panel (administradores y ejecutivos) con credenciales compartidas.
@@ -195,6 +269,8 @@ model StaffAccount {
   passwordHash          String              @map("password_hash")
   fullName              String              @map("full_name")
   role                  StaffRole
+  /// Solo para role=EXECUTIVE. Null en ADMIN.
+  executiveKind         ExecutiveKind?      @map("executive_kind")
   phone                 String?
   rut                   String?
   active                Boolean             @default(true)
@@ -218,6 +294,7 @@ model StaffAccount {
   passwordResetTokens   PasswordResetToken[]
 
   @@index([role])
+  @@index([executiveKind])
   @@index([subscriptionStatus])
   @@map("staff_accounts")
 }
@@ -239,16 +316,18 @@ model PasswordResetToken {
 
 /// Invitación por correo para crear cuenta admin o ejecutivo (enlace único).
 model StaffInvite {
-  id               String    @id @default(cuid())
+  id               String         @id @default(cuid())
   email            String
   rut              String?
   realm            String
-  tokenHash        String    @unique @map("token_hash")
-  expiresAt        DateTime  @map("expires_at")
-  acceptedAt       DateTime? @map("accepted_at")
-  invitedByAdminId String?   @map("invited_by_admin_id")
-  createdAt        DateTime  @default(now()) @map("created_at")
-  updatedAt        DateTime  @updatedAt @map("updated_at")
+  /// Solo cuando realm=executive. Null en admin; al activar default ISAPRES_PREMIUM.
+  executiveKind    ExecutiveKind? @map("executive_kind")
+  tokenHash        String         @unique @map("token_hash")
+  expiresAt        DateTime       @map("expires_at")
+  acceptedAt       DateTime?      @map("accepted_at")
+  invitedByAdminId String?        @map("invited_by_admin_id")
+  createdAt        DateTime       @default(now()) @map("created_at")
+  updatedAt        DateTime       @updatedAt @map("updated_at")
 
   @@index([email])
   @@map("staff_invites")

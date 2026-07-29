@@ -13,6 +13,7 @@ import { issueSession } from "@/lib/auth/session";
 import {
   isAdminRole,
   isExecutiveRole,
+  normalizeExecutiveKind,
   staffRealmToRole,
   staffRoleToRealm,
 } from "@/lib/auth/staff-role";
@@ -41,6 +42,10 @@ function mapStaffRecord(account: StaffAccount): StaffAccountRecord {
   return {
     id: account.id,
     realm,
+    executiveKind:
+      realm === "executive"
+        ? normalizeExecutiveKind(account.executiveKind)
+        : null,
     email: account.email,
     fullName: account.fullName,
     active: account.active,
@@ -69,6 +74,7 @@ function mapExecutiveSessionUser(account: StaffAccount): ExecutiveSessionUser {
     fullName: account.fullName,
     phone: account.phone,
     rut: account.rut,
+    executiveKind: normalizeExecutiveKind(account.executiveKind),
     subscriptionStatus,
     subscriptionExpiresAt: account.subscriptionExpiresAt?.toISOString() ?? null,
     subscriptionActive,
@@ -326,6 +332,9 @@ export async function updateStaffAccount(
       rut: input.rut,
       subscriptionStatus: input.subscriptionStatus,
       assignmentsSuspended: input.assignmentsSuspended,
+      ...(input.executiveKind !== undefined
+        ? { executiveKind: input.executiveKind }
+        : {}),
     },
   });
 

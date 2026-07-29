@@ -28,6 +28,7 @@
     "export-plan-reports": "tsx scripts/export-plan-reports.ts",
     "backfill-plan-zones": "tsx scripts/backfill-plan-zones.ts",
     "backfill-clinic-zones": "tsx scripts/backfill-clinic-zones.ts",
+    "set-all-plans-preferred": "tsx scripts/set-all-plans-preferred.ts",
     "export-clinic-zones": "tsx scripts/export-clinic-zones-report.ts",
     "audit-plan-coverages": "tsx scripts/audit-plan-coverages.ts",
     "audit-mobile-views": "node scripts/audit-mobile-views.mjs",
