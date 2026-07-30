@@ -42,6 +42,7 @@ import {
 import { buildWhatsAppUrl } from "@/lib/partner-entity/theme";
 import { comparePlansByFinalPriceAsc } from "@/lib/plan-sort";
 import {
+  EXECUTIVE_PLANS_PAGE_SIZE,
   INITIAL_PLANS_PAGE_SIZE,
   PLANS_PAGE_SIZE_STEP,
 } from "@/lib/plan-search-config";
@@ -113,6 +114,46 @@ function sortPlansByKey(
   return next;
 }
 
+/** Páginas visibles con elipsis (ej. 1 … 9 10 11 … 115). */
+function buildPaginationItems(
+  current: number,
+  total: number,
+): Array<number | "ellipsis"> {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, index) => index + 1);
+  }
+
+  const items: Array<number | "ellipsis"> = [1];
+  const start = Math.max(2, current - 1);
+  const end = Math.min(total - 1, current + 1);
+
+  if (start > 2) items.push("ellipsis");
+  for (let page = start; page <= end; page += 1) items.push(page);
+  if (end < total - 1) items.push("ellipsis");
+  items.push(total);
+
+  return items;
+}
+
+function PaginationChevron({ direction }: { direction: "prev" | "next" }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="size-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      aria-hidden
+    >
+      {direction === "prev" ? (
+        <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+      ) : (
+        <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
+      )}
+    </svg>
+  );
+}
+
 export interface CotizadorWorkspaceProps {
   variant: CotizadorHeaderVariant;
   /** Oculta header y nav globales cuando el panel ejecutivo ya provee la navegación. */
@@ -161,6 +202,7 @@ function CotizadorWorkspaceInner({
   const [assignPlan, setAssignPlan] = useState<HealthPlan | null>(null);
   const [sortKey, setSortKey] = useState<QuoteSortKey>("price_asc");
   const [visibleCount, setVisibleCount] = useState(INITIAL_PLANS_PAGE_SIZE);
+  const [executivePage, setExecutivePage] = useState(1);
   const [priceBoundsInitialized, setPriceBoundsInitialized] = useState(false);
   const [clients, setClients] = useState<UserRecord[]>([]);
   const [activeClientId, setActiveClientId] = useState("");
@@ -382,14 +424,47 @@ function CotizadorWorkspaceInner({
     [displayedPlans, visibleCount],
   );
 
-  const plansToDisplay = isSelectedPlansView ? selectedPlans : visiblePlans;
+  const executiveTotalPages = Math.max(
+    1,
+    Math.ceil(displayedPlans.length / EXECUTIVE_PLANS_PAGE_SIZE),
+  );
+
+  const executivePageSafe = Math.min(executivePage, executiveTotalPages);
+
+  const executivePagePlans = useMemo(() => {
+    const start = (executivePageSafe - 1) * EXECUTIVE_PLANS_PAGE_SIZE;
+    return displayedPlans.slice(start, start + EXECUTIVE_PLANS_PAGE_SIZE);
+  }, [displayedPlans, executivePageSafe]);
+
+  const plansToDisplay = isSelectedPlansView
+    ? selectedPlans
+    : isExecutive
+      ? executivePagePlans
+      : visiblePlans;
 
   const hasMorePlans =
-    !isSelectedPlansView && displayedPlans.length > visiblePlans.length;
+    !isExecutive &&
+    !isSelectedPlansView &&
+    displayedPlans.length > visiblePlans.length;
 
   const shouldShowPlanList = isSelectedPlansView
     ? selectedPlans.length > 0
     : displayedPlans.length > 0;
+
+  const executiveRangeLabel = useMemo(() => {
+    if (displayedPlans.length === 0) return "0";
+    const start = (executivePageSafe - 1) * EXECUTIVE_PLANS_PAGE_SIZE + 1;
+    const end = Math.min(
+      executivePageSafe * EXECUTIVE_PLANS_PAGE_SIZE,
+      displayedPlans.length,
+    );
+    return `${start}–${end} de ${displayedPlans.length}`;
+  }, [displayedPlans.length, executivePageSafe]);
+
+  const executivePaginationItems = useMemo(
+    () => buildPaginationItems(executivePageSafe, executiveTotalPages),
+    [executivePageSafe, executiveTotalPages],
+  );
 
   const selectedShareInput = useMemo(
     () => ({
@@ -434,12 +509,22 @@ function CotizadorWorkspaceInner({
 
   useEffect(() => {
     setVisibleCount(INITIAL_PLANS_PAGE_SIZE);
+    setExecutivePage(1);
   }, [resultsFingerprint]);
 
   function handleLoadMorePlans() {
     setVisibleCount((current) =>
       Math.min(current + PLANS_PAGE_SIZE_STEP, displayedPlans.length),
     );
+  }
+
+  function goToExecutivePage(nextPage: number) {
+    const clamped = Math.min(Math.max(1, nextPage), executiveTotalPages);
+    setExecutivePage(clamped);
+    if (typeof window === "undefined") return;
+    document
+      .getElementById("executive-plans-toolbar")
+      ?.scrollIntoView({ block: "start", behavior: "smooth" });
   }
 
   function notify(message: string, tone: "success" | "error" = "success") {
@@ -672,7 +757,14 @@ function CotizadorWorkspaceInner({
               </section>
             ) : null}
 
-            <section className="border-b border-border/40 pb-3 pt-0.5">
+            <section
+              id="executive-plans-toolbar"
+              className={joinClasses(
+                "border-b border-border/40 pb-3 pt-0.5",
+                embeddedInExecutiveShell &&
+                  "sticky top-0 z-10 -mx-4 scroll-mt-0 bg-bg-layout/95 px-4 pt-2 backdrop-blur-sm sm:-mx-6 sm:px-6 lg:top-20 lg:-mx-10 lg:scroll-mt-20 lg:px-10",
+              )}
+            >
               <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-end sm:gap-x-3 sm:gap-y-2">
                 <div className="flex min-w-0 shrink-0 gap-3">
                   <div className="min-w-0">
@@ -680,7 +772,9 @@ function CotizadorWorkspaceInner({
                       Planes encontrados
                     </p>
                     <p className="flex h-10 items-center text-sm font-bold tabular-nums text-primary-dark">
-                      {displayedPlans.length}
+                      {isExecutive && !isSelectedPlansView
+                        ? executiveRangeLabel
+                        : displayedPlans.length}
                     </p>
                   </div>
                   <div className="min-w-0">
@@ -841,6 +935,79 @@ function CotizadorWorkspaceInner({
                   </select>
                 </label>
 
+                {isExecutive &&
+                !isSelectedPlansView &&
+                displayedPlans.length > EXECUTIVE_PLANS_PAGE_SIZE ? (
+                  <div
+                    className="flex min-w-0 w-full flex-col items-start gap-1.5 sm:ml-auto sm:w-auto"
+                    role="navigation"
+                    aria-label="Paginación de planes"
+                  >
+                    <p className="text-xs font-medium text-muted">
+                      Página {executivePageSafe} de {executiveTotalPages}
+                    </p>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => goToExecutivePage(executivePageSafe - 1)}
+                        disabled={executivePageSafe <= 1}
+                        className={joinClasses(
+                          "inline-flex size-9 items-center justify-center rounded-lg border bg-white text-primary-dark transition hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-40",
+                          ui.border,
+                        )}
+                        aria-label="Página anterior"
+                      >
+                        <PaginationChevron direction="prev" />
+                      </button>
+
+                      {executivePaginationItems.map((item, index) =>
+                        item === "ellipsis" ? (
+                          <span
+                            key={`ellipsis-${index}`}
+                            className="inline-flex size-9 items-center justify-center text-xs font-semibold text-muted"
+                            aria-hidden
+                          >
+                            …
+                          </span>
+                        ) : (
+                          <button
+                            key={item}
+                            type="button"
+                            onClick={() => goToExecutivePage(item)}
+                            aria-label={`Ir a la página ${item}`}
+                            aria-current={
+                              item === executivePageSafe ? "page" : undefined
+                            }
+                            className={joinClasses(
+                              "inline-flex size-9 items-center justify-center rounded-lg text-xs font-semibold tabular-nums transition",
+                              item === executivePageSafe
+                                ? "bg-primary text-primary-foreground shadow-sm"
+                                : joinClasses(
+                                    "border bg-white text-foreground hover:bg-primary/5",
+                                    ui.border,
+                                  ),
+                            )}
+                          >
+                            {item}
+                          </button>
+                        ),
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => goToExecutivePage(executivePageSafe + 1)}
+                        disabled={executivePageSafe >= executiveTotalPages}
+                        className={joinClasses(
+                          "inline-flex size-9 items-center justify-center rounded-lg border bg-white text-primary-dark transition hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-40",
+                          ui.border,
+                        )}
+                        aria-label="Página siguiente"
+                      >
+                        <PaginationChevron direction="next" />
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
               </div>
             </section>
 

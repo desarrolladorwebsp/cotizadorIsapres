@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,10 +27,14 @@ import { CotizadorSourceBadge } from "@/components/executive/cotizador-source-ba
 import { useStaffSession } from "@/hooks/use-auth-session";
 import {
   assignQuoteToExecutive,
-  fetchExecutiveAccounts,
-  fetchQuotes,
   updateQuoteLead,
 } from "@/lib/api/admin-client";
+import { useExecutiveAccountsQuery } from "@/hooks/query/use-executive-accounts-query";
+import { useExecutiveQuotesQuery } from "@/hooks/query/use-executive-quotes-query";
+import {
+  invalidateExecutiveQuotes,
+  upsertExecutiveQuoteCache,
+} from "@/lib/query/executive-cache";
 import { getPlanPdfDownloadUrl } from "@/lib/plan-pdf";
 import { resolveCotizadorSourceFromQuote } from "@/lib/partner-entity/source-label";
 import { formatPlanClp, formatQuotedUf } from "@/lib/plan-format";
@@ -42,7 +47,6 @@ import { executiveStatToneClass } from "@/lib/executive/action-styles";
 import { ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type { QuoteRecord, QuoteStatus } from "@/types/quote";
-import type { StaffAccountRecord } from "@/types/staff-account";
 
 export interface ExecutiveQuotesPanelProps {
   onNotify: (message: string, tone?: "success" | "error") => void;
@@ -57,10 +61,18 @@ function formatDate(value: string): string {
 }
 
 export function ExecutiveQuotesPanel({ onNotify }: ExecutiveQuotesPanelProps) {
+  const queryClient = useQueryClient();
   const { isAdmin, user } = useStaffSession();
-  const [quotes, setQuotes] = useState<QuoteRecord[]>([]);
-  const [executives, setExecutives] = useState<StaffAccountRecord[]>([]);
-  const [loading, setLoading] = useState(true);
+  const quotesQuery = useExecutiveQuotesQuery();
+  const executivesQuery = useExecutiveAccountsQuery({ enabled: isAdmin });
+
+  const quotes = quotesQuery.data;
+  const executives = executivesQuery.data ?? [];
+  const loading =
+    (quotesQuery.isLoading && !quotes) ||
+    (isAdmin && executivesQuery.isLoading && !executivesQuery.data);
+  const isFetching = quotesQuery.isFetching || executivesQuery.isFetching;
+
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<QuoteStatus | "all">("all");
   const [executiveFilter, setExecutiveFilter] = useState<string>("all");
@@ -73,34 +85,29 @@ export function ExecutiveQuotesPanel({ onNotify }: ExecutiveQuotesPanelProps) {
     ? null
     : (user?.fullName ?? null);
 
-  async function loadQuotes() {
-    setLoading(true);
-    try {
-      const nextQuotes = await fetchQuotes();
-      setQuotes(nextQuotes);
-
-      if (isAdmin) {
-        const nextExecutives = await fetchExecutiveAccounts();
-        setExecutives(nextExecutives);
-      }
-    } catch (error) {
+  useEffect(() => {
+    if (quotesQuery.isError) {
       onNotify(
-        error instanceof Error ? error.message : "No se pudieron cargar cotizaciones.",
+        quotesQuery.error instanceof Error
+          ? quotesQuery.error.message
+          : "No se pudieron cargar cotizaciones.",
         "error",
       );
-    } finally {
-      setLoading(false);
     }
+  }, [quotesQuery.isError, quotesQuery.error, onNotify]);
+
+  async function handleRefresh() {
+    await Promise.all([
+      quotesQuery.refetch(),
+      isAdmin ? executivesQuery.refetch() : Promise.resolve(),
+    ]);
   }
 
-  useEffect(() => {
-    void loadQuotes();
-  }, [isAdmin]);
-
   const filteredQuotes = useMemo(() => {
+    const rows = quotes ?? [];
     const query = search.trim().toLowerCase();
 
-    return quotes.filter((quote) => {
+    return rows.filter((quote) => {
       if (statusFilter !== "all" && quote.status !== statusFilter) return false;
 
       if (isAdmin) {
@@ -137,26 +144,26 @@ export function ExecutiveQuotesPanel({ onNotify }: ExecutiveQuotesPanelProps) {
   }, [quotes, search, statusFilter, executiveFilter, isAdmin]);
 
   const stats = useMemo(() => {
+    const rows = quotes ?? [];
     return {
-      total: quotes.length,
-      prospect: quotes.filter((q) => q.status === "PENDING").length,
-      contracting: quotes.filter((q) => q.status === "CONTACTED").length,
-      purchased: quotes.filter((q) => q.status === "CONVERTED").length,
-      rejected: quotes.filter((q) => q.status === "CANCELLED").length,
-      unassigned: quotes.filter((q) => !q.executiveAccountId).length,
+      total: rows.length,
+      prospect: rows.filter((q) => q.status === "PENDING").length,
+      contracting: rows.filter((q) => q.status === "CONTACTED").length,
+      purchased: rows.filter((q) => q.status === "CONVERTED").length,
+      rejected: rows.filter((q) => q.status === "CANCELLED").length,
+      unassigned: rows.filter((q) => !q.executiveAccountId).length,
     };
   }, [quotes]);
 
   async function handleStatusChange(quote: QuoteRecord, status: QuoteStatus) {
     setSavingId(quote.id);
     try {
-      if (isAdmin) {
-        await updateQuoteLead(quote.id, { status });
-      } else {
-        await assignQuoteToExecutive(quote.id, { status });
-      }
+      const updated = isAdmin
+        ? await updateQuoteLead(quote.id, { status })
+        : await assignQuoteToExecutive(quote.id, { status });
+      upsertExecutiveQuoteCache(queryClient, updated);
+      void invalidateExecutiveQuotes(queryClient);
       onNotify(`Estado actualizado: ${QUOTE_STATUS_LABELS[status]}.`);
-      await loadQuotes();
     } catch (error) {
       onNotify(
         error instanceof Error ? error.message : "No se pudo actualizar el estado.",
@@ -173,7 +180,9 @@ export function ExecutiveQuotesPanel({ onNotify }: ExecutiveQuotesPanelProps) {
   ) {
     setSavingId(quote.id);
     try {
-      await updateQuoteLead(quote.id, { executiveAccountId });
+      const updated = await updateQuoteLead(quote.id, { executiveAccountId });
+      upsertExecutiveQuoteCache(queryClient, updated);
+      void invalidateExecutiveQuotes(queryClient);
       const executiveName = executives.find(
         (executive) => executive.id === executiveAccountId,
       )?.fullName;
@@ -187,7 +196,6 @@ export function ExecutiveQuotesPanel({ onNotify }: ExecutiveQuotesPanelProps) {
         delete next[quote.id];
         return next;
       });
-      await loadQuotes();
     } catch (error) {
       onNotify(
         error instanceof Error ? error.message : "No se pudo reasignar el ejecutivo.",
@@ -230,7 +238,12 @@ export function ExecutiveQuotesPanel({ onNotify }: ExecutiveQuotesPanelProps) {
             ? "Todas las solicitudes de planes registradas en el cotizador. Puedes ver y reasignar el ejecutivo responsable de cada una."
             : "Cotizaciones asignadas a tu cuenta. Contacta al cliente y actualiza el estado del pipeline."
         }
-        actions={<AdminRefreshButton onClick={() => void loadQuotes()} />}
+        actions={
+          <AdminRefreshButton
+            loading={isFetching && !loading}
+            onClick={() => void handleRefresh()}
+          />
+        }
       />
 
       <div
@@ -346,7 +359,7 @@ export function ExecutiveQuotesPanel({ onNotify }: ExecutiveQuotesPanelProps) {
             : "Las nuevas cotizaciones aparecerán aquí cuando te sean asignadas."
         }
         loadingMessage="Cargando cotizaciones…"
-        footer={`Mostrando ${filteredQuotes.length} de ${quotes.length} cotizaciones.`}
+        footer={`Mostrando ${filteredQuotes.length} de ${(quotes ?? []).length} cotizaciones.`}
       >
         <AdminTable minWidth={isAdmin ? "80rem" : "64rem"}>
           <AdminTableHead>

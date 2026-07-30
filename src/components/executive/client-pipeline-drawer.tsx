@@ -79,6 +79,31 @@ export interface ClientPipelineDrawerProps {
   /** Tras redirigir / reasignar: el ejecutivo pierde el cliente de su cartera. */
   onRedirected?: (client: UserRecord) => void;
   onNotify: (message: string, tone?: "success" | "error") => void;
+  /**
+   * `modal`: diálogo (legacy).
+   * `page`: ficha completa embebida en el panel (sin overlay).
+   */
+  variant?: "modal" | "page";
+  /**
+   * Si es `false`, tras guardar se permanece en la ficha.
+   * Por defecto: `true` en modal, `false` en page.
+   */
+  closeAfterSave?: boolean;
+}
+
+function getManagementDescription(input: {
+  isZoom: boolean;
+  isIsapres: boolean;
+  isPremium: boolean;
+}): string | undefined {
+  if (input.isZoom) {
+    return "Gestión ejecutivo: contacto, reagendar, redirigir a Premium y datos del cliente.";
+  }
+  if (input.isIsapres) {
+    return "Gestión Isapres: revisa los datos del cliente y cierra el contrato cuando corresponda.";
+  }
+  if (input.isPremium) return undefined;
+  return "Datos del titular, cargas, documentos solicitados y seguimiento comercial.";
 }
 
 function WhatsAppIcon() {
@@ -359,7 +384,10 @@ export function ClientPipelineDrawer({
   onUpdated,
   onRedirected,
   onNotify,
+  variant = "modal",
+  closeAfterSave,
 }: ClientPipelineDrawerProps) {
+  const shouldCloseAfterSave = closeAfterSave ?? variant === "modal";
   const { isAdmin, executiveKind, user: sessionUser } = useStaffSession();
   const isZoom = executiveKind === "ZOOM";
   const isPremium = executiveKind === "ISAPRES_PREMIUM";
@@ -1062,7 +1090,9 @@ export function ClientPipelineDrawer({
             ? "Llamado reagendado y cambios guardados."
             : "Cliente actualizado.",
       );
-      onClose();
+      if (shouldCloseAfterSave) {
+        onClose();
+      }
     } catch (error) {
       onNotify(
         error instanceof Error ? error.message : "No se pudo guardar.",
@@ -1624,21 +1654,73 @@ export function ClientPipelineDrawer({
 
   return (
     <>
+    {variant === "modal" ? (
     <AdminFormModal
       open={open}
       onClose={onClose}
       title={client.fullName}
-      description={
-        isZoom
-          ? "Gestión ejecutivo: contacto, reagendar, redirigir a Premium y datos del cliente."
-          : isIsapres
-            ? "Gestión Isapres: revisa los datos del cliente y cierra el contrato cuando corresponda."
-            : isPremium
-              ? undefined
-              : "Datos del titular, cargas, documentos solicitados y seguimiento comercial."
-      }
+      description={getManagementDescription({ isZoom, isIsapres, isPremium })}
       size="xl"
     >
+      {renderManagementBody()}
+    </AdminFormModal>
+    ) : open ? (
+      <div
+        className={joinClasses(
+          "rounded-2xl border bg-white p-4 shadow-sm sm:p-6",
+          ui.border,
+        )}
+      >
+        {renderManagementBody()}
+      </div>
+    ) : null}
+
+    <div className="relative z-[60]">
+      <AdminFormModal
+        open={Boolean(pendingConfirm && confirmCopy)}
+        title={confirmCopy?.title ?? "Confirmar"}
+        description={confirmCopy?.description}
+        onClose={() => setPendingConfirm(null)}
+        size="md"
+      >
+        <div className="space-y-4">
+          {confirmCopy?.changes?.length ? (
+            <ul className="space-y-1.5 rounded-xl border border-border bg-bg-layout/40 px-3 py-3 text-sm text-foreground">
+              {confirmCopy.changes.map((change) => (
+                <li key={change} className="flex gap-2">
+                  <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-primary" />
+                  <span>{change}</span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={saving || actionBusy}
+              onClick={() => setPendingConfirm(null)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              disabled={saving || actionBusy}
+              onClick={() => void executePendingConfirm()}
+            >
+              {saving || actionBusy ? "Procesando…" : "Confirmar"}
+            </Button>
+          </div>
+        </div>
+      </AdminFormModal>
+    </div>
+    </>
+  );
+
+  function renderManagementBody() {
+    if (!client) return null;
+
+    return (
       <div className="space-y-6">
         {!isZoom ? (
           <ClientAdvisedPlanSection
@@ -2519,7 +2601,7 @@ export function ClientPipelineDrawer({
 
         <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
           <Button type="button" variant="ghost" onClick={onClose}>
-            Cancelar
+            {variant === "page" ? "Volver a clientes" : "Cancelar"}
           </Button>
           <Button
             type="button"
@@ -2530,47 +2612,6 @@ export function ClientPipelineDrawer({
           </Button>
         </div>
       </div>
-    </AdminFormModal>
-
-    <div className="relative z-[60]">
-      <AdminFormModal
-        open={Boolean(pendingConfirm && confirmCopy)}
-        title={confirmCopy?.title ?? "Confirmar"}
-        description={confirmCopy?.description}
-        onClose={() => setPendingConfirm(null)}
-        size="md"
-      >
-        <div className="space-y-4">
-          {confirmCopy?.changes?.length ? (
-            <ul className="space-y-1.5 rounded-xl border border-border bg-bg-layout/40 px-3 py-3 text-sm text-foreground">
-              {confirmCopy.changes.map((change) => (
-                <li key={change} className="flex gap-2">
-                  <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-primary" />
-                  <span>{change}</span>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <Button
-              type="button"
-              variant="ghost"
-              disabled={saving || actionBusy}
-              onClick={() => setPendingConfirm(null)}
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="button"
-              disabled={saving || actionBusy}
-              onClick={() => void executePendingConfirm()}
-            >
-              {saving || actionBusy ? "Procesando…" : "Confirmar"}
-            </Button>
-          </div>
-        </div>
-      </AdminFormModal>
-    </div>
-    </>
-  );
+    );
+  }
 }

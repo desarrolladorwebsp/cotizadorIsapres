@@ -128,8 +128,8 @@ export function DashboardFiltersPanel({
                 title="Prestadores y clínicas"
                 paragraphs={[
                   "Puedes elegir clínicas distintas para cobertura hospitalaria y ambulatoria.",
-                  "Si defines un porcentaje junto con clínicas, el plan debe cumplir ese mínimo en al menos una de las clínicas seleccionadas para ese tipo.",
-                  FILTER_HELP.coverage.body[1],
+                  "Si seleccionas dos o más clínicas, el plan debe incluir todas las seleccionadas de ese tipo.",
+                  "Si defines un porcentaje junto con clínicas, cada clínica seleccionada debe cumplir ese mínimo.",
                 ]}
                 source={FILTER_HELP.coverage.source}
               />
@@ -226,8 +226,8 @@ export function DashboardFiltersPanel({
                       )}
                     >
                       Cada tipo de cobertura usa su propia selección de clínicas.
-                      Si eliges un porcentaje, el plan debe cumplir ese mínimo en
-                      al menos una clínica del tipo correspondiente.
+                      Si eliges varias, el plan debe incluirlas todas. Con
+                      porcentaje, cada una debe cumplir ese mínimo.
                     </p>
                   ) : null}
                 </>
@@ -362,6 +362,7 @@ export function DashboardFiltersPanel({
             <button
               type="button"
               onClick={clearFilters}
+              data-filters-clear
               className={joinClasses(
                 "inline-flex w-full items-center justify-center gap-1.5 rounded-lg px-4 text-xs font-semibold transition",
                 executiveVisual

@@ -4,6 +4,9 @@ export const INITIAL_PLANS_PAGE_SIZE = 12;
 /** Incremento al pulsar "Ver más planes". */
 export const PLANS_PAGE_SIZE_STEP = 12;
 
+/** Planes por página en el cotizador ejecutivo (paginación fija). */
+export const EXECUTIVE_PLANS_PAGE_SIZE = 20;
+
 /** Tope de planes por request de búsqueda (protege memoria y payload). */
 export const MAX_PLAN_SEARCH_LIMIT = 48;
 

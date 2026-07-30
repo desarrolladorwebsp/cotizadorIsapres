@@ -20,7 +20,7 @@ export interface CoveragePercentageFilterProps {
 
 const percentButtonClass = joinClasses(
   touchTarget,
-  "h-12 w-full rounded-lg text-xs font-bold tabular-nums md:h-9 md:min-h-0 md:min-w-0",
+  "h-10 w-full rounded-xl text-xs font-bold tabular-nums transition md:h-9 md:min-h-0 md:min-w-0",
 );
 
 export function CoveragePercentageFilter({
@@ -36,7 +36,7 @@ export function CoveragePercentageFilter({
   return (
     <div
       className={joinClasses(
-        "space-y-3",
+        "space-y-2.5",
         compactEmbed && "max-md:space-y-2",
       )}
     >
@@ -49,17 +49,21 @@ export function CoveragePercentageFilter({
         {title}
       </p>
 
-      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+      <div
+        data-coverage-chip-group
+        className="grid grid-cols-4 gap-1.5 rounded-2xl border border-border/50 bg-bg-layout/20 p-1.5"
+      >
         <button
           type="button"
           onClick={() => onChange(null)}
+          data-filter-chip
+          data-filter-tone={tone}
           className={joinClasses(
-            "col-span-3 sm:col-span-2",
+            "col-span-4",
             percentButtonClass,
-            ui.borderHairline,
             isAllActive
               ? activeClass
-              : joinClasses("text-muted", ui.hoverSurface),
+              : joinClasses("border border-transparent text-muted", ui.hoverSurface),
           )}
           aria-pressed={isAllActive}
         >
@@ -74,12 +78,16 @@ export function CoveragePercentageFilter({
               key={percent}
               type="button"
               onClick={() => onChange(percent)}
+              data-filter-chip
+              data-filter-tone={tone}
               className={joinClasses(
                 percentButtonClass,
-                ui.borderHairline,
                 isActive
                   ? activeClass
-                  : joinClasses("text-foreground/75", ui.hoverSurface),
+                  : joinClasses(
+                      "border border-transparent text-foreground/75",
+                      ui.hoverSurface,
+                    ),
               )}
               aria-pressed={isActive}
               aria-label={`Filtrar ${percent}%`}

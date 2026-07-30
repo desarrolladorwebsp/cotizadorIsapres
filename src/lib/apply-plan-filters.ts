@@ -66,15 +66,15 @@ function matchesPlanTypeFilter(
   return activeTypes.some((type) => planTypes.includes(type));
 }
 
-function planIncludesAnyClinicForType(
+function planIncludesAllClinicsForType(
   plan: HealthPlan,
   type: "hospitalaria" | "ambulatoria",
   clinicIds: string[],
 ): boolean {
   if (clinicIds.length === 0) return true;
   const entries = getCoverageEntriesByType(plan, type);
-  const selected = new Set(clinicIds);
-  return entries.some((entry) => selected.has(entry.clinic_id));
+  const present = new Set(entries.map((entry) => entry.clinic_id));
+  return clinicIds.every((clinicId) => present.has(clinicId));
 }
 
 function getClinicIdsForCoverageType(
@@ -91,18 +91,22 @@ function coverageTypeMeetsThresholdForClinics(
   clinicIds: string[],
   threshold: number,
 ): boolean {
-  const selected = new Set(clinicIds);
-  return entries.some(
-    (entry) =>
-      selected.has(entry.clinic_id) && entry.percentage >= threshold,
+  if (clinicIds.length === 0) return true;
+  const byClinic = new Map(
+    entries.map((entry) => [entry.clinic_id, entry.percentage]),
   );
+  return clinicIds.every((clinicId) => {
+    const percentage = byClinic.get(clinicId);
+    return typeof percentage === "number" && percentage >= threshold;
+  });
 }
 
 /**
  * Cobertura por tipo (hospitalaria / ambulatoria).
- * - Clínica(s) + %: al menos una clínica seleccionada debe cumplir >= umbral en ese tipo.
+ * - Clínica(s) + %: todas las clínicas seleccionadas deben existir en el plan
+ *   y cumplir >= umbral en ese tipo (AND).
  * - Solo %: algún prestador del tipo debe cumplir >= umbral.
- * - Solo clínica(s) (sin % en ningún tipo): el plan debe incluir al menos una clínica seleccionada.
+ * - Solo clínica(s) (sin %): el plan debe incluir todas las clínicas seleccionadas (AND).
  */
 function matchesCoverageTypeFilter(
   plan: HealthPlan,
@@ -132,7 +136,7 @@ function matchesCoverageTypeFilter(
   }
 
   if (clinicIds.length > 0) {
-    return planIncludesAnyClinicForType(plan, type, clinicIds);
+    return planIncludesAllClinicsForType(plan, type, clinicIds);
   }
 
   return true;
@@ -222,14 +226,14 @@ export function getClinicCoveragePercent(
   return entry?.percentage ?? null;
 }
 
-function catalogIncludesAnyClinicForType(
+function catalogIncludesAllClinicsForType(
   plan: HealthPlanCatalogItem,
   type: "hospitalaria" | "ambulatoria",
   clinicIds: string[],
 ): boolean {
   if (clinicIds.length === 0) return true;
   const index = type === "hospitalaria" ? 0 : 1;
-  return clinicIds.some((clinicId) => {
+  return clinicIds.every((clinicId) => {
     const values = plan.clinic_index[clinicId];
     return values ? values[index] > 0 : false;
   });
@@ -242,7 +246,7 @@ function catalogCoverageMeetsThresholdForClinics(
   threshold: number,
 ): boolean {
   const index = type === "hospitalaria" ? 0 : 1;
-  return clinicIds.some((clinicId) => {
+  return clinicIds.every((clinicId) => {
     const values = plan.clinic_index[clinicId];
     return values ? values[index] >= threshold : false;
   });
@@ -296,7 +300,7 @@ function matchesCatalogCoverageTypeFilter(
   }
 
   if (clinicIds.length > 0) {
-    return catalogIncludesAnyClinicForType(plan, type, clinicIds);
+    return catalogIncludesAllClinicsForType(plan, type, clinicIds);
   }
 
   return true;

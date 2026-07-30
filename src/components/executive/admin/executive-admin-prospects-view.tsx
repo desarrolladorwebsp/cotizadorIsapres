@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,13 +23,17 @@ import { ExecutiveAdminLayout } from "@/components/executive/admin/executive-adm
 import { QuoteStatusBadge } from "@/components/lead/quote-lead-actions";
 import {
   distributeUnassignedQuotes,
-  fetchExecutiveAccounts,
   fetchExecutiveAssignmentStats,
   fetchLatestQuoteActivities,
-  fetchQuotes,
   updateQuoteLead,
   type ExecutiveAssignmentStat,
 } from "@/lib/api/admin-client";
+import { useExecutiveAccountsQuery } from "@/hooks/query/use-executive-accounts-query";
+import { useExecutiveQuotesQuery } from "@/hooks/query/use-executive-quotes-query";
+import {
+  invalidateExecutiveQuotes,
+  upsertExecutiveQuoteCache,
+} from "@/lib/query/executive-cache";
 import { formatPlanClp, formatQuotedUf } from "@/lib/plan-format";
 import { formatQuoteDate, resolvePartnerLabel } from "@/lib/quote/quote-display";
 import {
@@ -39,7 +44,6 @@ import { ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type { QuoteActivityRecord } from "@/types/quote-activity";
 import type { QuoteRecord, QuoteStatus } from "@/types/quote";
-import type { StaffAccountRecord } from "@/types/staff-account";
 
 export interface ExecutiveAdminProspectsViewProps {
   onNotify: (message: string, tone?: "success" | "error") => void;
@@ -60,13 +64,19 @@ export function ExecutiveAdminProspectsView({
   onNotify,
   embedded = false,
 }: ExecutiveAdminProspectsViewProps) {
-  const [quotes, setQuotes] = useState<QuoteRecord[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const quotesQuery = useExecutiveQuotesQuery();
+  const executivesQuery = useExecutiveAccountsQuery();
+
+  const quotes = quotesQuery.data;
+  const executives = executivesQuery.data ?? [];
+  const loading = quotesQuery.isLoading && !quotes;
+  const isFetching = quotesQuery.isFetching;
+
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<QuoteStatus | "all">("all");
   const [executiveFilter, setExecutiveFilter] = useState<string>("all");
   const [unassignedOnly, setUnassignedOnly] = useState(false);
-  const [executives, setExecutives] = useState<StaffAccountRecord[]>([]);
   const [assignmentStats, setAssignmentStats] = useState<ExecutiveAssignmentStat[]>(
     [],
   );
@@ -77,65 +87,84 @@ export function ExecutiveAdminProspectsView({
   const [savingQuoteId, setSavingQuoteId] = useState<string | null>(null);
   const [distributing, setDistributing] = useState(false);
 
-  async function loadQuotes() {
-    setLoading(true);
-    try {
-      const nextQuotes = await fetchQuotes();
-      setQuotes(nextQuotes);
-
-      if (nextQuotes.length > 0) {
-        const latest = await fetchLatestQuoteActivities(
-          nextQuotes.map((quote) => quote.id),
-        );
-        setLatestActivities(latest);
-      } else {
-        setLatestActivities({});
-      }
-    } catch (error) {
+  useEffect(() => {
+    if (quotesQuery.isError) {
       onNotify(
-        error instanceof Error
-          ? error.message
+        quotesQuery.error instanceof Error
+          ? quotesQuery.error.message
           : "No se pudieron cargar los prospectos.",
         "error",
       );
-    } finally {
-      setLoading(false);
     }
-  }
+  }, [quotesQuery.isError, quotesQuery.error, onNotify]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      if (!quotesQuery.data || quotesQuery.data.length === 0) {
+        if (!cancelled) setLatestActivities({});
+        return;
+      }
+      try {
+        const latest = await fetchLatestQuoteActivities(
+          quotesQuery.data.map((quote) => quote.id),
+        );
+        if (!cancelled) setLatestActivities(latest);
+      } catch {
+        // Actividades son complementarias; la tabla sigue usable.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [quotesQuery.dataUpdatedAt, quotesQuery.data]);
+
+  useEffect(() => {
+    // Stats de asignación son complementarias al caché de cotizaciones.
+    void (async () => {
+      try {
+        const nextStats = await fetchExecutiveAssignmentStats();
+        setAssignmentStats(nextStats);
+        await executivesQuery.refetch();
+      } catch {
+        // El panel sigue operativo sin stats.
+      }
+    })();
+    // Solo al montar el panel de prospectos.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function refreshAssignmentStats() {
     try {
-      const [nextExecutives, nextStats] = await Promise.all([
-        fetchExecutiveAccounts(),
-        fetchExecutiveAssignmentStats(),
-      ]);
-      setExecutives(nextExecutives);
+      const nextStats = await fetchExecutiveAssignmentStats();
       setAssignmentStats(nextStats);
+      await executivesQuery.refetch();
     } catch {
       // El panel sigue operativo sin stats.
     }
   }
 
-  useEffect(() => {
-    void loadQuotes();
-    void refreshAssignmentStats();
-  }, []);
+  async function handleRefresh() {
+    await Promise.all([quotesQuery.refetch(), refreshAssignmentStats()]);
+  }
 
   const stats = useMemo(() => {
+    const rows = quotes ?? [];
     return {
-      total: quotes.length,
-      unassigned: quotes.filter((quote) => !quote.executiveAccountId).length,
-      prospect: quotes.filter((quote) => quote.status === "PENDING").length,
-      contracting: quotes.filter((quote) => quote.status === "CONTACTED").length,
-      purchased: quotes.filter((quote) => quote.status === "CONVERTED").length,
-      rejected: quotes.filter((quote) => quote.status === "CANCELLED").length,
+      total: rows.length,
+      unassigned: rows.filter((quote) => !quote.executiveAccountId).length,
+      prospect: rows.filter((quote) => quote.status === "PENDING").length,
+      contracting: rows.filter((quote) => quote.status === "CONTACTED").length,
+      purchased: rows.filter((quote) => quote.status === "CONVERTED").length,
+      rejected: rows.filter((quote) => quote.status === "CANCELLED").length,
     };
   }, [quotes]);
 
   const filteredQuotes = useMemo(() => {
+    const rows = quotes ?? [];
     const query = search.trim().toLowerCase();
 
-    return quotes.filter((quote) => {
+    return rows.filter((quote) => {
       if (unassignedOnly && quote.executiveAccountId) return false;
       if (statusFilter !== "all" && quote.status !== statusFilter) return false;
       if (executiveFilter === "unassigned") {
@@ -164,7 +193,7 @@ export function ExecutiveAdminProspectsView({
   }, [quotes, search, statusFilter, executiveFilter, unassignedOnly]);
 
   const selectedQuote = useMemo(
-    () => quotes.find((quote) => quote.id === selectedQuoteId) ?? null,
+    () => (quotes ?? []).find((quote) => quote.id === selectedQuoteId) ?? null,
     [quotes, selectedQuoteId],
   );
 
@@ -175,9 +204,8 @@ export function ExecutiveAdminProspectsView({
     setSavingQuoteId(quote.id);
     try {
       const updated = await updateQuoteLead(quote.id, input);
-      setQuotes((current) =>
-        current.map((item) => (item.id === updated.id ? updated : item)),
-      );
+      upsertExecutiveQuoteCache(queryClient, updated);
+      void invalidateExecutiveQuotes(queryClient);
       const latest = await fetchLatestQuoteActivities([updated.id]);
       setLatestActivities((current) => ({ ...current, ...latest }));
       await refreshAssignmentStats();
@@ -196,7 +224,7 @@ export function ExecutiveAdminProspectsView({
     try {
       const result = await distributeUnassignedQuotes();
       onNotify(result.message);
-      await loadQuotes();
+      await invalidateExecutiveQuotes(queryClient);
       await refreshAssignmentStats();
     } catch (error) {
       onNotify(
@@ -211,9 +239,8 @@ export function ExecutiveAdminProspectsView({
   }
 
   function handleQuoteUpdated(updated: QuoteRecord) {
-    setQuotes((current) =>
-      current.map((item) => (item.id === updated.id ? updated : item)),
-    );
+    upsertExecutiveQuoteCache(queryClient, updated);
+    void invalidateExecutiveQuotes(queryClient);
   }
 
   const panel = (
@@ -234,7 +261,10 @@ export function ExecutiveAdminProspectsView({
                   ? "Distribuyendo…"
                   : `Distribuir sin asignar (${stats.unassigned})`}
               </Button>
-              <AdminRefreshButton onClick={() => void loadQuotes()} />
+              <AdminRefreshButton
+                loading={isFetching && !loading}
+                onClick={() => void handleRefresh()}
+              />
             </>
           }
         />
@@ -359,7 +389,7 @@ export function ExecutiveAdminProspectsView({
           emptyTitle="No hay prospectos para mostrar"
           emptyDescription="Los prospectos aparecerán aquí cuando ingresen solicitudes desde el cotizador."
           loadingMessage="Cargando prospectos…"
-          footer={`Mostrando ${filteredQuotes.length} de ${quotes.length} prospectos.`}
+          footer={`Mostrando ${filteredQuotes.length} de ${(quotes ?? []).length} prospectos.`}
         >
           <AdminTable minWidth="72rem">
             <AdminTableHead>

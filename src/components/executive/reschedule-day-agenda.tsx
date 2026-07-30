@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { fetchCalendarCallEvents } from "@/lib/api/admin-client";
+import { useMemo } from "react";
+import { useExecutiveCalendarQuery } from "@/hooks/query/use-executive-calendar-query";
 import { joinClasses } from "@/lib/utils";
-import type { CalendarCallEvent } from "@/types/calendar";
 
 const CONFLICT_WINDOW_MS = 30 * 60 * 1000;
 
@@ -85,48 +84,33 @@ export function RescheduleDayAgenda({
     [dayKey, nextCallLocal],
   );
 
-  const [events, setEvents] = useState<CalendarCallEvent[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const range = useMemo(
+    () =>
+      bounds
+        ? { from: bounds.fromIso, to: bounds.toIso }
+        : { from: "", to: "" },
+    [bounds],
+  );
 
-  useEffect(() => {
-    if (!enabled || !bounds) {
-      setEvents([]);
-      setError(null);
-      return;
-    }
+  const eventsQuery = useExecutiveCalendarQuery(range, {
+    enabled: enabled && Boolean(bounds),
+  });
 
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
+  const events = useMemo(
+    () =>
+      (eventsQuery.data ?? []).filter(
+        (event) => event.clientId !== excludeClientId,
+      ),
+    [eventsQuery.data, excludeClientId],
+  );
 
-    void (async () => {
-      try {
-        const rows = await fetchCalendarCallEvents({
-          from: bounds.fromIso,
-          to: bounds.toIso,
-        });
-        if (!cancelled) {
-          setEvents(rows.filter((event) => event.clientId !== excludeClientId));
-        }
-      } catch (loadError) {
-        if (!cancelled) {
-          setEvents([]);
-          setError(
-            loadError instanceof Error
-              ? loadError.message
-              : "No se pudo cargar la agenda del día.",
-          );
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [enabled, dayKey, excludeClientId, bounds?.fromIso, bounds?.toIso]);
+  const loading = eventsQuery.isLoading && !eventsQuery.data;
+  const error =
+    eventsQuery.isError
+      ? eventsQuery.error instanceof Error
+        ? eventsQuery.error.message
+        : "No se pudo cargar la agenda del día."
+      : null;
 
   if (!enabled || !bounds) return null;
 

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { CotizadorWorkspace } from "@/components/cotizador/cotizador-workspace";
 import { ExecutiveToastStack } from "@/components/executive/executive-toast";
 import { useExecutiveToast } from "@/hooks/use-executive-toast";
@@ -20,29 +21,25 @@ import {
   ExecutiveShell,
   type ExecutiveSection,
 } from "@/components/executive/executive-shell";
+import { ExecutiveQueryProvider } from "@/components/providers/executive-query-provider";
 import { useStaffSession } from "@/hooks/use-auth-session";
-import {
-  fetchClinics,
-  fetchPlans,
-} from "@/lib/api/admin-client";
+import { useExecutiveClinicsQuery } from "@/hooks/query/use-executive-clinics-query";
+import { useExecutivePlansQuery } from "@/hooks/query/use-executive-plans-query";
+import { executiveKeys } from "@/lib/query/executive-keys";
 import {
   isStaffSection,
   STAFF_SECTION_QUERY,
   staffSectionHref,
   type StaffSection,
 } from "@/lib/staff/staff-sections";
-import type { Clinic } from "@/types/clinic";
-import type { HealthPlan } from "@/types/plan";
 
-export function ExecutiveDashboard() {
+function ExecutiveDashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
   const { allowedSections, loading: sessionLoading } = useStaffSession();
 
   const [section, setSection] = useState<ExecutiveSection>("inicio");
-  const [plans, setPlans] = useState<HealthPlan[]>([]);
-  const [clinics, setClinics] = useState<Clinic[]>([]);
-  const [loadingCatalog, setLoadingCatalog] = useState(false);
   const { toasts, notify, dismiss } = useExecutiveToast();
 
   const sectionSet = useMemo(
@@ -54,6 +51,25 @@ export function ExecutiveDashboard() {
     (next: StaffSection) => sectionSet.has(next),
     [sectionSet],
   );
+
+  const needsClinics =
+    (section === "clinicas" ||
+      section === "reportes-pdf" ||
+      section === "mapa") &&
+    canAccessSection(section);
+
+  const needsPlans =
+    (section === "clinicas" || section === "reportes-pdf") &&
+    canAccessSection(section);
+
+  const clinicsQuery = useExecutiveClinicsQuery({ enabled: needsClinics });
+  const plansQuery = useExecutivePlansQuery({ enabled: needsPlans });
+
+  const clinics = clinicsQuery.data ?? [];
+  const plans = plansQuery.data ?? [];
+  const loadingCatalog =
+    (needsClinics && clinicsQuery.isLoading) ||
+    (needsPlans && plansQuery.isLoading);
 
   useEffect(() => {
     if (sessionLoading || allowedSections.length === 0) return;
@@ -82,56 +98,38 @@ export function ExecutiveDashboard() {
     allowedSections.length,
   ]);
 
-  const loadClinics = useCallback(async () => {
-    setLoadingCatalog(true);
-    try {
-      const nextClinics = await fetchClinics();
-      setClinics(nextClinics);
-    } catch (error) {
+  useEffect(() => {
+    if (clinicsQuery.isError) {
       notify(
-        error instanceof Error
-          ? error.message
+        clinicsQuery.error instanceof Error
+          ? clinicsQuery.error.message
           : "No se pudieron cargar las clínicas.",
         "error",
       );
-    } finally {
-      setLoadingCatalog(false);
     }
-  }, [notify]);
+  }, [clinicsQuery.isError, clinicsQuery.error, notify]);
 
-  const loadCatalog = useCallback(async () => {
-    setLoadingCatalog(true);
-    try {
-      const [nextPlans, nextClinics] = await Promise.all([
-        fetchPlans(),
-        fetchClinics(),
-      ]);
-      setPlans(nextPlans);
-      setClinics(nextClinics);
-    } catch (error) {
+  useEffect(() => {
+    if (plansQuery.isError) {
       notify(
-        error instanceof Error
-          ? error.message
+        plansQuery.error instanceof Error
+          ? plansQuery.error.message
           : "No se pudo cargar el catálogo.",
         "error",
       );
-    } finally {
-      setLoadingCatalog(false);
     }
-  }, [notify]);
+  }, [plansQuery.isError, plansQuery.error, notify]);
 
-  useEffect(() => {
-    if (
-      (section === "clinicas" || section === "reportes-pdf") &&
-      canAccessSection(section)
-    ) {
-      void loadCatalog();
-      return;
-    }
-    if (section === "mapa" && canAccessSection("mapa")) {
-      void loadClinics();
-    }
-  }, [section, canAccessSection, loadCatalog, loadClinics]);
+  const refreshClinics = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: executiveKeys.clinics() });
+  }, [queryClient]);
+
+  const refreshCatalog = useCallback(async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: executiveKeys.clinics() }),
+      queryClient.invalidateQueries({ queryKey: executiveKeys.plans() }),
+    ]);
+  }, [queryClient]);
 
   function handleSectionChange(next: ExecutiveSection) {
     if (!canAccessSection(next)) return;
@@ -173,8 +171,9 @@ export function ExecutiveDashboard() {
         {section === "mapa" && canAccessSection("mapa") ? (
           <ExecutiveClinicsMapPanel
             clinics={clinics}
-            loading={loadingCatalog}
-            onRefresh={loadClinics}
+            loading={loadingCatalog && clinics.length === 0}
+            refreshing={clinicsQuery.isFetching}
+            onRefresh={refreshClinics}
           />
         ) : null}
 
@@ -190,8 +189,8 @@ export function ExecutiveDashboard() {
           <ClinicsPanel
             clinics={clinics}
             plans={plans}
-            loading={loadingCatalog}
-            onRefresh={loadCatalog}
+            loading={loadingCatalog && clinics.length === 0 && plans.length === 0}
+            onRefresh={refreshCatalog}
             onNotify={notify}
             canManage
           />
@@ -205,8 +204,8 @@ export function ExecutiveDashboard() {
           <PlansAndPdfsAdminView
             plans={plans}
             clinics={clinics}
-            loading={loadingCatalog}
-            onRefresh={loadCatalog}
+            loading={loadingCatalog && clinics.length === 0 && plans.length === 0}
+            onRefresh={refreshCatalog}
             onNotify={notify}
           />
         ) : null}
@@ -218,5 +217,13 @@ export function ExecutiveDashboard() {
 
       <ExecutiveToastStack toasts={toasts} onDismiss={dismiss} />
     </>
+  );
+}
+
+export function ExecutiveDashboard() {
+  return (
+    <ExecutiveQueryProvider>
+      <ExecutiveDashboardContent />
+    </ExecutiveQueryProvider>
   );
 }

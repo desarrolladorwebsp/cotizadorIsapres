@@ -22,12 +22,15 @@ import type { Clinic } from "@/types/clinic";
 export interface ExecutiveClinicsMapPanelProps {
   clinics: Clinic[];
   loading: boolean;
+  /** Refetch en curso sin vaciar el mapa (stale-while-revalidate). */
+  refreshing?: boolean;
   onRefresh: () => Promise<void>;
 }
 
 export function ExecutiveClinicsMapPanel({
   clinics,
   loading,
+  refreshing = false,
   onRefresh,
 }: ExecutiveClinicsMapPanelProps) {
   const [search, setSearch] = useState("");
@@ -82,7 +85,12 @@ export function ExecutiveClinicsMapPanel({
       <AdminPanelHeader
         title="Mapa de clínicas"
         description="Ubicaciones verificadas de prestadores del catálogo. Cada pin representa una sede física real; si varios planes comparten el mismo lugar, se agrupan en un solo marcador."
-        actions={<AdminRefreshButton onClick={() => void onRefresh()} />}
+        actions={
+          <AdminRefreshButton
+            loading={refreshing}
+            onClick={() => void onRefresh()}
+          />
+        }
       />
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(300px,360px)] xl:items-start">

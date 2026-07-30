@@ -173,15 +173,15 @@ export function buildClinicFilterApiGuide() {
     filter_logic: {
       hospital_clinics: {
         matching_rule:
-          "OR — el plan se incluye si tiene cobertura hospitalaria en al menos una clínica seleccionada.",
+          "AND — el plan se incluye solo si tiene cobertura hospitalaria en todas las clínicas seleccionadas.",
         with_coverage_percent:
-          "Si también envías coberturaH, al menos una clínica hospitalaria seleccionada debe cumplir ese porcentaje mínimo.",
+          "Si también envías coberturaH, cada clínica hospitalaria seleccionada debe cumplir ese porcentaje mínimo.",
       },
       ambulatory_clinics: {
         matching_rule:
-          "OR — el plan se incluye si tiene cobertura ambulatoria en al menos una clínica seleccionada.",
+          "AND — el plan se incluye solo si tiene cobertura ambulatoria en todas las clínicas seleccionadas.",
         with_coverage_percent:
-          "Si también envías coberturaA, al menos una clínica ambulatoria seleccionada debe cumplir ese porcentaje mínimo.",
+          "Si también envías coberturaA, cada clínica ambulatoria seleccionada debe cumplir ese porcentaje mínimo.",
       },
       combined_behavior:
         "Si envías clínicas en ambos tipos, el plan debe cumplir hospitalario y ambulatorio por separado (AND entre tipos).",

@@ -45,7 +45,8 @@ export const FILTER_HELP = {
     body: [
       "Es la parte del costo de una prestación que bonifica tu Isapre. El resto lo pagas tú como copago.",
       "Puedes elegir clínicas distintas para cobertura hospitalaria y ambulatoria.",
-      "Si combinas clínica(s) y porcentaje mínimo en un mismo tipo, el plan debe cumplir ese % en al menos una clínica seleccionada de ese tipo.",
+      "Si seleccionas dos o más clínicas en un mismo tipo, el plan debe incluir todas ellas.",
+      "Si combinas clínica(s) y porcentaje mínimo en un mismo tipo, cada clínica seleccionada debe cumplir ese %.",
       "Si solo eliges porcentaje (sin clínicas), basta con que algún prestador del plan alcance ese mínimo en ese tipo.",
     ],
     items: [

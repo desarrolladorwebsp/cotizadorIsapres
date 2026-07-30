@@ -39,6 +39,7 @@ export function FilterCheckboxList({
           <label
             key={option.id}
             htmlFor={inputId}
+            data-filter-option={state[option.id] ? "active" : "idle"}
             className={joinClasses(
               "flex w-full cursor-pointer items-center gap-2.5 rounded-md text-sm text-foreground transition",
               executiveVisual ? "px-1 py-1.5 hover:bg-surface-hover/70" : joinClasses(touchRow, "hover:bg-surface-hover/70"),

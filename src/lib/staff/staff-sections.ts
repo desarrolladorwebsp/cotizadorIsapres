@@ -13,6 +13,7 @@ export type StaffSection =
   | "convenios";
 
 export const STAFF_SECTION_QUERY = "section";
+export const STAFF_CLIENT_ID_QUERY = "clientId";
 
 /** Secciones base del administrador (incluye cotizaciones). */
 export const STAFF_BASE_SECTIONS: StaffSection[] = [
@@ -62,6 +63,11 @@ export function isStaffSection(value: string | null | undefined): value is Staff
 
 export function staffSectionHref(section: StaffSection): string {
   return `/cotizador/ejecutivos?${STAFF_SECTION_QUERY}=${section}`;
+}
+
+/** Ficha completa de un cliente dentro de la sección Clientes. */
+export function staffClientHref(clientId: string): string {
+  return `/cotizador/ejecutivos?${STAFF_SECTION_QUERY}=clientes&${STAFF_CLIENT_ID_QUERY}=${encodeURIComponent(clientId)}`;
 }
 
 /** Mapeo de rutas legacy `/cotizador/admin/*` hacia secciones unificadas. */

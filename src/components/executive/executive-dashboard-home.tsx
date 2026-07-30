@@ -1,12 +1,11 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useStaffSession } from "@/hooks/use-auth-session";
-import {
-  fetchExecutiveClients,
-  fetchQuotes,
-} from "@/lib/api/admin-client";
+import { useExecutiveClientsQuery } from "@/hooks/query/use-executive-clients-query";
+import { useExecutiveQuotesQuery } from "@/hooks/query/use-executive-quotes-query";
+import { AdminRefreshButton } from "@/components/admin/admin-data-table";
 import { joinClasses } from "@/lib/utils";
 import {
   IconClipboard,
@@ -79,55 +78,31 @@ export function ExecutiveDashboardHome() {
     (executiveKind === "ISAPRES" || executiveKind === "ZOOM");
   const canSeeQuotes = isAdmin || allowedSections.includes("cotizaciones");
 
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [loadingStats, setLoadingStats] = useState(true);
+  const clientsQuery = useExecutiveClientsQuery();
+  const quotesQuery = useExecutiveQuotesQuery({ enabled: canSeeQuotes });
 
-  useEffect(() => {
-    let cancelled = false;
+  const clients = clientsQuery.data;
+  const quotes = quotesQuery.data;
 
-    void (async () => {
-      try {
-        const clients = await fetchExecutiveClients();
-        let quotesLength = 0;
-        let pendingQuotes = 0;
-        if (canSeeQuotes) {
-          try {
-            const quotes = await fetchQuotes();
-            quotesLength = quotes.length;
-            pendingQuotes = quotes.filter(
-              (quote) => quote.status === "PENDING",
-            ).length;
-          } catch {
-            // Limited roles may not access cotizaciones.
-          }
-        }
-
-        if (!cancelled) {
-          setStats({
-            clients: clients.length,
-            quotes: quotesLength,
-            pendingQuotes,
-            inDocumentation: countByStatus(clients, "DOCUMENTACION"),
-            closed: countByStatus(clients, "CERRADO"),
-            noAnswer: countByStatus(clients, "NO_CONTESTA"),
-            inFollowUp: countByStatus(clients, "EN_SEGUIMIENTO"),
-          });
-        }
-      } catch {
-        if (!cancelled) {
-          setStats(null);
-        }
-      } finally {
-        if (!cancelled) {
-          setLoadingStats(false);
-        }
-      }
-    })();
-
-    return () => {
-      cancelled = true;
+  const stats = useMemo<DashboardStats | null>(() => {
+    if (!clients) return null;
+    const quoteRows = quotes ?? [];
+    return {
+      clients: clients.length,
+      quotes: canSeeQuotes ? quoteRows.length : 0,
+      pendingQuotes: canSeeQuotes
+        ? quoteRows.filter((quote) => quote.status === "PENDING").length
+        : 0,
+      inDocumentation: countByStatus(clients, "DOCUMENTACION"),
+      closed: countByStatus(clients, "CERRADO"),
+      noAnswer: countByStatus(clients, "NO_CONTESTA"),
+      inFollowUp: countByStatus(clients, "EN_SEGUIMIENTO"),
     };
-  }, [canSeeQuotes]);
+  }, [clients, quotes, canSeeQuotes]);
+
+  const loadingStats = clientsQuery.isLoading && !clientsQuery.data;
+  const isFetching =
+    clientsQuery.isFetching || (canSeeQuotes && quotesQuery.isFetching);
 
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
@@ -212,24 +187,40 @@ export function ExecutiveDashboardHome() {
         },
       ];
 
+  async function handleRefresh() {
+    await Promise.all([
+      clientsQuery.refetch(),
+      canSeeQuotes ? quotesQuery.refetch() : Promise.resolve(),
+    ]);
+  }
+
   return (
     <div className="space-y-5 sm:space-y-7">
       <section className="premium-dash-hero p-5 sm:p-8">
         <DashboardHeroDecoration />
-        <div className="relative z-[1] max-w-2xl">
-          <p className="premium-dash-kicker">Dashboard</p>
-          <h1 className="premium-dash-greeting mt-2 text-2xl sm:text-3xl lg:text-[2rem]">
-            {greeting}
-            {firstName ? (
-              <>
-                ,{" "}
-                <span className="premium-dash-greeting-name">{firstName}</span>
-              </>
-            ) : null}
-          </h1>
-          <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted sm:text-[0.95rem]">
-            {heroHint}
-          </p>
+        <div className="relative z-[1] flex max-w-2xl flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+          <div>
+            <p className="premium-dash-kicker">Dashboard</p>
+            <h1 className="premium-dash-greeting mt-2 text-2xl sm:text-3xl lg:text-[2rem]">
+              {greeting}
+              {firstName ? (
+                <>
+                  ,{" "}
+                  <span className="premium-dash-greeting-name">{firstName}</span>
+                </>
+              ) : null}
+            </h1>
+            <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted sm:text-[0.95rem]">
+              {heroHint}
+            </p>
+          </div>
+          <div className="shrink-0 self-start">
+            <AdminRefreshButton
+              compactMobile
+              loading={isFetching && !loadingStats}
+              onClick={() => void handleRefresh()}
+            />
+          </div>
         </div>
       </section>
 

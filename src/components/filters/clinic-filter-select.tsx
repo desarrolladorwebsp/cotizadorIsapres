@@ -93,6 +93,8 @@ export function ClinicFilterSelect({
         type="button"
         onClick={() => setModalOpen(true)}
         disabled={loading}
+        data-filter-control
+        data-filter-active={hasSelection ? "true" : "false"}
         className={joinClasses(
           "flex w-full items-center gap-2 rounded-lg border px-3 text-left transition",
           compactEmbed ? "min-h-10 py-2 text-xs" : "min-h-11 py-2.5 text-sm",

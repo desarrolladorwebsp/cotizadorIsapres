@@ -732,7 +732,7 @@ export function CompanyAgreementValidationSection({
               variant="ghost"
               data-convenio-cta
               disabled={submitting}
-              className="h-10 shrink-0 rounded-lg border-0 bg-[var(--convenio-accent-strong)] px-3.5 text-xs font-semibold text-white shadow-sm hover:bg-[var(--convenio-accent-strong)] hover:brightness-95 hover:text-white"
+              className="h-10 shrink-0 rounded-lg border-0 px-3.5 text-xs font-semibold text-white shadow-sm"
             >
               {submitting ? "Validando…" : "Validar"}
             </Button>
@@ -785,7 +785,7 @@ export function CompanyAgreementValidationSection({
                 data-convenio-cta
                 disabled={submitting}
                 className={joinClasses(
-                  "w-full shrink-0 border-0 bg-[var(--convenio-accent-strong)] text-white shadow-sm hover:bg-[var(--convenio-accent-strong)] hover:brightness-95 hover:text-white lg:w-auto lg:min-w-[7.5rem]",
+                  "w-full shrink-0 border-0 text-white shadow-sm lg:w-auto lg:min-w-[7.5rem]",
                   isInline && "h-9 rounded-lg px-4 text-xs",
                   compactEmbed && "max-md:h-8 max-md:px-3 max-md:text-[11px]",
                 )}

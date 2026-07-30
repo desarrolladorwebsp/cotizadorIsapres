@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   AdminPanel,
   AdminPanelHeader,
+  AdminRefreshButton,
 } from "@/components/admin/admin-data-table";
 import { Button } from "@/components/ui/button";
-import { fetchCalendarCallEvents } from "@/lib/api/admin-client";
+import { useExecutiveCalendarQuery } from "@/hooks/query/use-executive-calendar-query";
 import { horizontalScrollRail, touchTarget, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type { CalendarCallEvent } from "@/types/calendar";
@@ -590,9 +591,6 @@ function YearView({
 export function ExecutiveCalendarPanel() {
   const [view, setView] = useState<CalendarView>("month");
   const [cursor, setCursor] = useState(() => startOfDay(new Date()));
-  const [events, setEvents] = useState<CalendarCallEvent[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
   const today = useMemo(() => startOfDay(new Date()), []);
 
   const periodTitle = useMemo(
@@ -601,43 +599,36 @@ export function ExecutiveCalendarPanel() {
   );
 
   const range = useMemo(() => getVisibleRange(view, cursor), [view, cursor]);
+  const rangeKey = useMemo(
+    () => ({
+      from: range.from.toISOString(),
+      to: range.to.toISOString(),
+    }),
+    [range],
+  );
 
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setLoadError(null);
-
-    void (async () => {
-      try {
-        const rows = await fetchCalendarCallEvents({
-          from: range.from.toISOString(),
-          to: range.to.toISOString(),
-        });
-        if (!cancelled) setEvents(rows);
-      } catch (error) {
-        if (!cancelled) {
-          setEvents([]);
-          setLoadError(
-            error instanceof Error
-              ? error.message
-              : "No se pudieron cargar los llamados.",
-          );
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [range]);
+  const eventsQuery = useExecutiveCalendarQuery(rangeKey);
+  const events = eventsQuery.data ?? [];
+  const loading = eventsQuery.isLoading && !eventsQuery.data;
+  const isFetching = eventsQuery.isFetching;
+  const loadError =
+    eventsQuery.isError
+      ? eventsQuery.error instanceof Error
+        ? eventsQuery.error.message
+        : "No se pudieron cargar los llamados."
+      : null;
 
   return (
     <AdminPanel>
       <AdminPanelHeader
         title="Calendario"
         description="Reuniones y llamados agendados. WhatsApp en verde, Zoom en azul."
+        actions={
+          <AdminRefreshButton
+            loading={isFetching && !loading}
+            onClick={() => void eventsQuery.refetch()}
+          />
+        }
       />
 
       <div className={joinClasses(ui.surfaceCard, "space-y-4 p-3 sm:p-4")}>
@@ -715,6 +706,7 @@ export function ExecutiveCalendarPanel() {
               <span className="size-2.5 rounded-sm bg-sky-400" />
               Zoom
             </span>
+            {isFetching && !loading ? <span>Actualizando…</span> : null}
             {loading ? <span>Cargando llamados…</span> : null}
           </div>
         </div>

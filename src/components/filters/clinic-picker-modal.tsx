@@ -18,6 +18,34 @@ export interface ClinicPickerModalProps {
   loading?: boolean;
 }
 
+type PortalThemeScope =
+  | { kind: "premium"; variant: string }
+  | { kind: "brand"; brand: string }
+  | null;
+
+/**
+ * El modal se porta a `document.body` y sale del árbol con `data-premium-surface`
+ * / `data-brand`. Sin reaplicar el scope, cae a la paleta verde de `:root`.
+ */
+function resolvePortalThemeScope(): PortalThemeScope {
+  if (typeof document === "undefined") return null;
+
+  const premium = document.querySelector("[data-premium-surface]");
+  if (premium) {
+    return {
+      kind: "premium",
+      variant: premium.getAttribute("data-premium-variant") || "dashboard",
+    };
+  }
+
+  const brandHost =
+    document.querySelector("[data-brand]") ?? document.documentElement;
+  const brand = brandHost.getAttribute("data-brand");
+  if (brand) return { kind: "brand", brand };
+
+  return null;
+}
+
 function CloseIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" className="size-5" aria-hidden>
@@ -71,6 +99,7 @@ export function ClinicPickerModal({
   const [query, setQuery] = useState("");
   const [draftSelection, setDraftSelection] = useState<string[]>(value);
   const [mounted, setMounted] = useState(false);
+  const [themeScope, setThemeScope] = useState<PortalThemeScope>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -81,6 +110,7 @@ export function ClinicPickerModal({
     if (!open) return;
     setQuery("");
     setDraftSelection(value);
+    setThemeScope(resolvePortalThemeScope());
     const timer = window.setTimeout(() => searchRef.current?.focus(), 80);
     return () => window.clearTimeout(timer);
   }, [open, value]);
@@ -135,8 +165,24 @@ export function ClinicPickerModal({
 
   if (!mounted || !open) return null;
 
+  const portalThemeProps =
+    themeScope?.kind === "premium"
+      ? {
+          "data-premium-surface": true as const,
+          "data-premium-variant": themeScope.variant,
+        }
+      : themeScope?.kind === "brand"
+        ? { "data-brand": themeScope.brand }
+        : {};
+
   return createPortal(
-    <div className="fixed inset-0 z-[70] flex items-end justify-center sm:items-center sm:p-4">
+    <div
+      {...portalThemeProps}
+      className={joinClasses(
+        "fixed inset-0 z-[70] flex items-end justify-center sm:items-center sm:p-4",
+        themeScope?.kind === "premium" && "premium-surface-root",
+      )}
+    >
       <button
         type="button"
         className="absolute inset-0 bg-primary-dark/45 backdrop-blur-[2px]"
@@ -149,7 +195,7 @@ export function ClinicPickerModal({
         aria-modal="true"
         aria-labelledby="clinic-picker-modal-title"
         className={joinClasses(
-          "relative flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-t-2xl shadow-2xl sm:rounded-2xl",
+          "relative flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl sm:rounded-2xl",
           ui.border,
         )}
       >
@@ -163,8 +209,8 @@ export function ClinicPickerModal({
                 {title}
               </h2>
               <p className="mt-1 text-xs text-white/70">
-                Puedes elegir una o más clínicas. Los planes deben incluir al
-                menos una de las seleccionadas.
+                Puedes elegir una o más clínicas. Si seleccionas varias, los
+                planes deben incluir todas las seleccionadas.
               </p>
             </div>
             <button

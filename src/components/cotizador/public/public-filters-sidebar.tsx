@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { DashboardFiltersPanel } from "@/components/filters/dashboard-filters-panel";
 import { usePlanClinicOptions } from "@/hooks/use-plan-clinic-options";
 import { useIsLargeScreen } from "@/hooks/use-media-query";
-import { touchTarget, filtersSidebarDesktopShell, filtersSidebarScrollBody, ui } from "@/lib/ui-tokens";
+import { touchTarget, filtersSidebarDesktopShell, filtersSidebarScrollBody } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type { DashboardFiltersState } from "@/domain";
 
@@ -89,33 +89,36 @@ export function PublicFiltersSidebar({
         aria-modal={open ? "true" : undefined}
         aria-hidden={open ? undefined : true}
         aria-label="Filtros de búsqueda"
+        data-filters-panel
         initial={false}
         animate={{ x: isLargeScreen ? 0 : open ? 0 : "-100%" }}
         transition={{ type: "spring", stiffness: 320, damping: 32 }}
         className={joinClasses(
-          "fixed inset-y-0 left-0 z-50 flex w-full max-w-full flex-col overflow-hidden border-r bg-white shadow-xl",
+          "fixed inset-y-0 left-0 z-50 flex w-full max-w-full flex-col overflow-hidden border-r shadow-xl",
+          "bg-[var(--criteria-surface)] text-[var(--criteria-on-surface)]",
           compactEmbed
-            ? "max-md:max-w-[min(100%,20rem)] lg:static lg:z-20 lg:h-auto lg:max-h-none lg:w-52 lg:max-w-[13rem] lg:shrink-0 lg:translate-x-0 lg:overflow-visible lg:shadow-none"
+            ? "max-md:max-w-[min(100%,20rem)] lg:static lg:z-20 lg:h-auto lg:max-h-none lg:w-52 lg:max-w-[13rem] lg:shrink-0 lg:translate-x-0 lg:overflow-visible lg:rounded-2xl lg:border lg:shadow-sm"
             : joinClasses(
-                "lg:w-72 lg:max-w-[18rem] lg:shrink-0 lg:translate-x-0 lg:overflow-visible lg:shadow-none",
+                "lg:w-72 lg:max-w-[18rem] lg:shrink-0 lg:translate-x-0 lg:overflow-visible lg:rounded-2xl lg:border lg:shadow-sm",
                 filtersSidebarDesktopShell,
               ),
-          ui.border,
           !open && "pointer-events-none lg:pointer-events-auto",
           open ? "lg:flex" : "lg:hidden",
         )}
+        style={{ borderColor: "var(--criteria-ring)" }}
       >
         <div className="flex h-full min-h-0 w-full flex-col lg:max-h-[inherit]">
           <div
+            data-filters-header
             className={joinClasses(
               "flex shrink-0 items-center justify-between border-b px-4 py-4",
               compactEmbed && "max-md:px-3 max-md:py-2.5",
-              ui.border,
             )}
           >
             <p
+              data-filters-title
               className={joinClasses(
-                "text-sm font-bold text-primary-dark",
+                "text-sm font-bold",
                 compactEmbed && "max-md:text-xs",
               )}
             >
@@ -124,7 +127,8 @@ export function PublicFiltersSidebar({
             <button
               type="button"
               onClick={onClose}
-              className={joinClasses("rounded-lg text-muted lg:hidden", touchTarget)}
+              data-filters-close
+              className={joinClasses("rounded-lg lg:hidden", touchTarget)}
               aria-label="Cerrar"
             >
               <CloseIcon />

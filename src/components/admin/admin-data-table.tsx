@@ -283,16 +283,48 @@ export function AdminRefreshButton({
   onClick,
   label = "Actualizar",
   compactMobile = false,
+  loading = false,
 }: {
   onClick: () => void;
   label?: string;
   /** En mobile solo ícono; desde `sm` ícono + texto. */
   compactMobile?: boolean;
+  /** Muestra spinner en el ícono sin vaciar la lista (stale-while-revalidate). */
+  loading?: boolean;
 }) {
+  const icon = (
+    <svg
+      viewBox="0 0 24 24"
+      className={joinClasses(
+        "size-4",
+        compactMobile ? "sm:mr-1.5" : "mr-1.5",
+        loading ? "animate-spin" : "",
+      )}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      aria-hidden
+    >
+      <path
+        d="M21 12a9 9 0 11-2.64-6.36M21 3v6h-6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+
   if (!compactMobile) {
     return (
-      <Button type="button" variant="ghost" size="sm" onClick={onClick}>
-        {label}
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={onClick}
+        disabled={loading}
+        aria-busy={loading}
+      >
+        {icon}
+        {loading ? "Actualizando…" : label}
       </Button>
     );
   }
@@ -303,25 +335,16 @@ export function AdminRefreshButton({
       variant="ghost"
       size="sm"
       onClick={onClick}
-      aria-label={label}
-      title={label}
+      disabled={loading}
+      aria-busy={loading}
+      aria-label={loading ? "Actualizando…" : label}
+      title={loading ? "Actualizando…" : label}
       className={joinClasses(touchTarget, "px-0 sm:h-9 sm:min-h-9 sm:min-w-0 sm:px-3")}
     >
-      <svg
-        viewBox="0 0 24 24"
-        className="size-4 sm:mr-1.5"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        aria-hidden
-      >
-        <path
-          d="M21 12a9 9 0 11-2.64-6.36M21 3v6h-6"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-      <span className="hidden sm:inline">{label}</span>
+      {icon}
+      <span className="hidden sm:inline">
+        {loading ? "Actualizando…" : label}
+      </span>
     </Button>
   );
 }

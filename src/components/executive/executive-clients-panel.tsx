@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  IconSettings,
+  IconEye,
   IconUserPlus,
   IconUsers,
   IconWhatsApp,
@@ -28,11 +30,14 @@ import {
 import {
   assignClientToExecutive,
   distributeUnassignedClients,
-  fetchExecutiveAccounts,
-  fetchExecutiveClients,
 } from "@/lib/api/admin-client";
 import { useStaffSession } from "@/hooks/use-auth-session";
-import { ClientPipelineDrawer } from "@/components/executive/client-pipeline-drawer";
+import { useExecutiveAccountsQuery } from "@/hooks/query/use-executive-accounts-query";
+import { useExecutiveClientsQuery } from "@/hooks/query/use-executive-clients-query";
+import {
+  invalidateExecutiveClients,
+  upsertExecutiveClientCache,
+} from "@/lib/query/executive-cache";
 import { ClientPipelineStatusBadge } from "@/components/executive/client-pipeline-status-badge";
 import { ClientPlanSummary } from "@/components/executive/client-plan-summary";
 import { ClientOriginBadge } from "@/components/executive/client-origin-badge";
@@ -40,11 +45,16 @@ import { ClientContactMethodBadge } from "@/components/executive/client-contact-
 import { ClientRutCell } from "@/components/executive/client-rut-cell";
 import { CotizadorSourceBadge } from "@/components/executive/cotizador-source-badge";
 import { CreateClientModal } from "@/components/executive/create-client-modal";
+import { ExecutiveClientDetailView } from "@/components/executive/executive-client-detail-view";
 import { buildClientWhatsAppMessage } from "@/lib/client-pipeline/constants";
 import { buildWhatsAppUrl } from "@/lib/partner-entity/theme";
+import {
+  STAFF_CLIENT_ID_QUERY,
+  staffClientHref,
+  staffSectionHref,
+} from "@/lib/staff/staff-sections";
 import { touchTarget, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
-import type { StaffAccountRecord } from "@/types/staff-account";
 import type { UserRecord } from "@/types/user";
 
 export interface ExecutiveClientsPanelProps {
@@ -72,48 +82,56 @@ function formatNextCallAt(value: string | null | undefined): string | null {
 export function ExecutiveClientsPanel({
   onNotify,
 }: ExecutiveClientsPanelProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
   const { isAdmin } = useStaffSession();
-  const [clients, setClients] = useState<UserRecord[]>([]);
-  const [executives, setExecutives] = useState<StaffAccountRecord[]>([]);
-  const [loading, setLoading] = useState(true);
+  const clientsQuery = useExecutiveClientsQuery();
+  const executivesQuery = useExecutiveAccountsQuery({ enabled: isAdmin });
+
+  const detailClientId = searchParams.get(STAFF_CLIENT_ID_QUERY)?.trim() || null;
+
+  const clients = clientsQuery.data;
+  const executives = executivesQuery.data ?? [];
+  const loading =
+    (clientsQuery.isLoading && !clients) ||
+    (isAdmin && executivesQuery.isLoading && !executivesQuery.data);
+  const isFetching = clientsQuery.isFetching || executivesQuery.isFetching;
+
   const [search, setSearch] = useState("");
   const [savingId, setSavingId] = useState<string | null>(null);
   const [distributing, setDistributing] = useState(false);
-  const [pipelineClient, setPipelineClient] = useState<UserRecord | null>(null);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [pendingExecutiveByClientId, setPendingExecutiveByClientId] = useState<
     Record<string, string>
   >({});
   const [distributeConfirmOpen, setDistributeConfirmOpen] = useState(false);
 
-  async function loadClients() {
-    setLoading(true);
-    try {
-      const [nextClients, nextExecutives] = await Promise.all([
-        fetchExecutiveClients(),
-        isAdmin ? fetchExecutiveAccounts() : Promise.resolve([]),
-      ]);
-      setClients(nextClients);
-      setExecutives(nextExecutives);
-    } catch (error) {
-      onNotify(
-        error instanceof Error ? error.message : "No se pudieron cargar los clientes.",
-        "error",
-      );
-    } finally {
-      setLoading(false);
-    }
+  function openClientFicha(clientId: string) {
+    router.replace(staffClientHref(clientId), { scroll: false });
+  }
+
+  function closeClientFicha() {
+    router.replace(staffSectionHref("clientes"), { scroll: false });
   }
 
   useEffect(() => {
-    void loadClients();
-  }, [isAdmin]);
+    if (clientsQuery.isError) {
+      onNotify(
+        clientsQuery.error instanceof Error
+          ? clientsQuery.error.message
+          : "No se pudieron cargar los clientes.",
+        "error",
+      );
+    }
+  }, [clientsQuery.isError, clientsQuery.error, onNotify]);
 
   const filteredClients = useMemo(() => {
+    const rows = clients ?? [];
     const query = search.trim().toLowerCase();
-    if (!query) return clients;
+    if (!query) return rows;
 
-    return clients.filter((client) =>
+    return rows.filter((client) =>
       [
         client.fullName,
         client.email,
@@ -129,9 +147,26 @@ export function ExecutiveClientsPanel({
   }, [clients, search]);
 
   const unassignedCount = useMemo(
-    () => clients.filter((client) => !client.assignedExecutiveId).length,
+    () => (clients ?? []).filter((client) => !client.assignedExecutiveId).length,
     [clients],
   );
+
+  if (detailClientId) {
+    return (
+      <ExecutiveClientDetailView
+        clientId={detailClientId}
+        onBack={closeClientFicha}
+        onNotify={onNotify}
+      />
+    );
+  }
+
+  async function handleRefresh() {
+    await Promise.all([
+      clientsQuery.refetch(),
+      isAdmin ? executivesQuery.refetch() : Promise.resolve(),
+    ]);
+  }
 
   async function handleAssignExecutive(
     client: UserRecord,
@@ -140,9 +175,8 @@ export function ExecutiveClientsPanel({
     setSavingId(client.id);
     try {
       const updated = await assignClientToExecutive(client.id, executiveAccountId);
-      setClients((current) =>
-        current.map((row) => (row.id === updated.id ? updated : row)),
-      );
+      upsertExecutiveClientCache(queryClient, updated);
+      void invalidateExecutiveClients(queryClient);
       setPendingExecutiveByClientId((current) => {
         const next = { ...current };
         delete next[client.id];
@@ -194,7 +228,7 @@ export function ExecutiveClientsPanel({
       const result = await distributeUnassignedClients();
       onNotify(result.message, result.assigned > 0 ? "success" : "error");
       setDistributeConfirmOpen(false);
-      await loadClients();
+      await invalidateExecutiveClients(queryClient);
     } catch (error) {
       onNotify(
         error instanceof Error
@@ -216,7 +250,8 @@ export function ExecutiveClientsPanel({
           <>
             <AdminRefreshButton
               compactMobile
-              onClick={() => void loadClients()}
+              loading={isFetching && !loading}
+              onClick={() => void handleRefresh()}
             />
             <Button
               size="sm"
@@ -287,7 +322,7 @@ export function ExecutiveClientsPanel({
             : "Agrega clientes que captaste por tu cuenta o espera leads asignados desde el cotizador."
         }
         loadingMessage="Cargando clientes…"
-        footer={`Mostrando ${filteredClients.length} de ${clients.length} clientes.`}
+        footer={`Mostrando ${filteredClients.length} de ${(clients ?? []).length} clientes.`}
       >
         <AdminTable minWidth={isAdmin ? "72rem" : "64rem"}>
           <AdminTableHead>
@@ -468,10 +503,10 @@ export function ExecutiveClientsPanel({
                     <Button
                       size="sm"
                       variant="primary"
-                      onClick={() => setPipelineClient(client)}
+                      onClick={() => openClientFicha(client.id)}
                     >
-                      <IconSettings className="mr-1.5 size-3.5" />
-                      Gestionar
+                      <IconEye className="mr-1.5 size-3.5" />
+                      Ver ficha
                     </Button>
                   </AdminRowActions>
                 </AdminTableCell>
@@ -511,33 +546,9 @@ export function ExecutiveClientsPanel({
         open={createModalOpen}
         onClose={() => setCreateModalOpen(false)}
         onCreated={(created) => {
-          setClients((current) => [created, ...current]);
-        }}
-        onNotify={onNotify}
-      />
-
-      <ClientPipelineDrawer
-        client={pipelineClient}
-        open={Boolean(pipelineClient)}
-        onClose={() => setPipelineClient(null)}
-        onUpdated={(updated) => {
-          setClients((current) =>
-            current.map((row) => (row.id === updated.id ? updated : row)),
-          );
-          setPipelineClient(updated);
-        }}
-        onRedirected={(updated) => {
-          if (isAdmin) {
-            setClients((current) =>
-              current.map((row) => (row.id === updated.id ? updated : row)),
-            );
-            setPipelineClient(updated);
-            return;
-          }
-          setClients((current) =>
-            current.filter((row) => row.id !== updated.id),
-          );
-          setPipelineClient(null);
+          upsertExecutiveClientCache(queryClient, created);
+          void invalidateExecutiveClients(queryClient);
+          openClientFicha(created.id);
         }}
         onNotify={onNotify}
       />
