@@ -51,7 +51,6 @@ import { notifyCotizacionByEmail } from "@/lib/cotizacion-notify/client";
 import {
   EMBED_WIDGET_PLANS_LIMIT,
   INITIAL_PLANS_PAGE_SIZE,
-  PLANS_PAGE_SIZE_STEP,
 } from "@/lib/plan-search-config";
 import { sortHealthPlanSummariesByFinalPriceAsc } from "@/lib/plan-sort";
 import type { QuoteSortKey } from "@/lib/quote-criteria-options";
@@ -141,12 +140,9 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
     embedMode ||
     searchParams.get("embed") === "1" ||
     searchParams.get("embed") === "true";
-  const activePlansLimit = isEmbedded
+  const pageSize = isEmbedded
     ? EMBED_WIDGET_PLANS_LIMIT
     : INITIAL_PLANS_PAGE_SIZE;
-  const activePlansStep = isEmbedded
-    ? EMBED_WIDGET_PLANS_LIMIT
-    : PLANS_PAGE_SIZE_STEP;
 
   const deepLinkParamKey = searchParams.toString();
   const deepLink = useMemo(
@@ -209,7 +205,7 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
     "overview" | "price" | "request" | undefined
   >(deepLink.modalTab);
   const [searchText, setSearchText] = useState(deepLink.q ?? "");
-  const [resultsLimit, setResultsLimit] = useState(activePlansLimit);
+  const [resultsPage, setResultsPage] = useState(1);
   const [notifyEmail, setNotifyEmail] = useState(deepLink.email ?? "");
   const searchNotifySentRef = useRef(false);
   const [embedExitLoading, setEmbedExitLoading] = useState(false);
@@ -289,6 +285,7 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
       setRecoveryNotice(null);
       setSolicitarFlowActive(deepLink.hasSolicitarDeepLink);
       resetSearchCache();
+      setResultsPage(1);
     }
 
     setFormReady(true);
@@ -325,16 +322,19 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
 
   const runSearch = useCallback(
     (
-      limit = resultsLimit,
+      page = 1,
       options?: { force?: boolean; filters?: DashboardFiltersState },
     ) => {
+      const safePage = Math.max(1, page);
+      setResultsPage(safePage);
       return search(
         {
           q: searchText,
           priceMin: dashboard.priceMin,
           priceMax: dashboard.priceMax,
           filters: options?.filters ?? dashboard.dashboardFilters,
-          limit,
+          limit: pageSize,
+          offset: (safePage - 1) * pageSize,
         },
         options,
       );
@@ -345,7 +345,7 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
       dashboard.priceMin,
       dashboard.priceMax,
       dashboard.dashboardFilters,
-      resultsLimit,
+      pageSize,
     ],
   );
 
@@ -434,6 +434,7 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
     dashboard.setPriceMax(priceMax);
     initialSearchDoneRef.current = true;
     skipDebouncedSearchRef.current = true;
+    setResultsPage(1);
 
     if (!deepLink.shouldAutoSearch) return;
 
@@ -455,7 +456,8 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
         priceMin,
         priceMax,
         filters,
-        limit: activePlansLimit,
+        limit: pageSize,
+        offset: 0,
       },
       { force: true },
     ).then(() => {
@@ -483,6 +485,7 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
     deepLink.priceMin,
     deepLink.q,
     deepLink.shouldAutoSearch,
+    pageSize,
     search,
     sendSearchCotizacionNotify,
   ]);
@@ -493,7 +496,7 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
       return;
     }
 
-    setResultsLimit(activePlansLimit);
+    setResultsPage(1);
     const timer = window.setTimeout(() => {
       resetSearchCache();
       void search(
@@ -502,7 +505,8 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
           priceMin: dashboard.priceMin,
           priceMax: dashboard.priceMax,
           filters: dashboard.dashboardFilters,
-          limit: activePlansLimit,
+          limit: pageSize,
+          offset: 0,
         },
         { force: true },
       );
@@ -517,7 +521,7 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
     dashboard.priceMin,
     dashboard.priceMax,
     searchText,
-    activePlansLimit,
+    pageSize,
   ]);
 
   const sortedPlans = useMemo(() => {
@@ -640,7 +644,8 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
             priceMin: dashboard.priceMin,
             priceMax: dashboard.priceMax,
             filters: dashboard.dashboardFilters,
-            limit: activePlansLimit,
+            limit: pageSize,
+            offset: 0,
           },
           { force: true },
         );
@@ -665,6 +670,7 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
     dashboard.priceMin,
     dashboard.priceMax,
     dashboard.dashboardFilters,
+    pageSize,
   ]);
 
   const willAutoSearch =
@@ -678,8 +684,41 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
         willAutoSearch &&
         (boundsLoading || loading || !isEmbedded)));
 
-  const hasMoreResults = total > plans.length;
+  const hasMoreEmbedResults = isEmbedded && total > plans.length;
   const showInlineLoading = loading && hasSearched && plans.length > 0;
+
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const pageSafe = Math.min(resultsPage, totalPages);
+  const rangeStart = total === 0 ? 0 : (pageSafe - 1) * pageSize + 1;
+  const rangeEnd =
+    total === 0 ? 0 : Math.min((pageSafe - 1) * pageSize + plans.length, total);
+  const resultsRangeLabel =
+    total === 0
+      ? "0 resultados"
+      : `Mostrando ${rangeStart.toLocaleString("es-CL")}–${rangeEnd.toLocaleString("es-CL")} de ${total.toLocaleString("es-CL")}`;
+
+  function goToResultsPage(nextPage: number) {
+    const clamped = Math.min(Math.max(1, nextPage), totalPages);
+    if (clamped === pageSafe && !loading) return;
+    skipDebouncedSearchRef.current = true;
+    setResultsPage(clamped);
+    void search(
+      {
+        q: searchText,
+        priceMin: dashboard.priceMin,
+        priceMax: dashboard.priceMax,
+        filters: dashboard.dashboardFilters,
+        limit: pageSize,
+        offset: (clamped - 1) * pageSize,
+      },
+      { force: true },
+    ).then(() => {
+      scrollElementIntoAppShell(resultsRef.current, {
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  }
 
   function handleResetAll() {
     const defaultCriteria = createDefaultQuoteCriteria();
@@ -706,7 +745,7 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
     dashboard.setPriceMax(defaultPriceMax);
     setSearchText("");
     setCurrency("clp");
-    setResultsLimit(activePlansLimit);
+    setResultsPage(1);
     setContractPlan(null);
     setContractModalTab(undefined);
     setSolicitarFlowActive(false);
@@ -795,7 +834,7 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
       return;
     }
 
-    setResultsLimit(activePlansLimit);
+    setResultsPage(1);
     skipDebouncedSearchRef.current = true;
     void search(
       {
@@ -803,7 +842,8 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
         priceMin: dashboard.priceMin,
         priceMax: dashboard.priceMax,
         filters: dashboard.dashboardFilters,
-        limit: activePlansLimit,
+        limit: pageSize,
+        offset: 0,
       },
       { force: true },
     ).then(() => {
@@ -833,21 +873,6 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
 
   function handleEmbedViewAllPlans() {
     redirectEmbedToFullCotizador();
-  }
-
-  function handleLoadMore() {
-    skipDebouncedSearchRef.current = true;
-    void search(
-      {
-        q: searchText,
-        priceMin: dashboard.priceMin,
-        priceMax: dashboard.priceMax,
-        filters: dashboard.dashboardFilters,
-        limit: activePlansStep,
-        offset: plans.length,
-      },
-      { force: true, append: true },
-    );
   }
 
   const brandKey = isBranded ? entity!.brandKey : undefined;
@@ -936,11 +961,21 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
                 <PublicResultsToolbar
                   displayedCount={sortedPlans.length}
                   totalCount={total}
+                  rangeLabel={resultsRangeLabel}
                   currency={currency}
                   onCurrencyChange={setCurrency}
                   searchText={searchText}
                   onSearchTextChange={handleSearchTextChange}
                   compactEmbed={isEmbedded}
+                  pagination={
+                    isEmbedded
+                      ? null
+                      : {
+                          page: pageSafe,
+                          totalPages,
+                          onPageChange: goToResultsPage,
+                        }
+                  }
                 />
               </div>
             ) : null}
@@ -1011,7 +1046,7 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
                     <p className="font-medium">{error}</p>
                     <button
                       type="button"
-                      onClick={() => runSearch(undefined, { force: true })}
+                      onClick={() => void runSearch(1, { force: true })}
                       className={joinClasses(
                         "mt-4 text-sm font-semibold",
                         ui.link,
@@ -1047,22 +1082,18 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
                         <PublicPlanResultsLoadingInline />
                       </div>
                     ) : null}
-                    {hasMoreResults && !showInlineLoading ? (
+                    {hasMoreEmbedResults && !showInlineLoading ? (
                       <div className="mt-6 flex justify-center">
                         <button
                           type="button"
-                          onClick={
-                            isEmbedded ? handleEmbedViewAllPlans : handleLoadMore
-                          }
+                          onClick={handleEmbedViewAllPlans}
                           className={joinClasses(
                             touchTarget,
-                            "rounded-full border px-8 text-sm font-semibold text-primary-dark transition hover:border-primary/40 hover:bg-primary/5",
+                            "rounded-md border px-8 text-sm font-semibold text-primary-dark transition hover:border-primary/40 hover:bg-primary/5",
                             ui.border,
                           )}
                         >
-                          {isEmbedded
-                            ? `Ver todos los planes (${total})`
-                            : `Ver más planes (${Math.min(activePlansStep, total - plans.length)} adicionales)`}
+                          {`Ver todos los planes (${total})`}
                         </button>
                       </div>
                     ) : null}

@@ -1,7 +1,10 @@
-/** Cantidad inicial de planes mostrados al cargar el cotizador público. */
+/** Cantidad inicial / tamaño de página del cotizador público. */
 export const INITIAL_PLANS_PAGE_SIZE = 12;
 
-/** Incremento al pulsar "Ver más planes". */
+/** @deprecated Usar INITIAL_PLANS_PAGE_SIZE; se mantiene por compatibilidad. */
+export const PUBLIC_PLANS_PAGE_SIZE = INITIAL_PLANS_PAGE_SIZE;
+
+/** Incremento al pulsar "Ver más planes" (legado / embed). */
 export const PLANS_PAGE_SIZE_STEP = 12;
 
 /** Planes por página en el cotizador ejecutivo (paginación fija). */
