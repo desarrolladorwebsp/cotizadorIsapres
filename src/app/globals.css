@@ -751,6 +751,45 @@
   --convenio-accent-muted: #e8f5f2;
 }
 
+/* Convenio inline sobre barra teal: texto claro + CTA esmeralda */
+[data-brand="isapre-premium"] [data-criteria-bar] {
+  --convenio-accent: #e8f5f2;
+  --convenio-accent-strong: #22b573;
+  --convenio-accent-muted: rgb(255 255 255 / 0.18);
+}
+
+[data-brand="isapre-premium"] [data-convenio-inline] {
+  border-color: rgb(255 255 255 / 0.35) !important;
+}
+
+[data-brand="isapre-premium"] [data-convenio-title],
+[data-brand="isapre-premium"] [data-convenio-toggle],
+[data-brand="isapre-premium"] [data-convenio-info] {
+  color: #ffffff !important;
+}
+
+[data-brand="isapre-premium"] [data-convenio-toggle] {
+  color: #b8f0d8 !important;
+}
+
+[data-brand="isapre-premium"] [data-convenio-info] {
+  border-color: rgb(255 255 255 / 0.45) !important;
+  background-color: rgb(255 255 255 / 0.12);
+}
+
+[data-brand="isapre-premium"] [data-convenio-info]:hover {
+  background-color: rgb(255 255 255 / 0.22) !important;
+  color: #ffffff !important;
+}
+
+[data-brand="isapre-premium"] [data-convenio-hint] {
+  color: rgb(255 255 255 / 0.82) !important;
+}
+
+[data-brand="isapre-premium"] [data-convenio-field-label] {
+  color: rgb(255 255 255 / 0.92) !important;
+}
+
 /* Gradiente de marca eliminado: barra y filtros usan color sólido / blanco */
 
 @theme inline {

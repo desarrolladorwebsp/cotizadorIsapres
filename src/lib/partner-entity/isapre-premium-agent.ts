@@ -37,6 +37,7 @@ export const ISAPRE_PREMIUM_THEME: PartnerEntityTheme = {
   criteriaSurface: "#0F8D8E",
   criteriaRing: "#0A6F73",
   convenioAccent: "#0F8D8E",
+  /** CTA Validar: verde esmeralda (contrasta en barra y en blanco). */
   convenioAccentStrong: "#22B573",
   convenioAccentMuted: "#E8F5F2",
 };
