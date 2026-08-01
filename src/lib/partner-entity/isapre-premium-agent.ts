@@ -13,29 +13,32 @@ export const ISAPRE_PREMIUM_WEBSITE = "https://isaprespremium.cl";
 export const ISAPRE_PREMIUM_LOGO_PATH = "/images/partners/logo-isapre-premium.png";
 
 /**
- * Paleta extraída del logo y sitio isaprespremium.cl:
- * - Verde vibrante (ISAPRES) como color principal de acción
- * - Teal/cian (PREMIUM, monograma) como secundario y acentos
+ * Paleta oficial Isapres Premium (turquesa petróleo + verde esmeralda).
+ * Gradiente de marca: #0F8D8E → #22B573 (ver también globals.css).
  */
 export const ISAPRE_PREMIUM_THEME: PartnerEntityTheme = {
-  primary: "#6CC24A",
-  primaryHover: "#5AB83D",
-  primaryDark: "#1F8F84",
+  /** CTA principal — verde profundo */
+  primary: "#0A6F73",
+  /** Hover CTA — turquesa oscuro */
+  primaryHover: "#08777A",
+  /** Texto principal — azul petróleo */
+  primaryDark: "#154B56",
   primaryForeground: "#ffffff",
-  secondary: "#2EAEA0",
-  secondaryMuted: "#E8F7F5",
-  bgLayout: "#ffffff",
-  foreground: "#1a2e2b",
-  muted: "#5c6b68",
-  border: "#d4ebe8",
-  surfaceHover: "#f0faf8",
-  criteriaSurface: "#6CC24A",
-  criteriaRing: "#1F8F84",
-  /** Texto convenio en verde de marca. */
-  convenioAccent: "#1F8F84",
-  /** CTA Validar convenio: verde fuerte. */
-  convenioAccentStrong: "#6CC24A",
-  convenioAccentMuted: "#E8F7F5",
+  /** Color secundario — verde esmeralda */
+  secondary: "#22B573",
+  secondaryMuted: "#E8F5F2",
+  /** Fondos suaves — gris azulado muy claro */
+  bgLayout: "#F7FAFB",
+  foreground: "#154B56",
+  muted: "#7A8D93",
+  border: "#E6EFF0",
+  surfaceHover: "#EEF5F6",
+  /** Brand primary — turquesa petróleo (barra de criterios) */
+  criteriaSurface: "#0F8D8E",
+  criteriaRing: "#0A6F73",
+  convenioAccent: "#0F8D8E",
+  convenioAccentStrong: "#22B573",
+  convenioAccentMuted: "#E8F5F2",
 };
 
 export function buildIsaprePremiumPartnerRecord(): PartnerEntityPublic {

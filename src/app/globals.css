@@ -695,36 +695,70 @@
 }
 
 [data-brand="isapre-premium"] {
-  --primary: #6cc24a;
-  --primary-hover: #5ab83d;
-  --primary-dark: #1f8f84;
+  /* Alinear con isapre-premium-agent.ts */
+  --primary: #0a6f73;
+  --primary-hover: #08777a;
+  --primary-dark: #154b56;
   --primary-foreground: #ffffff;
-  --secondary: #2eaea0;
-  --secondary-muted: #e8f7f5;
-  --bg-layout: #ffffff;
-  --foreground: #1a2e2b;
-  --muted: #5c6b68;
-  --border: #d4ebe8;
-  --surface-hover: #f0faf8;
-  --criteria-surface: #6cc24a;
-  --criteria-ring: #1f8f84;
+
+  --secondary: #22b573;
+  --secondary-muted: #e8f5f2;
+
+  --bg-layout: #f7fafb;
+  --background: #ffffff;
+  --foreground: #154b56;
+  --muted: #7a8d93;
+  --border: #e6eff0;
+  --surface-hover: #eef5f6;
+
+  --shadow-card: 0 4px 24px -8px rgb(21 75 86 / 0.07);
+  --shadow-card-hover: 0 12px 32px -10px rgb(15 141 142 / 0.18);
+  --shadow-cta: 0 8px 24px -8px rgb(10 111 115 / 0.4);
+
+  --plan-card-surface: #ffffff;
+  --plan-card-header-bg: color-mix(in srgb, var(--bg-layout) 40%, white);
+  --plan-card-coverage-bg: color-mix(in srgb, var(--bg-layout) 55%, white);
+  --plan-card-border: color-mix(in srgb, var(--border) 85%, var(--foreground) 15%);
+  --plan-card-ring: rgb(21 75 86 / 0.04);
+  --shadow-plan-card:
+    0 1px 2px rgb(21 75 86 / 0.04),
+    0 2px 8px -2px rgb(15 141 142 / 0.08),
+    0 10px 28px -8px rgb(15 141 142 / 0.1);
+  --shadow-plan-card-hover:
+    0 0 0 1px var(--primary),
+    0 4px 14px -4px rgb(15 141 142 / 0.14),
+    0 16px 40px -10px rgb(34 181 115 / 0.16);
+
+  --gradient-coverage: linear-gradient(90deg, #0f8d8e 0%, #22b573 100%);
+
+  --criteria-surface: #0f8d8e;
+  --criteria-ring: #0a6f73;
   --criteria-on-surface: #ffffff;
   --criteria-on-surface-muted: rgb(255 255 255 / 0.9);
   --criteria-control-bg: #ffffff;
-  --criteria-control-fg: #1f8f84;
-  --criteria-control-placeholder: rgb(31 143 132 / 0.45);
+  --criteria-control-fg: #154b56;
+  --criteria-control-placeholder: rgb(21 75 86 / 0.45);
   --criteria-chip-idle-bg: rgb(255 255 255 / 0.16);
   --criteria-chip-idle-border: rgb(255 255 255 / 0.38);
   --criteria-chip-idle-fg: #ffffff;
   --criteria-section-bg: rgb(255 255 255 / 0.12);
   --criteria-section-border: rgb(255 255 255 / 0.22);
   --criteria-divider: rgb(255 255 255 / 0.22);
-  --criteria-accent: #1f8f84;
+  --criteria-accent: #0a6f73;
   --criteria-accent-fg: #ffffff;
-  --criteria-accent-soft: #e8f7f5;
-  --convenio-accent: #1f8f84;
-  --convenio-accent-strong: #6cc24a;
-  --convenio-accent-muted: #e8f7f5;
+  --criteria-accent-soft: #e8f5f2;
+  --convenio-accent: #0f8d8e;
+  --convenio-accent-strong: #22b573;
+  --convenio-accent-muted: #e8f5f2;
+}
+
+/* Gradiente de marca en barra de criterios / panel de filtros */
+[data-brand="isapre-premium"] [data-criteria-bar] {
+  background: linear-gradient(90deg, #0f8d8e 0%, #22b573 100%) !important;
+}
+
+[data-brand="isapre-premium"] [data-filters-panel] {
+  background: linear-gradient(165deg, #0f8d8e 0%, #22b573 100%) !important;
 }
 
 @theme inline {
