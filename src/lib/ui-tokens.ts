@@ -49,7 +49,7 @@ export const motionGpu =
   "will-change-[transform,opacity] transform-gpu backface-hidden";
 
 export const criteriaBar =
-  "rounded-2xl bg-[var(--criteria-surface)] p-4 shadow-sm ring-1 ring-[var(--criteria-ring)] sm:p-5";
+  "rounded-lg bg-[var(--criteria-surface)] p-4 shadow-sm ring-1 ring-[var(--criteria-ring)] sm:p-5";
 
 /** Acentos de detalle (amarillo, azul, rojo) — no reemplazan el verde primario. */
 export const accent = {
@@ -78,7 +78,7 @@ export const accentIconClass: Record<AccentIconTone, string> = {
 
 export const ui = {
   canvas: "bg-bg-layout text-foreground",
-  surfaceCard: "rounded-xl border border-border bg-white shadow-card",
+  surfaceCard: "rounded-lg border border-border bg-white shadow-card",
   mutedText: "text-muted",
   border: "border-border",
   borderHairline: "border border-border",
@@ -86,7 +86,7 @@ export const ui = {
   sectionTitle: "text-primary-dark",
   input:
     "border border-border bg-white text-foreground placeholder:text-muted/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
-  card: "rounded-xl border border-border bg-white shadow-card",
+  card: "rounded-lg border border-border bg-white shadow-card",
   link: "text-secondary transition hover:text-secondary/80",
   cta: "bg-primary text-primary-foreground transition hover:bg-primary-hover active:scale-[0.99]",
   ctaOutline:
@@ -100,11 +100,11 @@ export type PercentageTone = "hospital" | "ambulatory" | "neutral";
 
 export const percentageToneActiveClass: Record<PercentageTone, string> = {
   hospital:
-    "border-primary bg-primary/25 text-primary-dark font-semibold shadow-sm ring-2 ring-primary/40",
+    "border-primary bg-primary text-primary-foreground font-semibold shadow-sm",
   ambulatory:
-    "border-secondary bg-secondary/20 text-primary-dark font-semibold shadow-sm ring-2 ring-secondary/45",
+    "border-primary bg-primary text-primary-foreground font-semibold shadow-sm",
   neutral:
-    "border-primary bg-primary/25 text-primary-dark font-semibold shadow-sm ring-2 ring-primary/45",
+    "border-primary bg-primary text-primary-foreground font-semibold shadow-sm",
 };
 
 export type StatusBadgeTone =
@@ -146,7 +146,7 @@ export function resolveBadgeTone(label: string): StatusBadgeTone {
  * Tokens CSS en globals.css: --shadow-plan-card, --plan-card-border, etc.
  */
 export const planCard = {
-  root: `${motionGpu} overflow-hidden rounded-xl border bg-[var(--plan-card-surface)] shadow-plan-card ring-1 ring-inset ring-[var(--plan-card-ring)]`,
+  root: `${motionGpu} overflow-hidden rounded-lg border bg-[var(--plan-card-surface)] shadow-plan-card ring-1 ring-inset ring-[var(--plan-card-ring)]`,
   header:
     "flex flex-col gap-3 border-b border-[var(--plan-card-border)] bg-[var(--plan-card-header-bg)] px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-4",
   coverageGrid: "grid bg-[var(--plan-card-coverage-bg)] md:grid-cols-2",

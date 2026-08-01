@@ -49,7 +49,7 @@ export function PublicResultsToolbar({
       >
         <span
           className={joinClasses(
-            "inline-flex w-fit max-w-full items-center rounded-full bg-primary px-4 py-1.5 text-sm font-bold text-white shadow-sm",
+            "inline-flex w-fit max-w-full items-center rounded-md bg-primary px-4 py-1.5 text-sm font-bold text-white shadow-sm",
             compactEmbed &&
               "max-md:truncate max-md:px-2.5 max-md:py-1 max-md:text-[11px]",
           )}
@@ -64,9 +64,9 @@ export function PublicResultsToolbar({
         onChange={(event) => onSearchTextChange(event.target.value)}
         placeholder={searchPlaceholder}
         className={joinClasses(
-          "h-11 w-full min-w-0 rounded-xl px-4 text-sm",
+          "h-11 w-full min-w-0 rounded-md px-4 text-sm",
           "lg:min-w-[12rem] lg:flex-1",
-          compactEmbed && "max-md:h-9 max-md:rounded-lg max-md:px-3 max-md:text-xs",
+          compactEmbed && "max-md:h-9 max-md:rounded-md max-md:px-3 max-md:text-xs",
           ui.input,
         )}
       />
@@ -79,7 +79,7 @@ export function PublicResultsToolbar({
       >
         <div
           className={joinClasses(
-            "inline-flex rounded-lg p-0.5",
+            "inline-flex rounded-md p-0.5",
             ui.borderHairline,
             compactEmbed && "max-md:rounded-md",
           )}

@@ -95,17 +95,17 @@ export function PublicFiltersSidebar({
         transition={{ type: "spring", stiffness: 320, damping: 32 }}
         className={joinClasses(
           "fixed inset-y-0 left-0 z-50 flex w-full max-w-full flex-col overflow-hidden border-r shadow-xl",
-          "bg-[var(--criteria-surface)] text-[var(--criteria-on-surface)]",
+          "bg-white text-foreground",
           compactEmbed
-            ? "max-md:max-w-[min(100%,20rem)] lg:static lg:z-20 lg:h-auto lg:max-h-none lg:w-52 lg:max-w-[13rem] lg:shrink-0 lg:translate-x-0 lg:overflow-visible lg:rounded-2xl lg:border lg:shadow-sm"
+            ? "max-md:max-w-[min(100%,20rem)] lg:static lg:z-20 lg:h-auto lg:max-h-none lg:w-52 lg:max-w-[13rem] lg:shrink-0 lg:translate-x-0 lg:overflow-visible lg:rounded-lg lg:border lg:shadow-sm"
             : joinClasses(
-                "lg:w-72 lg:max-w-[18rem] lg:shrink-0 lg:translate-x-0 lg:overflow-visible lg:rounded-2xl lg:border lg:shadow-sm",
+                "lg:w-72 lg:max-w-[18rem] lg:shrink-0 lg:translate-x-0 lg:overflow-visible lg:rounded-lg lg:border lg:shadow-sm",
                 filtersSidebarDesktopShell,
               ),
           !open && "pointer-events-none lg:pointer-events-auto",
           open ? "lg:flex" : "lg:hidden",
         )}
-        style={{ borderColor: "var(--criteria-ring)" }}
+        style={{ borderColor: "var(--border)" }}
       >
         <div className="flex h-full min-h-0 w-full flex-col lg:max-h-[inherit]">
           <div

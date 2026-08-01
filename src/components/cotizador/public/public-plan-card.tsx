@@ -81,7 +81,7 @@ const planTypeMetaStyle: Record<PlanTypeFilterId, string> = {
 
 const planActionBase = joinClasses(
   touchTarget,
-  "inline-flex h-10 items-center gap-1.5 rounded-full px-3.5 text-xs font-bold transition active:scale-[0.98]",
+  "inline-flex h-10 items-center gap-1.5 rounded-md px-3.5 text-xs font-bold transition active:scale-[0.98]",
 );
 
 const planActionIconCircle =

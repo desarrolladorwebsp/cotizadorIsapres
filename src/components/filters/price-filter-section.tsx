@@ -66,7 +66,7 @@ export function PriceFilterSection({
           </span>
           <span
             className={joinClasses(
-              "rounded-full px-2.5 py-1 text-[10px] font-bold tabular-nums",
+              "rounded-md px-2.5 py-1 text-[10px] font-bold tabular-nums",
               executiveVisual
                 ? "bg-surface-hover text-primary-dark"
                 : "bg-primary/8 text-primary-dark",
@@ -80,7 +80,7 @@ export function PriceFilterSection({
         <div
           data-price-range
           className={joinClasses(
-            "rounded-2xl border px-3 py-3",
+            "rounded-md border px-3 py-3",
             executiveVisual
               ? "border-border/50 bg-white/70"
               : "border-border/60 bg-bg-layout/25",
@@ -112,7 +112,7 @@ export function PriceFilterSection({
               aria-hidden
             />
             <div
-              className="absolute top-1/2 h-2 -translate-y-1/2 rounded-full bg-[var(--criteria-accent,var(--primary))]"
+              className="absolute top-1/2 h-2 -translate-y-1/2 rounded-full bg-primary"
               style={{ left: `${startPct}%`, width: `${Math.max(endPct - startPct, 0)}%` }}
               aria-hidden
             />

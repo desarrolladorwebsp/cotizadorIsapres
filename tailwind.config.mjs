@@ -35,6 +35,7 @@ const config = {
         md: "var(--radius-md)",
         sm: "var(--radius-sm)",
         xl: "var(--radius-xl)",
+        "2xl": "var(--radius-xl)",
       },
       boxShadow: {
         card: "var(--shadow-card)",

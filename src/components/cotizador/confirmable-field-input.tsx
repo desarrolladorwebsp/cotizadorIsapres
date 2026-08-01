@@ -174,9 +174,9 @@ export function ConfirmableFieldInput({
             aria-label={confirmLabel ?? `${actionLabel} ${label.toLowerCase()}`}
             className={joinClasses(
               touchTarget,
-              "h-11 shrink-0 rounded-full px-3.5 text-xs font-bold transition disabled:cursor-not-allowed",
+              "h-11 shrink-0 rounded-md px-3.5 text-xs font-bold transition disabled:cursor-not-allowed",
               !compact && "h-12 px-4 text-sm",
-              compact && "max-md:h-9 max-md:rounded-full max-md:px-2.5 max-md:text-[11px]",
+              compact && "max-md:h-9 max-md:rounded-md max-md:px-2.5 max-md:text-[11px]",
               canConfirm
                 ? "bg-secondary text-primary-dark shadow-sm hover:brightness-105"
                 : "border border-white/50 bg-white/70 text-primary-dark",

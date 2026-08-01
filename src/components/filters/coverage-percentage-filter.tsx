@@ -20,7 +20,7 @@ export interface CoveragePercentageFilterProps {
 
 const percentButtonClass = joinClasses(
   touchTarget,
-  "h-10 w-full rounded-xl text-xs font-bold tabular-nums transition md:h-9 md:min-h-0 md:min-w-0",
+  "h-10 w-full rounded-md border text-xs font-bold tabular-nums transition md:h-9 md:min-h-0 md:min-w-0",
 );
 
 export function CoveragePercentageFilter({
@@ -51,7 +51,7 @@ export function CoveragePercentageFilter({
 
       <div
         data-coverage-chip-group
-        className="grid grid-cols-4 gap-1.5 rounded-2xl border border-border/50 bg-bg-layout/20 p-1.5"
+        className="grid grid-cols-4 gap-1.5 rounded-md border border-border bg-white p-1.5"
       >
         <button
           type="button"
@@ -63,7 +63,7 @@ export function CoveragePercentageFilter({
             percentButtonClass,
             isAllActive
               ? activeClass
-              : joinClasses("border border-transparent text-muted", ui.hoverSurface),
+              : joinClasses("border border-border text-muted", ui.hoverSurface),
           )}
           aria-pressed={isAllActive}
         >
@@ -85,7 +85,7 @@ export function CoveragePercentageFilter({
                 isActive
                   ? activeClass
                   : joinClasses(
-                      "border border-transparent text-foreground/75",
+                      "border border-border text-foreground/75",
                       ui.hoverSurface,
                     ),
               )}

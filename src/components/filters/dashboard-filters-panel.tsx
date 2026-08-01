@@ -98,11 +98,11 @@ export function DashboardFiltersPanel({
 
   const coverageBlockClass = joinClasses(
     "space-y-3",
-    !executiveVisual && "rounded-lg border border-border/60 bg-bg-layout/20 p-3",
+    !executiveVisual && "rounded-md border border-border bg-white p-3",
   );
   const ambulatoryCoverageBlockClass = joinClasses(
     "space-y-3",
-    !executiveVisual && "rounded-lg border border-border/60 bg-bg-layout/20 p-3",
+    !executiveVisual && "rounded-md border border-border bg-white p-3",
     executiveVisual && "border-t border-border/40 pt-4",
   );
 

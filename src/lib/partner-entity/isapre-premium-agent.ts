@@ -14,11 +14,11 @@ export const ISAPRE_PREMIUM_LOGO_PATH = "/images/partners/logo-isapre-premium.pn
 
 /**
  * Paleta oficial Isapres Premium (turquesa petróleo + verde esmeralda).
- * Gradiente de marca: #0F8D8E → #22B573 (ver también globals.css).
+ * Primary = brand turquesa (#0F8D8E): badge, barra de criterios y filtros.
  */
 export const ISAPRE_PREMIUM_THEME: PartnerEntityTheme = {
-  /** CTA principal — verde profundo */
-  primary: "#0A6F73",
+  /** Color principal (Brand Primary) — turquesa petróleo */
+  primary: "#0F8D8E",
   /** Hover CTA — turquesa oscuro */
   primaryHover: "#08777A",
   /** Texto principal — azul petróleo */
@@ -33,7 +33,7 @@ export const ISAPRE_PREMIUM_THEME: PartnerEntityTheme = {
   muted: "#7A8D93",
   border: "#E6EFF0",
   surfaceHover: "#EEF5F6",
-  /** Brand primary — turquesa petróleo (barra de criterios) */
+  /** Misma familia que primary (barra de criterios sólida) */
   criteriaSurface: "#0F8D8E",
   criteriaRing: "#0A6F73",
   convenioAccent: "#0F8D8E",

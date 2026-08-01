@@ -50,11 +50,11 @@ export interface PublicQuoteCriteriaBarProps {
 }
 
 const fieldClass = joinClasses(
-  "h-12 w-full rounded-xl border-0 bg-white px-3 text-base text-primary-dark shadow-sm ring-1 ring-border/80 focus:ring-2 focus:ring-primary/40",
+  "h-12 w-full rounded-md border-0 bg-white px-3 text-base text-primary-dark shadow-sm ring-1 ring-border/80 focus:ring-2 focus:ring-primary/40",
 );
 
 const compactFieldClass =
-  "max-md:h-9 max-md:rounded-lg max-md:px-2.5 max-md:text-xs";
+  "max-md:h-9 max-md:rounded-md max-md:px-2.5 max-md:text-xs";
 
 const labelClass = "text-sm font-semibold text-muted";
 
@@ -245,7 +245,7 @@ export function PublicQuoteCriteriaBar({
       data-criteria-bar
       className={joinClasses(
         criteriaBar,
-        compactEmbed && "max-md:rounded-xl max-md:p-3 max-md:shadow-none",
+        compactEmbed && "max-md:rounded-lg max-md:p-3 max-md:shadow-none",
       )}
     >
       <div
@@ -360,10 +360,10 @@ export function PublicQuoteCriteriaBar({
             data-criteria-loads
             className={joinClasses(
               touchTarget,
-              "flex h-12 w-full items-center gap-2 rounded-xl border border-dashed border-primary/40 bg-white px-3 text-base font-semibold text-primary-dark transition hover:bg-primary/5",
+              "flex h-12 w-full items-center gap-2 rounded-md border border-dashed border-primary/40 bg-white px-3 text-base font-semibold text-primary-dark transition hover:bg-primary/5",
               !compactEmbed && "md:px-2.5 lg:px-3",
               compactEmbed &&
-                "max-md:h-9 max-md:min-h-10 max-md:rounded-lg max-md:px-2.5 max-md:text-xs",
+                "max-md:h-9 max-md:min-h-10 max-md:rounded-md max-md:px-2.5 max-md:text-xs",
             )}
           >
             <span className="inline-flex min-w-0 items-center gap-1.5">
@@ -387,7 +387,7 @@ export function PublicQuoteCriteriaBar({
               <span className="hidden truncate md:inline xl:hidden">Cargas</span>
               <span className="hidden truncate xl:inline">Gestionar cargas</span>
               {loadsCount > 0 ? (
-                <span className="shrink-0 rounded-full bg-primary px-2 py-0.5 text-[10px] text-white">
+                <span className="shrink-0 rounded-md bg-primary px-2 py-0.5 text-[10px] text-white">
                   {loadsCount}
                 </span>
               ) : null}
@@ -397,7 +397,7 @@ export function PublicQuoteCriteriaBar({
           {loadsOpen ? (
             <div
               className={joinClasses(
-                "absolute right-0 top-full z-20 mt-2 rounded-2xl border bg-white p-4 shadow-xl",
+                "absolute right-0 top-full z-20 mt-2 rounded-lg border bg-white p-4 shadow-xl",
                 compactEmbed
                   ? "left-0 w-full max-md:p-3"
                   : "w-[min(100vw-2rem,20rem)]",
@@ -423,7 +423,7 @@ export function PublicQuoteCriteriaBar({
           data-criteria-cta
           className={joinClasses(
             touchTarget,
-            "h-12 w-full shrink-0 rounded-full px-5 text-base font-bold text-white shadow-[var(--shadow-cta)] transition hover:brightness-105",
+            "h-12 w-full shrink-0 rounded-md px-5 text-base font-bold text-white shadow-[var(--shadow-cta)] transition hover:brightness-105",
             !compactEmbed && "md:w-auto md:whitespace-nowrap md:px-5 xl:px-6",
             compactEmbed && "max-md:h-10 max-md:px-4 max-md:text-xs sm:col-span-2",
             ui.cta,
@@ -450,7 +450,7 @@ export function PublicQuoteCriteriaBar({
             data-criteria-secondary
             className={joinClasses(
               touchTarget,
-              "h-12 w-full shrink-0 rounded-full border px-4 text-sm font-semibold",
+              "h-12 w-full shrink-0 rounded-md border px-4 text-sm font-semibold",
               !compactEmbed && "md:w-auto md:whitespace-nowrap md:px-3.5 xl:px-4",
               compactEmbed && "max-md:h-10 max-md:px-4 max-md:text-xs sm:col-span-2",
               ui.border,

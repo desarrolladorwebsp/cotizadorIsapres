@@ -40,8 +40,8 @@ export function RegionFilterSelect({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         className={joinClasses(
-          "h-11 w-full rounded-xl border-0 bg-white px-3 text-sm shadow-sm ring-1 ring-border/80 focus:ring-2 focus:ring-primary/40",
-          compact && "h-9 rounded-lg px-2.5 text-xs",
+          "h-11 w-full rounded-md border-0 bg-white px-3 text-sm shadow-sm ring-1 ring-border/80 focus:ring-2 focus:ring-primary/40",
+          compact && "h-9 rounded-md px-2.5 text-xs",
           ui.input,
           selectClassName,
         )}
