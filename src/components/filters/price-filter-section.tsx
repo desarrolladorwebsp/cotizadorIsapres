@@ -108,11 +108,13 @@ export function PriceFilterSection({
 
           <div className="relative h-8">
             <div
-              className="absolute left-0 right-0 top-1/2 h-2 -translate-y-1/2 rounded-full bg-border/80"
+              data-price-track
+              className="absolute left-0 right-0 top-1/2 h-2 -translate-y-1/2 rounded-full"
               aria-hidden
             />
             <div
-              className="absolute top-1/2 h-2 -translate-y-1/2 rounded-full bg-primary"
+              data-price-track-active
+              className="absolute top-1/2 h-2 -translate-y-1/2 rounded-full"
               style={{ left: `${startPct}%`, width: `${Math.max(endPct - startPct, 0)}%` }}
               aria-hidden
             />

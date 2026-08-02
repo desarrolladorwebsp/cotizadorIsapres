@@ -179,8 +179,11 @@ const FIELD_PLACEHOLDERS: Record<FieldKey, string> = {
   companyRut: "76.543.210-K",
 };
 
-const INLINE_TITLE =
-  "¿Tu empresa tiene convenio? Obtén descuento en tu plan de hasta 10%";
+const INLINE_TITLE_BEFORE = "¿Tu empresa tiene ";
+const INLINE_TITLE_WORD = "convenio";
+const INLINE_TITLE_AFTER = "? Obtén";
+const INLINE_DISCOUNT_PILL = "hasta 10% de descuento";
+const INLINE_TITLE_TAIL = "en tu plan.";
 
 const inlineFieldClass = joinClasses(
   "h-9 w-full min-w-0 rounded-lg border-0 bg-white px-2.5 text-sm shadow-sm ring-1 ring-border/80 placeholder:text-muted/70 focus:ring-2 focus:ring-primary/40",
@@ -857,7 +860,11 @@ export function CompanyAgreementValidationSection({
                     : "text-sm sm:text-[15px]",
                 )}
               >
-                {INLINE_TITLE}
+                {INLINE_TITLE_BEFORE}
+                <span data-convenio-word>{INLINE_TITLE_WORD}</span>
+                {INLINE_TITLE_AFTER}{" "}
+                <span data-convenio-discount>{INLINE_DISCOUNT_PILL}</span>{" "}
+                {INLINE_TITLE_TAIL}
               </span>
               <span
                 data-convenio-toggle
@@ -964,7 +971,11 @@ export function CompanyAgreementValidationSection({
                       : "text-base sm:text-lg",
                   )}
                 >
-                  {INLINE_TITLE}
+                  {INLINE_TITLE_BEFORE}
+                  <span data-convenio-word>{INLINE_TITLE_WORD}</span>
+                  {INLINE_TITLE_AFTER}{" "}
+                  <span data-convenio-discount>{INLINE_DISCOUNT_PILL}</span>{" "}
+                  {INLINE_TITLE_TAIL}
                 </h2>
                 <span className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-[var(--convenio-accent)]">
                   {expanded ? "Ocultar formulario" : "Consultar convenio"}

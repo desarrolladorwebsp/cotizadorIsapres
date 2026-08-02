@@ -29,6 +29,9 @@ export const COTIZALO_ANTES_THEME: PartnerEntityTheme = {
   surfaceHover: "#f4f4f5",
   criteriaSurface: "#ed7d11",
   criteriaRing: "#c4650c",
+  convenioAccent: "#ed7d11",
+  convenioAccentStrong: "#0e7c9c",
+  convenioAccentMuted: "#eef6f8",
 };
 
 export const DESDETU7_THEME: PartnerEntityTheme = {
@@ -45,6 +48,9 @@ export const DESDETU7_THEME: PartnerEntityTheme = {
   surfaceHover: "#f4f4f5",
   criteriaSurface: "#ff6600",
   criteriaRing: "#cc5200",
+  convenioAccent: "#ff6600",
+  convenioAccentStrong: "#111827",
+  convenioAccentMuted: "#f5f7fa",
 };
 
 const ISAPRE_PREMIUM_RECORD = buildIsaprePremiumPartnerRecord();

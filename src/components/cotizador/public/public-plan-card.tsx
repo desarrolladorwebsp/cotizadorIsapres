@@ -115,10 +115,7 @@ function PlanCardActionButton({
   const className = joinClasses(
     planActionBase,
     isPrimary
-      ? joinClasses(
-          ui.cta,
-          "shadow-[var(--shadow-cta)] hover:brightness-105",
-        )
+      ? ui.cta
       : joinClasses(
           ui.border,
           "border bg-white text-foreground shadow-sm hover:border-primary/35 hover:bg-primary/5 hover:text-primary-dark",
@@ -292,11 +289,11 @@ export function PublicPlanCard({
               disabled={!hasPdf}
             />
             <PlanCardActionButton
-              label="Solicitar"
+              label="Solicitar asesoría"
               icon={<ChatIcon />}
               variant="primary"
               onClick={onRequest}
-              title="Solicitar cotización del plan"
+              title="Solicitar asesoría del plan"
             />
           </div>
         </div>

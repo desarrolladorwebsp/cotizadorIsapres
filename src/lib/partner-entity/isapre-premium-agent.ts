@@ -13,19 +13,20 @@ export const ISAPRE_PREMIUM_WEBSITE = "https://isaprespremium.cl";
 export const ISAPRE_PREMIUM_LOGO_PATH = "/images/partners/logo-isapre-premium.png";
 
 /**
- * Paleta oficial Isapres Premium (turquesa petróleo + verde esmeralda).
- * Primary = brand turquesa (#0F8D8E): badge, barra de criterios y filtros.
+ * Paleta oficial Isapres Premium (turquesa + verde manzana solo en CTAs).
+ * - Brand / primary / criteria: #0F8D8E
+ * - CTA (Buscar / Solicitar asesoría): #8CC63F · hover #7AB82F
  */
 export const ISAPRE_PREMIUM_THEME: PartnerEntityTheme = {
-  /** Color principal (Brand Primary) — turquesa petróleo */
+  /** Color principal de marca — turquesa (badge, filtros, tipografía de acento) */
   primary: "#0F8D8E",
-  /** Hover CTA — turquesa oscuro */
-  primaryHover: "#08777A",
+  /** Hover de marca */
+  primaryHover: "#0C7576",
   /** Texto principal — azul petróleo */
   primaryDark: "#154B56",
   primaryForeground: "#ffffff",
-  /** Color secundario — verde esmeralda */
-  secondary: "#22B573",
+  /** Secundario — acento de marca (soft / pills no-CTA) */
+  secondary: "#0F8D8E",
   secondaryMuted: "#E8F5F2",
   /** Fondos suaves — gris azulado muy claro */
   bgLayout: "#F7FAFB",
@@ -33,12 +34,13 @@ export const ISAPRE_PREMIUM_THEME: PartnerEntityTheme = {
   muted: "#7A8D93",
   border: "#E6EFF0",
   surfaceHover: "#EEF5F6",
-  /** Misma familia que primary (barra de criterios sólida) */
+  /** Barra de criterios */
   criteriaSurface: "#0F8D8E",
-  criteriaRing: "#0A6F73",
+  criteriaRing: "#0C7576",
+  /** Standalone convenio sobre blanco */
   convenioAccent: "#0F8D8E",
-  /** CTA Validar: verde esmeralda (contrasta en barra y en blanco). */
-  convenioAccentStrong: "#22B573",
+  /** Validar convenio: marca (no manzana) */
+  convenioAccentStrong: "#0F8D8E",
   convenioAccentMuted: "#E8F5F2",
 };
 

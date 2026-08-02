@@ -81,6 +81,10 @@
   --convenio-accent-strong: #ff6b4a;
   --convenio-accent-muted: #fce8e0;
 
+  /* CTA de acción: por defecto = primary; marcas pueden sobreescribir (--cta) */
+  --cta: var(--primary);
+  --cta-hover: var(--primary-hover);
+
   /* Espaciado base 8pt */
   --space-1: 0.25rem;
   --space-2: 0.5rem;
@@ -99,6 +103,7 @@
  * Marca premium: cotizadorpremium.cl (ver también [data-brand="premium"]).
  */
 [data-brand="cotizalo-antes"] {
+  /* Barra naranja; verde manzana en CTAs (Buscar / Solicitar) y acentos convenio */
   --primary: #ed7d11;
   --primary-hover: #f59324;
   --primary-dark: #92450a;
@@ -106,6 +111,9 @@
 
   --secondary: #0e7c9c;
   --secondary-muted: #eef6f8;
+
+  --cta: #8cc63f;
+  --cta-hover: #7ab82f;
 
   /* Fondo neutro: blanco / gris muy suave (sin tinte naranja) */
   --bg-layout: #ffffff;
@@ -116,7 +124,7 @@
 
   --shadow-card: 0 4px 24px -8px rgb(0 0 0 / 0.06);
   --shadow-card-hover: 0 12px 32px -10px rgb(0 0 0 / 0.1);
-  --shadow-cta: 0 8px 24px -8px rgb(237 125 17 / 0.4);
+  --shadow-cta: 0 8px 24px -8px rgb(140 198 63 / 0.45);
 
   --plan-card-header-bg: color-mix(in srgb, var(--bg-layout) 14%, white);
   --plan-card-coverage-bg: #fafafa;
@@ -147,9 +155,13 @@
   --criteria-accent: var(--primary);
   --criteria-accent-fg: var(--primary-foreground);
   --criteria-accent-soft: color-mix(in srgb, var(--primary) 18%, white);
+  --convenio-accent: #ed7d11;
+  --convenio-accent-strong: #0e7c9c;
+  --convenio-accent-muted: #eef6f8;
 }
 
 [data-brand="desdetu7"] {
+  /* Barra naranja; verde manzana en CTAs (Buscar / Solicitar) y acentos convenio */
   --primary: #ff6600;
   --primary-hover: #ff8533;
   --primary-dark: #cc5200;
@@ -157,6 +169,9 @@
 
   --secondary: #111827;
   --secondary-muted: #f5f7fa;
+
+  --cta: #8cc63f;
+  --cta-hover: #7ab82f;
 
   --bg-layout: #ffffff;
   --foreground: #111827;
@@ -166,7 +181,7 @@
 
   --shadow-card: 0 4px 24px -8px rgb(0 0 0 / 0.06);
   --shadow-card-hover: 0 12px 32px -10px rgb(255 102 0 / 0.18);
-  --shadow-cta: 0 8px 24px -8px rgb(255 102 0 / 0.4);
+  --shadow-cta: 0 8px 24px -8px rgb(140 198 63 / 0.45);
 
   --plan-card-header-bg: color-mix(in srgb, var(--bg-layout) 14%, white);
   --plan-card-coverage-bg: #fafafa;
@@ -186,6 +201,9 @@
   --criteria-accent: var(--primary);
   --criteria-accent-fg: var(--primary-foreground);
   --criteria-accent-soft: color-mix(in srgb, var(--primary) 18%, white);
+  --convenio-accent: #ff6600;
+  --convenio-accent-strong: #111827;
+  --convenio-accent-muted: #f5f7fa;
 }
 
 [data-brand="premium"] {
@@ -198,6 +216,10 @@
   --secondary: #1ac9ea;
   --secondary-muted: #e6f9fd;
 
+  /* Verde manzana: Buscar / Solicitar asesoría */
+  --cta: #8cc63f;
+  --cta-hover: #7ab82f;
+
   --bg-layout: #f5f9fc;
   --foreground: #092558;
   --muted: #7a8fa5;
@@ -206,7 +228,7 @@
 
   --shadow-card: 0 4px 24px -8px rgb(9 37 88 / 0.07);
   --shadow-card-hover: 0 12px 32px -10px rgb(13 109 238 / 0.18);
-  --shadow-cta: 0 8px 28px -8px rgb(13 109 238 / 0.35);
+  --shadow-cta: 0 8px 24px -8px rgb(140 198 63 / 0.5);
 
   --plan-card-header-bg: color-mix(in srgb, var(--secondary-muted) 45%, white);
   --plan-card-coverage-bg: color-mix(in srgb, var(--bg-layout) 35%, white);
@@ -338,20 +360,20 @@
   color: var(--foreground) !important;
 }
 
-/* Chip activo: mismo --primary del badge / barra de marca */
+/* Chip activo: criteria-accent (brand) — CTAs usan --primary por separado */
 [data-filters-panel] button[aria-pressed="true"],
 [data-filters-panel] [data-filter-active="true"] {
-  background-color: var(--primary) !important;
-  border-color: var(--primary) !important;
-  color: var(--primary-foreground) !important;
+  background-color: var(--criteria-accent, var(--primary)) !important;
+  border-color: var(--criteria-accent, var(--primary)) !important;
+  color: var(--criteria-accent-fg, var(--primary-foreground)) !important;
   font-weight: 800 !important;
   box-shadow: none !important;
 }
 
 [data-filters-panel] [data-filter-tone="ambulatory"][aria-pressed="true"] {
-  background-color: var(--primary) !important;
-  color: var(--primary-foreground) !important;
-  border-color: var(--primary) !important;
+  background-color: var(--criteria-accent, var(--primary)) !important;
+  color: var(--criteria-accent-fg, var(--primary-foreground)) !important;
+  border-color: var(--criteria-accent, var(--primary)) !important;
   box-shadow: none !important;
 }
 
@@ -365,9 +387,9 @@
 
 [data-filters-panel] button[aria-haspopup="dialog"][data-filter-active="true"] {
   background-color: #ffffff !important;
-  border-color: var(--primary) !important;
-  color: var(--primary) !important;
-  box-shadow: inset 0 0 0 1px var(--primary) !important;
+  border-color: var(--criteria-accent, var(--primary)) !important;
+  color: var(--criteria-accent, var(--primary)) !important;
+  box-shadow: inset 0 0 0 1px var(--criteria-accent, var(--primary)) !important;
 }
 
 [data-filters-panel] button[aria-haspopup="dialog"] .text-primary-dark,
@@ -395,15 +417,19 @@
 }
 
 [data-filters-panel] input[type="checkbox"] {
-  accent-color: var(--primary) !important;
+  accent-color: var(--criteria-accent, var(--primary)) !important;
   background-color: #ffffff !important;
 }
 
 [data-filters-panel] label:has(input[type="checkbox"]:checked) {
-  background-color: color-mix(in srgb, var(--primary) 10%, white) !important;
+  background-color: color-mix(
+    in srgb,
+    var(--criteria-accent, var(--primary)) 10%,
+    white
+  ) !important;
   color: var(--foreground) !important;
   box-shadow: inset 0 0 0 1px
-    color-mix(in srgb, var(--primary) 55%, var(--border));
+    color-mix(in srgb, var(--criteria-accent, var(--primary)) 55%, var(--border));
 }
 
 [data-filters-panel] label:has(input[type="checkbox"]:checked) span {
@@ -432,9 +458,21 @@
   color: var(--foreground) !important;
 }
 
-[data-filters-panel] [data-price-range] .bg-border\/70,
-[data-filters-panel] [data-price-range] .bg-border\/80 {
-  background-color: var(--border) !important;
+/* Pista del rango: contraste visible sobre panel blanco */
+[data-price-track] {
+  background-color: color-mix(in srgb, var(--foreground) 18%, var(--border));
+}
+
+[data-price-track-active] {
+  background-color: var(--primary);
+}
+
+[data-filters-panel] [data-price-track] {
+  background-color: color-mix(in srgb, var(--foreground) 22%, #ffffff) !important;
+}
+
+[data-filters-panel] [data-price-track-active] {
+  background-color: var(--primary) !important;
 }
 
 .price-range-input {
@@ -599,27 +637,27 @@
   color: #ffffff !important;
 }
 
-/* CTA principal «Buscar plan»: máximo contraste y peso visual sobre el card */
+/* CTA principal «Buscar plan»: verde manzana sobre barra azul */
 [data-brand="premium"] [data-criteria-bar] [data-criteria-cta] {
-  background-color: #ff6b4a !important;
+  background-color: #8cc63f !important;
   color: #ffffff !important;
   font-weight: 800 !important;
   letter-spacing: 0.01em;
   border: 2px solid rgb(255 255 255 / 0.85) !important;
   box-shadow:
     0 4px 0 rgb(9 37 88 / 0.18),
-    0 12px 32px -8px rgb(255 107 74 / 0.75),
+    0 12px 32px -8px rgb(140 198 63 / 0.75),
     0 0 0 4px rgb(255 255 255 / 0.2);
   transform: translateY(0);
 }
 
 [data-brand="premium"] [data-criteria-bar] [data-criteria-cta]:hover {
-  background-color: #ff7d60 !important;
+  background-color: #7ab82f !important;
   color: #ffffff !important;
   filter: none;
   box-shadow:
     0 5px 0 rgb(9 37 88 / 0.16),
-    0 16px 36px -8px rgb(255 107 74 / 0.85),
+    0 16px 36px -8px rgb(140 198 63 / 0.85),
     0 0 0 4px rgb(255 255 255 / 0.28);
 }
 
@@ -694,14 +732,17 @@
 }
 
 [data-brand="isapre-premium"] {
-  /* Alinear con isapre-premium-agent.ts */
+  /* Brand turquesa; verde manzana solo en --cta (Buscar / Solicitar asesoría) */
   --primary: #0f8d8e;
-  --primary-hover: #08777a;
+  --primary-hover: #0c7576;
   --primary-dark: #154b56;
   --primary-foreground: #ffffff;
 
-  --secondary: #22b573;
+  --secondary: #0f8d8e;
   --secondary-muted: #e8f5f2;
+
+  --cta: #8cc63f;
+  --cta-hover: #7ab82f;
 
   --bg-layout: #f7fafb;
   --background: #ffffff;
@@ -712,7 +753,7 @@
 
   --shadow-card: 0 4px 24px -8px rgb(21 75 86 / 0.07);
   --shadow-card-hover: 0 12px 32px -10px rgb(15 141 142 / 0.18);
-  --shadow-cta: 0 8px 24px -8px rgb(15 141 142 / 0.4);
+  --shadow-cta: 0 8px 24px -8px rgb(140 198 63 / 0.5);
 
   --plan-card-surface: #ffffff;
   --plan-card-header-bg: color-mix(in srgb, var(--bg-layout) 40%, white);
@@ -726,12 +767,12 @@
   --shadow-plan-card-hover:
     0 0 0 1px var(--primary),
     0 4px 14px -4px rgb(15 141 142 / 0.14),
-    0 16px 40px -10px rgb(34 181 115 / 0.16);
+    0 16px 40px -10px rgb(15 141 142 / 0.18);
 
-  --gradient-coverage: linear-gradient(90deg, #0f8d8e 0%, #22b573 100%);
+  --gradient-coverage: linear-gradient(90deg, #0f8d8e 0%, #0c7576 100%);
 
   --criteria-surface: #0f8d8e;
-  --criteria-ring: #0a6f73;
+  --criteria-ring: #0c7576;
   --criteria-on-surface: #ffffff;
   --criteria-on-surface-muted: rgb(255 255 255 / 0.9);
   --criteria-control-bg: #ffffff;
@@ -743,51 +784,87 @@
   --criteria-section-bg: rgb(255 255 255 / 0.12);
   --criteria-section-border: rgb(255 255 255 / 0.22);
   --criteria-divider: rgb(255 255 255 / 0.22);
-  --criteria-accent: var(--primary);
-  --criteria-accent-fg: var(--primary-foreground);
+  --criteria-accent: #0f8d8e;
+  --criteria-accent-fg: #ffffff;
   --criteria-accent-soft: #e8f5f2;
   --convenio-accent: #0f8d8e;
-  --convenio-accent-strong: #22b573;
+  --convenio-accent-strong: #0f8d8e;
   --convenio-accent-muted: #e8f5f2;
 }
 
-/* Convenio inline sobre barra teal: texto claro + CTA esmeralda */
-[data-brand="isapre-premium"] [data-criteria-bar] {
-  --convenio-accent: #e8f5f2;
-  --convenio-accent-strong: #22b573;
+/*
+ * Convenio inline sobre barra de criterios de marca (tipografía clara).
+ * Aplica a todos los agentes con criteria-surface de color sólido.
+ */
+[data-brand] [data-criteria-bar] {
+  --convenio-accent: #ffffff;
   --convenio-accent-muted: rgb(255 255 255 / 0.18);
 }
 
-[data-brand="isapre-premium"] [data-convenio-inline] {
+[data-brand="premium"] [data-criteria-bar] {
+  --convenio-accent: #ffd2c2;
+  --convenio-accent-strong: #ff6b4a;
+  --convenio-accent-muted: rgb(255 255 255 / 0.18);
+}
+
+[data-brand] [data-convenio-inline] {
   border-color: rgb(255 255 255 / 0.35) !important;
 }
 
-[data-brand="isapre-premium"] [data-convenio-title],
-[data-brand="isapre-premium"] [data-convenio-toggle],
-[data-brand="isapre-premium"] [data-convenio-info] {
-  color: #ffffff !important;
-}
-
-[data-brand="isapre-premium"] [data-convenio-toggle] {
-  color: #b8f0d8 !important;
-}
-
-[data-brand="isapre-premium"] [data-convenio-info] {
+[data-brand] [data-convenio-info] {
   border-color: rgb(255 255 255 / 0.45) !important;
   background-color: rgb(255 255 255 / 0.12);
 }
 
-[data-brand="isapre-premium"] [data-convenio-info]:hover {
+[data-brand] [data-convenio-info]:hover {
   background-color: rgb(255 255 255 / 0.22) !important;
   color: #ffffff !important;
 }
 
-[data-brand="isapre-premium"] [data-convenio-hint] {
-  color: rgb(255 255 255 / 0.82) !important;
+[data-brand] [data-convenio-hint],
+[data-brand] [data-convenio-field-label] {
+  color: rgb(255 255 255 / 0.88) !important;
 }
 
-[data-brand="isapre-premium"] [data-convenio-field-label] {
-  color: rgb(255 255 255 / 0.92) !important;
+/* Pill de descuento: acento secundario soft, legible sobre la barra */
+[data-convenio-discount] {
+  display: inline-flex;
+  align-items: center;
+  margin-inline: 0.15em;
+  border-radius: 9999px;
+  padding: 0.1em 0.55em;
+  font-weight: 800;
+  background: color-mix(in srgb, var(--secondary) 32%, white);
+  color: var(--primary-dark);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--secondary) 28%, white);
+}
+
+[data-brand] [data-criteria-bar] [data-convenio-discount] {
+  background: color-mix(in srgb, var(--secondary) 42%, white);
+  color: var(--primary-dark);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.35);
+}
+
+/* Todos los agentes: “convenio” + pill descuento en verde manzana (sin relleno) */
+[data-brand="isapre-premium"] [data-convenio-word],
+[data-brand="desdetu7"] [data-convenio-word],
+[data-brand="cotizalo-antes"] [data-convenio-word],
+[data-brand="premium"] [data-convenio-word] {
+  color: #8cc63f !important;
+}
+
+[data-brand="isapre-premium"] [data-convenio-discount],
+[data-brand="isapre-premium"] [data-criteria-bar] [data-convenio-discount],
+[data-brand="desdetu7"] [data-convenio-discount],
+[data-brand="desdetu7"] [data-criteria-bar] [data-convenio-discount],
+[data-brand="cotizalo-antes"] [data-convenio-discount],
+[data-brand="cotizalo-antes"] [data-criteria-bar] [data-convenio-discount],
+[data-brand="premium"] [data-convenio-discount],
+[data-brand="premium"] [data-criteria-bar] [data-convenio-discount] {
+  background: transparent !important;
+  color: #8cc63f !important;
+  box-shadow: none !important;
+  border: 1px solid #8cc63f;
 }
 
 /* Gradiente de marca eliminado: barra y filtros usan color sólido / blanco */

@@ -423,8 +423,9 @@ export function PublicQuoteCriteriaBar({
           data-criteria-cta
           className={joinClasses(
             touchTarget,
-            "h-12 w-full shrink-0 rounded-md px-5 text-base font-bold text-white shadow-[var(--shadow-cta)] transition hover:brightness-105",
-            !compactEmbed && "md:w-auto md:whitespace-nowrap md:px-5 xl:px-6",
+            "h-12 w-full shrink-0 rounded-md px-5 text-base font-extrabold text-white transition",
+            !compactEmbed &&
+              "md:h-14 md:min-w-[12.5rem] md:whitespace-nowrap md:px-7 md:text-lg xl:min-w-[14rem] xl:px-8",
             compactEmbed && "max-md:h-10 max-md:px-4 max-md:text-xs sm:col-span-2",
             ui.cta,
           )}

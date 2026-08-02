@@ -88,7 +88,7 @@ export const ui = {
     "border border-border bg-white text-foreground placeholder:text-muted/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
   card: "rounded-lg border border-border bg-white shadow-card",
   link: "text-secondary transition hover:text-secondary/80",
-  cta: "bg-primary text-primary-foreground transition hover:bg-primary-hover active:scale-[0.99]",
+  cta: "bg-[var(--cta,var(--primary))] text-primary-foreground shadow-[var(--shadow-cta)] transition hover:bg-[var(--cta-hover,var(--primary-hover))] active:scale-[0.99]",
   ctaOutline:
     "border border-border bg-white text-foreground transition hover:bg-surface-hover",
   dangerText: "text-danger transition hover:text-danger/80",

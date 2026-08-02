@@ -1,5 +1,7 @@
 import {
+  COTIZALO_ANTES_THEME,
   DEFAULT_PARTNER_ENTITY_SLUG,
+  DESDETU7_THEME,
   getFallbackPartnerEntity,
 } from "@/lib/partner-entity/fallback-entities";
 import { RESERVED_ROOT_SEGMENTS } from "@/lib/partner-entity/constants";
@@ -36,6 +38,13 @@ function parseTheme(raw: unknown): PartnerEntityTheme {
   return raw as PartnerEntityTheme;
 }
 
+function isAgentKey(
+  entity: PartnerEntityRecord,
+  key: string,
+): boolean {
+  return entity.slug === key || entity.embedKey === key;
+}
+
 /** Tokens de marca canónicos en código (criterios / convenio) sobre theme de BD. */
 function resolvePublicTheme(entity: PartnerEntityRecord): PartnerEntityTheme {
   const isPlatform =
@@ -51,6 +60,14 @@ function resolvePublicTheme(entity: PartnerEntityRecord): PartnerEntityTheme {
     isIsaprePremiumAgentKey(entity.embedKey)
   ) {
     return { ...entity.theme, ...ISAPRE_PREMIUM_THEME };
+  }
+
+  if (isAgentKey(entity, "desdetu7")) {
+    return { ...entity.theme, ...DESDETU7_THEME };
+  }
+
+  if (isAgentKey(entity, "cotizaloantes")) {
+    return { ...entity.theme, ...COTIZALO_ANTES_THEME };
   }
 
   return entity.theme;

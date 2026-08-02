@@ -913,15 +913,133 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
             <header
               className={joinClasses(
                 safeWidth,
-                "motion-safe-fade-in space-y-2",
+                "motion-safe-fade-in flex flex-col gap-5 sm:gap-6 lg:flex-row lg:items-center lg:justify-between lg:gap-8",
               )}
             >
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">
-                Cotizador en línea
-              </p>
-              <h1 className="text-2xl font-bold tracking-tight text-primary-dark sm:text-3xl">
-                Encuentra tu plan de salud
-              </h1>
+              <div className="min-w-0 max-w-2xl space-y-2">
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">
+                  Cotizador en línea
+                </p>
+                <h1 className="text-2xl font-bold tracking-tight text-primary-dark sm:text-3xl lg:text-[2.05rem] lg:leading-tight">
+                  Encuentra tu plan de salud{" "}
+                  <span className="text-primary">ideal</span>
+                </h1>
+                <p className="max-w-xl text-sm leading-relaxed text-muted sm:text-[15px]">
+                  Compara coberturas, precios y beneficios en un solo lugar.
+                </p>
+              </div>
+
+              <ul
+                className="flex w-full shrink-0 flex-col gap-3.5 sm:flex-row sm:flex-wrap sm:items-center sm:divide-x sm:divide-border sm:gap-0 lg:w-auto lg:max-w-none lg:flex-nowrap lg:justify-end"
+                aria-label="Beneficios del cotizador"
+              >
+                {(
+                  [
+                    {
+                      title: "Sin costo",
+                      subtitle: "100% gratuito",
+                      icon: (
+                        <>
+                          <circle
+                            cx="12"
+                            cy="12"
+                            r="8.25"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                          />
+                          <path
+                            d="M12 7.25v9.5M14.35 9.1c-.55-.7-1.35-1.1-2.25-1.1-1.55 0-2.6.95-2.6 2.2 0 1.2.9 1.85 2.55 2.25 1.7.4 2.65 1.1 2.65 2.45 0 1.4-1.2 2.4-2.75 2.4-1.05 0-1.95-.45-2.5-1.25"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </>
+                      ),
+                    },
+                    {
+                      title: "En 2 minutos",
+                      subtitle: "Cotiza y compara",
+                      icon: (
+                        <>
+                          <circle
+                            cx="12"
+                            cy="12"
+                            r="8.25"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                          />
+                          <path
+                            d="M12 8v4.25l3 1.85"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </>
+                      ),
+                    },
+                    {
+                      title: "Hasta 10%",
+                      subtitle: "Descuento por convenio",
+                      icon: (
+                        <>
+                          <path
+                            d="M12 2.5l1.1 1.9 2.15-.4.45 2.15 2.1.7-1.05 1.9 1.75 1.35-1.75 1.05.9 2.05-2.15.35-.75 2.05L12 15.75l-1.85 1.45-.75-2.05-2.15-.35.9-2.05-1.75-1.05 1.75-1.35-1.05-1.9 2.1-.7.45-2.15 2.15.4Z"
+                            stroke="currentColor"
+                            strokeWidth="1.35"
+                            strokeLinejoin="round"
+                          />
+                          <circle
+                            cx="9.4"
+                            cy="9.5"
+                            r="1.55"
+                            stroke="currentColor"
+                            strokeWidth="1.4"
+                          />
+                          <path
+                            d="m8.9 15.1 6.2-6.2"
+                            stroke="currentColor"
+                            strokeWidth="1.55"
+                            strokeLinecap="round"
+                          />
+                          <circle
+                            cx="14.6"
+                            cy="14.5"
+                            r="1.55"
+                            stroke="currentColor"
+                            strokeWidth="1.4"
+                          />
+                        </>
+                      ),
+                    },
+                  ] as const
+                ).map((item) => (
+                  <li
+                    key={item.title}
+                    className="flex min-w-0 items-center gap-3 sm:px-5 lg:px-6 first:sm:pl-0 last:sm:pr-0"
+                  >
+                    <span className="inline-flex size-10 shrink-0 items-center justify-center text-primary">
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="size-9"
+                        fill="none"
+                        aria-hidden
+                      >
+                        {item.icon}
+                      </svg>
+                    </span>
+                    <span className="min-w-0 leading-tight">
+                      <span className="block text-[15px] font-bold text-primary-dark">
+                        {item.title}
+                      </span>
+                      <span className="mt-0.5 block text-xs text-muted sm:text-[13px]">
+                        {item.subtitle}
+                      </span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
             </header>
           )}
 
