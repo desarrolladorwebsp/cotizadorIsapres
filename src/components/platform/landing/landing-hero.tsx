@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import { LandingHeroFamilyVisual } from "./landing-hero-family-visual";
 import { landing } from "./landing-tokens";
@@ -133,10 +132,10 @@ export function LandingHero({ cotizadorHref = "#cotizar" }: { cotizadorHref?: st
                 {...motionProps(0.24)}
                 className="mt-10 flex justify-center lg:justify-start"
               >
-                <Link href={cotizadorHref} className={landing.ctaPrimaryHero}>
+                <a href={cotizadorHref} className={landing.ctaPrimaryHero}>
                   Cotizar mi plan gratis
                   <ArrowIcon />
-                </Link>
+                </a>
               </motion.div>
 
               <motion.ul

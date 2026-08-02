@@ -1,37 +1,34 @@
-import { buildCotizadorUrl } from "@/lib/deep-link/build-cotizador-url";
-import { PREMIUM_COTIZADOR_PATH } from "@/lib/platform/routing";
+import {
+  PREMIUM_COTIZADOR_PATH,
+  resolveEngineAppBaseUrl,
+} from "@/lib/platform/routing";
 import { PLATFORM_AGENT_KEY } from "@/lib/partner-entity/platform-agent";
 
-function toAppPath(fullUrl: string): string {
-  try {
-    const url = new URL(fullUrl);
-    return `${url.pathname}${url.search}`;
-  } catch {
-    return fullUrl;
+function buildEngineCotizadorUrl(params: Record<string, string>): string {
+  const url = new URL(
+    PREMIUM_COTIZADOR_PATH,
+    `${resolveEngineAppBaseUrl().replace(/\/$/, "")}/`,
+  );
+  url.searchParams.set("agent", PLATFORM_AGENT_KEY);
+  for (const [key, value] of Object.entries(params)) {
+    if (value) url.searchParams.set(key, value);
   }
+  return url.toString();
 }
 
 export function buildIsapreCotizadorUrl(isapreId: string): string {
-  return toAppPath(
-    buildCotizadorUrl({
-      agent: PLATFORM_AGENT_KEY,
-      isapres: [isapreId],
-    }),
-  );
+  return buildEngineCotizadorUrl({ isapres: isapreId });
 }
 
 export function buildIsaprePlanCotizadorUrl(
   isapreId: string,
   planCode: string,
 ): string {
-  return toAppPath(
-    buildCotizadorUrl({
-      agent: PLATFORM_AGENT_KEY,
-      isapres: [isapreId],
-      plan: planCode,
-      auto: true,
-    }),
-  );
+  return buildEngineCotizadorUrl({
+    isapres: isapreId,
+    plan: planCode,
+    auto: "1",
+  });
 }
 
 export function buildIsapresIndexUrl(): string {
@@ -39,10 +36,11 @@ export function buildIsapresIndexUrl(): string {
 }
 
 export function buildIsaprePagePath(isapreId: string): string {
-  return `/isapres/${isapreId}`;
+  // Las fichas /isapres/* viven en el motor (redirect desde esta landing).
+  return `${resolveEngineAppBaseUrl()}/isapres/${isapreId}`;
 }
 
-/** Atajo relativo al cotizador premium sin filtros. */
+/** URL absoluta al motor con agent Cotizador Premium. */
 export function buildPremiumCotizadorPath(): string {
-  return `${PREMIUM_COTIZADOR_PATH}?agent=${PLATFORM_AGENT_KEY}`;
+  return `${resolveEngineAppBaseUrl()}${PREMIUM_COTIZADOR_PATH}?agent=${PLATFORM_AGENT_KEY}`;
 }

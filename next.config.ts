@@ -1,61 +1,77 @@
 import type { NextConfig } from "next";
-import { resolveEmbedFrameAncestorsDirective } from "./src/lib/security/embed-frame-ancestors";
 
-/** Orígenes permitidos para iframe embebido (CSP frame-ancestors). */
-const embedFrameAncestors = resolveEmbedFrameAncestorsDirective();
+const ENGINE_ORIGIN = "https://isaprespremium.cl";
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ["@prisma/client", "prisma"],
-  outputFileTracingIncludes: {
-    "/api/**/*": ["./public/images/logo-cotizador-premium.png"],
-  },
   async redirects() {
     return [
-      // `/index` en Vercel se normaliza a `/` (→ cotizador). Preferir `/inicio`.
       {
         source: "/index",
-        destination: "/inicio",
+        destination: "/",
         permanent: true,
       },
       {
         source: "/index/:path*",
-        destination: "/inicio/:path*",
+        destination: "/",
         permanent: true,
       },
-    ];
-  },
-  async headers() {
-    return [
+      {
+        source: "/inicio",
+        destination: "/",
+        permanent: true,
+      },
+      {
+        source: "/inicio/:path*",
+        destination: "/",
+        permanent: true,
+      },
+      // Motor del cotizador → isaprespremium.cl (query se reenvía automáticamente)
       {
         source: "/cotizador",
-        headers: [
-          {
-            key: "Content-Security-Policy",
-            value: embedFrameAncestors,
-          },
-        ],
+        destination: `${ENGINE_ORIGIN}/cotizador`,
+        permanent: true,
+      },
+      {
+        source: "/cotizador/:path*",
+        destination: `${ENGINE_ORIGIN}/cotizador/:path*`,
+        permanent: true,
+      },
+      {
+        source: "/embed",
+        destination: `${ENGINE_ORIGIN}/embed`,
+        permanent: true,
       },
       {
         source: "/embed/:path*",
-        headers: [
-          {
-            key: "Content-Security-Policy",
-            value: embedFrameAncestors,
-          },
-        ],
+        destination: `${ENGINE_ORIGIN}/embed/:path*`,
+        permanent: true,
+      },
+      {
+        source: "/isapres",
+        destination: `${ENGINE_ORIGIN}/isapres`,
+        permanent: true,
+      },
+      {
+        source: "/isapres/:path*",
+        destination: `${ENGINE_ORIGIN}/isapres/:path*`,
+        permanent: true,
+      },
+      // APIs del motor (cualquier /api/* excepto assets estáticos de la landing)
+      {
+        source: "/api/:path*",
+        destination: `${ENGINE_ORIGIN}/api/:path*`,
+        permanent: true,
       },
       {
         source: "/cotizador-widget.js",
-        headers: [
-          {
-            key: "Access-Control-Allow-Origin",
-            value: "*",
-          },
-          {
-            key: "Cache-Control",
-            value: "public, max-age=300",
-          },
-        ],
+        destination: `${ENGINE_ORIGIN}/cotizador-widget.js`,
+        permanent: false,
+      },
+      {
+        source: "/cotizador-widget.js.map",
+        destination: `${ENGINE_ORIGIN}/cotizador-widget.js.map`,
+        permanent: false,
       },
     ];
   },

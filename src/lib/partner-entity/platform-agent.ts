@@ -7,11 +7,8 @@ import {
 /** Agent key / slug de la plataforma principal (cotizadorpremium.cl). */
 export const PLATFORM_AGENT_KEY = "cotizadorpremium";
 
-/** Landing marketing (antes en `/`). El cotizador vive en `/cotizador`.
- * No usar `/index`: en Vercel/Next el segmento `index` se normaliza a `/`
- * y el middleware redirige `/` → `/cotizador`.
- */
-export const PLATFORM_LANDING_PATH = "/inicio";
+/** Landing marketing (ahora en `/`). */
+export const PLATFORM_LANDING_PATH = "/";
 
 export const PLATFORM_AGENT_WEBSITE = "https://cotizadorpremium.cl";
 
@@ -65,5 +62,11 @@ export function buildCotizadorPremiumPartnerRecord(): Omit<
 export function buildCotizadorPremiumCotizadorUrl(
   basePath = "/cotizador",
 ): string {
-  return `${basePath}?agent=${PLATFORM_AGENT_KEY}`;
+  // Prefer absolute URL to the engine host when called from the landing.
+  if (basePath.startsWith("http")) {
+    const url = new URL(basePath.includes("?") ? basePath : `${basePath}`);
+    url.searchParams.set("agent", PLATFORM_AGENT_KEY);
+    return url.toString();
+  }
+  return `https://isaprespremium.cl${basePath}?agent=${PLATFORM_AGENT_KEY}`;
 }

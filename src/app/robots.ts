@@ -4,10 +4,9 @@ import { PROD_APP_BASE_URL } from "@/lib/platform/routing";
 import { isLegacySeoHostname, normalizeHostname } from "@/lib/seo/request-host";
 
 /**
- * robots.txt:
- * - Dominio canónico (cotizadorpremium.cl): indexar + sitemap premium.
- * - Dominio legacy (cotizador.cotizaloantes.cl): noindex total para no
- *   competir en Google con la marca Cotizador Premium.
+ * robots.txt (landing cotizadorpremium.cl):
+ * - Indexar solo marketing local.
+ * - El motor (/cotizador, paneles) vive en isaprespremium.cl.
  */
 export default async function robots(): Promise<MetadataRoute.Robots> {
   const headerList = await headers();
@@ -33,16 +32,15 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
     rules: [
       {
         userAgent: "*",
-        allow: ["/", "/cotizador", "/inicio", "/isapres"],
+        allow: ["/", "/politica-privacidad"],
         disallow: [
+          "/cotizador",
+          "/cotizador/",
           "/embed",
           "/embed/",
           "/api/",
-          "/cotizador/admin",
-          "/cotizador/admin/",
-          "/cotizador/ejecutivos",
-          "/cotizador/ejecutivos/",
-          "/cotizador/acceso",
+          "/isapres",
+          "/isapres/",
         ],
       },
     ],

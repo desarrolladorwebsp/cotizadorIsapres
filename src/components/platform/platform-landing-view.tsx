@@ -28,6 +28,7 @@ export function PlatformLandingView({
   reviews,
 }: PlatformLandingViewProps) {
   const cotizadorHref = buildCotizadorPremiumCotizadorUrl();
+  const staffAccessHref = "https://isaprespremium.cl/cotizador/acceso";
 
   return (
     <div data-landing data-brand="premium" className={landing.pageRoot}>
@@ -35,7 +36,7 @@ export function PlatformLandingView({
       <LandingPageBackdrop />
       <header className={`${landing.header} landing-header-over-backdrop`}>
         <div className={landing.headerInner}>
-          <Link href="/inicio" className="flex items-center gap-3">
+          <Link href="/" className="flex items-center gap-3">
             <LandingLogo size="lg" />
             <div className="min-w-0">
               <p className="text-base font-semibold tracking-tight text-foreground">
@@ -47,12 +48,12 @@ export function PlatformLandingView({
             </div>
           </Link>
           <nav aria-label="Navegación principal" className="flex items-center gap-1.5 sm:gap-2">
-            <Link href={cotizadorHref} className={landing.navLink}>
+            <a href={cotizadorHref} className={landing.navLink}>
               Cotizar
-            </Link>
-            <Link href="/cotizador/acceso" className={landing.navCta}>
+            </a>
+            <a href={staffAccessHref} className={landing.navCta}>
               Acceso staff
-            </Link>
+            </a>
           </nav>
         </div>
       </header>

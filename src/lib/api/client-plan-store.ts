@@ -99,7 +99,7 @@ export async function updateClientAdvisedPlan(
     },
     include: {
       assignedExecutive: {
-        select: { id: true, fullName: true, email: true },
+        select: { id: true, fullName: true, email: true, executiveKind: true },
       },
       quotes: {
         orderBy: { createdAt: "desc" },

@@ -46,7 +46,7 @@ function BrowserFrame({ children }: { children: ReactNode }) {
         </div>
         <div className="min-w-0 flex-1 rounded-lg border border-border/60 bg-background/90 px-3 py-1.5 shadow-sm">
           <p className="truncate text-center text-[11px] font-medium text-muted sm:text-xs">
-            cotizadorpremium.cl/cotizador
+            isaprespremium.cl/cotizador
           </p>
         </div>
         <div className="hidden w-[52px] shrink-0 sm:block" aria-hidden />

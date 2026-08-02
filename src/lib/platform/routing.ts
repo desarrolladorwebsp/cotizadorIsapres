@@ -1,11 +1,17 @@
 /** Ruta canónica del cotizador completo (multitenant por ?agent=). */
 export const PREMIUM_COTIZADOR_PATH = "/cotizador";
 
-/** URL local de desarrollo (cotizador en :3001). */
+/** URL local de desarrollo (landing cotizadorpremium en :3001). */
 export const DEV_APP_BASE_URL = "http://localhost:3001";
 
-/** URL canónica de producción. */
+/** URL canónica de la landing (cotizadorpremium.cl). */
 export const PROD_APP_BASE_URL = "https://cotizadorpremium.cl";
+
+/** Motor del cotizador (host isaprespremium.cl). */
+export const PROD_ENGINE_APP_BASE_URL = "https://isaprespremium.cl";
+
+/** Motor en desarrollo local (isapresPremium en :3000). */
+export const DEV_ENGINE_APP_BASE_URL = "http://localhost:3000";
 
 /** @deprecated Usar resolveAppBaseUrl() */
 export const DEFAULT_APP_BASE_URL = PROD_APP_BASE_URL;
@@ -21,8 +27,7 @@ function normalizeBaseUrl(value: string): string {
 function readConfiguredAppBaseUrl(): string | null {
   const fromEnv =
     process.env.NEXT_PUBLIC_APP_URL?.trim() ||
-    process.env.APP_BASE_URL?.trim() ||
-    process.env.NEXT_PUBLIC_COTIZADOR_URL?.trim();
+    process.env.APP_BASE_URL?.trim();
 
   if (fromEnv) return normalizeBaseUrl(fromEnv);
 
@@ -47,6 +52,28 @@ export function resolveAppBaseUrl(override?: string): string {
   }
 
   return PROD_APP_BASE_URL;
+}
+
+/**
+ * Base URL del motor de cotización (isaprespremium.cl).
+ * Usar en CTAs, widget y redirects desde la landing.
+ */
+export function resolveEngineAppBaseUrl(override?: string): string {
+  if (override?.trim()) {
+    return normalizeBaseUrl(override);
+  }
+
+  const fromEnv =
+    process.env.NEXT_PUBLIC_ENGINE_APP_URL?.trim() ||
+    process.env.NEXT_PUBLIC_COTIZADOR_URL?.trim();
+
+  if (fromEnv) return normalizeBaseUrl(fromEnv);
+
+  if (process.env.NODE_ENV === "development") {
+    return DEV_ENGINE_APP_BASE_URL;
+  }
+
+  return PROD_ENGINE_APP_BASE_URL;
 }
 
 /**

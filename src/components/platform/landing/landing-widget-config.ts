@@ -1,5 +1,8 @@
 import { PLATFORM_AGENT_KEY } from "@/lib/partner-entity/platform-agent";
-import { PROD_APP_BASE_URL, resolveAppBaseUrl } from "@/lib/platform/routing";
+import {
+  PROD_ENGINE_APP_BASE_URL,
+  resolveEngineAppBaseUrl,
+} from "@/lib/platform/routing";
 
 /** Agente / partner key de Cotizador Premium en la Landing. */
 export const LANDING_WIDGET_AGENT_KEY =
@@ -7,9 +10,10 @@ export const LANDING_WIDGET_AGENT_KEY =
   process.env.NEXT_PUBLIC_COTIZADOR_AGENT_KEY?.trim() ||
   PLATFORM_AGENT_KEY;
 
+/** Widget JS se sirve desde el motor (isaprespremium.cl). */
 export const LANDING_WIDGET_SCRIPT_URL =
   process.env.NEXT_PUBLIC_COTIZADOR_WIDGET_URL?.trim() ||
-  "/cotizador-widget.js";
+  `${PROD_ENGINE_APP_BASE_URL}/cotizador-widget.js`;
 
 export const LANDING_WIDGET_MIN_HEIGHT = 720;
 
@@ -18,17 +22,16 @@ function isLocalHostUrl(value: string): boolean {
 }
 
 /**
- * Base URL del cotizador embebido en la landing.
- * En el navegador usa siempre el origen actual (evita localhost en producción).
+ * Base URL del cotizador embebido en la landing → motor en isaprespremium.cl.
  */
 export function resolveLandingWidgetBaseUrl(): string {
-  if (typeof window !== "undefined") {
-    const origin = window.location.origin;
-    if (!isLocalHostUrl(origin)) return origin;
-  }
-
-  const configured = resolveAppBaseUrl();
+  const configured = resolveEngineAppBaseUrl();
   if (!isLocalHostUrl(configured)) return configured;
 
-  return PROD_APP_BASE_URL;
+  if (typeof window !== "undefined") {
+    // En local, el motor suele estar en :3000
+    return resolveEngineAppBaseUrl();
+  }
+
+  return PROD_ENGINE_APP_BASE_URL;
 }

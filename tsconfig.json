@@ -30,5 +30,29 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", "scripts"]
+  "exclude": [
+    "node_modules",
+    "scripts",
+    "src/hooks",
+    "src/lib/cotizacion-notify",
+    "src/lib/deep-link",
+    "src/lib/email",
+    "src/lib/public-api",
+    "src/lib/auth",
+    "src/lib/executive",
+    "src/lib/company-agreements",
+    "src/lib/calendly",
+    "src/lib/client-pipeline",
+    "src/lib/client-plan",
+    "src/lib/client-profile",
+    "src/lib/plans",
+    "src/lib/quote",
+    "src/lib/staff",
+    "src/lib/plan-pdf-storage",
+    "src/lib/geocoding",
+    "src/lib/maps",
+    "src/domain",
+    "src/types/executive.ts",
+    "src/types/quote.ts"
+  ]
 }
