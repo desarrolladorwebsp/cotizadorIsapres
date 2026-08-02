@@ -1,16 +1,29 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import {
+  AdminFormModal,
   AdminPanel,
   AdminPanelHeader,
   AdminRefreshButton,
 } from "@/components/admin/admin-data-table";
+import { ClientContactMethodBadge } from "@/components/executive/client-contact-method-badge";
+import { ClientPipelineStatusBadge } from "@/components/executive/client-pipeline-status-badge";
+import { ClientRutCell } from "@/components/executive/client-rut-cell";
 import { Button } from "@/components/ui/button";
 import { useExecutiveCalendarQuery } from "@/hooks/query/use-executive-calendar-query";
+import { getStaffRoleLabel } from "@/lib/auth/staff-role";
+import { CALENDLY_TEAM_LABELS } from "@/lib/calendly/labels";
+import { buildWhatsAppUrl } from "@/lib/partner-entity/theme";
+import {
+  staffClientHref,
+  staffExecutiveHref,
+} from "@/lib/staff/staff-sections";
 import { horizontalScrollRail, touchTarget, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import type { CalendarCallEvent } from "@/types/calendar";
+import { CLIENT_CONTACT_METHOD_LABELS } from "@/types/client-pipeline";
 
 type CalendarView = "month" | "week" | "day" | "year";
 
@@ -110,6 +123,18 @@ function formatEventTime(iso: string): string {
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(iso));
+}
+
+function formatEventDateTime(iso: string): string {
+  const formatted = new Intl.DateTimeFormat("es-CL", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(iso));
+  return formatted.charAt(0).toUpperCase() + formatted.slice(1);
 }
 
 function dayKey(date: Date): string {
@@ -246,18 +271,23 @@ function EventChip({
   event,
   showTime = false,
   dense = false,
+  onSelect,
 }: {
   event: CalendarCallEvent;
   showTime?: boolean;
   dense?: boolean;
+  onSelect: (event: CalendarCallEvent) => void;
 }) {
   const time = formatEventTime(event.startsAt);
   const label = showTime ? `${time} ${event.title}` : event.title;
   return (
-    <div
+    <button
+      type="button"
       title={`${event.title} · ${time}${event.zoomJoinUrl ? " · Zoom disponible" : ""}`}
+      aria-label={`Ver reunión: ${event.title}`}
+      onClick={() => onSelect(event)}
       className={joinClasses(
-        "truncate rounded-md",
+        "block w-full truncate rounded-md text-left transition hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
         eventChipClass(event.contactMethod),
         dense
           ? "px-1 py-0.5 text-[10px] leading-tight"
@@ -266,17 +296,177 @@ function EventChip({
     >
       {label}
       {event.zoomJoinUrl && !dense ? (
-        <a
-          href={event.zoomJoinUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="ml-1 font-semibold underline decoration-sky-400/70 underline-offset-2"
-          onClick={(click) => click.stopPropagation()}
-        >
+        <span className="ml-1 font-semibold underline decoration-sky-400/70 underline-offset-2">
           Unirse
-        </a>
+        </span>
       ) : null}
+    </button>
+  );
+}
+
+function MeetingDetailField({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="space-y-1">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">
+        {label}
+      </p>
+      <div className="text-sm text-foreground">{children}</div>
     </div>
+  );
+}
+
+function MeetingDetailModal({
+  event,
+  onClose,
+  onOpenClient,
+  onOpenExecutive,
+}: {
+  event: CalendarCallEvent | null;
+  onClose: () => void;
+  onOpenClient: (clientId: string) => void;
+  onOpenExecutive: (executiveId: string) => void;
+}) {
+  if (!event) return null;
+
+  const channelLabel = event.contactMethod
+    ? CLIENT_CONTACT_METHOD_LABELS[event.contactMethod]
+    : "Llamado";
+  const whatsappUrl = event.clientPhone
+    ? buildWhatsAppUrl(event.clientPhone)
+    : null;
+  const calendlyLabel =
+    event.calendlyTeam && event.calendlyTeam in CALENDLY_TEAM_LABELS
+      ? CALENDLY_TEAM_LABELS[event.calendlyTeam]
+      : null;
+  const executiveRoleLabel = event.assignedExecutiveName
+    ? getStaffRoleLabel({
+        realm: "executive",
+        executiveKind: event.assignedExecutiveKind,
+      })
+    : null;
+
+  return (
+    <AdminFormModal
+      open
+      size="md"
+      title={event.clientName}
+      description={`${channelLabel} · ${formatEventDateTime(event.startsAt)}`}
+      onClose={onClose}
+    >
+      <div className="space-y-5">
+        <div className="flex flex-wrap items-center gap-2">
+          <ClientContactMethodBadge method={event.contactMethod} />
+          <ClientPipelineStatusBadge status={event.pipelineStatus ?? undefined} />
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <MeetingDetailField label="Fecha y hora">
+            {formatEventDateTime(event.startsAt)}
+          </MeetingDetailField>
+          <MeetingDetailField label="Canal">
+            {channelLabel}
+          </MeetingDetailField>
+          <MeetingDetailField label="Ejecutivo a cargo">
+            {event.assignedExecutiveName && event.assignedExecutiveId ? (
+              <button
+                type="button"
+                onClick={() => onOpenExecutive(event.assignedExecutiveId!)}
+                className="text-left font-medium text-primary-dark underline-offset-2 hover:underline"
+              >
+                {event.assignedExecutiveName}
+              </button>
+            ) : event.assignedExecutiveName ? (
+              <span className="font-medium">{event.assignedExecutiveName}</span>
+            ) : (
+              <span className="text-muted">Sin ejecutivo asignado</span>
+            )}
+          </MeetingDetailField>
+          <MeetingDetailField label="Rol">
+            {executiveRoleLabel ?? (
+              <span className="text-muted">Sin rol</span>
+            )}
+          </MeetingDetailField>
+          <MeetingDetailField label="RUT">
+            <ClientRutCell rut={event.clientRut} />
+          </MeetingDetailField>
+          <MeetingDetailField label="Teléfono">
+            {event.clientPhone ? (
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <a
+                  href={`tel:${event.clientPhone}`}
+                  className="font-medium text-primary-dark underline-offset-2 hover:underline"
+                >
+                  {event.clientPhone}
+                </a>
+                {whatsappUrl ? (
+                  <a
+                    href={whatsappUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-semibold text-[#128C7E] underline-offset-2 hover:underline"
+                  >
+                    WhatsApp
+                  </a>
+                ) : null}
+              </div>
+            ) : (
+              <span className="text-muted">Sin teléfono</span>
+            )}
+          </MeetingDetailField>
+          <MeetingDetailField label="Correo">
+            {event.clientEmail ? (
+              <a
+                href={`mailto:${event.clientEmail}`}
+                className="break-all font-medium text-primary-dark underline-offset-2 hover:underline"
+              >
+                {event.clientEmail}
+              </a>
+            ) : (
+              <span className="text-muted">Sin correo</span>
+            )}
+          </MeetingDetailField>
+          {calendlyLabel ? (
+            <MeetingDetailField label="Equipo Calendly">
+              {calendlyLabel}
+            </MeetingDetailField>
+          ) : null}
+        </div>
+
+        {event.zoomJoinUrl ? (
+          <div className="rounded-lg border border-sky-200 bg-sky-50 px-3 py-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-sky-800">
+              Reunión Zoom
+            </p>
+            <a
+              href={event.zoomJoinUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-1 inline-flex text-sm font-semibold text-sky-900 underline decoration-sky-400/70 underline-offset-2"
+            >
+              Unirse a la videollamada
+            </a>
+          </div>
+        ) : null}
+
+        <div className="flex flex-wrap gap-2 border-t border-border pt-4">
+          <Button
+            type="button"
+            onClick={() => onOpenClient(event.clientId)}
+          >
+            Ver ficha del cliente
+          </Button>
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Cerrar
+          </Button>
+        </div>
+      </div>
+    </AdminFormModal>
   );
 }
 
@@ -284,10 +474,12 @@ function MonthView({
   cursor,
   today,
   events,
+  onSelectEvent,
 }: {
   cursor: Date;
   today: Date;
   events: CalendarCallEvent[];
+  onSelectEvent: (event: CalendarCallEvent) => void;
 }) {
   const cells = useMemo(() => buildMonthCells(cursor), [cursor]);
 
@@ -340,7 +532,13 @@ function MonthView({
               </div>
               <div className="hidden space-y-1 sm:block">
                 {visible.map((event) => (
-                  <EventChip key={event.id} event={event} showTime dense />
+                  <EventChip
+                    key={event.id}
+                    event={event}
+                    showTime
+                    dense
+                    onSelect={onSelectEvent}
+                  />
                 ))}
                 {overflow > 0 ? (
                   <p className="px-0.5 text-[10px] font-medium text-muted">
@@ -361,10 +559,12 @@ function WeekView({
   cursor,
   today,
   events,
+  onSelectEvent,
 }: {
   cursor: Date;
   today: Date;
   events: CalendarCallEvent[];
+  onSelectEvent: (event: CalendarCallEvent) => void;
 }) {
   const days = useMemo(() => buildWeekDays(cursor), [cursor]);
 
@@ -422,7 +622,12 @@ function WeekView({
                     className="min-h-10 space-y-1 border-r border-border p-1 last:border-r-0"
                   >
                     {slotEvents.map((event) => (
-                      <EventChip key={event.id} event={event} dense />
+                      <EventChip
+                        key={event.id}
+                        event={event}
+                        dense
+                        onSelect={onSelectEvent}
+                      />
                     ))}
                   </div>
                 );
@@ -440,10 +645,12 @@ function DayView({
   cursor,
   today,
   events,
+  onSelectEvent,
 }: {
   cursor: Date;
   today: Date;
   events: CalendarCallEvent[];
+  onSelectEvent: (event: CalendarCallEvent) => void;
 }) {
   const isToday = isSameDay(cursor, today);
   const dayEvents = eventsForDay(events, cursor);
@@ -473,7 +680,12 @@ function DayView({
         {outsideHours.length > 0 ? (
           <div className="space-y-1 border-b border-border bg-amber-50/70 px-4 py-2">
             {outsideHours.map((event) => (
-              <EventChip key={event.id} event={event} showTime />
+              <EventChip
+                key={event.id}
+                event={event}
+                showTime
+                onSelect={onSelectEvent}
+              />
             ))}
           </div>
         ) : null}
@@ -493,7 +705,12 @@ function DayView({
                 ) : (
                   <div className="flex min-w-0 flex-1 flex-col gap-1">
                     {slotEvents.map((event) => (
-                      <EventChip key={event.id} event={event} showTime />
+                      <EventChip
+                        key={event.id}
+                        event={event}
+                        showTime
+                        onSelect={onSelectEvent}
+                      />
                     ))}
                   </div>
                 )}
@@ -589,8 +806,12 @@ function YearView({
 }
 
 export function ExecutiveCalendarPanel() {
+  const router = useRouter();
   const [view, setView] = useState<CalendarView>("month");
   const [cursor, setCursor] = useState(() => startOfDay(new Date()));
+  const [selectedEvent, setSelectedEvent] = useState<CalendarCallEvent | null>(
+    null,
+  );
   const today = useMemo(() => startOfDay(new Date()), []);
 
   const periodTitle = useMemo(
@@ -618,11 +839,21 @@ export function ExecutiveCalendarPanel() {
         : "No se pudieron cargar los llamados."
       : null;
 
+  function openClientFicha(clientId: string) {
+    setSelectedEvent(null);
+    router.push(staffClientHref(clientId));
+  }
+
+  function openExecutiveFicha(executiveId: string) {
+    setSelectedEvent(null);
+    router.push(staffExecutiveHref(executiveId));
+  }
+
   return (
     <AdminPanel>
       <AdminPanelHeader
         title="Calendario"
-        description="Reuniones y llamados agendados. WhatsApp en verde, Zoom en azul."
+        description="Reuniones y llamados agendados. WhatsApp en verde, Zoom en azul. Haz clic en un evento para ver el detalle."
         actions={
           <AdminRefreshButton
             loading={isFetching && !loading}
@@ -718,18 +949,40 @@ export function ExecutiveCalendarPanel() {
         ) : null}
 
         {view === "month" ? (
-          <MonthView cursor={cursor} today={today} events={events} />
+          <MonthView
+            cursor={cursor}
+            today={today}
+            events={events}
+            onSelectEvent={setSelectedEvent}
+          />
         ) : null}
         {view === "week" ? (
-          <WeekView cursor={cursor} today={today} events={events} />
+          <WeekView
+            cursor={cursor}
+            today={today}
+            events={events}
+            onSelectEvent={setSelectedEvent}
+          />
         ) : null}
         {view === "day" ? (
-          <DayView cursor={cursor} today={today} events={events} />
+          <DayView
+            cursor={cursor}
+            today={today}
+            events={events}
+            onSelectEvent={setSelectedEvent}
+          />
         ) : null}
         {view === "year" ? (
           <YearView cursor={cursor} today={today} events={events} />
         ) : null}
       </div>
+
+      <MeetingDetailModal
+        event={selectedEvent}
+        onClose={() => setSelectedEvent(null)}
+        onOpenClient={openClientFicha}
+        onOpenExecutive={openExecutiveFicha}
+      />
     </AdminPanel>
   );
 }

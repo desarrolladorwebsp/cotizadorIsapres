@@ -25,6 +25,12 @@ export type {
 
 export { buildBeneficiaryGroupSummary } from "@/lib/beneficiary-summary";
 export {
+  createEmptyFamilyBeneficiaries,
+  getPrimaryContributorAge,
+  normalizeFamilyBeneficiaries,
+  setPrimaryContributorAge,
+} from "@/lib/beneficiary-state";
+export {
   formatRiskFactor,
   getRiskFactor604,
   isValidBeneficiaryAge,

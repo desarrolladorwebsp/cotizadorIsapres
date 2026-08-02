@@ -1,9 +1,13 @@
+import {
+  getPrimaryContributorAge,
+  normalizeFamilyBeneficiaries,
+} from "@/lib/beneficiary-state";
 import type { FamilyBeneficiariesState } from "@/types/beneficiary";
 
 export function getConfirmedDependents(
   beneficiaries: FamilyBeneficiariesState,
 ) {
-  return beneficiaries.dependents.filter(
+  return normalizeFamilyBeneficiaries(beneficiaries).dependents.filter(
     (dependent) => dependent.age !== null,
   );
 }
@@ -12,10 +16,17 @@ export function formatBeneficiariesBarSummary(
   beneficiaries: FamilyBeneficiariesState,
 ): string | null {
   const parts: string[] = [];
-  const confirmed = getConfirmedDependents(beneficiaries);
+  const normalized = normalizeFamilyBeneficiaries(beneficiaries);
+  const confirmed = getConfirmedDependents(normalized);
+  const contributors = normalized.contributors.filter(
+    (person) => person.age !== null,
+  );
 
-  if (beneficiaries.contributorAge !== null) {
-    parts.push(`Cotizante ${beneficiaries.contributorAge} años`);
+  if (contributors.length === 1) {
+    parts.push(`Cotizante ${contributors[0]!.age} años`);
+  } else if (contributors.length > 1) {
+    const ages = contributors.map((person) => `${person.age} años`).join(", ");
+    parts.push(`${contributors.length} cotizantes (${ages})`);
   }
 
   if (confirmed.length > 0) {
@@ -32,3 +43,5 @@ export function formatDependentsCountLabel(count: number): string {
   if (count === 0) return "Sin cargas";
   return `${count} carga${count === 1 ? "" : "s"}`;
 }
+
+export { getPrimaryContributorAge };

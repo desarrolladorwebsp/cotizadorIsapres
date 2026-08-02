@@ -724,8 +724,8 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
     const defaultCriteria = createDefaultQuoteCriteria();
     setCriteria(defaultCriteria);
     const emptyBeneficiaries = {
-      contributorAge: null,
-      dependents: [],
+      contributors: [] as { id: string; age: number | null }[],
+      dependents: [] as { id: string; age: number | null }[],
     };
     dashboard.handleBeneficiariesChange(
       emptyBeneficiaries,
@@ -985,31 +985,21 @@ function PublicCotizadorViewInner({ embedMode }: { embedMode: boolean }) {
                       icon: (
                         <>
                           <path
-                            d="M12 2.5l1.1 1.9 2.15-.4.45 2.15 2.1.7-1.05 1.9 1.75 1.35-1.75 1.05.9 2.05-2.15.35-.75 2.05L12 15.75l-1.85 1.45-.75-2.05-2.15-.35.9-2.05-1.75-1.05 1.75-1.35-1.05-1.9 2.1-.7.45-2.15 2.15.4Z"
+                            d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"
                             stroke="currentColor"
-                            strokeWidth="1.35"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
                             strokeLinejoin="round"
                           />
-                          <circle
-                            cx="9.4"
-                            cy="9.5"
-                            r="1.55"
-                            stroke="currentColor"
-                            strokeWidth="1.4"
-                          />
                           <path
-                            d="m8.9 15.1 6.2-6.2"
+                            d="m15 9-6 6"
                             stroke="currentColor"
-                            strokeWidth="1.55"
+                            strokeWidth="1.5"
                             strokeLinecap="round"
+                            strokeLinejoin="round"
                           />
-                          <circle
-                            cx="14.6"
-                            cy="14.5"
-                            r="1.55"
-                            stroke="currentColor"
-                            strokeWidth="1.4"
-                          />
+                          <circle cx="9" cy="9" r="1.15" fill="currentColor" />
+                          <circle cx="15" cy="15" r="1.15" fill="currentColor" />
                         </>
                       ),
                     },

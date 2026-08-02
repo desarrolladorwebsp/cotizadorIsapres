@@ -205,8 +205,12 @@ export function parseCotizadorUrl(
   const sortRaw = params.get(DEEP_LINK_PARAMS.orden)?.trim().toLowerCase();
   const currencyRaw = params.get(DEEP_LINK_PARAMS.moneda)?.trim().toLowerCase();
 
+  const primaryAge = parseContributorAge(params.get(DEEP_LINK_PARAMS.edad));
   const beneficiaries: FamilyBeneficiariesState = {
-    contributorAge: parseContributorAge(params.get(DEEP_LINK_PARAMS.edad)),
+    contributors:
+      primaryAge !== null
+        ? [{ id: "contributor", age: primaryAge }]
+        : [],
     dependents: parseDependents(params.get(DEEP_LINK_PARAMS.cargas)),
   };
 

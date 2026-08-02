@@ -5,6 +5,8 @@ import {
   applyDashboardFilters,
   buildBeneficiaryGroupSummary,
   createDefaultDashboardFilters,
+  createEmptyFamilyBeneficiaries,
+  normalizeFamilyBeneficiaries,
 } from "@/domain";
 import { useIsLargeScreen } from "@/hooks/use-media-query";
 import { useUfValue } from "@/hooks/use-uf-value";
@@ -16,10 +18,8 @@ import type {
 import type { DashboardFiltersState } from "@/types/filters";
 import type { HealthPlan } from "@/types/plan";
 
-const INITIAL_BENEFICIARIES: FamilyBeneficiariesState = {
-  contributorAge: null,
-  dependents: [],
-};
+const INITIAL_BENEFICIARIES: FamilyBeneficiariesState =
+  createEmptyFamilyBeneficiaries();
 
 export interface CotizadorDashboardOptions {
   initialBeneficiaries?: FamilyBeneficiariesState;
@@ -33,8 +33,9 @@ export function useCotizadorDashboard(
   plansCatalog: HealthPlan[],
   options?: CotizadorDashboardOptions,
 ) {
-  const seedBeneficiaries =
-    options?.initialBeneficiaries ?? INITIAL_BENEFICIARIES;
+  const seedBeneficiaries = normalizeFamilyBeneficiaries(
+    options?.initialBeneficiaries ?? INITIAL_BENEFICIARIES,
+  );
   const seedSummary =
     options?.initialBeneficiarySummary ??
     buildBeneficiaryGroupSummary(seedBeneficiaries);
@@ -100,8 +101,9 @@ export function useCotizadorDashboard(
 
   const applyBeneficiaries = useCallback(
     (next: FamilyBeneficiariesState, summary: BeneficiaryGroupSummary) => {
-      setBeneficiaries(next);
-      setBeneficiarySummary(summary);
+      const normalized = normalizeFamilyBeneficiaries(next);
+      setBeneficiaries(normalized);
+      setBeneficiarySummary(summary ?? buildBeneficiaryGroupSummary(normalized));
     },
     [],
   );

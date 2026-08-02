@@ -17,6 +17,10 @@ import {
 import {
   getConfirmedDependents,
 } from "@/lib/beneficiary-display";
+import {
+  getPrimaryContributorAge,
+  setPrimaryContributorAge,
+} from "@/lib/beneficiary-state";
 import { criteriaBar, safeWidth, touchTarget, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
 import { CompanyAgreementValidationSection } from "@/components/cotizador/company-agreement";
@@ -77,22 +81,18 @@ export function PublicQuoteCriteriaBar({
   showCompanyAgreement = true,
   partnerEntitySlug,
 }: PublicQuoteCriteriaBarProps) {
+  const primaryAge = getPrimaryContributorAge(beneficiaries);
   const [ageInput, setAgeInput] = useState(
-    beneficiaries.contributorAge !== null
-      ? String(beneficiaries.contributorAge)
-      : "",
+    primaryAge !== null ? String(primaryAge) : "",
   );
   const [incomeInput, setIncomeInput] = useState(criteria.monthlyIncome);
   const [loadsOpen, setLoadsOpen] = useState(showPreloadedDependents);
   const popoverRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setAgeInput(
-      beneficiaries.contributorAge !== null
-        ? String(beneficiaries.contributorAge)
-        : "",
-    );
-  }, [beneficiaries.contributorAge]);
+    const age = getPrimaryContributorAge(beneficiaries);
+    setAgeInput(age !== null ? String(age) : "");
+  }, [beneficiaries]);
 
   useEffect(() => {
     setIncomeInput(criteria.monthlyIncome);
@@ -135,8 +135,7 @@ export function PublicQuoteCriteriaBar({
     if (!canConfirmAge || parsedAgeDraft === null) return;
     setAgeInput(String(parsedAgeDraft));
     emitBeneficiaries({
-      ...beneficiaries,
-      contributorAge: parsedAgeDraft,
+      ...setPrimaryContributorAge(beneficiaries, parsedAgeDraft),
       dependents: getConfirmedDependents(beneficiaries),
     });
   }
@@ -167,15 +166,15 @@ export function PublicQuoteCriteriaBar({
 
   /** Confirma borradores válidos pendientes antes de buscar. */
   function commitPendingDrafts() {
+    const committedPrimaryAge = getPrimaryContributorAge(beneficiaries);
     const ageNeedsCommit =
       canConfirmAge &&
       parsedAgeDraft !== null &&
-      parsedAgeDraft !== beneficiaries.contributorAge;
+      parsedAgeDraft !== committedPrimaryAge;
 
     if (ageNeedsCommit) {
       emitBeneficiaries({
-        ...beneficiaries,
-        contributorAge: parsedAgeDraft,
+        ...setPrimaryContributorAge(beneficiaries, parsedAgeDraft),
         dependents: getConfirmedDependents(beneficiaries),
       });
       setAgeInput(String(parsedAgeDraft));
@@ -196,7 +195,7 @@ export function PublicQuoteCriteriaBar({
     }
 
     return {
-      nextAge: ageNeedsCommit ? parsedAgeDraft : beneficiaries.contributorAge,
+      nextAge: ageNeedsCommit ? parsedAgeDraft : committedPrimaryAge,
       nextIncome: incomeNeedsCommit ? formattedIncome : criteria.monthlyIncome,
     };
   }
@@ -205,7 +204,7 @@ export function PublicQuoteCriteriaBar({
   const loadsCount = confirmedDependents.length;
 
   function handleSearchClick() {
-    let nextAge = beneficiaries.contributorAge;
+    let nextAge = getPrimaryContributorAge(beneficiaries);
     let nextIncome = criteria.monthlyIncome;
 
     flushSync(() => {
@@ -220,8 +219,7 @@ export function PublicQuoteCriteriaBar({
         monthlyIncome: nextIncome,
       },
       beneficiaries: {
-        ...beneficiaries,
-        contributorAge: nextAge,
+        ...setPrimaryContributorAge(beneficiaries, nextAge),
         dependents: confirmedDependents,
       },
     });
@@ -267,8 +265,8 @@ export function PublicQuoteCriteriaBar({
           label="Edad"
           value={ageInput}
           committedValue={
-            beneficiaries.contributorAge !== null
-              ? String(beneficiaries.contributorAge)
+            getPrimaryContributorAge(beneficiaries) !== null
+              ? String(getPrimaryContributorAge(beneficiaries))
               : ""
           }
           onChange={setAgeInput}

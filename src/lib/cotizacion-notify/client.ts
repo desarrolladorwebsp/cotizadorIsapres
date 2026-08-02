@@ -1,4 +1,3 @@
-import { buildCotizadorUrlFromParsed } from "@/lib/deep-link/build-cotizador-url";
 import type { ParsedCotizadorDeepLink } from "@/lib/deep-link/parse-cotizador-url";
 import type {
   CotizacionNotifyInput,
@@ -6,6 +5,7 @@ import type {
   CotizacionNotifySolicitante,
   CotizacionNotifyConvenio,
 } from "@/lib/email/cotizacion-notify-schema";
+import { buildMiCotizacionShareUrl } from "@/lib/cotizacion-notify/mi-cotizacion-share";
 import {
   getActiveCheckboxIds,
   ISAPRE_FILTER_OPTIONS,
@@ -89,20 +89,6 @@ function resolveFilteredIsapres(
   if (activeIds.length === ISAPRE_FILTER_OPTIONS.length) return undefined;
   if (activeIds.length === 0) return undefined;
   return activeIds.map((id) => resolveIsapreDisplayName(id));
-}
-
-function resolveCotizadorUrl(
-  deepLink: ParsedCotizadorDeepLink | undefined,
-  explicitUrl?: string,
-): string {
-  if (explicitUrl?.trim()) return explicitUrl.trim();
-  if (typeof window !== "undefined") return window.location.href;
-
-  if (deepLink) {
-    return buildCotizadorUrlFromParsed(deepLink);
-  }
-
-  return `${resolveAppBaseUrl()}/cotizador`;
 }
 
 function resolveAbsoluteLogoUrl(path: string | null | undefined): string | undefined {
@@ -241,9 +227,13 @@ export function buildCotizacionNotifyPayload(
     orden: resolveSortLabel(input.sortKey),
     moneda: input.currency,
     isapres: resolveFilteredIsapres(input.filters),
-    cotizadorUrl: resolveCotizadorUrl(input.deepLink, input.cotizadorUrl),
+    cotizadorUrl:
+      input.cotizadorUrl?.trim() ||
+      `${resolveAppBaseUrl()}/cotizador/mi-cotizacion`,
     partnerEntitySlug:
-      input.partnerEntitySlug?.trim().toLowerCase() || undefined,
+      input.partnerEntitySlug?.trim().toLowerCase() ||
+      input.deepLink?.entidad?.trim().toLowerCase() ||
+      undefined,
     partnerEntityName: input.partnerEntityName?.trim() || undefined,
     partnerEntityTheme: input.partnerEntityTheme ?? undefined,
     partnerEntityLogoUrl: resolveAbsoluteLogoUrl(input.partnerEntityLogoUrl),
@@ -263,6 +253,10 @@ export function buildCotizacionNotifyPayload(
       input.beneficiarySummary,
       agreementPrices,
     );
+  }
+
+  if (!input.cotizadorUrl?.trim()) {
+    payload.cotizadorUrl = buildMiCotizacionShareUrl(payload);
   }
 
   return payload;

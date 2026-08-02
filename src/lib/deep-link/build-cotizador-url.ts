@@ -8,6 +8,7 @@ import {
   PLAN_TYPE_FILTER_OPTIONS,
   ZONE_FILTER_OPTIONS,
 } from "@/lib/filter-options";
+import { getPrimaryContributorAge } from "@/lib/beneficiary-state";
 import { DEEP_LINK_PARAMS } from "@/lib/deep-link/params";
 import { normalizeIncomeDigits } from "@/lib/deep-link/income";
 import {
@@ -180,7 +181,7 @@ export function buildCotizadorUrlFromParsed(
     baseUrl,
     entidad: parsed.entidad,
     region: parsed.criteria.region,
-    edad: parsed.beneficiaries.contributorAge ?? undefined,
+    edad: getPrimaryContributorAge(parsed.beneficiaries) ?? undefined,
     sexo: parsed.criteria.sex || undefined,
     ingreso: parsed.criteria.monthlyIncome || undefined,
     cargas: parsed.beneficiaries.dependents

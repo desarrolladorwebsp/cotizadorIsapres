@@ -1,4 +1,5 @@
 import { normalizeIncomeDigits } from "@/lib/deep-link/income";
+import { getPrimaryContributorAge } from "@/lib/beneficiary-state";
 import type { BeneficiaryGroupSummary, FamilyBeneficiariesState } from "@/types/beneficiary";
 import type { QuoteCriteria } from "@/lib/quote-criteria-options";
 
@@ -17,7 +18,7 @@ export function getMissingQuoteCriteriaFields(input: {
 
   const age =
     input.beneficiarySummary?.contributor.age ??
-    input.beneficiaries.contributorAge;
+    getPrimaryContributorAge(input.beneficiaries);
 
   if (age === null || age === undefined || age < 18 || age > 120) {
     missing.push("edad");

@@ -45,12 +45,15 @@ import { ClientContactMethodBadge } from "@/components/executive/client-contact-
 import { ClientRutCell } from "@/components/executive/client-rut-cell";
 import { CotizadorSourceBadge } from "@/components/executive/cotizador-source-badge";
 import { CreateClientModal } from "@/components/executive/create-client-modal";
+import { ExecutiveAccountDetailView } from "@/components/executive/executive-account-detail-view";
 import { ExecutiveClientDetailView } from "@/components/executive/executive-client-detail-view";
 import { buildClientWhatsAppMessage } from "@/lib/client-pipeline/constants";
 import { buildWhatsAppUrl } from "@/lib/partner-entity/theme";
 import {
   STAFF_CLIENT_ID_QUERY,
+  STAFF_EXECUTIVE_ID_QUERY,
   staffClientHref,
+  staffExecutiveHref,
   staffSectionHref,
 } from "@/lib/staff/staff-sections";
 import { touchTarget, ui } from "@/lib/ui-tokens";
@@ -90,6 +93,8 @@ export function ExecutiveClientsPanel({
   const executivesQuery = useExecutiveAccountsQuery({ enabled: isAdmin });
 
   const detailClientId = searchParams.get(STAFF_CLIENT_ID_QUERY)?.trim() || null;
+  const detailExecutiveId =
+    searchParams.get(STAFF_EXECUTIVE_ID_QUERY)?.trim() || null;
 
   const clients = clientsQuery.data;
   const executives = executivesQuery.data ?? [];
@@ -107,11 +112,24 @@ export function ExecutiveClientsPanel({
   >({});
   const [distributeConfirmOpen, setDistributeConfirmOpen] = useState(false);
 
-  function openClientFicha(clientId: string) {
-    router.replace(staffClientHref(clientId), { scroll: false });
+  function openClientFicha(clientId: string, executiveId?: string) {
+    router.replace(
+      staffClientHref(clientId, {
+        executiveId: executiveId ?? detailExecutiveId ?? undefined,
+      }),
+      { scroll: false },
+    );
   }
 
   function closeClientFicha() {
+    if (detailExecutiveId) {
+      router.replace(staffExecutiveHref(detailExecutiveId), { scroll: false });
+      return;
+    }
+    router.replace(staffSectionHref("clientes"), { scroll: false });
+  }
+
+  function closeExecutiveFicha() {
     router.replace(staffSectionHref("clientes"), { scroll: false });
   }
 
@@ -157,6 +175,16 @@ export function ExecutiveClientsPanel({
         clientId={detailClientId}
         onBack={closeClientFicha}
         onNotify={onNotify}
+      />
+    );
+  }
+
+  if (detailExecutiveId) {
+    return (
+      <ExecutiveAccountDetailView
+        executiveId={detailExecutiveId}
+        onBack={closeExecutiveFicha}
+        onOpenClient={(clientId) => openClientFicha(clientId, detailExecutiveId)}
       />
     );
   }

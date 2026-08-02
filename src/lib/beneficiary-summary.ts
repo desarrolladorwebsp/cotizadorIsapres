@@ -1,8 +1,10 @@
 import { isRiskFactorExemptByAge } from "@/lib/isapre-pricing-rules";
+import { normalizeFamilyBeneficiaries } from "@/lib/beneficiary-state";
 import { getRiskFactor604, isValidBeneficiaryAge } from "@/lib/risk-factor-table-604";
 import type {
   BeneficiaryGroupSummary,
   FamilyBeneficiariesState,
+  LegacyFamilyBeneficiariesState,
   PersonRiskFactor,
 } from "@/types/beneficiary";
 
@@ -19,40 +21,47 @@ function isCountedBeneficiary(age: number | null): boolean {
   return age !== null && isValidBeneficiaryAge(age);
 }
 
-export function buildBeneficiaryGroupSummary(
-  state: FamilyBeneficiariesState,
-): BeneficiaryGroupSummary {
-  const contributorTableFactor =
-    state.contributorAge !== null
-      ? getRiskFactor604(state.contributorAge, "contributor")
-      : null;
+function toPersonRiskFactor(
+  id: string,
+  age: number | null,
+  role: PersonRiskFactor["role"],
+): PersonRiskFactor {
+  const tableFactor =
+    age !== null ? getRiskFactor604(age, role) : null;
 
-  const contributor: PersonRiskFactor = {
-    id: "contributor",
-    role: "contributor",
-    age: state.contributorAge,
-    tableFactor: contributorTableFactor,
-    factor: resolveBillableFactor(state.contributorAge, "contributor"),
-    isRiskFactorExempt: isRiskFactorExemptByAge(state.contributorAge),
+  return {
+    id,
+    role,
+    age,
+    tableFactor,
+    factor: resolveBillableFactor(age, role),
+    isRiskFactorExempt: isRiskFactorExemptByAge(age),
   };
+}
 
-  const dependents: PersonRiskFactor[] = state.dependents.map((dependent) => {
-    const tableFactor =
-      dependent.age !== null
-        ? getRiskFactor604(dependent.age, "dependent")
-        : null;
+const EMPTY_CONTRIBUTOR: PersonRiskFactor = {
+  id: "contributor",
+  role: "contributor",
+  age: null,
+  tableFactor: null,
+  factor: null,
+  isRiskFactorExempt: false,
+};
 
-    return {
-      id: dependent.id,
-      role: "dependent",
-      age: dependent.age,
-      tableFactor,
-      factor: resolveBillableFactor(dependent.age, "dependent"),
-      isRiskFactorExempt: isRiskFactorExemptByAge(dependent.age),
-    };
-  });
+export function buildBeneficiaryGroupSummary(
+  state: FamilyBeneficiariesState | LegacyFamilyBeneficiariesState,
+): BeneficiaryGroupSummary {
+  const normalized = normalizeFamilyBeneficiaries(state);
 
-  const allPersons = [contributor, ...dependents];
+  const contributors = normalized.contributors.map((person) =>
+    toPersonRiskFactor(person.id, person.age, "contributor"),
+  );
+
+  const dependents = normalized.dependents.map((person) =>
+    toPersonRiskFactor(person.id, person.age, "dependent"),
+  );
+
+  const allPersons = [...contributors, ...dependents];
   const totalFactors = allPersons.reduce(
     (sum, person) => sum + (person.factor ?? 0),
     0,
@@ -62,7 +71,8 @@ export function buildBeneficiaryGroupSummary(
   ).length;
 
   return {
-    contributor,
+    contributor: contributors[0] ?? EMPTY_CONTRIBUTOR,
+    contributors,
     dependents,
     beneficiaryCount,
     personCount: beneficiaryCount,

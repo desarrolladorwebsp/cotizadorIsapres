@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import {
   AdminPanel,
   AdminPanelHeader,
@@ -17,9 +18,13 @@ import {
 } from "@/components/executive/executive-icons";
 import { useStaffSession } from "@/hooks/use-auth-session";
 import { useExecutiveClientsQuery } from "@/hooks/query/use-executive-clients-query";
+import { getStaffRoleLabel } from "@/lib/auth/staff-role";
+import { CLIENT_PIPELINE_STATUS_DESCRIPTIONS } from "@/lib/client-pipeline/constants";
 import { syncClientMutationCache } from "@/lib/query/executive-cache";
+import { staffExecutiveHref } from "@/lib/staff/staff-sections";
 import { touchTarget, ui } from "@/lib/ui-tokens";
 import { joinClasses } from "@/lib/utils";
+import type { ClientPipelineStatus } from "@/types/client-pipeline";
 import type { UserRecord } from "@/types/user";
 
 export interface ExecutiveClientDetailViewProps {
@@ -37,12 +42,30 @@ function formatDate(value: string): string {
   }).format(new Date(value));
 }
 
+function SummaryField({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="min-w-0 space-y-1">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">
+        {label}
+      </p>
+      <div className="text-sm text-foreground">{children}</div>
+    </div>
+  );
+}
+
 export function ExecutiveClientDetailView({
   clientId,
   onBack,
   onNotify,
   onLeftPortfolio,
 }: ExecutiveClientDetailViewProps) {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const { isAdmin } = useStaffSession();
   const clientsQuery = useExecutiveClientsQuery();
@@ -126,6 +149,15 @@ export function ExecutiveClientDetailView({
     );
   }
 
+  const pipelineStatus = (client.pipelineStatus ??
+    "NUEVO") as ClientPipelineStatus;
+  const executiveRoleLabel = client.assignedExecutiveName
+    ? getStaffRoleLabel({
+        realm: "executive",
+        executiveKind: client.assignedExecutiveKind,
+      })
+    : null;
+
   return (
     <AdminPanel>
       <AdminPanelHeader
@@ -153,33 +185,66 @@ export function ExecutiveClientDetailView({
 
       <div
         className={joinClasses(
-          "flex flex-wrap items-center gap-2 rounded-2xl border bg-white px-4 py-3 shadow-sm",
+          "space-y-4 rounded-2xl border bg-white px-4 py-4 shadow-sm",
           ui.border,
         )}
       >
-        <ClientPipelineStatusBadge status={client.pipelineStatus} />
-        <ClientContactMethodBadge method={client.preferredContactMethod} />
-        <ClientOriginBadge
-          origin={client.clientOrigin}
-          cotizadorSource={client.cotizadorSource}
-        />
-        <span className="text-xs text-muted">
-          Registro: {formatDate(client.createdAt)}
-        </span>
-        {client.assignedExecutiveName ? (
-          <span className="text-xs text-muted">
-            Ejecutivo: {client.assignedExecutiveName}
-          </span>
-        ) : null}
-        <div className="ml-auto min-w-0">
-          <ClientRutCell rut={client.rut} />
+        <div className="grid gap-4 sm:grid-cols-3">
+          <SummaryField label="Ejecutivo asignado">
+            {client.assignedExecutiveName && client.assignedExecutiveId ? (
+              <button
+                type="button"
+                onClick={() =>
+                  router.push(staffExecutiveHref(client.assignedExecutiveId!))
+                }
+                className="text-left font-semibold text-primary-dark underline-offset-2 hover:underline"
+              >
+                {client.assignedExecutiveName}
+              </button>
+            ) : client.assignedExecutiveName ? (
+              <span className="font-semibold">{client.assignedExecutiveName}</span>
+            ) : (
+              <span className="text-muted">Sin ejecutivo asignado</span>
+            )}
+          </SummaryField>
+
+          <SummaryField label="Rol del ejecutivo">
+            {executiveRoleLabel ? (
+              <span className="font-medium">{executiveRoleLabel}</span>
+            ) : (
+              <span className="text-muted">Sin rol</span>
+            )}
+          </SummaryField>
+
+          <SummaryField label="Etapa del cliente">
+            <div className="space-y-1.5">
+              <ClientPipelineStatusBadge status={pipelineStatus} />
+              <p className="text-xs leading-snug text-muted">
+                {CLIENT_PIPELINE_STATUS_DESCRIPTIONS[pipelineStatus]}
+              </p>
+            </div>
+          </SummaryField>
         </div>
-        {client.email ? (
-          <p className="w-full truncate text-sm text-muted sm:w-auto">
-            {client.email}
-            {client.phone ? ` · ${client.phone}` : ""}
-          </p>
-        ) : null}
+
+        <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
+          <ClientContactMethodBadge method={client.preferredContactMethod} />
+          <ClientOriginBadge
+            origin={client.clientOrigin}
+            cotizadorSource={client.cotizadorSource}
+          />
+          <span className="text-xs text-muted">
+            Registro: {formatDate(client.createdAt)}
+          </span>
+          <div className="ml-auto min-w-0">
+            <ClientRutCell rut={client.rut} />
+          </div>
+          {client.email ? (
+            <p className="w-full truncate text-sm text-muted sm:w-auto">
+              {client.email}
+              {client.phone ? ` · ${client.phone}` : ""}
+            </p>
+          ) : null}
+        </div>
       </div>
 
       <ClientPipelineDrawer

@@ -25,7 +25,10 @@ import type {
 } from "@prisma/client";
 
 export type UserWithExecutive = DbUser & {
-  assignedExecutive?: Pick<StaffAccount, "id" | "fullName" | "email"> | null;
+  assignedExecutive?: Pick<
+    StaffAccount,
+    "id" | "fullName" | "email" | "executiveKind"
+  > | null;
 };
 
 type PlanSummary = Pick<Plan, "uniqueCode" | "planName"> & {
@@ -37,14 +40,17 @@ type QuoteWithPlan = Quote & {
 };
 
 export type ClientRecordWithPlans = DbUser & {
-  assignedExecutive?: Pick<StaffAccount, "id" | "fullName" | "email"> | null;
+  assignedExecutive?: Pick<
+    StaffAccount,
+    "id" | "fullName" | "email" | "executiveKind"
+  > | null;
   quotes?: QuoteWithPlan[];
   advisedPlan?: PlanSummary | null;
 };
 
 export const clientRecordInclude = {
   assignedExecutive: {
-    select: { id: true, fullName: true, email: true },
+    select: { id: true, fullName: true, email: true, executiveKind: true },
   },
   quotes: {
     orderBy: { createdAt: "desc" as const },
@@ -101,6 +107,7 @@ export function mapDbUser(user: UserWithExecutive): UserRecord {
     active: user.active,
     assignedExecutiveId: user.assignedExecutiveId,
     assignedExecutiveName: user.assignedExecutive?.fullName ?? null,
+    assignedExecutiveKind: user.assignedExecutive?.executiveKind ?? null,
     pipelineStatus: user.pipelineStatus as ClientPipelineStatus,
     checklist: resolveClientChecklist(user.pipelineChecklist),
     closedRecord: parseClientClosedRecord(user.pipelineClosedRecord),
@@ -161,7 +168,7 @@ export async function readUsers(role?: UserRole): Promise<UserRecord[]> {
     orderBy: [{ role: "asc" }, { fullName: "asc" }],
     include: {
       assignedExecutive: {
-        select: { id: true, fullName: true, email: true },
+        select: { id: true, fullName: true, email: true, executiveKind: true },
       },
     },
   });
@@ -184,7 +191,7 @@ export async function readUserByEmail(
     where: { email: email.trim().toLowerCase() },
     include: {
       assignedExecutive: {
-        select: { id: true, fullName: true, email: true },
+        select: { id: true, fullName: true, email: true, executiveKind: true },
       },
     },
   });
@@ -212,7 +219,7 @@ export async function createUser(input: CreateUserInput): Promise<UserRecord> {
     },
     include: {
       assignedExecutive: {
-        select: { id: true, fullName: true, email: true },
+        select: { id: true, fullName: true, email: true, executiveKind: true },
       },
     },
   });
@@ -246,7 +253,7 @@ export async function upsertUserByEmail(
     },
     include: {
       assignedExecutive: {
-        select: { id: true, fullName: true, email: true },
+        select: { id: true, fullName: true, email: true, executiveKind: true },
       },
     },
   });

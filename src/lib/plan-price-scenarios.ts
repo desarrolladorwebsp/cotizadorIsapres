@@ -184,24 +184,42 @@ export function buildCargasScenarioFromSummary(
   ufToClp: number,
   gesPremiumUfPerPerson?: number,
 ): CargasPriceScenario | null {
-  const contributorAge = summary.contributor.age;
-  if (contributorAge === null) return null;
+  const contributorAges = summary.contributors
+    .map((person) => person.age)
+    .filter((age): age is number => age !== null);
+  if (contributorAges.length === 0) return null;
 
   const dependentAges = summary.dependents
     .map((d) => d.age)
     .filter((age): age is number => age !== null);
 
-  return buildScenarioQuote(
-    basePriceUf,
-    ufToClp,
-    contributorAge,
+  const gesRate = resolveGesPremiumUf(gesPremiumUfPerPerson);
+  const allAges = [...contributorAges, ...dependentAges];
+  const beneficiaryCount = allAges.length;
+  const gesBillableCount = countGesBillableBeneficiaries(allAges);
+  const totalFactors = summary.totalFactors;
+  const riskUf = totalFactors * basePriceUf;
+  const gesUf = gesBillableCount * gesRate;
+  const priceUf = riskUf + gesUf;
+
+  return {
+    id: "current",
+    label:
+      dependentAges.length === 0
+        ? "Tu grupo"
+        : `Tu grupo (${dependentAges.length} carga${dependentAges.length === 1 ? "" : "s"})`,
+    dependentCount: dependentAges.length,
     dependentAges,
-    dependentAges.length === 0
-      ? "Tu grupo"
-      : `Tu grupo (${dependentAges.length} carga${dependentAges.length === 1 ? "" : "s"})`,
-    "current",
-    resolveGesPremiumUf(gesPremiumUfPerPerson),
-  );
+    totalFactors,
+    beneficiaryCount,
+    gesBillableCount,
+    riskUf,
+    riskClp: calculateFinalPlanPriceClp(riskUf, ufToClp),
+    gesUf,
+    gesClp: calculateFinalPlanPriceClp(gesUf, ufToClp),
+    priceUf,
+    priceClp: calculateFinalPlanPriceClp(priceUf, ufToClp),
+  };
 }
 
 /** Escenarios de cargas usando edad real del cotizante del criterio. */

@@ -1,5 +1,6 @@
 import type { CurrencyDisplay } from "@/components/cotizador/public/public-results-toolbar";
 import { getActiveCheckboxIds } from "@/lib/filter-options";
+import { getPrimaryContributorAge } from "@/lib/beneficiary-state";
 import {
   buildCotizadorUrlFromParsed,
   buildSolicitarUrl,
@@ -91,7 +92,7 @@ export function buildEmbedSolicitarExitUrl(
     region: parsed.criteria.region || undefined,
     edad:
       parsed.beneficiarySummary.contributor.age ??
-      parsed.beneficiaries.contributorAge ??
+      getPrimaryContributorAge(parsed.beneficiaries) ??
       undefined,
     sexo: parsed.criteria.sex || undefined,
     ingreso: parsed.criteria.monthlyIncome || undefined,

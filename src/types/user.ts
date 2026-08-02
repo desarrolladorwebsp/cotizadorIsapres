@@ -42,6 +42,8 @@ export interface UserRecord {
   active: boolean;
   assignedExecutiveId?: string | null;
   assignedExecutiveName?: string | null;
+  /** Kind del ejecutivo asignado (Zoom / Isapres / Premium). */
+  assignedExecutiveKind?: import("@/types/staff-account").ExecutiveKind | null;
   pipelineStatus?: ClientPipelineStatus;
   checklist?: ClientChecklist;
   closedRecord?: ClientClosedRecord | null;

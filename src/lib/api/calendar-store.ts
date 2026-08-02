@@ -28,10 +28,21 @@ export async function readCalendarCallEvents(input: {
     select: {
       id: true,
       fullName: true,
+      email: true,
+      phone: true,
+      rut: true,
+      pipelineStatus: true,
       nextCallAt: true,
       preferredContactMethod: true,
       calendlyTeam: true,
       zoomJoinUrl: true,
+      assignedExecutive: {
+        select: {
+          id: true,
+          fullName: true,
+          executiveKind: true,
+        },
+      },
     },
     orderBy: { nextCallAt: "asc" },
   });
@@ -56,6 +67,17 @@ export async function readCalendarCallEvents(input: {
         calendlyTeam:
           (client.calendlyTeam as CalendarCallEvent["calendlyTeam"]) ?? null,
         zoomJoinUrl: client.zoomJoinUrl ?? null,
+        clientEmail: client.email ?? null,
+        clientPhone: client.phone ?? null,
+        clientRut: client.rut ?? null,
+        pipelineStatus:
+          (client.pipelineStatus as CalendarCallEvent["pipelineStatus"]) ?? null,
+        assignedExecutiveId: client.assignedExecutive?.id ?? null,
+        assignedExecutiveName: client.assignedExecutive?.fullName ?? null,
+        assignedExecutiveKind:
+          (client.assignedExecutive
+            ?.executiveKind as CalendarCallEvent["assignedExecutiveKind"]) ??
+          null,
       },
     ];
   });

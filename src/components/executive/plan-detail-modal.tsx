@@ -374,23 +374,24 @@ function SummaryPanel({
       clp: number;
     }> = [];
 
-    if (
-      beneficiarySummary.contributor.age != null ||
-      beneficiarySummary.beneficiaryCount > 0
-    ) {
+    beneficiarySummary.contributors.forEach((contributor, index) => {
+      if (contributor.age == null) return;
       const uf = personUnitPriceUf(
-        beneficiarySummary.contributor,
+        contributor,
         priceQuote.basePriceUf,
         gesRate,
       );
       items.push({
-        key: "contributor",
-        label: "Cotizante",
+        key: contributor.id,
+        label:
+          beneficiarySummary.contributors.length > 1
+            ? `Cotizante ${index + 1}`
+            : "Cotizante",
         badge: "COT",
         uf,
         clp: calculateFinalPlanPriceClp(uf, priceQuote.ufToClp),
       });
-    }
+    });
 
     beneficiarySummary.dependents.forEach((dependent, index) => {
       const uf = personUnitPriceUf(
@@ -401,7 +402,7 @@ function SummaryPanel({
       items.push({
         key: dependent.id,
         label: `Carga ${index + 1}`,
-        badge: "CAR",
+        badge: "CRG",
         uf,
         clp: calculateFinalPlanPriceClp(uf, priceQuote.ufToClp),
       });
