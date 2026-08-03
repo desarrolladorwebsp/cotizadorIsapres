@@ -52,6 +52,7 @@ export const LANDING_FOOTER_NAV = [
   { label: "Cotizador", href: "/inicio#cotizar" },
   { label: "Nuestros Socios", href: "/inicio#socios" },
   { label: "Reseñas", href: "/inicio#reseñas" },
+  { label: "Asesoría", href: "/#asesoria" },
   { label: "Contacto", href: "/inicio#contacto" },
   { label: "Política de Privacidad", href: "/politica-privacidad" },
 ] as const;

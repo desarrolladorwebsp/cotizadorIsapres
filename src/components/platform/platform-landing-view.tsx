@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { PartnerEntityPublic } from "@/types/partner-entity";
 import type { PublicPlanReview } from "@/types/plan-review";
 import { buildCotizadorPremiumCotizadorUrl } from "@/lib/partner-entity/platform-agent";
+import { LandingAsesoriaSection } from "./landing/landing-asesoria-section";
 import { LandingBrandThemeEffect } from "./landing/landing-brand-theme-effect";
 import { LandingCotizadorWidgetSection } from "./landing/landing-cotizador-widget-section";
 import { LandingFloatingSocial } from "./landing/landing-floating-social";
@@ -48,6 +49,9 @@ export function PlatformLandingView({
             </div>
           </Link>
           <nav aria-label="Navegación principal" className="flex items-center gap-1.5 sm:gap-2">
+            <a href="#asesoria" className={landing.navLink}>
+              Asesoría
+            </a>
             <a href={cotizadorHref} className={landing.navLink}>
               Cotizar
             </a>
@@ -64,6 +68,7 @@ export function PlatformLandingView({
         <LandingCotizadorWidgetSection />
         <LandingIsapresSection />
         <LandingReviewsSection reviews={reviews} />
+        <LandingAsesoriaSection />
       </main>
 
       <LandingFloatingSocial />

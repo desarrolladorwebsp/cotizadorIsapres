@@ -75,8 +75,8 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/embed/") ||
     pathname === "/isapres" ||
     pathname.startsWith("/isapres/") ||
-    pathname === "/api" ||
-    pathname.startsWith("/api/") ||
+    ((pathname === "/api" || pathname.startsWith("/api/")) &&
+      !pathname.startsWith("/api/leads")) ||
     pathname === "/cotizador-widget.js" ||
     pathname === "/cotizador-widget.js.map"
   ) {
